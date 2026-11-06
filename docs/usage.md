@@ -1,0 +1,219 @@
+# How to use ClipKaro: what to type
+
+You use ClipKaro by **writing to Claude Code** (your AI helper) while it's open inside the
+ClipKaro folder. There are no special commands to learn: you write a normal sentence, and Claude
+does the right steps. This page shows what you can ask for.
+
+Not set up yet? See [installation.md](installation.md), or the simple [user guide](user-guide.md).
+
+## 1. The basic request
+
+Open Claude Code **inside the ClipKaro folder** and type:
+
+> **clip this video: https://youtu.be/VIDEO_ID**
+
+or, for a video on your computer, its path in quotes:
+
+> **clip this video: "C:\Users\you\Videos\my podcast.mp4"** (Windows)
+> **clip this video: "/home/you/Videos/my podcast.mp4"** (Linux)
+> **clip this video: "/Users/you/Movies/my podcast.mp4"** (Mac)
+
+That's all. Claude then does every step by itself, without stopping to ask:
+
+1. downloads the sound and writes down every word (using your NVIDIA graphics card if you have one),
+2. reads everything and picks the **3-8 best moments**, and shows you a table of them,
+3. for Hindi/Hinglish, writes the captions in English letters ("aaj hum business ki baat karenge"),
+4. cuts each moment into a standing (9:16) video and keeps the speaker's face in the middle,
+5. adds the edit: zooms, word-by-word captions, a couple of soft whooshes, phone-friendly volume,
+6. shows you a table of the finished clips, with a caption to post for each one.
+
+**Good to know**
+- "clip this video" isn't a magic phrase. "make shorts from this", "cut this into reels",
+  "best moments of this podcast" or "isko clip karo" all work.
+- **Put file paths in quotes**, especially when they have spaces. You can usually drag the file into
+  the window to paste its path. (Windows: Shift + right-click the file → "Copy as path".)
+- Keep a video file where it is until the clips are done: ClipKaro reads it from there and doesn't
+  make a copy.
+- YouTube links work best. Many other video sites work too, but YouTube is what ClipKaro is tested with.
+- One video at a time works best. Send the next one when the first is done.
+
+## 2. Add your own wishes
+
+Write your wishes **in the same message**, in normal words. You can combine as many as you like:
+
+> clip this video: https://youtu.be/... only the 3 best, under 40 seconds, captions a bit lower,
+> no sound effects
+
+The tables below show what you can say. The right-hand column shows what ClipKaro does behind the
+scenes; you don't need to type that part.
+
+### How many clips, and how long
+| You write | What happens |
+|---|---|
+| "only the 3 best" / "give me 8 clips" | that many clips (normally 3-8, depending on how much good material there is) |
+| "clips under 30 seconds" / "around 45-60 seconds" | that length (normally 25-60 seconds, never under 15 or over 90) |
+| "one clip only, the strongest" | a single clip |
+
+### Which moments
+| You write | What happens |
+|---|---|
+| "only clips about money" / "focus on the funny parts" | only moments about that topic or with that mood |
+| "include the part where she talks about her first business" | that moment becomes one of the clips |
+| "skip the first 10 minutes" / "only from 20:00 to 45:00" | moments only from that part |
+| "show me the moments first" / "let me approve the clips" | Claude stops after picking and waits for your OK |
+| "it's a gameplay video" | clips are built around what the player says, not the game's own voices |
+
+### Language and listening
+| You write | What happens |
+|---|---|
+| "the video is in Hinglish" / "it's in English" / "it's in Spanish" | uses that language (normally it's found automatically) |
+| "the language came out wrong, do it again in English" | writes down the words again in English |
+| "use the most accurate model" | uses the biggest speech model (slower) |
+| "use the processor, not the graphics card" / "use the graphics card" | chooses where the listening runs |
+
+### The look of the edit
+| You write | What happens |
+|---|---|
+| "don't edit them, just cut" / "raw clips only" | stops after cutting (clips are in the `clips` folder) |
+| "no sound effects" | no whooshes |
+| "only one whoosh" / "fewer sound effects" | just one whoosh, at the start |
+| "no zooms" | no zoom effects |
+| "no captions" | no captions |
+| "captions lower" / "captions higher" | moves the captions down or up |
+| "bigger captions" / "smaller captions" | changes the caption size |
+| "captions not in capital letters" | normal upper and lower case |
+| "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
+| "use the creator's brand colour" | Claude uses it if it knows it for sure; otherwise it picks a colour from the video |
+| "Hindi captions in Hindi letters" | captions in Devanagari instead of English letters |
+| "render with Remotion" | uses the optional second editor (slower; needs `python install.py --remotion`; free for individuals and small companies, [larger companies need a license](https://www.remotion.dev/license)) |
+
+### Framing
+| You write | What happens |
+|---|---|
+| "keep it wide" / "16:9" | keeps the original wide shape |
+| "use the facecam layout" / "don't use the facecam layout" | gameplay on top and your webcam below, or not |
+| "the webcam is in the bottom-left corner" | Claude saves the webcam's position in `settings.json` |
+
+### Changes after you've seen the clips
+| You write | What happens |
+|---|---|
+| "clip 2 starts too early, start at 'the real reason'" | Claude finds the exact moment and redoes only clip 2 |
+| "make clip 1 shorter" / "end clip 3 on the punchline" | the same: only that clip is redone |
+| "fix the spelling of 'Juyal' in clip 3's captions" | the caption is corrected and the clip edited again |
+| "make the captions bigger in all clips" | the edit is done again; the cuts stay |
+| "change the posting caption of clip 4" | Claude rewrites it |
+| "add one more clip about X" | adds one clip, and cuts and edits only that one |
+
+### Downloading
+| You write | What happens |
+|---|---|
+| "YouTube says sign in to confirm you're not a bot" / "use my Firefox cookies" | downloads using your browser's YouTube login (Chrome, Firefox or Edge) |
+
+### Can I write anything else?
+Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
+for something ClipKaro **can't do yet**, Claude tells you instead of pretending. Examples: background
+music, extra footage, emojis and stickers, translated subtitles, or posting to the apps for you.
+If you want, you can ask Claude to **change ClipKaro's code** to add such a feature: it's your
+copy, and [architecture.md](architecture.md) shows where everything is.
+
+## 3. Your lasting wishes: "My preferences"
+
+If you always want the same things, you don't have to repeat them every time. Write them once at the
+bottom of the file **`CLAUDE.md`** (in the ClipKaro folder), under **"My preferences"**, one per line:
+
+```
+- My videos are in English.
+- Always give me 5 clips, 30-45 seconds long.
+- My brand colour is #00E5FF.
+- No sound effects.
+```
+
+Or ask Claude: **"add to my preferences: always give me 5 clips"**. Claude reads this file every time
+it starts in the ClipKaro folder, and follows your preferences unless you ask for something else in
+a message.
+
+## 4. What you get
+
+Everything goes into `output/<project>/`. `<project>` is a folder named after the video, for example
+`output/my-podcast-episode-12-dQw4w9WgXcQ/`:
+
+| Folder / file | What it is |
+|---|---|
+| `edited/01-title.mp4` | **the finished short videos** (1080x1920, ready for phones): upload these |
+| `edited/01-title.srt` | the captions as a separate subtitle file, for apps that accept one |
+| `clips/01-title.mp4` | the cut videos without zooms, captions or sounds (also fine to post) |
+| `clips.json` | the chosen moments: titles, times, scores, highlighted words and **captions to post** |
+| `transcript/transcript.txt` | everything that was said, with times |
+
+Claude's last message lists each clip with its length, file and a caption to post.
+
+## 5. Your defaults: `settings.json`
+
+The file `settings.json` in the ClipKaro folder holds your default settings. You can also just ask
+Claude to change them.
+
+```json
+{
+  "language": "auto",
+  "model": "auto",
+  "device": "auto",
+  "hinglish_captions": "roman",
+  "layout": "auto",
+  "facecam": null
+}
+```
+
+| Setting | Normally | Choices |
+|---|---|---|
+| `language` | `auto` (found automatically) | `auto`, `hinglish`, `en`, `hi`, or any [Whisper language code](https://github.com/openai/whisper/blob/main/whisper/tokenizer.py) (`es` Spanish, `fr` French, `de` German, ...) |
+| `model` | `auto` | `auto` (the big `large-v3-turbo` with an NVIDIA card or for Hindi/Hinglish, otherwise the smaller `small.en`/`small`), `large-v3`, `medium`, `small`, `base`, ... |
+| `device` | `auto` | `auto` (the NVIDIA card if it works, otherwise the processor), `cuda` (the NVIDIA card), `cpu` (the processor) |
+| `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
+| `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
+| `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
+
+## 6. Doing the steps by hand (optional)
+
+You don't need Claude for the mechanical steps. Each one is a command you type in the ClipKaro
+folder (`python3` instead of `python` on Mac/Linux):
+
+```bash
+python run.py fetch "<link or file>"            # 1. download the sound, write down the words; shows the <project> name
+# 2. write output/<project>/clips.json yourself (format: docs/architecture.md, part 4)
+python run.py romanize <project>                # 2b. Hindi/Hinglish: lists the words for romanize.json
+python run.py cut <project> --check             # 3a. check where the clips start and end (cuts nothing)
+python run.py cut <project>                     # 3b. standing clips → output/<project>/clips/
+python run.py brand <project> --accent "#FFD60A"  # 4. optional: the caption colour
+python run.py edit <project>                    # 5. the edit → output/<project>/edited/
+```
+
+### All commands and options
+| Command | Options |
+|---|---|
+| `run.py fetch <link or file>` | `--lang auto\|hinglish\|en\|hi\|<code>`, `--model auto\|large-v3-turbo\|large-v3\|medium\|small\|small.en`, `--device auto\|cuda\|cpu`, `--beam N`, `--cookies-from-browser chrome\|firefox\|edge`, `--retranscribe` |
+| `run.py romanize <project>` | `--clips 1,3` |
+| `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
+| `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
+| `run.py edit <project>` | `--clips 2`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
+| `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
+
+Add `-h` to any command to see its help, for example `python run.py cut -h`.
+
+### Command reference
+The same, as a quick list: `fetch` (listen) → `romanize` (Hindi captions) → `cut` (standing clips)
+→ `brand` (colour, optional) → `edit` (the finished look). Helpers: `find` (exact times),
+`gpu` (graphics-card test).
+
+## 7. Make it your own
+- **Your own sound effects**: put `.mp3` or `.wav` files into `assets/sfx/`, with `whoosh`, `hit` or
+  `click` in the file name. They're found automatically. Only use sounds you're allowed to use.
+- **A different caption font**: see "Where to change things" in [architecture.md](architecture.md#8-where-to-change-things).
+- **Another language**: see [languages.md](languages.md) and [adding-a-language.md](adding-a-language.md).
+
+## 8. Good to know
+- **Watch your clips once before posting.** The automatic captions are very good, but not perfect,
+  especially for fast or noisy Hindi. Claude fixes obvious mistakes while writing the captions.
+- **Only clip videos you own or have permission to use**, and follow each app's rules.
+- Nothing is uploaded anywhere. Your videos and clips stay in the `output` folder on your computer.
+- Using another AI helper instead of Claude Code? See [AGENTS.md](../AGENTS.md).

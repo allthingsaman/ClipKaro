@@ -1,0 +1,80 @@
+# your videos and results never get committed
+output/*
+!output/.gitkeep
+
+# your own voice / video samples (any format, any folder)
+*voice-sample*
+*voice_sample*
+*-sample.*
+
+# videos and subtitles anywhere in the repo (they are yours, not part of the project)
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.m4v
+*.avi
+*.flv
+*.wmv
+*.srt
+*.vtt
+*.ass
+
+# audio anywhere, except the sound effects that ship with ClipKaro
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+*.opus
+*.flac
+!assets/sfx/*.mp3
+!assets/sfx/*.wav
+
+# unfinished downloads (yt-dlp) and converted speech models
+*.part
+*.ytdl
+*-ct2/
+
+# local working folders
+/Output Edit/
+/Claude outputs/
+
+# Python environments and caches
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.cache/
+*.log
+
+# Remotion engine (installed by `python install.py --remotion`; fonts and clips are copied in when rendering)
+node_modules/
+remotion/public/clip*.mp4
+remotion/public/fonts/*
+!remotion/public/fonts/Montserrat-ExtraBold.ttf
+remotion/out/
+
+# personal Claude Code settings (the shared skill in .claude/skills/ IS committed)
+.claude/settings.local.json
+
+# secrets, cookies
+.env
+*.cookies
+cookies*.txt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
