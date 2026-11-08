@@ -4,15 +4,22 @@ This page compares ClipKaro's **output** with the best-known AI clippers (mainly
 out a plan to close the gaps. It only looks at the clipping pipeline: *give it a video → get clips
 that can go viral*. Payments, accounts and app design are out of scope.
 
-It's a plan, not a promise: nothing here is built yet. Contributions are welcome (see
-[CONTRIBUTING.md](../CONTRIBUTING.md)).
+It's a plan, not a promise. Items marked **Status (v1.1)** are already built; the rest is still to
+do. Contributions are welcome (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+
+> **New in v1.1 (November 2026):** ClipKaro now knows *who is speaking* (speaker diarization) and
+> frames podcasts like an editor: the person talking is shown, and both people are shown in a split
+> screen around laughs and cross-talk. On 9 hand-checked podcast clips it chose the ideal framing
+> 83% of the time and showed the wrong person only 1% of the time. This closes the biggest visible
+> gap with Opus Clip for two-person podcasts. See items 8-10 and [CHANGELOG.md](../CHANGELOG.md).
 
 ---
 
 ## 1. The short answer
 
-**ClipKaro is close to Opus Clip on the basics, ahead on Hindi/Hinglish, and behind on "polish"
-and on videos with more than one person.**
+**ClipKaro is close to Opus Clip on the basics, and since v1.1 also on two-person podcasts; ahead
+on Hindi/Hinglish; behind on "polish" (caption styles, B-roll, music) and on videos where people
+move around or there are three or more.**
 
 | | Verdict |
 |---|---|
@@ -49,9 +56,9 @@ to do.** The five most important upgrades are in section 5.
 | **Clip start and end** | Reviewers mention cut-off context and awkward starts/ends. | Every cut is snapped to whole words, with automatic warnings for cuts in the middle of a sentence. | We're ahead; keep it. |
 | **Long videos (1-3 h)** | Handled automatically. | Works, but for our 2-hour test the moment-picking was split into four parts **by hand** to read everything carefully. | Build that splitting into ClipKaro. |
 | **Transcription** | Claims about 97% caption accuracy. Hindi not supported (per its help page). | Whisper large-v3-turbo with re-transcription of skipped speech. Very good on clear speech; makes nonsense words during laughter and cross-talk, and splits some words ("P .O .K."). | Clean-up filters and confidence flags. |
-| **Who is speaking** | Active speaker detection (Opus Clip, Vizard); Klap labels speakers in captions. | Not known. | Add speaker detection ("diarization"). |
-| **Framing** | Follows the speaker and moving people/objects ("ReframeAnything"). | One still crop per camera shot, centred on the biggest face. Slides get a blurred background. Gameplay with a webcam gets a stacked layout. | Follow the *talking* person; smooth tracking. |
-| **Two or more people** | Split-screen for interviews, 3-4 panels for panels, picture-in-picture for remote guests (Klap, Vizard). | None (except the gameplay webcam layout). | Add automatic multi-person layouts. |
+| **Who is speaking** | Active speaker detection (Opus Clip, Vizard); Klap labels speakers in captions. | **Since v1.1:** speaker diarization (who speaks when) and laughter detection, matched to each person's seat across the whole video. Used for framing; not yet shown in captions or the transcript. | Show speakers in the transcript Claude reads; speaker labels in captions. |
+| **Framing** | Follows the speaker and moving people/objects ("ReframeAnything"). | One still crop per camera shot, on the face. **Since v1.1:** in two-person shots, a crop on the person *talking*, switching between words. Slides and things being shown get the whole frame over a blurred background (`show_full`). Gameplay with a webcam gets a stacked layout. | Smooth tracking of people who move; following objects. |
+| **Two or more people** | Split-screen for interviews, 3-4 panels for panels, picture-in-picture for remote guests (Klap, Vizard). | **Since v1.1:** two-person split screen for laughs, cross-talk, quick back-and-forth and wide shots (main talker on top, captions on the seam). | 3-4 panels; picture-in-picture for remote guests. |
 | **Captions** | Many animated templates, emojis, GIFs (Submagic), 50+ languages. | One clean style: word-by-word pop-in, highlighted key words, colour from the video; Roman Hinglish or Devanagari. | Templates, emojis, face-aware placement. |
 | **Edit polish** | Auto zooms synced to words, B-roll, background music, sound effects on transitions, one-click silence removal (Submagic); AI B-roll (Opus Clip). | Zoom punch-ins on the beat, 1-2 soft whooshes, loudness set for phones. | Silence/filler trimming, hook title, music, B-roll. |
 | **Gaming / sports** | Reviewers say Opus Clip is weaker here. | Facecam layout; picks moments from the creator's commentary. Weak on silent action moments (text-only). | Sound/picture signals help here too. |
@@ -69,7 +76,10 @@ to do.** The five most important upgrades are in section 5.
    for the Indian creator market.
 4. **Free, private and unlimited**: no credits, no watermark, no uploads.
 5. **Fully adjustable.** Every decision is in a readable file (`clips.json`, `romanize.json`), and
-   every step can be redone for one clip.
+   every step can be redone for one clip. Since v1.1 any moment's framing can be changed too
+   (`framing`, `show_full`).
+6. **Careful two-person framing (v1.1).** It never guesses a face: when unsure it shows both people.
+   The AI editor checks picture sheets and adds what sound can't catch (a silent laugh).
 
 ---
 
@@ -126,6 +136,10 @@ and **how we'll measure** it.
   - Join split tokens automatically (letters split by dots, numbers split from letters).
   - Mark every word Whisper is unsure about (confidence below ~0.4), so the AI checks those first
     when it writes the captions.
+  - **Stretched words** (found in v1.1 testing): sometimes Whisper writes one long "word" over a
+    stretch where several words were said, so those words are missing from the captions (a Khan
+    Sir clip lost "ki ye America ki chaal hai"). Find words longer than about 1 s over continuous
+    speech, transcribe just that bit again, and replace them. In v1.1 two cases were fixed by hand.
 - **Measure:** caption word error rate on a hand-corrected 10-minute sample of each test video.
 
 #### 6. Automatic quality check after editing (S)
@@ -133,11 +147,15 @@ and **how we'll measure** it.
   reviews before publishing.
 - **How:** `run.py qa <project>` writes a report and one contact-sheet image per clip: cut points
   inside words, unsure caption words, leftover Hindi letters, percentage of time a face is in
-  frame, black or blurred frames, loudness, length. The skill tells the agent to read the report
-  and fix what fails.
+  frame, black or blurred frames, loudness, length, and a camera cut in the last half second of a
+  clip (a short flash of another shot at the very end, seen once in v1.1 testing). The skill tells
+  the agent to read the report and fix what fails.
 - **Measure:** problems caught before the user sees them.
 
 #### 7. Caption placement that avoids faces and app buttons (S)
+- **Status (v1.1): partly done.** In the split screen the captions sit on the seam between the two
+  people and never cover a face, even at a switch. Still open: in very tight close-ups the caption
+  line can sit on the chin or beard (seen in a Khan Sir clip).
 - **Why:** Captions over a mouth or under TikTok's buttons hurt watch time.
 - **How:** We know where the face is in every shot. Move the caption line up or down when it would
   cover the face, and keep it inside the "safe zone" of TikTok, Reels and Shorts.
@@ -185,6 +203,8 @@ and **how we'll measure** it.
   picture for remote guests; 3-4 panels for panels.
 
 #### 11. Use sound and picture, not just words (M)
+- **Status (v1.1): laughter is heard** (YAMNet) and used for framing. Not yet shown to Claude as
+  hints for picking moments.
 - **Why:** Some of the best moments are laughter, a reaction, a raised voice, or an action in a game,
   and the transcript alone can't see them. This is what "multimodal" clippers like ClipAnything use.
 - **How:** code computes simple signals and marks them in the transcript Claude reads, for example
@@ -253,6 +273,10 @@ and **how we'll measure** it.
 
 Keep the test set and run it after every big change, so improvements are real and nothing breaks.
 
+**Progress (v1.1):** a first labelled set exists for framing: 9 two-person podcast clips (224 s)
+labelled moment by moment (who speaks, who laughs, ideal framing). Result: ideal framing 83%,
+acceptable 91%, wrong person 1%. The side-by-side test against Opus Clip is still to do.
+
 ---
 
 ## 7. Should ClipKaro become an app?
@@ -283,10 +307,11 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 | 2 | Silence/filler trimming + hook title (items 1, 2) | S | The quickest visible jump in "viral feel" |
 | 3 | Long videos + second opinion (items 3, 4) | M | Better picks on podcasts, fewer weak clips |
 | 4 | Cleaner transcripts + automatic quality check (items 5, 6) | M | Professional captions without manual fixing |
-| 5 | Speaker diarization + active speaker framing + split-screen (items 8, 9, 10) | L | Closes the biggest visible gap with Opus Clip |
+| 5 | Speaker diarization + active speaker framing + split-screen (items 8, 9, 10) | L | Closes the biggest visible gap with Opus Clip. **Done in v1.1 for two-person podcasts.** |
 
 After these five, ClipKaro should match or beat Opus Clip on talking-head and podcast videos, and
-stay clearly ahead for Hindi/Hinglish creators.
+stay clearly ahead for Hindi/Hinglish creators. With item 5 done first (v1.1), the next ones are
+the test set and blind test, then silence trimming and the hook title.
 
 ---
 
