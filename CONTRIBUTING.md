@@ -29,6 +29,10 @@ Please don't attach videos you don't have the rights to share.
 - Keep error messages actionable: say what went wrong and the exact fix.
 - Keep it cross-platform (Windows, macOS, Linux): use `pathlib`, quote paths, no shell-only tricks.
 
+## What to work on
+The plan for the next version, with the most useful improvements in order, is in
+[docs/roadmap-v2.md](docs/roadmap-v2.md).
+
 ## Adding a language
 See [docs/adding-a-language.md](docs/adding-a-language.md).
 

@@ -125,7 +125,8 @@ def probe(path):
         w, h = int(v['width']), int(v['height'])
         if abs(rot) in (90, 270):
             w, h = h, w
-        out.update(width=w, height=h, fps=float(num) / float(den or 1) if float(den or 1) else 30.0)
+        out.update(width=w, height=h, fps=float(num) / float(den or 1) if float(den or 1) else 30.0,
+                   start_time=float(v.get('start_time') or 0.0))
     return out
 
 

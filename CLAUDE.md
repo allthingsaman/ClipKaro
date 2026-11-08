@@ -26,6 +26,11 @@ file, or asks for clips, shorts, reels or TikToks, **use the `clip-video` skill*
   `"facecam"` in settings.json if the cam is found in the wrong place. In gameplay videos the
   transcript also holds the game's own dialogue: build clips around the creator's commentary and
   reactions, not the game characters' lines.
+- Podcasts and interviews with two people on screen are framed automatically at `cut` (speaker
+  crop, split screen around laughs and cross-talk). After cutting, check those clips with
+  `python run.py frames <project> --clips N` and fix only what's wrong with `"framing"` or
+  `"show_full"` in clips.json (see the skill). Add `"split"` where the listener visibly laughs or
+  reacts while the other talks: the sound alone can't catch a silent reaction.
 - User documentation is in `docs/` (start at `docs/README.md`; for people new to all this:
   `docs/user-guide.md`; how the code works: `docs/architecture.md`). Keep it in sync when behaviour
   or options change, and write it in simple, everyday words.

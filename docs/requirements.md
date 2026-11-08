@@ -86,12 +86,18 @@ The speech models are the "ears" of ClipKaro. They download once and are kept in
 | `large-v3-turbo` | 1.6 GB | Hindi/Hinglish always, and every language with an NVIDIA card | 3 GB, or 2.3 GB on the card |
 | `large-v3` | 3.1 GB | optional: the most accurate and the slowest (`--model large-v3`) | 5 GB, or 4.5 GB on the card |
 
+For **podcasts with two people on screen**, three small models are downloaded the first time they're
+needed (about 50 MB in total, kept in `~/.cache/clipkaro/models`): one finds who is talking, one
+tells the two voices apart, and one hears laughter. They run on the processor in a few seconds per
+clip. Video work uses a lot of memory: with 8 GB of RAM, close other big programs while cutting.
+
 ## Disk space
 
 | What | Size |
 |---|---|
 | ClipKaro's own parts (the `.venv` folder) | about 1 GB, or about 3 GB with an NVIDIA card |
 | Speech models | 0.6 GB (English only, no graphics card) up to about 1.9 GB |
+| Voice and laughter models (podcasts) | about 50 MB |
 | Each video you clip | the downloaded video (roughly 0.5-1 GB per hour at 1080p) + the clips (20-40 MB each) |
 
 When you're done with a video, delete its folder in `output/` to get the space back.

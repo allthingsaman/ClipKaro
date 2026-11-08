@@ -87,6 +87,35 @@ turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (s
 videos, pick moments from the creator's commentary and reactions, not the game characters' dialogue.
 Use `--horizontal` to keep 16:9, and `--clips 2,4` to redo only some.
 
+**Two people on screen (podcasts, interviews)** are framed automatically when they sit too far
+apart for one 9:16 crop (a side-by-side picture or a wide shot of the room). `cut` listens to who
+is talking and frames each moment like an editor:
+- one person talks, the other listens: a crop on the speaker;
+- around a laugh (from 2 s before it, when the punchline lands, to 2 s after), both laughing,
+  talking over each other, a quick back-and-forth, or when it can't tell who is talking: both
+  people stacked in a split screen, the one who talks most on top, the captions on the seam;
+- a wide shot of the room: split screen, unless one person talks alone for 6 s or more.
+It never guesses a face. `cut` prints one line per clip (`clip 4: right 31s`, `clip 1: split 26s`).
+The first time it downloads small voice and laughter models (~50 MB).
+
+**Check what the crop keeps** (for podcasts, product videos, anything where something is shown):
+```
+python run.py frames <project> --clips 1,3
+```
+It writes `output/<project>/frames/NN-title.jpg`: frames with the crop box, SPEAKER / BOTH (split)
+labels, a FULL border for whole-frame stretches, red borders where something moves outside the
+crop, and orange dots where words point at something ("ye dekho", "look at this"). Look at the
+sheets of every clip with a two-person shot or a red border. Fix only what is wrong, in clips.json
+(source seconds, at word gaps), then `cut --clips N` again:
+- `"framing": [[a, b, "split"]]`: show both people, e.g. the listener visibly laughs or reacts
+  while the other talks (a silent laugh, an "impressed" face). Sound can't catch these; you can.
+- `"framing": [[a, b, "left" | "right" | "center" | 0-1]]`: show that person (or point); e.g. a big
+  reaction shot of the one laughing while the speaker pauses, or the wrong face in any crop.
+- `"show_full": [[a, b]]` (or `"framing": [[a, b, "full"]]`): the whole landscape frame over a
+  blurred background, when what is shown or talked about lies outside the crop (a product held up,
+  a screen, a gesture across the room).
+Hand-picked framing always wins over the automatic choice.
+
 **These raw cuts are already postable.** If the user only wanted clips, stop here and report.
 
 ## 4. Brand colours for captions (quick, don't overthink)

@@ -3,7 +3,8 @@ import {loadFont} from '@remotion/fonts';
 import {AbsoluteFill, Easing, OffthreadVideo, interpolate, staticFile, useCurrentFrame} from 'remotion';
 
 type Word = {text: string; s: number; e: number; emph?: boolean};
-type Group = {start: number; end: number; words: Word[]};
+type Group = {start: number; end: number; words: Word[]; y?: number; cont?: boolean; nolead?: boolean};
+// y: set on the split-screen seam; cont / nolead: no one-frame early start (it would fall in the other layout)
 
 export type ClipProps = {
   src: string;
@@ -15,6 +16,7 @@ export type ClipProps = {
   captions: Group[];
   caption_style: {font: string; font_file: string; size: number; y: number; outline: number; spacing?: number};
   brand: {accent: string; text: string; outline: string};
+  camera_keys?: {f: number; ease: string}[];
 };
 
 const loaded = new Set<string>();
@@ -26,12 +28,14 @@ const useFont = (family: string, file: string) => {
 };
 
 // ------------------------------------------------------------ camera
-const Camera: React.FC<{src: string; cam: ClipProps['cam']}> = ({src, cam}) => {
+const Camera: React.FC<{src: string; cam: ClipProps['cam']; keys?: ClipProps['camera_keys']}> = ({src, cam, keys}) => {
   const f = useCurrentFrame();
   const [s, x, y] = cam[Math.min(f, cam.length - 1)] ?? [1, 540, 960];
   const prev = cam[Math.max(0, Math.min(f - 1, cam.length - 1))] ?? [s, x, y];
   const vel = Math.abs(s - prev[0]);
-  const blur = vel > 0.012 && vel < 0.08 ? 1.2 : 0; // light blur only during fast zooms
+  // light blur only during fast zooms, never on a camera cut (two different shots)
+  const atCut = (keys ?? []).some((k) => k.ease === 'cut' && k.f > 0 && Math.abs(k.f - f) <= 1);
+  const blur = !atCut && vel > 0.012 && vel < 0.08 ? 1.2 : 0;
   return (
     <AbsoluteFill style={{overflow: 'hidden', backgroundColor: 'black'}}>
       <div
@@ -60,7 +64,7 @@ const Captions: React.FC<Pick<ClipProps, 'captions' | 'caption_style' | 'brand' 
 }) => {
   const f = useCurrentFrame();
   const t = f / fps;
-  const g = captions.find((c) => t >= c.start - 1 / fps && t < c.end);
+  const g = captions.find((c) => t >= c.start - (c.cont || c.nolead ? 0 : 1 / fps) && t < c.end);
   if (!g) return null;
   return (
     <AbsoluteFill>
@@ -69,7 +73,7 @@ const Captions: React.FC<Pick<ClipProps, 'captions' | 'caption_style' | 'brand' 
           position: 'absolute',
           left: 60,
           right: 60,
-          top: st.y,
+          top: g.y ?? st.y,
           transform: 'translateY(-50%)',
           textAlign: 'center',
           fontFamily: `'${st.font}'`,
@@ -120,7 +124,7 @@ export const Clip: React.FC<ClipProps> = (p) => {
   if (!p.src) return <AbsoluteFill style={{backgroundColor: 'black'}} />;
   return (
     <AbsoluteFill style={{backgroundColor: 'black'}}>
-      <Camera src={p.src} cam={p.cam} />
+      <Camera src={p.src} cam={p.cam} keys={p.camera_keys} />
       <Captions captions={p.captions} caption_style={p.caption_style} brand={p.brand} fps={p.fps} />
     </AbsoluteFill>
   );

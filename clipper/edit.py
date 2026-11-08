@@ -57,8 +57,14 @@ def write_srt(plan, path):
         s, ms = divmod(ms, 1000)
         return f'{h:02d}:{m:02d}:{s:02d},{ms:03d}'
     lines = []
-    for i, g in enumerate(plan['captions'], 1):
-        lines += [str(i), f"{ts(g['start'])} --> {ts(g['end'])}", ' '.join(w['text'] for w in g['words']), '']
+    cues = []
+    for g in plan['captions']:
+        if g.get('cont') and cues:          # the same caption, continued after a layout switch
+            cues[-1][1] = g['end']
+        else:
+            cues.append([g['start'], g['end'], ' '.join(w['text'] for w in g['words'])])
+    for i, (a, b, text) in enumerate(cues, 1):
+        lines += [str(i), f"{ts(a)} --> {ts(b)}", text, '']
     Path(path).write_text('\n'.join(lines), encoding='utf-8')
 
 
@@ -113,22 +119,35 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     events = []
     fps = plan['fps']
     caps = plan['captions']
+    # each caption shows one frame early, except where that frame is in the other layout: the
+    # second part of a caption cut at a layout switch ('cont'), or one starting right at it ('nolead')
+    starts = [g['start'] - (0 if g.get('cont') or g.get('nolead') else 1 / fps) for g in caps]
     for k, g in enumerate(caps):
-        g0 = g['start'] - 1 / fps
+        g0 = starts[k]
         # end where the next group begins, so two groups never share a frame (was a 1-frame overlap)
-        g_end = min(g['end'], caps[k + 1]['start'] - 1 / fps) if k + 1 < len(caps) else g['end']
+        g_end = min(g['end'], starts[k + 1]) if k + 1 < len(caps) else g['end']
         parts = []
         for i, w in enumerate(g['words']):
             a = max(0, int((w['s'] - 1 / fps - g0) * 1000))
             nxt = g['words'][i + 1]['s'] if i + 1 < len(g['words']) else None
             b = int(((nxt if nxt is not None else g['end'] + 1) - g0) * 1000)
             col = accent if w.get('emph') else white
-            # hidden until spoken, then pops up (vertical squash -> full + fade), active word in accent colour
-            tag = (f'{{\\alpha&HFF&\\fscy60\\1c{accent}'
-                   f'\\t({a},{a + 1},\\alpha&H00&)\\t({a},{a + 110},0.6,\\fscy100)'
-                   f'\\t({b},{b + 1},\\1c{col})}}')
+            if w['s'] < g['start'] - 0.01:
+                # already spoken when this caption part began (a caption continued after a layout
+                # switch): shown at once, no pop
+                tag = f'{{\\1c{accent}\\t({b},{b + 1},\\1c{col})}}' if b > 0 else f'{{\\1c{col}}}'
+            elif a == 0:
+                # the first word: visible from the first frame (hiding it for one frame made every
+                # caption blink), then the pop
+                tag = (f'{{\\fscy60\\1c{accent}\\t(0,110,0.6,\\fscy100)'
+                       f'\\t({b},{b + 1},\\1c{col})}}')
+            else:
+                # hidden until spoken, then pops up (vertical squash -> full + fade), active word in accent colour
+                tag = (f'{{\\alpha&HFF&\\fscy60\\1c{accent}'
+                       f'\\t({a},{a + 1},\\alpha&H00&)\\t({a},{a + 110},0.6,\\fscy100)'
+                       f'\\t({b},{b + 1},\\1c{col})}}')
             parts.append(tag + w['text'].replace('{', '(').replace('}', ')'))
-        text = f"{{\\pos({W // 2},{st['y']})}}" + ' '.join(parts)
+        text = f"{{\\pos({W // 2},{g.get('y', st['y'])})}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
 
@@ -152,6 +171,8 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
     size = W * H * 3
     prev = None
     f = 0
+    # frames where the camera cuts (and their neighbours): never blend two different shots
+    cuts = {k['f'] + d for k in plan.get('camera_keys', []) if k.get('ease') == 'cut' and k['f'] > 0 for d in (-1, 0, 1)}
     while True:
         buf = dec.stdout.read(size)
         if len(buf) < size:
@@ -164,7 +185,7 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
         else:
             out = frame
         # light motion blur only while the camera is moving fast (snap zooms)
-        if prev is not None and f > 0:
+        if prev is not None and f > 0 and f not in cuts:
             vel = abs(s - cam[min(f - 1, len(cam) - 1)][0])
             if 0.012 < vel < 0.08:
                 out = cv2.addWeighted(out, 0.7, prev, 0.3, 0)

@@ -30,6 +30,8 @@ you:  clip this video: https://youtu.be/...
   grab attention in the first seconds and make sense on their own (usually 25-60 seconds each).
 - 📱 **Keeps the face in frame.** It turns wide videos into standing ones and keeps the speaker's
   face in the middle. Slides and other shots are shown whole over a blurred background.
+- 🎙️ **Podcasts with two people.** It listens to who is talking and shows that person. When
+  someone laughs or both talk at once, it shows both of them in a split screen. *(new in v1.1)*
 - 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
   the captions in between.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
@@ -156,6 +158,7 @@ Add your wishes to the same message, in normal words (English, Hindi or Hinglish
 - "use #00E5FF as the caption colour" · "Hindi captions in Hindi letters"
 - "it's a gameplay video" · "keep it wide (16:9)" · "the video is in English"
 - After you see the clips: "clip 2 starts too early" · "make clip 1 shorter" · "use yellow captions"
+- Podcasts: "in clip 4, show both of them when he laughs" · "show the whole picture when he holds up the box"
 
 The full list, and what each one changes: [docs/usage.md](docs/usage.md).
 
@@ -232,11 +235,13 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 | [Troubleshooting](docs/troubleshooting.md) | common problems and questions |
 | [Architecture](docs/architecture.md) | how it works inside, and how it picks moments (for developers) |
 | [Adding a language](docs/adding-a-language.md) | step by step, for developers |
+| [Roadmap (v2)](docs/roadmap-v2.md) | how ClipKaro compares with Opus Clip today, and what we'll build next |
+| [Changelog](CHANGELOG.md) | what's new in each version |
 
 ## Folder layout
 ```
 .claude/skills/clip-video/   the instructions Claude follows to make clips
-clipper/                     the program's steps: fetch, romanize, cut, reframe, facecam, brand, plan, edit, sfx, find, gpu
+clipper/                     the program's steps: fetch, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
 remotion/                    an optional second way to draw the edit
 assets/                      fonts, the face-finding model, sound effects
 docs/                        documentation
@@ -259,6 +264,10 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
 - Fonts: [Montserrat](https://github.com/JulietaUla/Montserrat) and
   [Poppins](https://github.com/itfoundry/Poppins) (Hindi + English letters), SIL Open Font License 1.1.
 - Face finding: [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT).
+- Who is talking, and laughter (podcasts): [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache 2.0)
+  running [pyannote segmentation 3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT),
+  [3D-Speaker ERes2Net](https://github.com/modelscope/3D-Speaker) (Apache 2.0) and Google's
+  [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache 2.0).
 - Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
   OpenAI's [Whisper](https://github.com/openai/whisper) models, [OpenCV](https://opencv.org),
   [FFmpeg](https://ffmpeg.org) and, optionally, [Remotion](https://www.remotion.dev) (free for individuals and

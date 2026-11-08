@@ -12,6 +12,7 @@ Zoom style (adapted from a tested short-form editing engine):
   * between changes a slow +0.03 push so the frame is never dead
   * scale is always around the speaker's face, so the face stays in place
 """
+import math
 import re
 
 from .common import FPS, H, W, has_devanagari, is_sentence_end, norm_token
@@ -87,6 +88,13 @@ def focus_at(shots, t):
     return shots[-1]['focus'] if shots else [W / 2, H * 0.4]
 
 
+def mode_at(shots, t):
+    for s in shots:
+        if s['t0'] <= t < s['t1']:
+            return s.get('mode')
+    return shots[-1].get('mode') if shots else None
+
+
 def beat_bounds(words, shots, splices, duration):
     """Times where the framing changes. Must-cuts: camera cuts and splices."""
     must = sorted({round(s['t0'], 3) for s in shots if s['t0'] > 0.3} | {s for s in splices if s > 0.3})
@@ -109,7 +117,7 @@ def beat_bounds(words, shots, splices, duration):
         if c - last >= 2.8 and nxt_must - c >= 1.5:
             bounds.append(c)
             last = c
-        elif c - last > 6.0:
+        elif c - last > 6.0 and nxt_must - c >= 0.5:      # (never just before a real cut, which would lose it)
             bounds.append(c)
             last = c
     # very long stretches with no sentence end: cut on a word start every ~4.5 s
@@ -133,6 +141,7 @@ def build_camera(meta):
     fps = meta.get('fps', FPS)
     frames = int(round(dur * fps))
     bounds, must = beat_bounds(words, shots, meta.get('splices', []), dur)
+    exact = exact_frames(meta)
     starts = [0.0] + bounds
     ends = bounds + [dur]
     keys, transitions = [], []
@@ -141,7 +150,14 @@ def build_camera(meta):
     snap_after = dur * 0.3
     for b, (t0, t1) in enumerate(zip(starts, ends)):
         fx, fy = focus_at(shots, t0 + 0.05)
-        f0, f1 = int(round(t0 * fps)), max(int(round(t0 * fps)) + 1, int(round(t1 * fps)) - 1)
+        is_must = any(abs(t0 - m) < 0.05 for m in must)
+        # a zoom change that goes with a camera cut lands on the frame where the cut really shows:
+        # recorded exactly by cut (when it could), else the nearest frame
+        f0 = exact.get(round(t0, 3), int(round(t0 * fps))) if is_must else int(round(t0 * fps))
+        f1 = max(f0 + 1, int(round(t1 * fps)) - 1)
+        # 'fit' shots show the whole frame (slides, b-roll, show_full moments): zooming in would
+        # crop away exactly what they are there to show, so the camera stays wide and still
+        full = mode_at(shots, t0 + 0.05) in ('fit', 'split')
         punched = b % 2 == 1
         if punched:
             s = PUNCH[pi % len(PUNCH)]
@@ -149,12 +165,13 @@ def build_camera(meta):
         else:
             s = WIDE[wi % len(WIDE)]
             wi += 1
+        if full:            # override after the level rotation advanced, so later beats stay unchanged
+            s, punched = 1.0, False
         if b == 0:
-            keys.append({'f': 0, 's': OPEN_SCALE, 'x': fx, 'y': fy, 'ease': 'cut'})
+            keys.append({'f': 0, 's': 1.06 if full else OPEN_SCALE, 'x': fx, 'y': fy, 'ease': 'cut'})
             keys.append({'f': OPEN_FRAMES, 's': s, 'x': fx, 'y': fy, 'ease': 'snap', 'dur': OPEN_FRAMES})
             transitions.append({'t': 0.0, 'kind': 'open'})
         else:
-            is_must = any(abs(t0 - m) < 0.05 for m in must)
             if punched and not is_must and snaps_left and t0 >= snap_after:
                 keys.append({'f': f0 + SNAP_FRAMES, 's': s, 'x': fx, 'y': fy, 'ease': 'snap', 'dur': SNAP_FRAMES})
                 transitions.append({'t': t0, 'kind': 'snap'})
@@ -163,7 +180,7 @@ def build_camera(meta):
             else:
                 keys.append({'f': f0, 's': s, 'x': fx, 'y': fy, 'ease': 'cut'})
                 transitions.append({'t': t0, 'kind': 'cut'})
-        keys.append({'f': f1, 's': round(s + DRIFT, 4), 'x': fx, 'y': fy, 'ease': 'linear'})
+        keys.append({'f': f1, 's': round(s + (0 if full else DRIFT), 4), 'x': fx, 'y': fy, 'ease': 'linear'})
     cam = []
     for f in range(frames):
         s, x, y = cam_at(keys, f)
@@ -198,6 +215,10 @@ def merge_tokens(words):
 def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
     words = merge_tokens(meta['words'])
     splices = meta.get('splices', [])
+    # in the split-screen layout the captions sit on the seam: a group never runs across a switch
+    # into or out of it (it would cover a face)
+    shots = meta.get('shots', [])
+    seams = [s['t0'] for p, s in zip(shots, shots[1:]) if (p.get('mode') == 'split') != (s.get('mode') == 'split')]
     # emphasis words may be given as spoken (Devanagari) or as captioned (Roman Hinglish)
     emph = {norm_token(e) for e in meta.get('emphasis', [])} - {''}
     groups, cur = [], []
@@ -213,7 +234,8 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
         if cur:
             chars = sum(len(c['text']) + 1 for c in cur) + len(text)
             gap = w['s'] - cur[-1]['e']
-            crosses = any(cur[-1]['e'] <= s <= w['s'] + 0.01 for s in splices)
+            crosses = any(cur[-1]['e'] <= s <= w['s'] + 0.01 for s in splices) or \
+                any(cur[0]['s'] < s <= w['s'] + 0.01 for s in seams)
             if len(cur) >= max_words or chars > max_chars or gap > 0.35 or \
                     w['e'] - cur[0]['s'] > max_dur or crosses:
                 flush()
@@ -228,7 +250,35 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
         if nxt is not None:
             end = nxt[0]['s'] if nxt[0]['s'] - g[-1]['e'] < 0.6 else min(end, nxt[0]['s'])
         end = min(end, meta['duration'])
-        out.append({'start': round(g[0]['s'], 3), 'end': round(end, 3), 'words': g})
+        # (max 0: a first word that starts a hair before the clip would give a negative .srt time)
+        out.append({'start': round(max(0.0, g[0]['s']), 3), 'end': round(end, 3), 'words': g})
+    return out
+
+
+def exact_frames(meta):
+    """{clip time: frame} where a shot or a part really begins, as recorded by cut (if it could)."""
+    out = {round(s['t0'], 3): s['f0'] for s in meta.get('shots', []) if 'f0' in s}
+    out.update({round(t, 3): f for t, f in zip(meta.get('splices', []), meta.get('splice_frames', []))})
+    return out
+
+
+def cut_at_seams(caps, shots, fps=FPS):
+    """In the split-screen layout the captions sit on the seam, elsewhere lower down. A caption
+    still on screen when the layout switches (a word stretched over a laugh, or the short hold after
+    the last word) is cut in two at the switch, so each part sits at the right height for its own
+    layout and never covers a face. Both parts show the same words; the second part ('cont') starts
+    exactly on the first frame of the new layout."""
+    seams = [(s['f0'] if 'f0' in s else int(round(s['t0'] * fps))) / fps for p, s in zip(shots, shots[1:])
+             if (p.get('mode') == 'split') != (s.get('mode') == 'split')]
+    out = []
+    for g in caps:
+        inside = [s for s in seams if g['start'] + 0.02 < s < g['end'] - 0.02]
+        edges = [g['start']] + inside + [g['end']]
+        for k, (a, b) in enumerate(zip(edges, edges[1:])):
+            part = {**g, 'start': round(a, 3), 'end': round(b, 3)}
+            if k:
+                part['cont'] = True
+            out.append(part)
     return out
 
 
@@ -273,6 +323,21 @@ def build(meta, brand, opts):
     # Devanagari has no capitals, so mixed captions stay in normal case (only Latin words would shout)
     upper = opts.get('uppercase', True) and not hindi
     caps = caption_groups(meta, upper=upper) if opts.get('captions', True) else []
+    caps = cut_at_seams(caps, meta.get('shots', []), fps)
+    shot_frames = [(s.get('f0', int(round(s['t0'] * fps))), s.get('mode')) for s in meta.get('shots', [])]
+
+    def split_at(f):                    # is frame f in the split-screen layout?
+        mode = shot_frames[0][1] if shot_frames else None
+        for f0, md in shot_frames:
+            if f0 <= f:
+                mode = md
+        return mode == 'split'
+    for g in caps:                      # in the split-screen layout the captions sit on the seam
+        fs = int(math.ceil(g['start'] * fps - 1e-6))
+        if split_at(fs):
+            g['y'] = H // 2
+        if fs > 0 and not g.get('cont') and split_at(fs - 1) != split_at(fs):
+            g['nolead'] = True          # its one-frame early start would fall in the other layout
     font, font_file = (opts['font'], opts['font_file']) if opts.get('font') else (HINDI_FONT if hindi else LATIN_FONT)
     return {
         'fps': fps, 'width': W, 'height': H,

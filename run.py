@@ -5,6 +5,7 @@
     python run.py cut <project>                          cut the picked clips to 9:16
     python run.py edit <project> [--engine python|remotion] [--clips 1,3]
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
+    python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
@@ -24,6 +25,7 @@ COMMANDS = {
     'brand': 'clipper.brand',
     'edit': 'clipper.edit',
     'find': 'clipper.find',
+    'frames': 'clipper.frames',
     'gpu': 'clipper.gpu',
 }
 

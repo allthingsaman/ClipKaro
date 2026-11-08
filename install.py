@@ -149,6 +149,13 @@ def main():
         # YouTube changes often; keeping yt-dlp current fixes most download errors
         subprocess.run([str(PY), '-m', 'pip', 'install', '-q', '-U', 'yt-dlp[default]'], check=False)
         print('[ok] Python packages (yt-dlp up to date)')
+        # optional: hears who is talking and when people laugh, for podcasts with two people on
+        # screen. Without it everything still works; those shots just keep the classic framing.
+        r2 = subprocess.run([str(PY), '-m', 'pip', 'install', '-q', 'sherpa-onnx>=1.10'], check=False)
+        if r2.returncode == 0:
+            print('[ok] sherpa-onnx (two-person framing for podcasts)')
+        else:
+            print('[!] sherpa-onnx could not be installed: podcasts with two people keep the classic framing')
 
     # NVIDIA GPU: set up automatically when a card with a working driver is found (--cpu skips it)
     gpu_found = False

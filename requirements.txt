@@ -3,3 +3,5 @@ faster-whisper>=1.1.0
 soundfile>=0.12
 numpy>=1.26
 opencv-python>=4.10
+# optional, installed by install.py: two-person framing for podcasts (who talks, laughter)
+# sherpa-onnx>=1.10

@@ -202,7 +202,9 @@ python install.py --remotion  # also install the optional Remotion editor (needs
    system.
 2. **Sets up ClipKaro's private parts** in a `.venv` folder inside ClipKaro: the downloader
    (yt-dlp), the speech engine (faster-whisper) and a few helpers. It also updates the downloader,
-   because YouTube changes often.
+   because YouTube changes often, and adds sherpa-onnx, which hears who is talking in podcasts. If
+   sherpa-onnx can't be installed on your computer, it says so and everything else still works:
+   podcasts with two people then keep the simpler framing.
 3. **Looks for an NVIDIA graphics card.** If it finds one (with a working driver), it installs
    NVIDIA's helper files into `.venv` (about 1.5-2.5 GB), runs a quick test, and downloads the speech
    models (about 1.7 GB). If it finds none, it says so: ClipKaro then works on the processor, slowly.
@@ -222,6 +224,7 @@ A good run with an NVIDIA card looks like this:
 [ok] ffmpeg has libx264 and libass
 [ok] node v22.11.0 (helps YouTube downloads; needed only for the optional Remotion engine)
 [ok] Python packages (yt-dlp up to date)
+[ok] sherpa-onnx (two-person framing for podcasts)
 [ok] NVIDIA GPU found (1): setting up GPU transcription
 [ok] GPU: 1 NVIDIA GPU(s) ready for transcription ("tiny" ran on the GPU)
 Setup complete. Open this folder in Claude Code (or another AI coding agent, see AGENTS.md) and say:
@@ -251,6 +254,7 @@ Then open Claude Code inside the ClipKaro folder and try a short video:
 |---|---|---|
 | ClipKaro's private parts | the `.venv` folder inside ClipKaro | about 1 GB, about 3 GB with an NVIDIA card |
 | Speech models | `~/.cache/huggingface/hub/` (Windows: `C:\Users\<you>\.cache\huggingface\hub`) | 0.6-1.9 GB |
+| Voice and laughter models (podcasts) | `~/.cache/clipkaro/models/` (change it with `CLIPKARO_CACHE`) | about 50 MB |
 | Your clips and projects | the `output` folder inside ClipKaro | about 0.1-1 GB per video |
 
 To keep the speech models somewhere else, set the `HF_HOME` environment variable to another folder.

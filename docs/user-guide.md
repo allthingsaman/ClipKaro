@@ -164,11 +164,16 @@ Some examples:
 - "Hindi captions in Hindi letters" (instead of English letters)
 - "it's a gameplay video"
 
+**Podcasts and interviews with two people** need no special words. ClipKaro shows the person who
+is talking. When someone laughs, or both talk at once, it shows both of them, one above the other
+(a "split screen"), with the captions in between.
+
 After you see the clips, you can ask for changes:
 - "clip 2 starts too early"
 - "make clip 1 shorter"
 - "the spelling of 'Juyal' in clip 3 is wrong"
 - "make the captions bigger in all clips"
+- "in clip 4, show both of them when he laughs" · "show the other person there"
 
 You can ask for anything in your own words. If ClipKaro can't do something yet (for example adding
 background music), Claude will tell you.

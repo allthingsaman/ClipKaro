@@ -90,6 +90,14 @@ Write `output/<project>/clips.json`:
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key
   noun). They stay highlighted in the brand colour in the captions. Use the exact word as spoken.
 - `ranges`: one `[start, end]` pair, or 2–3 pairs for a splice (they play in the listed order).
+- `show_full` (optional): `[[a, b]]` source-time stretches shown as the whole landscape frame over
+  a blurred background, when what matters lies outside a 9:16 crop (a product held up, a screen,
+  a slide, a gesture across the room). Use sentence edges.
+- `framing` (optional): `[[a, b, "left" | "right" | "center" | "split" | "full" | 0-1]]` chooses
+  what a stretch shows: the face on the left or right, the centre, both people stacked (`split`),
+  the whole frame (`full`), or an exact spot (0 = left edge, 1 = right edge). Usually written after
+  looking at the `run.py frames` sheets, to fix the automatic choice or to show a reaction the
+  sound can't catch (a silent laugh: `split`). It always wins over the automatic framing.
 
 ## Quality checklist (run it before you write the file)
 - [ ] Would a stranger understand it with zero context?

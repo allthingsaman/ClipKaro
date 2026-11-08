@@ -18,6 +18,10 @@ No flashy transitions, emojis or motion graphics.
   about two-thirds down; around 1500 sits lower, around 1100 near mid-chest).
 - **"Bigger/smaller captions"**: `--size` (96 by default).
 - **"Not all caps"**: `--no-upper`.
+- **"Show both of them here" / "show the other person" / "show the whole picture here"**: add
+  `"framing": [[a, b, "split" | "left" | "right"]]` or `"show_full": [[a, b]]` to that clip in
+  clips.json (source seconds), then `cut --clips N` and `edit --clips N` again. In the split screen
+  the captions sit on the seam between the two people and there are no zooms.
 - **"No sound effects" / "only one"**: `--sfx none` / `--sfx light`.
 - **"Less zooming"**: `--no-zoom` for none, or raise the 2.8 s minimum in `beat_bounds`.
 - **"Use my own sounds"**: drop files into `assets/sfx/` with `whoosh`, `hit` or `click`

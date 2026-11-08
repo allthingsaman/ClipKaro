@@ -27,3 +27,6 @@ Third-party assets keep their own licenses:
   (see assets/fonts/OFL.txt and assets/fonts/OFL-Poppins.txt)
 - assets/models/ : YuNet face detector, MIT License (see assets/models/README.md)
 - assets/sfx/ : sound effects (see assets/sfx/README.md)
+- downloaded on first use for two-person framing (not part of this repository):
+  pyannote segmentation 3.0 (MIT), 3D-Speaker ERes2Net (Apache 2.0) and YAMNet (Apache 2.0),
+  run with sherpa-onnx (Apache 2.0) and onnxruntime (MIT)

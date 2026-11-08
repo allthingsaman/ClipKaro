@@ -73,7 +73,10 @@ flowchart TD
     RO --> CK["run.py cut --check<br/>AI fixes any bad boundaries"]
     CK --> CUT["run.py cut<br/>yt-dlp downloads the video, up to 1080p"]
     CUT --> RF["Shot detection, face detection<br/>9:16 reframe, fit or facecam layout"]
-    RF --> CL["clips/NN-title.mp4 and .json"]
+    RF --> TWO{"Two people too far apart<br/>for one crop?"}
+    TWO -->|yes| DIR["Director: voices, laughter, speaker register<br/>speaker crop or split screen"]
+    TWO -->|no| CL
+    DIR --> CL["clips/NN-title.mp4 and .json"]
     CL --> ED["run.py edit"]
     ED --> PL["Edit plan: zooms, captions, sound cues"]
     PL --> RD["Render: OpenCV + ffmpeg/libass, or Remotion<br/>audio mix normalised to -14 LUFS"]
@@ -89,6 +92,7 @@ flowchart TD
 | 4. Caption colour (optional) | `run.py brand <project>` | the video | `brand.json` | AI editor or scripts |
 | 5. Edit | `run.py edit <project>` | `clips/*.json`, `brand.json`, `romanize.json` | `edited/NN-title.mp4` + `.srt` | scripts |
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
+| Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
 | Helper | `run.py gpu [model]` | nothing | nothing (prints the GPU test result) | |
 
 `<project>` is the folder name inside `output/` that `fetch` prints, for example
@@ -115,7 +119,10 @@ clipper/                     the toolbox (Python)
     fetch.py      step 1: download audio, detect the language, transcribe
     romanize.py   step 2b: Roman spellings for Hindi words in captions
     cut.py        step 3: snap ranges to words, download the video, cut, reframe
-    reframe.py    shot detection, face detection, 16:9 -> 9:16 crops
+    reframe.py    shot detection, face detection, 16:9 -> 9:16 crops and the split-screen layout
+    director.py   two people on screen: speaker crop or split screen, moment by moment
+    speakers.py   who speaks when (voices), laughter, and the video's speaker register
+    frames.py     picture sheets of what the crop keeps (checked by the AI editor)
     facecam.py    webcam-overlay detection and the stacked gameplay layout
     brand.py      caption accent colour (override or picked from the video)
     plan.py       the edit plan: camera zooms, caption groups, sound cues
@@ -148,6 +155,10 @@ output/                      your projects (never committed)
 | NVIDIA cuBLAS, cuDNN, NVRTC (pip packages) | GPU transcription; installed inside `.venv` by `install.py` when it finds an NVIDIA card, no CUDA toolkit needed | `gpu.py`, `run.py` |
 | [OpenCV](https://opencv.org) | reading frames, YuNet face detection, Hough circles (round webcams), per-frame zooms, k-means colour picking | `reframe.py`, `facecam.py`, `edit.py`, `brand.py` |
 | [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) | the face detector model (MIT licence) | `assets/models/` |
+| [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (optional, Apache 2.0) | runs the voice models offline: who speaks when | `speakers.voices` |
+| [pyannote segmentation 3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT) | finds where each voice speaks (ONNX copy from sherpa-onnx) | downloaded to `~/.cache/clipkaro/models` |
+| [3D-Speaker ERes2Net](https://github.com/modelscope/3D-Speaker) (Apache 2.0, VoxCeleb) | the "voice print" model that tells two voices apart | downloaded to `~/.cache/clipkaro/models` |
+| [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache 2.0), on onnxruntime | hears laughter (classes Laughter, Giggle, Snicker, Belly laugh, Chuckle) | `speakers.laughter` |
 | numpy, soundfile | number crunching, reading audio | everywhere |
 | [Remotion](https://www.remotion.dev) (optional) | an alternative renderer that draws the same plan with React/CSS | `remotion/`, `edit.render_remotion` |
 
@@ -174,10 +185,13 @@ output/<project>/
     clips/
         01-title.mp4             raw vertical cut (already postable)
         01-title.json            timing, words, shots, focus points for the edit
+    speakers.json                the speaker register: each voice of the video and its side
+    frames/01-title.jpg          picture sheets made by run.py frames
     edited/
         01-title.mp4             the finished short
         01-title.srt             captions as a subtitle file
-    .work/                       temporary files (edit plans, caption files, masks)
+    .work/                       temporary files (edit plans, caption files, masks, and
+                                 signals-NN.json: voices and laughter measured for a clip)
 ```
 
 For a **local file**, nothing is copied: `project.json` stores the path and `cut` reads the file
@@ -235,6 +249,16 @@ What the AI editor reads. A header, then one sentence per line with `[start-end]
 ```
 `ranges` can hold 2-3 pairs to splice parts of the video together; they play in the listed order.
 
+Two optional fields change the framing of a stretch (source seconds); they always win over the
+automatic framing:
+```json
+"show_full": [[656.32, 674.26]],
+"framing": [[3389.6, 3391.7, "split"], [120.5, 124.0, "left"]]
+```
+`show_full` shows the whole landscape frame over a blurred background. `framing` takes `left`,
+`right`, `center`, a number from 0 (left edge) to 1 (right edge), `split` (both people stacked) or
+`full` (the same as `show_full`).
+
 ### romanize.json (Hindi/Hinglish)
 One entry per Hindi word in the picked clips, Devanagari → Roman: `{"आज": "aaj", "बात": "baat"}`.
 
@@ -246,9 +270,11 @@ One entry per Hindi word in the picked clips, Devanagari → Roman: `{"आज": 
 
 ### clips/NN-title.json (written by cut, read by edit)
 Clip-relative timings: `fps`, `duration`, `parts` (source ranges), `shots` (each with `t0`, `t1`,
-`mode` = `crop | fit | vertical | facecam | horizontal` and the `focus` point, usually the face),
-`splices` (where spliced ranges join), `words` (times relative to the clip), plus `id`, `title`,
-`hook`, `emphasis`, and `layout`/`caption_y` for the facecam layout.
+`mode` = `crop | fit | split | vertical | facecam | horizontal`, the `focus` point, usually the face,
+and `f0`, the exact frame where the shot begins), `splices` and `splice_frames` (where spliced
+ranges join), `words` (times relative to the clip), `director` (the two-person framing chosen, in
+source seconds), plus `id`, `title`, `hook`, `emphasis`, and `layout`/`caption_y` for the facecam
+layout.
 
 ### .work/NN-title.plan.json (written by edit)
 The full edit plan: camera keyframes, caption groups with per-word timings and emphasis flags,
@@ -351,6 +377,53 @@ stay highlighted in the captions, and a ready-to-post caption with hashtags.
      darkened copy of itself, so no text gets cut off,
    - `vertical`: the source is already vertical; it's just scaled to fill,
    - a faceless shot shorter than 1 s (usually a missed detection) reuses the nearest face.
+4. **Layout changes inside a shot** (an inserted photo or clip the cut detector missed): when the
+   picture changes a lot *and* the main face is gone, the shot is split there (exact frame), so the
+   insert gets its own framing. A split that changes nothing is joined back.
+5. **People, not detections**: faces are grouped by position across the sampled frames. One person
+   who leans or laughs can leave two groups; groups never seen in the same frame and less than about
+   1.5 face-widths apart are joined. A second person must be seen *in the same frames* as the first.
+   Two people who fit in one crop get a crop centred between them; two who don't are a
+   **two-person shot**, framed by the director (5.6a).
+
+### 5.6a Two people on screen: the director (`director.py`, `speakers.py`)
+For podcasts and interviews where two people sit too far apart for one crop (a side-by-side
+picture, or a wide shot of the room). It runs only on those stretches; all other shots are framed
+exactly as above.
+
+**Signals**, measured once per clip (cached in `.work/signals-NN.json`):
+- **voices**: who speaks when (pyannote segmentation 3.0 + 3D-Speaker ERes2Net voice prints,
+  clustered, run with sherpa-onnx on the clip's parts ±10 s);
+- **laughter**: YAMNet laughter scores every 0.48 s;
+- **mouth movement** of each face (only used summed up over many calm moments).
+
+**Speaker register** (`speakers.json`, one per video): voice prints are matched across all clips
+(similarity ≥ 0.55 is the same person; a voice disturbed by laughter still counts when it clearly
+resembles one person). Each clip votes on which side each person sits, using only *calm moments*
+(one voice, real words, no laughter); the weighted median of all votes decides. One funny clip
+can't flip it, because a laughing listener moves his mouth more than the talker.
+
+**Rules**, moment by moment:
+- one person talks, the other listens → crop on the speaker;
+- a laugh (YAMNet ≥ 0.2), from 2 s before it (the punchline, when the listener starts to crack up)
+  to 2 s after → both people (split screen);
+- talking over each other, three or more short turns in a row (under 4 s each), or a voice it can't
+  place → both people;
+- a wide room shot → both people, unless one person talks alone for 6 s or more;
+- silence keeps the framing around it.
+Then: no framing shorter than 1.5 s (split screen 2 s), switches move to real gaps between words,
+and a "word" longer than 0.8 s counts as stretched over a laugh. When unsure it always shows both:
+that never shows the wrong face. A single-person reaction shot is left to the AI editor (it can
+see a silent laugh on the `frames` sheet and add `framing`), because the sound alone can't tell who
+laughs: in most laughs both people laugh.
+
+**The split screen** (`mode: split`): two 9:8 boxes, one per person, stacked into 1080x1920; the
+person who talks most in the clip on top, right above the captions on the seam (y = 960). In a
+side-by-side picture each box stays inside its own half, so no strip of the other camera shows.
+
+**Measured** on 9 hand-labelled Khan Sir clips (224 s of two-person shots): the ideal framing 83% of
+the time, an acceptable one 91%, and a single wrong face 1%. If sherpa-onnx or the models are
+missing, these shots keep the framing of 5.6.
 
 ### 5.7 Gameplay with a webcam overlay (`facecam.py`)
 Detection runs once per video, on 24 frames spread across it. A webcam overlay is a face that:
@@ -375,7 +448,9 @@ detection; `--layout crop` turns the layout off.
   30 % of the clip, spaced apart.
 - **Never dead**: a slow +0.03 push during every beat.
 - All zooms **scale around the face** (the shot's focus point), so the face stays in place. A light
-  motion blur is added only while a zoom moves fast.
+  motion blur is added only while a zoom moves fast, never on a camera cut.
+- `fit` and `split` shots never zoom (they're there to show everything).
+- A zoom change that goes with a camera cut lands on the exact frame where the cut shows (`f0`).
 
 ### 5.9 Captions (`plan.caption_groups`, `edit.write_ass`)
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
@@ -387,7 +462,9 @@ detection; `--layout crop` turns the layout off.
   **Poppins ExtraBold** in normal case (Devanagari has no capitals) without letter spacing (which
   would break Hindi letter shaping).
 - Position: centre line at y = 1270 of 1920 (about two-thirds down), size 96 px, 8 px black
-  outline, or on the seam in the facecam layout. An `.srt` file with the same groups is written too.
+  outline, or on the seam in the facecam and split-screen layouts. A caption still on screen when
+  the layout switches is cut in two on that exact frame, so it never covers a face. An `.srt` file
+  with the same groups is written too.
 - **Hindi/Hinglish**: `romanize.json` replaces each Hindi word with its Roman spelling before the
   groups are built. Word timings don't change.
 
@@ -459,3 +536,6 @@ detection; `--layout crop` turns the layout off.
 | Fonts | `assets/fonts/` and `LATIN_FONT` / `HINDI_FONT` in `clipper/plan.py` |
 | Languages | [adding-a-language.md](adding-a-language.md) |
 | The facecam layout | `clipper/facecam.py`: `TOP_H`, `geometry` |
+| Two-person framing rules | `clipper/director.py`: `HOLD`, `PRE`, `POST`, `LAUGH_ON`, `WIDE_SOLO`, `FLOOR` |
+| Voice and laughter models | `clipper/speakers.py`: `MODELS`, `VOICE_THRESHOLD`, `SAME_VOICE` |
+| The split-screen layout | `clipper/reframe.py`: `split_box`; `clipper/cut.py`: `_framed` |

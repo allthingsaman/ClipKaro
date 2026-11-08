@@ -93,6 +93,9 @@ scenes; you don't need to type that part.
 | "keep it wide" / "16:9" | keeps the original wide shape |
 | "use the facecam layout" / "don't use the facecam layout" | gameplay on top and your webcam below, or not |
 | "the webcam is in the bottom-left corner" | Claude saves the webcam's position in `settings.json` |
+| (nothing: it's automatic) | in podcasts with two people on screen, the person talking is shown; around laughs and when they talk over each other, both are shown stacked (split screen) |
+| "show both of them when Raj laughs at 2:10" / "show Khan Sir there, not Raj" | Claude changes the framing of that moment only |
+| "show the whole picture when he holds up the box" | that moment shows the full landscape frame over a blurred background |
 
 ### Changes after you've seen the clips
 | You write | What happens |
@@ -196,6 +199,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
+| `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 
 Add `-h` to any command to see its help, for example `python run.py cut -h`.
@@ -203,7 +207,7 @@ Add `-h` to any command to see its help, for example `python run.py cut -h`.
 ### Command reference
 The same, as a quick list: `fetch` (listen) → `romanize` (Hindi captions) → `cut` (standing clips)
 → `brand` (colour, optional) → `edit` (the finished look). Helpers: `find` (exact times),
-`gpu` (graphics-card test).
+`frames` (what the crop keeps), `gpu` (graphics-card test).
 
 ## 7. Make it your own
 - **Your own sound effects**: put `.mp3` or `.wav` files into `assets/sfx/`, with `whoosh`, `hit` or

@@ -25,6 +25,9 @@ Key points (details in the files above):
   your tool supports it) and keep the user posted.
 - Results go to `output/<project>/`. Never commit or upload user videos or anything in `output/`.
 - Never invent words: clips contain only what the speaker said.
+- After `cut`, check clips with two people on screen (podcasts) or things being shown with
+  `python run.py frames <project> --clips N`, and fix only what's wrong with `"framing"` /
+  `"show_full"` in clips.json (details in the skill).
 - Don't run commands that need administrator rights (`sudo`, installers); give the user the
   exact commands instead.
 - User documentation is in [`docs/`](docs/README.md); how the code works is in
