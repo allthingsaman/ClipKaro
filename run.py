@@ -4,6 +4,8 @@
     python run.py romanize <project>                     Roman Hinglish captions for Hindi/Hinglish videos
     python run.py cut <project>                          cut the picked clips to 9:16
     python run.py edit <project> [--engine python|remotion] [--clips 1,3]
+    python run.py parts <project>                        split a long transcript into parts for careful reading
+    python run.py topics <project>                       join the parts' answers: topic map + clip candidates
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
@@ -25,6 +27,8 @@ COMMANDS = {
     'brand': 'clipper.brand',
     'edit': 'clipper.edit',
     'find': 'clipper.find',
+    'parts': 'clipper.parts',
+    'topics': 'clipper.topics',
     'frames': 'clipper.frames',
     'gpu': 'clipper.gpu',
 }

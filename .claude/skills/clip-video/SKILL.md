@@ -40,10 +40,39 @@ python run.py fetch "<youtube url or path to a video file>"
 
 ## 2. Pick the moments (your job)
 Read `references/picking-moments.md` first (plus `docs/hinglish.md` for a Hindi/Hinglish
-video), then read the **whole** `transcript.txt`.
+video). Then plan how to read the transcript:
+```
+python run.py parts <project>
+```
+**One part** (up to about 28 minutes of Hinglish, longer for English): read `transcript.txt` in
+full and pick the clips.
+
+**Several parts** (long videos): don't read the whole transcript at once. The file reader stops at
+256 KB, and long reads get skimmed; never use `allow_large` for it. Instead:
+1. Tell the user, e.g. "Reading the video in 6 parts at once; this takes a few minutes."
+2. Start one **`clipkaro-part-reader`** helper per part, **all in one message** (Agent tool,
+   subagent type `clipkaro-part-reader`, prompt e.g. "Part 3 of 6:
+   output/<project>/parts/part-03.txt"). Don't run them while `fetch`, `cut` or `edit` is running
+   (memory). Without helpers, read the parts one at a time as `references/reading-parts.md` says,
+   writing each `part-NN.json` before reading the next.
+3. `python run.py topics <project>` joins the answers and checks every quote. If it names a part
+   to redo, run only that part's helper again and pass it the problem lines.
+4. Read `topics.txt` (the topic map; look at its CHECK FIRST list) and `candidates.txt` (for a
+   very long video it names `candidates-1.txt`, `candidates-2.txt`, ...: read all of them). Rank
+   **all** candidates together: of candidates that overlap at all, keep the better one (clips
+   never share words); at most one pick per topic unless the ideas clearly differ; no quota per
+   part. If a third of the video has no pick but holds a candidate scored 8 or more, swap it in for
+   the weakest pick.
+5. Write clips.json with each pick's `ranges` copied exactly from the candidate list, plus
+   `"from": "<candidate id>"` (e.g. `"from": "p3-c1"`).
+
 Choose the best 3–8 self-contained clips (hook → story → payoff, 25–60 s ideal), and write
 `output/<project>/clips.json` in the format given there. Prefer continuous ranges; splice only
 when it clearly makes a better short.
+
+**Deep clips** ("deep clip this: <link>", "clip this, then go deeper", "do a deep pass") are
+being built (roadmap item 17). For now, make the regular clips and tell the user that deep clips
+aren't available yet.
 
 **Get exact times.** A transcript line can hold several sentences. When your hook or payoff
 starts or ends **inside** a line, look up the exact word time instead of using the line's time:

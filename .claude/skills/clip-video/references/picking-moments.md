@@ -50,6 +50,27 @@ punchline, a rule or a call to action. Never end mid-thought, on "and…", or on
   Never build a sentence the speaker didn't say.
 - Ranges of different clips must not overlap.
 
+## Never change what someone meant (joins and cold opens)
+A clip made of pieces must stay true to the full video. Check every join:
+1. **The full-video test.** Would the speaker be surprised by the clip? Would a viewer who then
+   watched the full video feel misled? If maybe, use one continuous range.
+2. **Original order.** Pieces play in the order they were said. The one exception is a cold open:
+   one line of at most about 5 s that works without setup, raises a question instead of giving
+   away the answer, and means the same when heard first. Never a reaction, and never an answer
+   whose question isn't shown.
+3. **Answers and reactions stay with their own question.** An answer only follows its own
+   question; "haan", "bilkul", "exactly" or a laugh only follows the line it reacted to.
+4. **Keep how it was said.** Never cut a quote, a hypothetical, sarcasm, an impression or a game
+   character so that it sounds like the speaker's own view.
+5. **Keep the softener.** Never drop a "just kidding", "मज़ाक था", "not really" or a correction
+   that comes right after a piece.
+6. **Nothing points at cut-out words.** No piece opens with "he", "that", "wo", "isliye" or
+   "lekin" unless its setup is in the clip.
+7. **Never build a sentence the speaker didn't say**, and never add silence after a question
+   for effect.
+8. **Quotation marks only for words actually said**, in titles and captions.
+9. **Never use ads, sponsor reads, cold-open teasers, intros or outros** as pieces.
+
 ## How many
 Usually **3–8 clips** per video (about one per 4–8 minutes of strong content). Quality over count:
 3 great clips beat 8 average ones. If nothing is clip-worthy, say so.
@@ -90,6 +111,8 @@ Write `output/<project>/clips.json`:
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key
   noun). They stay highlighted in the brand colour in the captions. Use the exact word as spoken.
 - `ranges`: one `[start, end]` pair, or 2–3 pairs for a splice (they play in the listed order).
+- `from` (long videos read in parts): the id of the candidate the clip comes from, e.g. `"p3-c1"`.
+  Copy its `ranges` from `candidates.txt`; `cut --check` warns when they differ.
 - `show_full` (optional): `[[a, b]]` source-time stretches shown as the whole landscape frame over
   a blurred background, when what matters lies outside a 9:16 crop (a product held up, a screen,
   a slide, a gesture across the room). Use sentence edges.

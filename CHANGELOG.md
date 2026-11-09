@@ -1,5 +1,34 @@
 # What's new
 
+## Unreleased: long videos are read in parts (deep clips, phase 1)
+
+- **Long podcasts get read properly.** A video of more than about half an hour is split into parts
+  of about 21 minutes (with 2 minutes of overlap, so no moment falls into a gap), and one AI reader
+  per part works at the same time. Before, a 2-hour transcript was too big for the AI's file reader
+  in one go, and long reads got skimmed. On the 2-hour Khan Sir podcast the candidates now spread
+  evenly over the start, middle and end of the video.
+- **A topic map** (`topics.txt`): every topic with its time, what it's about, its key lines and how
+  they were said (own view, quote, joke, impression), YouTube's "most replayed" peaks and the lines
+  the creator used in the cold open. It's the base for deep clips (stories spread across a video).
+- **Exact times, real words.** The readers quote words; code finds them in the transcript and takes
+  the exact times from there, so no time is guessed and no word is paraphrased.
+- `fetch` keeps the video's description, the creator's chapters and the "most replayed" curve.
+- **Very long videos no longer crash the computer.** Transcribing a 3-hour Hindi podcast used about
+  7 GB of memory at once, and on a 16 GB laptop the system closed programs to survive. Audio longer
+  than 30 minutes is now transcribed in pieces of about 20 minutes, cut in pauses, so memory use
+  stays the same for any length. Shorter videos are transcribed exactly as before.
+- **Podcasts with faces in the wall art show the right person.** In a podcast with painted faces on
+  the wall behind the guest, ClipKaro measured a painted face instead of the guest and showed the
+  listening host whenever the guest talked. It now looks only at the biggest face on each side.
+  Clips cut before this fix are measured again automatically the next time you run `cut`.
+- **Dark studios: camera cuts are found again.** In a podcast filmed against a black background
+  (like the Sam Altman interview), the cut detector found no camera changes at all, so the crop
+  stayed in one place for a whole clip, sometimes on the empty space between two people. Cuts are
+  now found by comparing each frame with the frames around it. Bright videos get the same cuts as
+  before.
+- New commands: `run.py parts` and `run.py topics`. New rules in the picking guide: "Never change
+  what someone meant" for clips joined from several pieces.
+
 ## v1.1 (November 2026): better framing
 
 ### Podcasts with two people on screen

@@ -112,6 +112,12 @@ scenes; you don't need to type that part.
 |---|---|
 | "YouTube says sign in to confirm you're not a bot" / "use my Firefox cookies" | downloads using your browser's YouTube login (Chrome, Firefox or Edge) |
 
+### Long videos (podcasts of an hour or more)
+| You write | What happens |
+|---|---|
+| (nothing: it's automatic) | a long video is read in parts of about 20 minutes, all at the same time, so no part is skimmed; then all the moments found are ranked together |
+| "show me the topic map" | Claude shows `topics.txt`: every topic with its time, what it's about, and the key lines |
+
 ### Can I write anything else?
 Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
 for something ClipKaro **can't do yet**, Claude tells you instead of pretending. Examples: background
@@ -199,6 +205,8 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
+| `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
+| `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 
@@ -207,7 +215,9 @@ Add `-h` to any command to see its help, for example `python run.py cut -h`.
 ### Command reference
 The same, as a quick list: `fetch` (listen) → `romanize` (Hindi captions) → `cut` (standing clips)
 → `brand` (colour, optional) → `edit` (the finished look). Helpers: `find` (exact times),
-`frames` (what the crop keeps), `gpu` (graphics-card test).
+`frames` (what the crop keeps), `gpu` (graphics-card test). Long videos: `parts` (split the
+transcript for careful reading) and `topics` (join the readers' answers into a topic map and one
+list of clip candidates).
 
 ## 7. Make it your own
 - **Your own sound effects**: put `.mp3` or `.wav` files into `assets/sfx/`, with `whoosh`, `hit` or

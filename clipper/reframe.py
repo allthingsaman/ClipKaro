@@ -26,12 +26,28 @@ def _detector(w, h):
     return d
 
 
-def scene_cuts(video, start, dur, threshold=0.30, min_shot=0.8):
-    """Return shot boundaries [(a, b), ...] in seconds relative to `start`."""
+def scene_cuts(video, start, dur, threshold=0.30, min_shot=0.8, floor=0.08, ratio=4.0, around=12):
+    """Return shot boundaries [(a, b), ...] in seconds relative to `start`.
+
+    A frame starts a new shot when its scene score (how much the picture changed) reaches
+    `threshold`, or when it reaches `floor` and is `ratio` times the median score of the `around`
+    frames on each side: in dark footage (a black studio) real cuts score only 0.1-0.2 while still
+    frames score ~0.001, so a fixed threshold missed every cut (the idea of PySceneDetect's adaptive
+    detector). In bright footage this finds the same cuts as before."""
     cmd = ['ffmpeg', '-hide_banner', '-ss', f'{start:.3f}', '-t', f'{dur:.3f}', '-i', str(video),
-           '-vf', f"scale=320:-2,select='gt(scene,{threshold})',showinfo", '-an', '-f', 'null', '-']
+           '-vf', "scale=320:-2,select='gte(scene,0)',metadata=print", '-an', '-f', 'null', '-']
     r = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
-    times = [float(m) for m in re.findall(r'pts_time:([0-9.]+)', r.stderr)]
+    ts = [float(m) for m in re.findall(r'pts_time:([0-9.]+)', r.stderr)]
+    ss = [float(m) for m in re.findall(r'scene_score=([0-9.]+)', r.stderr)]
+    sc = list(zip(ts, ss))
+    times = []
+    for i, (t, s) in enumerate(sc):
+        if s >= threshold:
+            times.append(t)
+        elif s >= floor:
+            near = sorted(x for _, x in sc[max(0, i - around):i] + sc[i + 1:i + 1 + around])
+            if near and s >= ratio * max(near[len(near) // 2], 0.005):
+                times.append(t)
     bounds = [0.0]
     for t in times:
         if t - bounds[-1] >= min_shot and dur - t >= min_shot:

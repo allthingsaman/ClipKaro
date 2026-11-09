@@ -164,6 +164,11 @@ Some examples:
 - "Hindi captions in Hindi letters" (instead of English letters)
 - "it's a gameplay video"
 
+**Long videos** need no special words either. A video of an hour or more is read in parts of
+about 20 minutes, all at the same time (Claude says, for example, "Reading the video in 6 parts at
+once"), so the middle of a long podcast gets the same attention as the start. It takes a few
+minutes more. Afterwards you can ask "show me the topic map" to see every topic with its time.
+
 **Podcasts and interviews with two people** need no special words. ClipKaro shows the person who
 is talking. When someone laughs, or both talk at once, it shows both of them, one above the other
 (a "split screen"), with the captions in between.

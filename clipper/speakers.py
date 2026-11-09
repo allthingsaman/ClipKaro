@@ -166,16 +166,19 @@ def face_activity(cap, t0, t1, subjects, step=0.25, gap=3):
             sa, sb = cv2.resize(a, (640, 360)), cv2.resize(b, (640, 360))
             ga = cv2.cvtColor(sa, cv2.COLOR_BGR2GRAY).astype(np.float32)
             gb = cv2.cvtColor(sb, cv2.COLOR_BGR2GRAY).astype(np.float32)
-            row = {}
+            row, size = {}, {}
             for x, y, w, h in _faces(sa):
                 cx = (x + w / 2) / 640
                 near = min((left, right), key=lambda s: abs(s - cx))
-                if abs(near - cx) > 0.12:
+                # per side only the biggest face: small faces in wall art or posters behind a person
+                # never move, and measuring one of them made a talking guest look silent (seen)
+                if abs(near - cx) > 0.12 or w * h <= size.get(side[near], 0):
                     continue
                 y0, y1 = int(y + h * 0.55), int(min(360, y + h * 1.05))
                 x0, x1 = int(max(0, x + w * 0.2)), int(min(640, x + w * 0.8))
                 if y1 > y0 and x1 > x0:
                     row[side[near]] = float(np.abs(gb[y0:y1, x0:x1] - ga[y0:y1, x0:x1]).mean())
+                    size[side[near]] = w * h
             if row:
                 out.append((round(t, 3), row))
         t += step
@@ -189,7 +192,8 @@ def face_activity(cap, t0, t1, subjects, step=0.25, gap=3):
 # moments in ANY clip which side of a two-person shot each person sits on. A funny clip, where the
 # listener laughs and smiles the whole time, then still gets the right face for each voice.
 
-SAME_VOICE = 0.55        # voice prints at least this similar are the same person (Raj vs Khan Sir: <= 0.38)
+SIGNALS_V = 2            # raise when voices / laughter / face_activity change: cached signals are redone
+SAME_VOICE = 0.55       # voice prints at least this similar are the same person (Raj vs Khan Sir: <= 0.38)
 SOFT_VOICE = 0.35        # a voice disturbed by laughter or talking-over still resembles its owner this much ...
 SOFT_MARGIN = 0.2        # ... and clearly more than anyone else: treat it as that person (prints unchanged)
 NEW_PERSON = 5.0         # a voice that matches nobody becomes a new person only with this many seconds

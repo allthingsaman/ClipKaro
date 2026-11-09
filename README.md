@@ -45,7 +45,8 @@ you:  clip this video: https://youtu.be/...
 
 ## How it works
 1. **Listen**: it downloads the sound and writes down every word with its exact time.
-2. **Pick**: the AI (Claude Code) reads the words and chooses the best moments.
+2. **Pick**: the AI (Claude Code) reads the words and chooses the best moments. A long podcast is
+   read in parts of about 20 minutes, all at once, so nothing in the middle gets skimmed.
 3. **Captions**: for Hindi/Hinglish, it writes every Hindi word in English letters.
 4. **Cut**: each moment is cut to a standing video, framed on the speaker's face.
 5. **Edit**: zooms, captions and sound effects are added, and the volume is evened out.
@@ -241,7 +242,7 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 ## Folder layout
 ```
 .claude/skills/clip-video/   the instructions Claude follows to make clips
-clipper/                     the program's steps: fetch, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
+clipper/                     the program's steps: fetch, parts, topics, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
 remotion/                    an optional second way to draw the edit
 assets/                      fonts, the face-finding model, sound effects
 docs/                        documentation

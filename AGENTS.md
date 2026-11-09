@@ -25,6 +25,10 @@ Key points (details in the files above):
   your tool supports it) and keep the user posted.
 - Results go to `output/<project>/`. Never commit or upload user videos or anything in `output/`.
 - Never invent words: clips contain only what the speaker said.
+- Long videos: run `python run.py parts <project>`. With several parts, don't read the whole
+  transcript at once: read the parts one at a time as
+  `.claude/skills/clip-video/references/reading-parts.md` says (write each `part-NN.json` before
+  reading the next), then run `python run.py topics <project>` and rank `candidates.txt`.
 - After `cut`, check clips with two people on screen (podcasts) or things being shown with
   `python run.py frames <project> --clips N`, and fix only what's wrong with `"framing"` /
   `"show_full"` in clips.json (details in the skill).

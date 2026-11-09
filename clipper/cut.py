@@ -152,6 +152,22 @@ def boundary_warnings(ranges, words):
     return warns
 
 
+def drift_warnings(clip, cands):
+    """A clip picked from a candidate list (long videos read in parts) should keep the candidate's
+    exact ranges; say so when they differ, or when the candidate doesn't exist."""
+    src = clip.get('from')
+    if not src:
+        return []
+    c = cands.get(src)
+    if not c:
+        return [f'"from": "{src}" is not in candidates.json']
+    mine, theirs = clip['ranges'], c['ranges']
+    if len(mine) != len(theirs) or any(abs(a - x) > 1.0 or abs(b - y) > 1.0
+                                       for (a, b), (x, y) in zip(mine, theirs)):
+        return [f'ranges differ from candidate {src} {theirs}: on purpose?']
+    return []
+
+
 def range_shots(video, info, clip, words):
     """[(start, dur, shots)] for each range of a clip, snapped to words and analysed (no framing yet)."""
     out = []
@@ -214,7 +230,8 @@ def two_person(pdir, video, plans, words):
         parts = [[round(start, 3), round(start + dur, 3)] for start, dur, _ in planned]
         cache = work / f'signals-{cid:02d}.json'
         old = load_json(cache)
-        if old and old.get('parts') == parts and old.get('pieces') == [list(x) for x in pieces]:
+        if old and old.get('parts') == parts and old.get('pieces') == [list(x) for x in pieces] \
+                and old.get('v') == speakers.SIGNALS_V:
             signals[cid] = old
             continue
         vo = speakers.voices(audio, parts)
@@ -229,7 +246,8 @@ def two_person(pdir, video, plans, words):
                 if _two_shot(sh):
                     two = sorted(f[0] for f in (sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]))
                     act += speakers.face_activity(cap, start + sh['a'], start + sh['b'], two)
-        signals[cid] = {'parts': parts, 'pieces': [list(x) for x in pieces], 'voices': vo, 'laughter': la,
+        signals[cid] = {'v': speakers.SIGNALS_V, 'parts': parts, 'pieces': [list(x) for x in pieces],
+                        'voices': vo, 'laughter': la,
                         'activity': act, 'prints': speakers.voice_prints(audio, vo) or {}}
         save_json(cache, signals[cid])
     cap.release()
@@ -425,6 +443,8 @@ def main():
     want = {int(x) for x in a.clips.split(',')} if a.clips else None
 
     flagged = 0
+    cands = {c['id']: c for c in load_json(pdir / 'candidates.json', []) or []}
+    taken = []                                   # (clip id, start, end) of every range so far
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
@@ -434,6 +454,12 @@ def main():
         msgs = boundary_warnings(clip['ranges'], words)
         if total and not 15 <= total <= 90:
             msgs.append(f'length {total:.0f}s is outside 15-90 s')
+        msgs += drift_warnings(clip, cands)
+        for r0, r1 in clip['ranges']:
+            for other, x, y in taken:
+                if r0 < y - 1.0 and x < r1 - 1.0:
+                    msgs.append(f'overlaps clip {other} ({x:.1f}-{y:.1f}): the same words twice')
+        taken += [(cid, r0, r1) for r0, r1 in clip['ranges']]
         for m in msgs:
             print(f'   WARNING clip {cid} "{clip.get("title")}": {m}')
         flagged += bool(msgs)
