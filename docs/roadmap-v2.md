@@ -316,10 +316,14 @@ and **how we'll measure** it.
   3), the critic (item 4) and the deep pass itself. Phase 4 (join polish) next. The branch is
   merged only after all phases and a blind comparison with v1.1 on fresh videos.**
 - **Phase 3 results:** the honesty check (pass B) was tested on clips built to mislead, each with
-  an honest twin, never seen while the judges' instructions were written: all 29 misleading clips caught (the true
-  miss rate is very likely under 10%), 3 of 27 honest clips rejected, each by a single judge on a
-  close call. On the practice set: 10 of 10 caught, 3 of 10 honest rejected (all three possibly
-  label mistakes; the owner spot-checks them). On real
+  an honest twin, never seen while the judges' instructions were written: all 29 misleading clips
+  caught (the true miss rate is very likely under 10%). With "any one judge rejects", 3 of 27
+  honest clips were rejected; the owner found that too strict (it only costs good clips), so now
+  **two judges must object** to reject a clip, and one objection becomes a note for the owner.
+  With that rule: still 29 of 29 caught (every misleading clip had at least two objections), 2 of
+  27 honest clips rejected, 1 kept with a note. On the practice set: 10 of 10 caught, 3 of 10
+  honest rejected (all three judges agreed; a spot-check found real but mild problems in them: a
+  made-up link between two topics, a qualification cut off). On real
   videos, the Sam Altman interview kept 2 deep clips (both beat their best single stretch, 6.5 vs
   5.8 and 4.8 vs 3.3); on the Khan Sir podcast none passed (the single stretch scored higher twice,
   and the judges rejected a clip that pinned Khan Sir's answer to a question from the host's intro,
@@ -351,8 +355,8 @@ and **how we'll measure** it.
      threw away good clips). Pass B is a separate **honesty check, pass or fail**: three judges
      (rules auditor, the speaker's advocate, a viewer who then watches the full video) read every
      piece with up to 75 s of the original before it and 60 s after, and what was cut between
-     pieces, and ask whether the speaker would be surprised or a viewer misled. Any fail or doubt
-     rejects the clip, whatever its score (the BBC Panorama edit, which joined real lines
+     pieces, and ask whether the speaker would be surprised or a viewer misled. Two judges saying
+     fail or unsure reject the clip, whatever its score (one gives a note for the owner) (the BBC Panorama edit, which joined real lines
      spoken almost an hour apart, would pass A and fail B). No deep clip at all is a fine answer.
   6. Cut and edit as usual, but **show joins across time instead of hiding them**: a 4-6 frame
      flash or whip, an optional time chip ("1:28:10" or "later"), and a short audio crossfade (PBS
@@ -373,7 +377,7 @@ and **how we'll measure** it.
   |---|---|---|---|
   | 1 | Long-video handling (item 3) and the topic map (`topics.json`) | M | Yes: the AI reads every part carefully |
   | 2 | The critic and a viral score with reasons (item 4) | S | Yes: fewer weak clips |
-  | 3 | The deep pass: threads, candidates, critic (must beat its single-stretch twin), honesty check (any fail rejects). **Built** | M | |
+  | 3 | The deep pass: threads, candidates, critic (must beat its single-stretch twin), honesty check (two of three objections reject). **Built** | M | |
   | 4 | Join polish: full-sentence checks, no missing references, gentler audio fade, optional soft whoosh on long jumps | S | Yes: better 2-part clips |
   | 5 | Test on three long videos and compare deep clips with regular clips | S | |
 

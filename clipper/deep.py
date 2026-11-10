@@ -18,7 +18,8 @@ Rules (references/picking-moments.md, "Never change what someone meant"): 2-3 pi
 they were said (one cold-open line may go first), whole sentences, 30-75 s, a guest's answer keeps
 the host's question. The narrator's own spoken intro may open a clip; a montage teaser (lines that
 come again later in the video) never. A deep clip is kept only if the blind critic scores it at
-least as high as its own best continuous version, and all three honesty judges pass it.
+least as high as its own best continuous version, and at most one of the three honesty judges
+objects (that judge's reason then goes with the clip as a "check" note for the owner).
 "No deep clip" is a normal answer: research found real long-distance threads are hard to find.
 """
 import argparse
@@ -307,7 +308,7 @@ def report(pdir, cands):
     score = {x['id']: x for x in crit['clips']}
     verdict = {x['id']: x for x in hon.get('clips', [])}
     rows, kept = ['# Deep clips: kept only when the critic scores them at least as high as their own continuous',
-                  '# version AND all three honesty judges pass them.', ''], []
+                  '# version AND at most one of the three honesty judges objects (that one becomes a note).', ''], []
     for c in [c for c in cands if c['kind'] == 'deep']:
         me, tw = score.get(c['id']), score.get(c.get('twin'))
         h = verdict.get(c['id'])
@@ -318,21 +319,25 @@ def report(pdir, cands):
             why.append(f"its continuous version scores higher ({tw['clip_score']} vs {me['clip_score']})")
         if not h:
             why.append('no honesty verdict')
-        elif h['verdict'] != 'pass':
+        elif h['verdict'] == 'fail':
             why.append(f"honesty: {h['verdict']} ({h.get('reason') or ''})")
         ok = not why
+        note = h.get('reason') if ok and h and h['verdict'] == 'check' else None
         line = (f"{'KEEP' if ok else 'no  '} {c['id']:<7} {me['clip_score'] if me else '-':>4}/10 "
                 f"(continuous {tw['clip_score'] if tw else '-'})  \"{c.get('title') or ''}\"  "
                 f"moments {' · '.join(c['moments'])}")
         rows.append(line)
         rows.append(f"     ranges: {c['ranges']}" + ('' if ok else f"   why not: {'; '.join(why)}"))
+        if note:
+            rows.append(f"     CHECK before posting, one honesty judge objected: {note}")
         if ok:
-            kept.append({**c, 'clip_score': me['clip_score'],
+            kept.append({**c, 'clip_score': me['clip_score'], **({'honesty_note': note} if note else {}),
                          'source_line': f"From {len(c['ranges'])} moments of the full video: " + ' · '.join(c['moments'])})
-    best = {}                                    # one deep clip per thread: the best score, then the shorter
+    best = {}                     # one deep clip per thread: the best score, then no honesty note, then the shorter
     for c in kept:
         b = best.get(c['thread'])
-        if not b or (c['clip_score'], -c['duration']) > (b['clip_score'], -b['duration']):
+        rank = lambda x: (x['clip_score'], not x.get('honesty_note'), -x['duration'])
+        if not b or rank(c) > rank(b):
             best[c['thread']] = c
     dropped = [c['id'] for c in kept if best[c['thread']] is not c]
     kept = list(best.values())

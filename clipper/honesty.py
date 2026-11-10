@@ -5,9 +5,11 @@ speaker meant?
                                         run again when the judges have answered: merges them
 
 Three fresh judges read every packet, each in its own role (.claude/agents/clipkaro-honesty.md):
-the rules auditor, the speaker's advocate, and a viewer who then watches the full video. Any
-"fail" or "unsure" rejects the clip: honesty is not a matter of taste, and a single model's judges
-share blind spots, so a majority vote would keep them.
+the rules auditor, the speaker's advocate, and a viewer who then watches the full video. When two
+or three of them say "fail" or "unsure", the clip is rejected. When only one does, the clip is kept
+with a "check" note quoting that judge, for the owner to look at before posting: in testing, every
+honest clip that a single judge rejected had at most a mild problem, while misleading clips were
+caught by two or more judges (the owner decided: being too strict only costs good clips).
 
 A packet holds the stitched words as viewers will hear them; each piece inside its original
 stretch (from 75 s before, or from the question it answers, to 60 s after); what was cut between
@@ -27,6 +29,7 @@ from . import topics as tp
 
 ROLES = ('auditor', 'advocate', 'viewer')
 VERDICTS = {'pass', 'fail', 'unsure'}
+REJECT_AT = 2                    # this many judges saying fail / unsure reject a clip; one gives a note
 BEFORE, AFTER = 75.0, 60.0       # seconds of the original shown around each piece
 VERBATIM_GAP = 180.0             # gaps up to this long are shown word for word
 SOFT_AFTER = 20.0                # look this far after a piece for a softener or correction
@@ -178,7 +181,8 @@ def merge(hdir, clips):
         verdicts = {r: j['verdict'] for r, j in judges.items()}
         bad = [r for r, v in verdicts.items() if v != 'pass']
         reason = '; '.join(f"{r}: {judges[r].get('reason', '')}" for r in bad)
-        out.append({'id': c['id'], 'verdict': 'pass' if not bad else 'fail', 'judges': verdicts, 'reason': reason})
+        verdict = 'fail' if len(bad) >= REJECT_AT else 'check' if bad else 'pass'
+        out.append({'id': c['id'], 'verdict': verdict, 'judges': verdicts, 'reason': reason})
     return out, probs, missing
 
 

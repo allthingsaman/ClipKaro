@@ -74,10 +74,11 @@
   dropped. "No deep clip" is a normal answer.
 - **Only when it's honest:** three separate AI judges (a rules checker, one who speaks for the
   person in the clip, and a viewer who then watches the full video) read each piece inside its
-  original minutes, and everything cut between the pieces. If any one of them says "fail" or "not
-  sure", the clip is dropped, whatever its score. Tested on 56 clips the
+  original minutes, and everything cut between the pieces. If two or three of them say "fail" or
+  "not sure", the clip is dropped, whatever its score. If only one does, the clip is kept and
+  Claude shows you that judge's reason, so you can look before posting. Tested on 56 clips the
   judges had never seen, about half of them made to mislead: all 29 misleading clips were caught,
-  and 3 of the 27 honest ones were rejected too (the price of being strict).
+  2 of the 27 honest ones were dropped, and 1 was kept with a note.
 - **Joins are visible:** where a clip skips more than 20 seconds, a short white flash shows the
   jump, and the posting caption starts with "From 2 moments of the full video: 35:30 · 1:03:01"
   plus the full video link.

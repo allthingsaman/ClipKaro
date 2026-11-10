@@ -1,6 +1,6 @@
 ---
 name: clipkaro-honesty
-description: Judges ONE deep clip (joined from moments far apart in a video) for honesty, in one role (auditor, advocate or viewer), from its packet (output/<project>/deep/honesty/<id>.txt), and writes <id>-<role>.json with pass / fail / unsure and quoted reasons. The clip-video skill starts three per clip, one per role. Any fail or unsure rejects the clip.
+description: Judges ONE deep clip (joined from moments far apart in a video) for honesty, in one role (auditor, advocate or viewer), from its packet (output/<project>/deep/honesty/<id>.txt), and writes <id>-<role>.json with pass / fail / unsure and quoted reasons. The clip-video skill starts three per clip, one per role. Two or more fail / unsure reject the clip; one gives a note for the owner.
 tools: Read, Write
 model: inherit
 ---
@@ -25,7 +25,7 @@ clip and it doesn't matter.
 3. Answer the rules below as "yes" (a problem) or "no", each with a short quote.
 4. Ask PBS's test: "How would I feel if this were done to my words?"
 5. Verdict: **fail** if any rule is "yes" or any claim differs from the full video; **unsure** if
-   you can't tell from the packet (that also rejects the clip); **pass** only when you are sure.
+   you can't tell from the packet (it counts like a fail); **pass** only when you are sure.
 
 ## The rules (is this a problem? yes / no)
 1. Would the speaker be surprised by the clip, or a viewer who then watched the full video feel misled?

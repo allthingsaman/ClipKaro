@@ -542,11 +542,14 @@ and does the next stage by itself:
    other moments about the same names; and flags from code (a piece opening on "he / वो / isliye"
    or on "haan / exactly", a possible softener within 20 s after a piece). Three fresh
    `clipkaro-honesty` judges read it, each in a role: a **rules auditor**, the **speaker's
-   advocate** ("would they object?") and a **viewer** who then watches the full video. **Any fail
-   or unsure rejects the clip**: honesty is not taste, and judges from one model share blind spots,
-   so a majority vote would keep them. They never see the critic's opinion or who made the clip.
+   advocate** ("would they object?") and a **viewer** who then watches the full video. **When two
+   or three say fail or unsure, the clip is rejected; when only one does, it is kept with a
+   `check` note** quoting that judge, for the owner to look at before posting. (The first rule was
+   "any one rejects", but every honest clip a single judge rejected had at most a mild problem,
+   and the owner, who checks every clip anyway, preferred fewer lost clips.) The judges never see
+   the critic's opinion or who made the clip.
 6. **The report** (`deep/report.txt`, `deep/kept.json`): one clip per thread, the best that passed
-   both. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
+   both (a clip without a note wins a tie). It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
    caption: "From 2 moments of the full video: 0:08 · 22:53", plus the full video link.
 
 **Joins are shown, not hidden.** At a join that skips more than 20 s, `cut` adds a short white
@@ -560,8 +563,10 @@ helper checked every label. The judges never knew which was which. On a practice
 prompt was tuned; then a held-back set of 29 misleading and 27 honest clips was judged once, exactly as in real use:
 **all 29 misleading clips were caught** (the true miss rate is very likely under 10%), and 3 of the
 27 honest ones were rejected too, each by one judge on a close call (for example a clip ending
-7 s before the speaker adds "but in Bihar your life is in danger"). Rejecting a few honest clips
-is the price of being strict; letting a misleading one through is not acceptable.
+7 s before the speaker adds "but in Bihar your life is in danger"). That was too strict for the
+owner, so the rule became "two objections reject, one is a note", and the test was scored again
+with a second judge for every clip: still **29 of 29 caught** (every misleading clip drew at least
+two objections), 2 of 27 honest clips rejected and 1 kept with a note.
 On real videos: the Sam Altman interview kept 2 deep clips; on the Khan Sir podcast none passed (the
 continuous versions scored higher twice, and the judges rejected a clip that pinned Khan Sir's
 answer to a question from the host's intro). "No deep clip" is a normal answer.

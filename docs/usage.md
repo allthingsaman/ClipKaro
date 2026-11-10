@@ -138,8 +138,10 @@ prediction of views: views also depend on your channel, the timing and luck.
 | "do a deep pass on <video>" | the same, for a video you've already clipped |
 | "show me the deep clip report" | Claude shows `deep/report.txt`: every deep clip tried, its clip score next to the best single stretch, and why it was kept or not |
 
-A deep clip is kept only when it scores at least as well as the best single stretch, **and** three
-separate honesty judges agree it keeps what the person meant. Often no deep clip passes: that's
+A deep clip is kept only when it scores at least as well as the best single stretch, **and** at
+least two of three separate honesty judges agree it keeps what the person meant. If one judge has
+a doubt, the clip is kept and Claude tells you that judge's reason, so you can check it before
+posting. Often no deep clip passes: that's
 normal, and Claude says so. A kept clip shows a short white flash where it jumps in time, and its
 posting caption starts with a line like "From 2 moments of the full video: 35:30 · 1:03:01" and the
 full video link. A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for

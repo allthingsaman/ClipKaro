@@ -129,11 +129,13 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
    clip goes on only if it scores at least as high as its twin.
 5. `python run.py honesty <project>`: for each packet, start 3 **`clipkaro-honesty`** helpers at
    once, one per role (prompt e.g. "Role: viewer. Packet: output/<project>/deep/honesty/d1-c1.txt").
-   Run it again to merge: any fail or unsure rejects the clip. Never override a rejection.
+   Run it again to merge: two or more fail / unsure reject the clip (never override that); one
+   keeps it with a `check` note quoting that judge.
 6. `python run.py deep <project>` again: `deep/report.txt` lists the kept deep clips. Add them to
    clips.json as extra clips, each with `"deep": {"moments": [...]}` and its `source_line`
    ("From 2 moments of the full video: 0:08 · 22:53") at the start of its caption, plus "Full
-   video: <link>". `cut` shows each jump across time with a short flash.
+   video: <link>". `cut` shows each jump across time with a short flash. When a kept clip has an
+   `honesty_note` (one judge objected), tell the user that judge's reason in your final message.
 New helper types appear after Claude Code restarts; until then start general helpers and tell
 them to read `.claude/agents/<name>.md` (everything after its front matter is their instructions).
 "No deep clip" is a normal, honest answer: say so plainly.
