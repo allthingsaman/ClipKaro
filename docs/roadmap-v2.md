@@ -138,7 +138,7 @@ and **how we'll measure** it.
 - **Measure:** the same picks whether a video is 20 minutes or 3 hours; no part of the video skipped.
 
 #### 4. A second opinion before cutting (S)
-- **Status: built (November 2026), phase 2 of deep clips (item 17); the user's blind check is next.**
+- **Status: built and blind-checked (November 2026), phase 2 of deep clips (item 17).**
   `run.py critic` + the `clipkaro-critic` helper (3 blind runs), sound cues for every video
   (`run.py sound`), focus reads for the creator's teaser and replay peaks, and a repair round.
 - **Tested on 5 videos** (a 2-hour and a 3-hour Hinglish podcast, a 68-minute English interview, a
@@ -156,8 +156,17 @@ and **how we'll measure** it.
     unnamed "he"). After one repair round by a fresh editor who never saw v1.1's picks, two pairs
     of dropped pieces became the video's two best clips (7.3 and 6.9).
   - **Design change from testing:** a fixed bar of 6/10 rejected half of a good interview (calm,
-    informative answers score low on emotion). The score now ranks clips within a video; only
-    clips under 5/10 are left out.
+    informative answers score low on emotion). The score now ranks clips within a video.
+  - **The user's blind check (23 clips they hadn't seen, plain cuts):** they would post 9 of the
+    critic's 12 favourites (2 no, 1 maybe) and **all 11** of the ideas it had dropped or rated
+    weak. So the critic's verdicts did not match the user's taste as a filter (n = 23, one
+    rater, who rated generously because the clips were unedited). The two "no"s: a clip cut
+    mid-sentence (code's boundary check catches it; the test skipped that step) and one without
+    context; the "maybe" had a slow hook; one more started on a false start ("1992 se leke,
+    1992..."). **Change:** the critic no longer throws clips away. Its gates became notes for the
+    repair round, all ideas are ranked, and hard facts (mid-sentence ends, false starts) come from
+    code and are shown to the critic. Because a yes/no test can't check a ranking when almost
+    everything is a yes, the final v1.1-vs-v2 test will ask "which of these two is better?".
   - **Known limit:** on close calls in story videos, a "stands alone" verdict can flip between two
     rounds (one clip passed in round 1 and failed in round 2). The majority of 3 runs reduces it.
   - **By-products:** the critic flags likely factual slips (`check-facts`, e.g. a surrender placed

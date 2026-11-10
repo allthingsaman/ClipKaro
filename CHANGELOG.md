@@ -34,10 +34,11 @@
   each time in a different order and without knowing who picked it or what score it got. Two
   checks are pass or fail: would a stranger understand the clip on its own, and does it end with
   its payoff (not just before it)? Then it scores the hook, the payoff, the feeling, how shareable
-  it is and whether it has a line worth quoting. Clips that fail a check are dropped; the rest are
-  ranked by their **clip score** out of 10, with reasons that quote the clip. The score compares
-  the moments of one video and is not a prediction of views. If the three runs disagree, Claude
-  reads the clip itself.
+  it is and whether it has a line worth quoting. All ideas are ranked by their **clip score** out
+  of 10, with reasons that quote the clip, and the best ones are used. A failed check becomes a
+  note for the repair round, never a reason to throw a clip away: in the blind check, every clip
+  the critic would have dropped was one the creator would post. The score compares the moments of
+  one video and is not a prediction of views.
 - **Short videos too:** Claude now writes a shortlist of about twice the clips you want, and the
   critic picks the best of them.
 - **Every video gets sound hints**, not only popular ones: right after transcribing, ClipKaro
@@ -49,10 +50,11 @@
   YouTube "most replayed" graph (only popular videos have one), points at a moment nobody picked,
   that stretch is read again carefully. Those hints never rescue a weak clip; they only decide
   between two clips that are nearly equal.
-- **A repair round:** like an editor after notes, Claude fixes good moments the critic dropped for
-  a fixable reason (a teaser without its answer, an unnamed "he", a slow start) and lets the
-  critic judge them once more. In testing, two pairs of dropped pieces became a video's two best
-  clips.
+- **A repair round:** like an editor after notes, Claude fixes the top clips that have a note (a
+  teaser without its answer, an unnamed "he", a slow start) and lets the critic judge them once
+  more. In testing, two pairs of pieces with such notes became a video's two best clips.
+- **False starts:** `cut --check` now also warns when a clip may open with a restarted phrase
+  ("1992 se leke, 1992 peak ho gaya"), so it can start at the second take.
 - **Things to check before posting:** the critic flags claims that look wrong (`check-facts`) and
   misheard words that would look wrong in the captions ("farts" for "fads"), which Claude fixes
   before cutting. Neither changes a score.

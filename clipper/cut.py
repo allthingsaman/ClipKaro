@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from . import facecam as fclib
-from .common import (H, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, probe, project_dir, save_json,
+from .common import (H, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
                      settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
@@ -149,7 +149,26 @@ def boundary_warnings(ranges, words):
         if nxt and not is_sentence_end(last['w']) and nxt['s'] - last['e'] < 0.6:
             warns.append(f'ends mid-sentence: "...{" ".join(w["w"] for w in words[max(0, i1 - 5):i1 + 1])}" '
                          f'is followed by "{" ".join(w["w"] for w in words[i1 + 1:i1 + 7])}..."')
+        fs = false_start(words, i0, i1)
+        if fs:
+            warns.append(f'may start with a false start: "{fs[0]}" is said again {fs[1]:.1f} s later; if it is '
+                         f'a restart, begin at the second one ({fs[2]:.2f})')
     return warns
+
+
+def false_start(words, i0, i1, max_k=3, within=3.5, gap_words=5):
+    """A clip that opens with a restarted phrase ("1992 se leke, 1992 peak ho gaya"): the first 1-3
+    words come again within a few seconds. Returns (words, gap, start of the repeat) or None."""
+    toks = [norm_token(w['w']) for w in words[i0:i1 + 1]]
+    for k in range(max_k, 0, -1):
+        head = toks[:k]
+        if not all(head) or (k == 1 and len(head[0]) < 3):
+            continue                             # one short word ("to", "ki") repeats by chance
+        for j in range(k, min(len(toks) - k + 1, 2 * k + gap_words + 1)):
+            if toks[j:j + k] == head and words[i0 + j]['s'] - words[i0]['s'] <= within:
+                return ' '.join(w['w'].strip() for w in words[i0:i0 + k]), \
+                    words[i0 + j]['s'] - words[i0]['s'], words[i0 + j]['s'] - 0.12
+    return None
 
 
 def drift_warnings(clip, cands):

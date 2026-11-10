@@ -24,6 +24,10 @@ it and feel it was worth watching?
   They can be wrong. A laugh in the room is no proof that viewers will laugh, and no marker does not
   mean the moment is dull.
 - `[--- cut ... ---]` means the clip joins a later moment of the video.
+- CHECKED BY CODE: facts measured on the word times, e.g. the clip ends mid-sentence (the speaker
+  goes on after it) or may start with a false start. They are reliable: a sentence that goes on
+  after the clip fails the ending gate unless what follows is clearly a new thought; a false start
+  lowers the hook.
 - AFTER THE CLIP: what comes right after the clip ends. The viewer never hears it. Use it only for
   the ending gate.
 

@@ -191,7 +191,7 @@ output/<project>/
         cues.json                sound cues: laughter, applause, both talking at once, lively spots
     clips.json                   the AI editor's picks (for a short video, first its shortlist)
     critic/                      the critic's packets (run-N.txt), answers (run-N.json), plan.json, critic.json
-    critic.txt                   every clip idea with its clip score and reasons (KEPT, DISPUTED, WEAK, DROPPED)
+    critic.txt                   every clip idea ranked by clip score, with reasons and fix / check notes
     romanize.json                Roman spellings of Hindi words (Hindi/Hinglish only)
     brand.json                   caption colours
     clips/
@@ -479,24 +479,27 @@ about twice the clips wanted that the AI editor writes for a short video.
   inside, not in the words after the cut). Then five scores from 0 to 5, each level described in
   words: hook (weight 3), payoff (3), emotion (2), "who would a viewer send this to?" (2), a line
   worth quoting (1).
-- **Merging (code):** a gate failed in 2 of 3 runs drops the clip. Clip score = the weighted mean,
-  shown out of 10 (9+ Standout, 7+ Strong, 6+ Good, 5+ OK). Under 5 a clip is weak and never used.
-  The score **ranks the clips of one video**: a calm, informative clip is not weak (a fixed bar of
-  6 rejected half of a good interview in testing). Runs that split on a gate make a clip
-  "disputed": the AI editor reads it itself. Close calls are not settled by comparing two clips
-  side by side: in research, such judges pick the more confident-sounding one.
+- **Merging (code):** clip score = the weighted mean, shown out of 10 (9+ Standout, 7+ Strong, 6+
+  Good, 5+ OK, below that Weak), and it **ranks the clips of one video**. A gate failed in 2 of 3
+  runs becomes a `fix?` note and a split gate a `check` note: they feed the repair round and
+  **never throw a clip away**. Two tests shaped this: a fixed bar of 6 rejected half of a good
+  interview (calm, informative answers score low on emotion), and in the user's blind check
+  (23 unseen clips) all 11 clips the critic had dropped or rated weak were ones they'd post.
+  Hard facts come from code and are shown to the critic: a sentence that goes on after the clip,
+  or a possible false start (`cut.false_start`). Close calls are not settled by comparing two
+  clips side by side: in research, such judges pick the more confident-sounding one.
 - **Hints, after scoring:** the creator's teaser, a clean replay peak and laughter add a small bonus
   (at most 0.3) that only reorders near-ties; a video without them loses nothing. Replay peaks: the
   first bin and ads / intros left out, a local maximum at least half the highest bin and 1.5x the
   median, at most 5 (our own starting values).
 - **Checks:** the score's link with clip length and with the place in the packet (a sign of bias),
   how often the gates agree, and how much the runs differ.
-- **Repair round (once):** the AI editor fixes good moments dropped for a fixable reason (adds the
-  line that answers a teaser or names "he", starts later, joins two halves of one story, always in
-  the order said) and runs `critic --fresh --from clips` on a shortlist of KEPT and repaired clips.
+- **Repair round (once):** the AI editor fixes the top clips that have a note, a false start or a
+  weak hook (adds the line that answers a teaser or names "he", starts later, joins two halves of
+  one story, always in the order said) and runs `critic --fresh --from clips` on that shortlist.
 - **Extras that never change a score:** `check-facts` tags (a claim that looks wrong) and caption
   fixes (misheard words, applied to `words.json` for the picked clips before cutting).
-- **Output:** `critic.txt` (KEPT best first, DISPUTED, WEAK, DROPPED, with reasons) and
+- **Output:** `critic.txt` (every idea best first, with reasons and notes) and
   `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
 
 ### 5.5 Checking the cut points (`cut.snap_range`, `cut.boundary_warnings`)

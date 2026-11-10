@@ -86,32 +86,27 @@ sees your scores, titles, the replay curve or anything about the channel.
    while `fetch`, `cut` or `edit` is running (memory). Without helpers, judge the runs yourself
    one at a time, writing each `run-N.json` before reading the next packet.
 3. Run `python run.py critic <project>` again. If it names a run with problems, run only that
-   helper again and pass it the problem lines. It writes `critic.txt`: KEPT (both pass/fail checks
-   passed, ranked by clip score, best first), DISPUTED, WEAK (under 5/10) and DROPPED (failed a
-   check: needs earlier context, or the payoff comes after the cut), with reasons. The score ranks
-   clips **within this video**; a calm, informative clip is not weak.
-4. Pick the final 3–8 clips from the top of KEPT. Read every DISPUTED clip yourself and decide
-   (a confident voice is not content; the picture may supply what the words lack, e.g. a photo
-   that names the people). Of clips that overlap at all, keep the better one; at most
-   one per topic unless the ideas clearly differ; if a third of a long video has no pick but holds
-   a KEPT clip of 8 or more, swap it in for the weakest pick. **Fewer clips beat weak ones**: never
-   fill up with WEAK or DROPPED clips. If nothing is kept, say so and offer the best two, marked
-   "weak". Where the critic suggests a stronger start (or a cold open: that line first, ~5 s, then
-   the clip) for a KEPT or DISPUTED clip, you may use it with `run.py find` if the clip still makes
-   sense. A WEAK or DROPPED clip comes back only after being judged again: put the improved
-   version in the shortlist and run `python run.py critic <project> --fresh`.
-5. **Repair round (once, when it helps).** Like an editor after notes, look at the DROPPED and
-   WEAK ideas that are good moments with a fixable flaw, and repair them:
+   helper again and pass it the problem lines. It writes `critic.txt`: every idea **ranked by clip
+   score, best first**, with the critic's reasons, and notes: `fix?` (needs earlier context, or the
+   payoff comes after the cut) and `check` (the runs disagreed). Notes are for the repair round;
+   the critic never throws a clip away (in the user's blind check, clips it would have dropped were
+   ones they'd post). The score ranks clips **within this video**; calm, informative clips are fine.
+4. Pick the final 3–8 clips from the top. Of clips that overlap at all, keep the better one; at
+   most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
+   holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
+   content: read close calls yourself.
+5. **Repair round (once, when it helps).** Like an editor after notes, fix the clips you'd pick (or
+   good ones just below) that have a `fix?` note, a false start, or a weak hook:
    - "never says who / what" or a teaser with no answer: add the short line that names it or
      gives the answer, as a second piece in the order it was said (or a ~5 s cold open);
-   - opens on "जो / वो / so my point was" or a slow line: start where the subject is named, or at
-     the suggested stronger start;
-   - the payoff comes after the cut: end later, at the end of that sentence;
-   - two halves of one story dropped separately: join them (2–3 pieces, in the order said).
-   Follow "Never change what someone meant" in `references/picking-moments.md`. Then write a
-   shortlist to clips.json (the KEPT clips you'd pick, plus the repaired ones; at most 16) and run
-   `python run.py critic <project> --fresh --from clips`, start the 3 helpers again, and pick from
-   the new `critic.txt`. Skip this when the KEPT list already has enough strong clips.
+   - opens on "जो / वो / so my point was", a false start or a slow line: start where the subject
+     is named, at the second take, or at the suggested stronger start;
+   - the payoff comes after the cut, or the sentence goes on: end later, at the end of that thought;
+   - two halves of one story: join them (2–3 pieces, in the order said).
+   Follow "Never change what someone meant" in `references/picking-moments.md`. When you changed
+   any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16),
+   run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
+   from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
    third clip of a shortlist), its `ranges` exactly as listed, and `"clip_score"`. For the picked
    clips, apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") in
@@ -131,9 +126,9 @@ Use the `start` of the hook's first words and the `end` of the payoff's last wor
 clip can open with leftover words from the previous sentence.
 
 Before moving on, show the user a short table: #, title, length, hook line, clip score (e.g.
-"8/10 Strong"). Below it, one line on how many ideas the critic dropped and why (e.g. "4 dropped:
-3 needed earlier context, 1 ended before the answer"), and this line: "Clip scores judge how
-well-made each clip looks from its words and sound; they are not a prediction of views."
+"8/10 Strong"). Below it, one line on what the repair round fixed (e.g. "2 clips repaired: one
+now names who he is, one ends on the answer"), and this line: "Clip scores judge how well-made
+each clip looks from its words and sound; they are not a prediction of views."
 List clips the critic tagged `check-facts` with the claim to check (the user decides before
 posting). Don't wait for approval unless they asked to review picks first. Keep going.
 

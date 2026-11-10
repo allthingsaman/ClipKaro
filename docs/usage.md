@@ -122,8 +122,9 @@ scenes; you don't need to type that part.
 ### The second opinion (every video)
 | You write | What happens |
 |---|---|
-| (nothing: it's automatic) | before anything is cut, a second AI editor, the **critic**, checks every clip idea three times, without knowing who picked it. A clip that needs earlier context, or whose punchline comes after the cut, is dropped. The rest get a **clip score** out of 10, with reasons |
-| "show me why you dropped those" | Claude shows `critic.txt`: every idea with its score, the reasons and what was wrong |
+| (nothing: it's automatic) | before anything is cut, a second AI editor, the **critic**, checks every clip idea three times, without knowing who picked it. Every idea gets a **clip score** out of 10, with reasons, and the best ones are used. A clip that needs earlier context, or whose punchline comes after the cut, gets a note, and Claude repairs it |
+| "show me all the clip ideas" | Claude shows `critic.txt`: every idea with its score, the reasons and any notes |
+| "give me all the good clips" | more clips than usual, taken from the top of the critic's list |
 | "give me only clips with 7 or more" | only clips with a clip score of 7/10 or more are used |
 
 A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,
@@ -164,7 +165,7 @@ Everything goes into `output/<project>/`. `<project>` is a folder named after th
 | `edited/01-title.srt` | the captions as a separate subtitle file, for apps that accept one |
 | `clips/01-title.mp4` | the cut videos without zooms, captions or sounds (also fine to post) |
 | `clips.json` | the chosen moments: titles, times, clip scores, highlighted words and **captions to post** |
-| `critic.txt` | every clip idea with its clip score and the critic's reasons, also the ones that were dropped |
+| `critic.txt` | every clip idea, ranked by its clip score, with the critic's reasons and notes |
 | `transcript/transcript.txt` | everything that was said, with times |
 
 Claude's last message lists each clip with its length, file and a caption to post.

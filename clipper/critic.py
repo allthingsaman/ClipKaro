@@ -19,12 +19,14 @@ judge's scores, and warnings don't undo that (research for phase 2).
 The sheet (.claude/agents/clipkaro-critic.md): two pass/fail gates (stands alone, complete ending)
 and five 0-5 scores (hook x3, payoff x3, emotion x2, send-ability x2, quotable x1).
 
-Merging (here, in code): a gate failed in 2 of 3 runs drops the clip. Clip score = the weighted
-mean, out of 10, used to rank the clips of this one video. Under 5/10 a clip is weak (its hook and
-payoff are below "clear") and never used; a calm, informative clip is not weak. Runs that disagree
-make a clip "disputed": Claude reads it itself. Replay peaks, the creator's teaser and the sound's
-liveliness are attached afterwards and only break near-ties; they never rescue a weak clip and a
-video without them loses nothing.
+Merging (here, in code): the clip score (the weighted mean, out of 10) ranks the clips of this one
+video. A gate failed in 2 of 3 runs becomes a "fix?" note for the repair round (needs context, the
+payoff comes after the cut), and a split gate a "check" note; neither throws a clip away. In the
+user's blind check (Nov 2026) every clip the gates had dropped, and every clip under 5/10, was one
+they would post. Replay peaks, the creator's teaser and the sound's liveliness are attached
+afterwards and only break near-ties; a video without them loses nothing. Hard facts about the
+words (a sentence that goes on after the clip, a false start) come from code and are shown to the
+critic as facts.
 
 The score judges how well-made a clip looks from its words and sound. It is not a prediction of
 views. Every result is also logged to output/clip-log.csv, to tune the bar later from what the
@@ -40,11 +42,12 @@ import statistics
 import time
 
 from . import sound
+from .cut import boundary_warnings
 from .common import OUTPUT, die, fmt_ts, load_json, norm_token, project_dir, save_json
 from .parts import est_tokens
 
 RUNS = 3
-FLOOR = 5.0             # below this a clip is weak (hook and payoff below "clear"): never used
+WEAK = 5.0              # below this the band is "Weak" (a label only: the user's blind check kept such clips)
 WEIGHTS = {'hook': 3, 'payoff': 3, 'emotion': 2, 'share': 2, 'quote': 1}
 DIMS = list(WEIGHTS)
 GATES = {'alone': 'stands alone', 'ending': 'complete ending'}
@@ -64,7 +67,7 @@ LANG_NOTE = {
 
 
 def band(score):
-    for lo, name in ((9, 'Standout'), (7, 'Strong'), (6, 'Good'), (FLOOR, 'OK')):
+    for lo, name in ((9, 'Standout'), (7, 'Strong'), (6, 'Good'), (WEAK, 'OK')):
         if score >= lo - 1e-9:
             return name
     return 'Weak'
@@ -128,6 +131,9 @@ def clip_block(tr, cues, label, ranges):
             here = ' '.join(at.get(i, []))
             rows.append(f'[{mmss(off + t0 - a)}] {text}' + (f' {here}' if here else ''))
         off += b - a
+    facts = boundary_warnings(ranges, tr.words)
+    if facts:
+        rows.append('CHECKED BY CODE (facts): ' + '; '.join(facts))
     rows.append(f'AFTER THE CLIP (NOT IN THE CLIP, the viewer never hears this): {tr.after(ranges[-1][1]) or "(the video ends)"}')
     return '\n'.join(rows)
 
@@ -404,33 +410,21 @@ def merge(pdir, plan, answers):
             if t is not None:
                 res['better_start'] = {'t': round(t, 2), 'text': q}
                 break
+        # The gates are notes for the repair round, never a reason to throw a clip away: in the
+        # user's blind check (Nov 2026) every clip the gates had dropped was one they'd post.
         need = len(runs) // 2 + 1
         failed = [g for g in GATES if gates[g]['fail'] >= need]
-        split = [g for g in GATES if gates[g]['fail'] or gates[g]['unsure']]
-        if failed:
-            res['status'] = 'dropped'
-            g = failed[0]
-            res['reason'] = f"{GATES[g]}: {gates[g]['why'][0] if gates[g]['why'] else 'failed'}"
-        elif res['clip_score'] < FLOOR - 1e-9:
-            res['status'] = 'weak'
-            low = min(DIMS, key=lambda d: scores[d]['mean'] * WEIGHTS[d])
-            res['reason'] = f"score {res['clip_score']}/10; weakest: {low} ({scores[low]['why']})"
-        elif split:
-            res['status'] = 'disputed'
-            res['reason'] = '; '.join(f"{GATES[g]}: {gates[g]['pass']} pass, {gates[g]['fail']} fail, "
-                                      f"{gates[g]['unsure']} unsure ({gates[g]['why'][0]})" for g in split)
-        elif spread_big and res['clip_score'] < FLOOR + 1:
-            res['status'] = 'disputed'
-            res['reason'] = 'near the floor and the runs disagree on ' + ', '.join(
-                f"{d} {scores[d]['runs']}" for d in spread_big)
-        else:
-            res['status'] = 'kept'
-            res['reason'] = ''
+        split = [g for g in GATES if g not in failed and (gates[g]['fail'] or gates[g]['unsure'])]
+        notes = [f"fix? {GATES[g]}: {gates[g]['why'][0] if gates[g]['why'] else 'failed'}" for g in failed]
+        notes += [f"check {GATES[g]} ({gates[g]['pass']} of {len(runs)} runs passed): {gates[g]['why'][0]}"
+                  for g in split]
+        res['status'] = 'fix' if failed else 'check' if split else 'clean'
+        res['notes'] = notes
+        res['reason'] = '; '.join(notes)
         res['hints'] = hints(c, pk, teased, cues)
         res['rank_score'] = round(res['clip_score'] + bonus(res['hints']), 2)
         out.append(res)
-    order = {'kept': 0, 'disputed': 1, 'weak': 2, 'dropped': 3}
-    out.sort(key=lambda x: (order[x['status']], -x['rank_score'], x['ranges'][0][0]))
+    out.sort(key=lambda x: (-x['rank_score'], x['ranges'][0][0]))
     checks = {
         'score_vs_length': spearman([x['clip_score'] for x in out], [x['duration'] for x in out]),
         'score_vs_position': spearman([x['clip_score'] for x in out], [x['position'] for x in out]),
@@ -440,7 +434,7 @@ def merge(pdir, plan, answers):
         'mean_spread': round(statistics.mean(max(x['scores'][d]['runs']) - min(x['scores'][d]['runs'])
                                              for x in out for d in DIMS), 2),
     }
-    return {'project': pdir.name, 'pool': plan['pool'], 'floor': FLOOR, 'weights': WEIGHTS, 'runs': len(answers),
+    return {'project': pdir.name, 'pool': plan['pool'], 'weights': WEIGHTS, 'runs': len(answers),
             'peaks': pk, 'checks': checks, 'clips': out, 'made': time.strftime('%Y-%m-%d %H:%M')}
 
 
@@ -466,44 +460,37 @@ def hint_text(h):
 
 def write_txt(pdir, doc):
     cl = doc['clips']
-    count = {s: sum(1 for x in cl if x['status'] == s) for s in ('kept', 'disputed', 'weak', 'dropped')}
-    rows = [f"# Clip scores for {len(cl)} clip ideas ({doc['runs']} blind runs). "
-            f"{count['kept']} kept, {count['disputed']} disputed, {count['weak']} weak (under {FLOOR:g}/10), "
-            f"{count['dropped']} dropped.",
+    count = {s: sum(1 for x in cl if x['status'] == s) for s in ('clean', 'check', 'fix')}
+    rows = [f"# Clip scores for {len(cl)} clip ideas ({doc['runs']} blind runs), best first. "
+            f"{count['fix']} have a note to fix, {count['check']} a note to check.",
             '# A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,',
             '# shareability), compared with the other moments of this video. It is not a prediction of views.',
-            "# Pick the top of KEPT, best first (the rank includes a tiny hint bonus that only reorders near-ties).",
-            '# Read DISPUTED clips yourself. Phase-1 rules still apply: no overlap, one per topic, coverage.', '']
-    titles = {'kept': 'KEPT (best first)', 'disputed': 'DISPUTED (read these yourself and decide)',
-              'weak': f'WEAK (under {FLOOR:g}/10: never used)', 'dropped': 'DROPPED (failed a gate: never used)'}
-    for st in ('kept', 'disputed', 'weak', 'dropped'):
-        group = [x for x in cl if x['status'] == st]
-        if not group:
-            continue
-        rows.append(f'== {titles[st]} ==')
-        for x in group:
-            span = ' + '.join(f'{fmt_ts(a).split(".")[0]}-{fmt_ts(b).split(".")[0]}' for a, b in x['ranges'])
-            topic = f"  [{x['topic']}]" if x.get('topic') else ''
-            rows.append(f"{x['id']:<7} {x['clip_score']:>4}/10 {x['band']:<13} {span} ({x['duration']:.0f} s)  "
-                        f"\"{x.get('title') or ''}\"{topic}")
-            sc = x['scores']
-            rows.append('   ' + ' · '.join(f"{d} {sc[d]['mean']:.1f} \"{sc[d]['why']}\"" for d in DIMS))
-            if x['reason']:
-                rows.append(f"   why {st}: {x['reason']}")
-            h = hint_text(x['hints'])
-            if h:
-                rows.append(f'   hints: {h}')
-            if x['tags']:
-                rows.append(f"   tags: {', '.join(x['tags'])}")
-            if x.get('fixes'):
-                rows.append('   caption fixes to check: ' + ' · '.join(f'"{a}" -> "{b}"' for a, b in x['fixes']))
-            if x.get('sensitive'):
-                rows.append(f"   sensitive: {', '.join(x['sensitive'])}")
-            if x['better_start']:
-                bs = x['better_start']
-                rows.append(f"   a stronger start may be at {fmt_ts(bs['t'])}: \"{bs['text']}\"")
-            rows.append(f"   ranges: {x['ranges']}")
-        rows.append('')
+            '# Pick from the top (the rank includes a tiny hint bonus that only reorders near-ties). A "fix?" note',
+            '# (needs context, the payoff comes after the cut) is for the repair round, not a reason to drop a',
+            '# clip. Phase-1 rules still apply: no overlap, one per topic, coverage.', '']
+    for n, x in enumerate(cl, 1):
+        span = ' + '.join(f'{fmt_ts(a).split(".")[0]}-{fmt_ts(b).split(".")[0]}' for a, b in x['ranges'])
+        topic = f"  [{x['topic']}]" if x.get('topic') else ''
+        rows.append(f"{n:>2}. {x['id']:<7} {x['clip_score']:>4}/10 {x['band']:<9} {span} ({x['duration']:.0f} s)  "
+                    f"\"{x.get('title') or ''}\"{topic}")
+        sc = x['scores']
+        rows.append('    ' + ' · '.join(f"{d} {sc[d]['mean']:.1f} \"{sc[d]['why']}\"" for d in DIMS))
+        for note in x.get('notes') or []:
+            rows.append(f'    {note}')
+        h = hint_text(x['hints'])
+        if h:
+            rows.append(f'    hints: {h}')
+        if x['tags']:
+            rows.append(f"    tags: {', '.join(x['tags'])}")
+        if x.get('fixes'):
+            rows.append('    caption fixes to check: ' + ' · '.join(f'"{a}" -> "{b}"' for a, b in x['fixes']))
+        if x.get('sensitive'):
+            rows.append(f"    sensitive: {', '.join(x['sensitive'])}")
+        if x['better_start']:
+            bs = x['better_start']
+            rows.append(f"    a stronger start may be at {fmt_ts(bs['t'])}: \"{bs['text']}\"")
+        rows.append(f"    ranges: {x['ranges']}")
+    rows.append('')
     ck = doc['checks']
     rows.append('== CHECKS ==')
     warn = []
@@ -523,10 +510,14 @@ def log(pdir, doc):
     """One row per clip idea in output/clip-log.csv (rows of this project are replaced)."""
     cols = ['date', 'project', 'id', 'start', 'duration', 'language', 'clip_score', 'status', *DIMS,
             'alone_fail', 'ending_fail', 'laughter_s', 'both_talk_s', 'replay', 'teased', 'picked', 'user_decision']
-    old = []
+    old, kept = [], {}
     if LOG.exists():
         with open(LOG, newline='', encoding='utf-8') as f:
-            old = [r for r in csv.DictReader(f) if r.get('project') != pdir.name]
+            for r in csv.DictReader(f):
+                if r.get('project') != pdir.name:
+                    old.append(r)
+                elif r.get('user_decision') or r.get('picked'):    # the user's verdicts survive a re-run
+                    kept[(r.get('id'), str(r.get('start')))] = (r.get('picked', ''), r.get('user_decision', ''))
     lang = (load_json(pdir / 'project.json', {}) or {}).get('language', '')
     for x in doc['clips']:
         h = x['hints']
@@ -537,7 +528,8 @@ def log(pdir, doc):
                     'laughter_s': (h.get('lively') or {}).get('laughter_s', 0),
                     'both_talk_s': (h.get('lively') or {}).get('both_talk_s', 0),
                     'replay': (h.get('replay') or {}).get('strength', ''), 'teased': int(bool(h.get('teased'))),
-                    'picked': '', 'user_decision': ''})
+                    'picked': kept.get((x['id'], str(x['ranges'][0][0])), ('', ''))[0],
+                    'user_decision': kept.get((x['id'], str(x['ranges'][0][0])), ('', ''))[1]})
     LOG.parent.mkdir(exist_ok=True)
     with open(LOG, 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction='ignore')
@@ -606,15 +598,15 @@ def main():
     save_json(cdir / 'critic.json', doc)
     count, warn = write_txt(pdir, doc)
     log(pdir, doc)
-    print(f"-> {len(doc['clips'])} clip ideas judged: {count['kept']} kept, {count['disputed']} disputed, "
-          f"{count['weak']} weak, {count['dropped']} dropped")
-    for x in doc['clips']:
-        if x['status'] in ('kept', 'disputed'):
-            print(f"   {x['id']:<7} {x['clip_score']:>4}/10 {x['band']:<9} {x['status']:<9} {x.get('title') or ''}")
+    print(f"-> {len(doc['clips'])} clip ideas judged, best first ({count['fix']} with a note to fix, "
+          f"{count['check']} to check):")
+    for n, x in enumerate(doc['clips'][:15], 1):
+        flag = {'fix': '  [fix?]', 'check': '  [check]'}.get(x['status'], '')
+        print(f"   {n:>2}. {x['id']:<7} {x['clip_score']:>4}/10 {x['band']:<9} {x.get('title') or ''}{flag}")
     for w in warn:
         print(f'   WARNING: {w} is strongly linked to the score (possible bias)')
-    print(f'\nnext: read {(pdir / "critic.txt").relative_to(pdir.parent.parent)} and write the final clips.json '
-          f'(only KEPT clips, plus DISPUTED ones you checked yourself), each with "from": "<id>"')
+    print(f'\nnext: read {(pdir / "critic.txt").relative_to(pdir.parent.parent)}, repair the top clips that have a '
+          f'note (once), and write the final clips.json from the top, each with "from": "<id>"')
 
 
 if __name__ == '__main__':
