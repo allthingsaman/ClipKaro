@@ -173,6 +173,13 @@ about 20 minutes, all at the same time (Claude says, for example, "Reading the v
 once"), so the middle of a long podcast gets the same attention as the start. It takes a few
 minutes more. Afterwards you can ask "show me the topic map" to see every topic with its time.
 
+**Deep clips** (only when you ask): write "deep clip this: (link)" or "clip this, then go
+deeper". After the normal clips, Claude looks for a story that is spread across the video, like a
+question at minute 3 and its answer at minute 41, and joins those moments into one short, always in
+the order they were said. Three separate checks make sure the joined clip doesn't change what
+anyone meant, and a short white flash shows where it jumps in time. Often no deep clip is good
+enough, and Claude tells you so. It takes about 10-15 minutes more.
+
 **Podcasts and interviews with two people** need no special words. ClipKaro shows the person who
 is talking. When someone laughs, or both talk at once, it shows both of them, one above the other
 (a "split screen"), with the captions in between.

@@ -62,6 +62,27 @@
   what you keep and post.
 - New commands: `run.py sound` and `run.py critic`.
 
+### Deep clips, phase 3: one story from moments far apart
+- **Ask for it:** "deep clip this: <link>", "clip this, then go deeper" or "do a deep pass on
+  <video>". The regular clips are made first, exactly as before; without these words nothing
+  changes.
+- **What it makes:** a short that joins 2-3 moments that are far apart but belong to one story: a
+  question and its own answer 40 minutes later, the narrator's opening line and the story's
+  payoff. The pieces always play in the order they were said.
+- **Only when it's better:** every deep clip is scored by the blind critic next to the best
+  single stretch around the same payoff. If one stretch tells the story as well, the deep clip is
+  dropped. "No deep clip" is a normal answer.
+- **Only when it's honest:** three separate AI judges (a rules checker, one who speaks for the
+  person in the clip, and a viewer who then watches the full video) read each piece inside its
+  original minutes, and everything cut between the pieces. If any one of them says "fail" or "not
+  sure", the clip is dropped, whatever its score. Tested on 56 clips the
+  judges had never seen, about half of them made to mislead: all 29 misleading clips were caught,
+  and 3 of the 27 honest ones were rejected too (the price of being strict).
+- **Joins are visible:** where a clip skips more than 20 seconds, a short white flash shows the
+  jump, and the posting caption starts with "From 2 moments of the full video: 35:30 · 1:03:01"
+  plus the full video link.
+- New commands: `run.py deep` and `run.py honesty`.
+
 ## v1.1 (November 2026): better framing
 
 ### Podcasts with two people on screen

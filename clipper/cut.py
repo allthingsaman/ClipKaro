@@ -23,6 +23,7 @@ from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter,
 PAD_IN, PAD_OUT = 0.12, 0.30
 MIN_PIECE = 0.25          # a framing boundary never leaves a sliver shorter than this
 HOWS = ('full', 'left', 'right', 'center', 'split')
+JUMP_FLASH = 20.0        # a join that skips more than this many seconds of the video gets a short flash
 
 
 def framing_spans(clip):
@@ -395,14 +396,26 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
     if masks:                       # the round-cam mask image, shared by every range of the clip
         inputs += ['-loop', '1', '-t', f'{timeline + 1:.3f}', '-i', str(fc['mask'])]
         chains.append(f'[{n}:v]format=gray,split={len(masks)}' + ''.join(f'[{m}]' for m in masks))
+    # joins across time (deep clips, long splices) are shown, not hidden: a short white flash
+    jumps = [{'t': splices[i], 'gap': round(parts[i + 1][0] - parts[i][1], 1)} for i in range(len(splices))]
+    flashes = [j['t'] for j in jumps if abs(j['gap']) > JUMP_FLASH]
+    out_v = 'outv'
+    if flashes:
+        out_v = 'outvf'
     chains.append(''.join(labels) + f'concat=n={n}:v=1:a=1[outv][outa]')
+    if flashes:
+        boxes = []
+        for t in flashes:                         # about 4 frames: soft, bright, soft
+            boxes.append(f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.45:t=fill:enable='between(t,{t - 0.09:.3f},{t + 0.12:.3f})'")
+            boxes.append(f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.55:t=fill:enable='between(t,{t - 0.04:.3f},{t + 0.06:.3f})'")
+        chains.append('[outv]' + ','.join(boxes) + '[outvf]')
     tmp = out_mp4.with_suffix('.part.mp4')
-    ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', '[outv]', '-map', '[outa]',
+    ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', f'[{out_v}]', '-map', '[outa]',
            '-c:v', 'libx264', '-preset', 'fast', '-crf', '17', '-pix_fmt', 'yuv420p', '-r', str(fps),
            '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', tmp)
     tmp.replace(out_mp4)
     meta = {'fps': fps, 'parts': [[round(a, 3), round(b, 3)] for a, b in parts], 'duration': round(timeline, 3),
-            'shots': shots_out, 'splices': splices, 'words': clip_words}
+            'shots': shots_out, 'splices': splices, 'jumps': jumps, 'words': clip_words}
     if exact:
         meta['splice_frames'] = splice_frames
     if fc:
@@ -465,6 +478,8 @@ def main():
     cands = {c['id']: c for c in load_json(pdir / 'candidates.json', []) or []}
     for c in (load_json(pdir / 'critic' / 'plan.json') or {}).get('clips', []):
         cands.setdefault(c['id'], c)             # a short video's shortlist ("s3") judged by the critic
+    for c in load_json(pdir / 'deep' / 'candidates.json', []) or []:
+        cands.setdefault(c['id'], c)             # a deep clip ("d1-c1") from the deep pass
     taken = []                                   # (clip id, start, end) of every range so far
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))

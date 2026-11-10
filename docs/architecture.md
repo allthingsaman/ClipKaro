@@ -98,6 +98,7 @@ flowchart TD
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
 | Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
 | 2a. Long videos | `run.py parts <project>`, readers, `run.py topics <project>` | `transcript/` | `parts/`, `topics.json`, `topics.txt`, `candidates.json`, `candidates.txt` | AI readers + scripts |
+| 2d. Deep clips (only when asked) | `run.py deep <project>` between helper steps, `run.py critic <project> --from deep`, `run.py honesty <project>` | `topics.json`, `transcript/`, `clips.json` | `deep/` (map, threads, candidates, critic, honesty, report) | AI helpers + scripts |
 | Helper | `run.py gpu [model]` | nothing | nothing (prints the GPU test result) | |
 
 `<project>` is the folder name inside `output/` that `fetch` prints, for example
@@ -138,6 +139,8 @@ clipper/                     the toolbox (Python)
     topics.py     joins the part readers' answers: the topic map, the clip candidates, focus reads
     sound.py      sound cues for the whole video: laughter, applause, both talking at once, lively spots
     critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
+    deep.py       deep clips: the map for the thread finder, thread files, checks, the report
+    honesty.py    deep clips: honesty packets for three judges, and merging their verdicts
     gpu.py        NVIDIA GPU detection, CUDA libraries, GPU self-test
     models.py     Whisper model downloads from Hugging Face (with retry/resume)
     common.py     shared helpers: paths, settings, JSON, text, ffmpeg/ffprobe wrappers
@@ -202,6 +205,9 @@ output/<project>/
                                  focus-NN.txt/.json (a second look at a hinted moment)
     topics.json, topics.txt      the topic map (long videos)
     candidates.json, .txt        every reader's clip candidates with exact ranges (long videos)
+    deep/                        deep clips (only when asked): map.txt, threads.json, thread-NN.txt/.json,
+                                 candidates.json, critic/, honesty/ (packets and verdicts), honesty.json,
+                                 report.txt, kept.json
     frames/01-title.jpg          picture sheets made by run.py frames
     edited/
         01-title.mp4             the finished short
@@ -501,6 +507,64 @@ about twice the clips wanted that the AI editor writes for a short video.
   fixes (misheard words, applied to `words.json` for the picked clips before cutting).
 - **Output:** `critic.txt` (every idea best first, with reasons and notes) and
   `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
+
+### 5.4d Deep clips: one story from moments far apart (`deep.py`, `honesty.py`)
+Only when the user asks ("deep clip this", "do a deep pass on <video>"), after the regular clips.
+In a long podcast the best story is often in pieces: a question at minute 3 and its answer at
+minute 41, or the narrator's opening line and the story's payoff 20 minutes later. A deep clip
+joins 2-3 such pieces into one short. `run.py deep <project>` is run again after each helper step
+and does the next stage by itself:
+1. **The map** (`deep/map.txt`): the topic map made small (no transcript), plus seeds found by
+   code: open questions and back-references that no topic answers, teaser lines that come again
+   later, rare names shared by topics far apart.
+2. **Threads:** one `clipkaro-thread-finder` helper reads the map and proposes up to 8 threads
+   (`deep/threads.json`), best patterns first: a question and its own answer much later; the
+   narrator's intro line and the story's payoff; setup, story, punchline. Never "he contradicts
+   himself" or a supercut. Code checks every id and quote, and that the pieces are at least 60 s
+   apart (closer ones are just a regular clip), then writes `deep/thread-NN.txt`: the real words
+   around each piece (±90 s), with the setup and payoff marked.
+3. **Composers:** one `clipkaro-composer` per thread, all at once. Each checks the link on the real
+   words and writes up to 2 deep clips (2-3 pieces in the order said, whole sentences, 30-75 s, a
+   guest's answer keeps the host's question) **plus the best continuous clip around the payoff**,
+   its "twin". Code then checks the quotes, the order, and bans ads, outros and montage teasers (a
+   line re-cut from later in the video; the narrator's own spoken intro may open a clip). A deep
+   clip that overlaps a regular clip by more than half is dropped, and cut-point warnings are added
+   (`deep/candidates.json`).
+4. **Pass A, is it better?** The normal blind critic (5.4c) scores the deep clips and their twins
+   in one shuffled packet (`critic --from deep`, saved in `deep/critic/`). A deep clip goes on only
+   if its clip score is at least its twin's: if one stretch tells the story as well, joining pieces
+   adds nothing. No side-by-side judging (it favours the confident voice).
+5. **Pass B, is it honest?** (`run.py honesty`). Each deep clip gets a packet of at most about 6,500
+   tokens (long inputs blur judges): the words as viewers will hear them; each piece inside its
+   original stretch (75 s before to 60 s after, shrunk if the packet is too long); what was cut
+   between pieces (word for word up to 3 minutes, else a scan for corrections, jokes, negations
+   and the same names, as quotes, because a summary drops exactly the softener that matters);
+   other moments about the same names; and flags from code (a piece opening on "he / वो / isliye"
+   or on "haan / exactly", a possible softener within 20 s after a piece). Three fresh
+   `clipkaro-honesty` judges read it, each in a role: a **rules auditor**, the **speaker's
+   advocate** ("would they object?") and a **viewer** who then watches the full video. **Any fail
+   or unsure rejects the clip**: honesty is not taste, and judges from one model share blind spots,
+   so a majority vote would keep them. They never see the critic's opinion or who made the clip.
+6. **The report** (`deep/report.txt`, `deep/kept.json`): one clip per thread, the best that passed
+   both. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
+   caption: "From 2 moments of the full video: 0:08 · 22:53", plus the full video link.
+
+**Joins are shown, not hidden.** At a join that skips more than 20 s, `cut` adds a short white
+flash (about a fifth of a second), so a viewer can see that time was skipped (PBS asks for "an
+audio or visual cue" at such edits).
+
+**Tested before trusting it.** A helper built misleading clips from our 5 test videos (an answer
+moved to another question, a "just kidding" cut off, a quote played as the speaker's own view, two
+topics joined so a cause appears), each with an honest twin made from the same moments; another
+helper checked every label. The judges never knew which was which. On a practice set of 10 + 10 the
+prompt was tuned; then a held-back set of 29 misleading and 27 honest clips was judged once, exactly as in real use:
+**all 29 misleading clips were caught** (the true miss rate is very likely under 10%), and 3 of the
+27 honest ones were rejected too, each by one judge on a close call (for example a clip ending
+7 s before the speaker adds "but in Bihar your life is in danger"). Rejecting a few honest clips
+is the price of being strict; letting a misleading one through is not acceptable.
+On real videos: the Sam Altman interview kept 2 deep clips; on the Khan Sir podcast none passed (the
+continuous versions scored higher twice, and the judges rejected a clip that pinned Khan Sir's
+answer to a question from the host's intro). "No deep clip" is a normal answer.
 
 ### 5.5 Checking the cut points (`cut.snap_range`, `cut.boundary_warnings`)
 - Every range is **snapped to whole words**: it starts 0.12 s before the first word and ends

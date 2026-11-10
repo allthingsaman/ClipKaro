@@ -131,6 +131,20 @@ A clip score judges how well-made a clip looks from its words and sound (hook, p
 how shareable it is), compared with the other moments of the same video. It is **not** a
 prediction of views: views also depend on your channel, the timing and luck.
 
+### Deep clips: one story from moments far apart (only when you ask)
+| You write | What happens |
+|---|---|
+| "deep clip this: <link>" or "clip this, then go deeper" | the regular clips first, then Claude looks for stories spread across the video (a question and its answer much later, an opening line and the story's payoff) and joins 2-3 of those moments into one short |
+| "do a deep pass on <video>" | the same, for a video you've already clipped |
+| "show me the deep clip report" | Claude shows `deep/report.txt`: every deep clip tried, its clip score next to the best single stretch, and why it was kept or not |
+
+A deep clip is kept only when it scores at least as well as the best single stretch, **and** three
+separate honesty judges agree it keeps what the person meant. Often no deep clip passes: that's
+normal, and Claude says so. A kept clip shows a short white flash where it jumps in time, and its
+posting caption starts with a line like "From 2 moments of the full video: 35:30 · 1:03:01" and the
+full video link. A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for
+a 68-minute interview, 13 for a 2-hour podcast).
+
 ### Can I write anything else?
 Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
 for something ClipKaro **can't do yet**, Claude tells you instead of pretending. Examples: background
@@ -223,7 +237,9 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
 | `run.py sound <project>` | measures laughs, applause, both talking at once, and lively spots (`fetch` does this by itself) |
-| `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates` (what to judge), `--runs 3` |
+| `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates\|deep` (what to judge), `--runs 3` |
+| `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |
+| `run.py honesty <project>` | first run: one packet per deep clip for the three honesty judges; second run: merges their verdicts; `--fresh` (start over) |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 

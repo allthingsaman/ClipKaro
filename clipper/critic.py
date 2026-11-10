@@ -141,6 +141,12 @@ def clip_block(tr, cues, label, ranges):
 # ---------------------------------------------------------------- the pool
 
 def load_pool(pdir, source):
+    if source == 'deep':                          # deep clips and their continuous twins (run.py deep)
+        cands = load_json(pdir / 'deep' / 'candidates.json') or []
+        if not cands:
+            die(f'no deep/candidates.json in {pdir.name}: run  python run.py deep {pdir.name}  first')
+        return 'deep', [{'id': c['id'], 'ranges': c['ranges'], 'title': c.get('title'), 'kind': c.get('kind'),
+                         'twin': c.get('twin')} for c in cands]
     cands = load_json(pdir / 'candidates.json')
     if source != 'clips' and cands:
         return 'candidates', [{'id': c['id'], 'ranges': c['ranges'], 'title': c.get('title'),
@@ -169,6 +175,13 @@ def labels(rng, n):
     return lst
 
 
+def where(pdir, source):
+    """The critic's folder and its readable list: deep clips are judged apart from the regular ones."""
+    if source == 'deep':
+        return pdir / 'deep' / 'critic', pdir / 'deep' / 'critic.txt'
+    return pdir / 'critic', pdir / 'critic.txt'
+
+
 def prepare(pdir, source, runs):
     project = load_json(pdir / 'project.json', {}) or {}
     kind, pool = load_pool(pdir, source)
@@ -177,8 +190,8 @@ def prepare(pdir, source, runs):
     tr = Transcript(pdir)
     cues = sound.ensure(pdir, quiet=True)
     sig = signature(pool)
-    cdir = pdir / 'critic'
-    cdir.mkdir(exist_ok=True)
+    cdir = where(pdir, source)[0]
+    cdir.mkdir(parents=True, exist_ok=True)
     lang = (project.get('language') or '').lower()
     note = LANG_NOTE.get(lang) or LANG_NOTE.get('hinglish' if lang.startswith('hi') else '', '')
     key, files = {}, {}
@@ -458,7 +471,7 @@ def hint_text(h):
     return ' · '.join(out)
 
 
-def write_txt(pdir, doc):
+def write_txt(pdir, doc, path):
     cl = doc['clips']
     count = {s: sum(1 for x in cl if x['status'] == s) for s in ('clean', 'check', 'fix')}
     rows = [f"# Clip scores for {len(cl)} clip ideas ({doc['runs']} blind runs), best first. "
@@ -502,26 +515,29 @@ def write_txt(pdir, doc):
     rows.append(f"gates agreed in all runs: {ck['gate_agreement']:.0%}; mean spread of scores between runs: {ck['mean_spread']}")
     if doc['peaks']:
         rows.append('replay peaks: ' + ' · '.join(f"{fmt_ts(p['start']).split('.')[0]} ({p['strength']})" for p in doc['peaks']))
-    (pdir / 'critic.txt').write_text('\n'.join(rows) + '\n', encoding='utf-8')
+    path.write_text('\n'.join(rows) + '\n', encoding='utf-8')
     return count, warn
 
 
 def log(pdir, doc):
-    """One row per clip idea in output/clip-log.csv (rows of this project are replaced)."""
-    cols = ['date', 'project', 'id', 'start', 'duration', 'language', 'clip_score', 'status', *DIMS,
+    """One row per clip idea in output/clip-log.csv. Rows of this project and the same pool (regular or
+    deep) are replaced; the user's verdicts on them are kept."""
+    pool = 'deep' if doc['pool'] == 'deep' else 'regular'
+    cols = ['date', 'project', 'pool', 'id', 'start', 'duration', 'language', 'clip_score', 'status', *DIMS,
             'alone_fail', 'ending_fail', 'laughter_s', 'both_talk_s', 'replay', 'teased', 'picked', 'user_decision']
     old, kept = [], {}
     if LOG.exists():
         with open(LOG, newline='', encoding='utf-8') as f:
             for r in csv.DictReader(f):
-                if r.get('project') != pdir.name:
+                if r.get('project') != pdir.name or (r.get('pool') or 'regular') != pool:
                     old.append(r)
                 elif r.get('user_decision') or r.get('picked'):    # the user's verdicts survive a re-run
                     kept[(r.get('id'), str(r.get('start')))] = (r.get('picked', ''), r.get('user_decision', ''))
     lang = (load_json(pdir / 'project.json', {}) or {}).get('language', '')
     for x in doc['clips']:
         h = x['hints']
-        old.append({'date': doc['made'][:10], 'project': pdir.name, 'id': x['id'], 'start': x['ranges'][0][0],
+        old.append({'date': doc['made'][:10], 'project': pdir.name, 'pool': pool, 'id': x['id'],
+                    'start': x['ranges'][0][0],
                     'duration': x['duration'], 'language': lang, 'clip_score': x['clip_score'], 'status': x['status'],
                     **{d: x['scores'][d]['mean'] for d in DIMS},
                     'alone_fail': x['gates']['alone']['fail'], 'ending_fail': x['gates']['ending']['fail'],
@@ -552,12 +568,12 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('project')
     ap.add_argument('--fresh', action='store_true', help='start over (earlier packets and answers go to critic/old/)')
-    ap.add_argument('--from', dest='source', choices=['auto', 'clips', 'candidates'], default='auto',
+    ap.add_argument('--from', dest='source', choices=['auto', 'clips', 'candidates', 'deep'], default='auto',
                     help='judge candidates.json (default when it exists) or the clips.json shortlist')
     ap.add_argument('--runs', type=int, default=RUNS, help=f'blind runs (default {RUNS})')
     a = ap.parse_args()
     pdir = project_dir(a.project)
-    cdir = pdir / 'critic'
+    cdir, txt = where(pdir, a.source)
     plan = load_json(cdir / 'plan.json')
     if plan and a.fresh:
         keep = cdir / 'old' / time.strftime('%Y%m%d-%H%M%S')
@@ -596,7 +612,7 @@ def main():
         print(f"   (going on with {len(answers)} good runs of {plan['runs']})")
     doc = merge(pdir, plan, answers)
     save_json(cdir / 'critic.json', doc)
-    count, warn = write_txt(pdir, doc)
+    count, warn = write_txt(pdir, doc, txt)
     log(pdir, doc)
     print(f"-> {len(doc['clips'])} clip ideas judged, best first ({count['fix']} with a note to fix, "
           f"{count['check']} to check):")
@@ -605,7 +621,10 @@ def main():
         print(f"   {n:>2}. {x['id']:<7} {x['clip_score']:>4}/10 {x['band']:<9} {x.get('title') or ''}{flag}")
     for w in warn:
         print(f'   WARNING: {w} is strongly linked to the score (possible bias)')
-    print(f'\nnext: read {(pdir / "critic.txt").relative_to(pdir.parent.parent)}, repair the top clips that have a '
+    if a.source == 'deep':
+        print(f'\nnext: the honesty check:  python run.py honesty {pdir.name}')
+        return
+    print(f'\nnext: read {txt.relative_to(pdir.parent.parent)}, repair the top clips that have a '
           f'note (once), and write the final clips.json from the top, each with "from": "<id>"')
 
 

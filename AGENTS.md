@@ -33,6 +33,11 @@ Key points (details in the files above):
   ideas (a short video's shortlist in clips.json, or a long video's candidates). Judge each packet
   as `.claude/agents/clipkaro-critic.md` says (a fresh helper per run if you can), run `critic`
   again, and pick the final clips from the top of `critic.txt`.
+- Deep clips (only when the user asks: "deep clip this", "do a deep pass"): after the regular
+  clips, follow section 2d of the skill and `references/deep-clips.md`. Run `python run.py deep
+  <project>` again after each helper step (thread finder, composers), then `critic --from deep` and
+  `honesty` (judge each packet three times, once per role, as `.claude/agents/clipkaro-honesty.md`
+  says). Any fail or unsure rejects a deep clip; never override it.
 - After `cut`, check clips with two people on screen (podcasts) or things being shown with
   `python run.py frames <project> --clips N`, and fix only what's wrong with `"framing"` /
   `"show_full"` in clips.json (details in the skill).

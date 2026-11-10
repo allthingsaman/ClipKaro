@@ -112,9 +112,31 @@ sees your scores, titles, the replay curve or anything about the channel.
    clips, apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") in
    `transcript/words.json`, one word entry at a time, keeping the times.
 
-**Deep clips** ("deep clip this: <link>", "clip this, then go deeper", "do a deep pass") are
-being built (roadmap item 17). For now, make the regular clips and tell the user that deep clips
-aren't available yet.
+## 2d. Deep clips (only when asked)
+"deep clip this: <link>", "clip this, then go deeper", "do a deep pass on <video>": first make the
+regular clips as usual, then join moments that are far apart into one story (a question and its
+own answer 40 minutes later, a narrator's opening line and the story's payoff). Rules and formats:
+`references/deep-clips.md`. A short video needs a topic map first: start one `clipkaro-part-reader`
+for `parts/part-01.txt`, then `python run.py topics <project>`.
+1. `python run.py deep <project>` writes `deep/map.txt`. Start one **`clipkaro-thread-finder`**
+   helper on it (prompt: the map's path). It writes `deep/threads.json`.
+2. `python run.py deep <project>` again: it checks the threads and writes one `deep/thread-NN.txt`
+   per thread. Start one **`clipkaro-composer`** per thread file, all at once.
+3. `python run.py deep <project>` again: it checks the joined clips (quotes, order, no ads or
+   montage teasers, not a regular clip's core) and writes `deep/candidates.json`, each deep clip
+   with its own best continuous version ("twin").
+4. `python run.py critic <project> --from deep` and 3 `clipkaro-critic` helpers, as in 2a. A deep
+   clip goes on only if it scores at least as high as its twin.
+5. `python run.py honesty <project>`: for each packet, start 3 **`clipkaro-honesty`** helpers at
+   once, one per role (prompt e.g. "Role: viewer. Packet: output/<project>/deep/honesty/d1-c1.txt").
+   Run it again to merge: any fail or unsure rejects the clip. Never override a rejection.
+6. `python run.py deep <project>` again: `deep/report.txt` lists the kept deep clips. Add them to
+   clips.json as extra clips, each with `"deep": {"moments": [...]}` and its `source_line`
+   ("From 2 moments of the full video: 0:08 · 22:53") at the start of its caption, plus "Full
+   video: <link>". `cut` shows each jump across time with a short flash.
+New helper types appear after Claude Code restarts; until then start general helpers and tell
+them to read `.claude/agents/<name>.md` (everything after its front matter is their instructions).
+"No deep clip" is a normal, honest answer: say so plainly.
 
 **Get exact times.** A transcript line can hold several sentences. When your hook or payoff
 starts or ends **inside** a line, look up the exact word time instead of using the line's time:

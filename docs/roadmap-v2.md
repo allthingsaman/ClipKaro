@@ -312,9 +312,20 @@ and **how we'll measure** it.
 - **Measure:** edit time under 30% of the clip length on a GPU machine.
 
 #### 17. Deep clips: stories spread across the whole video (M)
-- **Status: approved (November 2026). Phase 1 (item 3, the topic map) and phase 2 (the critic, item
-  4) are built, on the branch `deep-clipping`; phase 3 next. The branch is merged only after all
-  phases and a blind comparison with v1.1 on fresh videos.**
+- **Status: phases 1-3 built (November 2026), on the branch `deep-clipping`: the topic map (item
+  3), the critic (item 4) and the deep pass itself. Phase 4 (join polish) next. The branch is
+  merged only after all phases and a blind comparison with v1.1 on fresh videos.**
+- **Phase 3 results:** the honesty check (pass B) was tested on clips built to mislead, each with
+  an honest twin, never seen while the judges' instructions were written: all 29 misleading clips caught (the true
+  miss rate is very likely under 10%), 3 of 27 honest clips rejected, each by a single judge on a
+  close call. On the practice set: 10 of 10 caught, 3 of 10 honest rejected (all three possibly
+  label mistakes; the owner spot-checks them). On real
+  videos, the Sam Altman interview kept 2 deep clips (both beat their best single stretch, 6.5 vs
+  5.8 and 4.8 vs 3.3); on the Khan Sir podcast none passed (the single stretch scored higher twice,
+  and the judges rejected a clip that pinned Khan Sir's answer to a question from the host's intro,
+  a real catch). A deep pass took 10 minutes on the 68-minute interview and 13 on the 2-hour
+  podcast. Decided with the owner: the narrator's own spoken intro may open a deep clip; a montage
+  teaser (lines re-cut from later in the video) never.
 - **Why:** In a long podcast the best story is often in pieces: the setup at minute 3, the story at
   minute 41, the punchline at minute 88. A normal clip takes one stretch, so these stories are lost.
   We're not the first: Opus Clip's ClipAnything says it "stitches together scenes from different
@@ -334,11 +345,14 @@ and **how we'll measure** it.
   3. **Threads:** topics that come back several times across the video.
   4. **Candidates:** 2-4 pieces, 30-75 s in all, each piece a complete thought. Pieces keep their
      original order; only a short hook line may move to the front (a cold open).
-  5. **Critic, in two passes:** pass A reads only the stitched words, like a viewer, and scores
-     hook, makes sense alone, payoff, emotion and flow out of 10; only **8 or more** goes on.
-     Pass B is a separate **honesty check, pass or fail**: it reads every piece with 60-90 s of the
-     original around it and asks whether the speaker would be surprised or a viewer misled. Any
-     doubt rejects the clip, whatever its score (the BBC Panorama edit, which joined real lines
+  5. **Critic, in two passes:** pass A is the normal blind critic (item 4), which scores each deep
+     clip next to the best single stretch around the same payoff (its "twin"); the deep clip goes
+     on only if it scores at least as high (a fixed bar of 8 was dropped: in phase 2 fixed bars
+     threw away good clips). Pass B is a separate **honesty check, pass or fail**: three judges
+     (rules auditor, the speaker's advocate, a viewer who then watches the full video) read every
+     piece with up to 75 s of the original before it and 60 s after, and what was cut between
+     pieces, and ask whether the speaker would be surprised or a viewer misled. Any fail or doubt
+     rejects the clip, whatever its score (the BBC Panorama edit, which joined real lines
      spoken almost an hour apart, would pass A and fail B). No deep clip at all is a fine answer.
   6. Cut and edit as usual, but **show joins across time instead of hiding them**: a 4-6 frame
      flash or whip, an optional time chip ("1:28:10" or "later"), and a short audio crossfade (PBS
@@ -359,7 +373,7 @@ and **how we'll measure** it.
   |---|---|---|---|
   | 1 | Long-video handling (item 3) and the topic map (`topics.json`) | M | Yes: the AI reads every part carefully |
   | 2 | The critic and a viral score with reasons (item 4) | S | Yes: fewer weak clips |
-  | 3 | The deep pass: threads, candidates, critic, only 8+ | M | |
+  | 3 | The deep pass: threads, candidates, critic (must beat its single-stretch twin), honesty check (any fail rejects). **Built** | M | |
   | 4 | Join polish: full-sentence checks, no missing references, gentler audio fade, optional soft whoosh on long jumps | S | Yes: better 2-part clips |
   | 5 | Test on three long videos and compare deep clips with regular clips | S | |
 
@@ -434,8 +448,8 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 ## 8. What to build next
 
 **Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
-item 3) and phase 2 (the critic, item 4) are built; next is the deep pass itself (phase 3). Phases 1 and 2 also make the
-regular clips better.
+item 3), phase 2 (the critic, item 4) and phase 3 (the deep pass with its honesty check) are built;
+next is phase 4, polishing the joins. Phases 1 and 2 also make the regular clips better.
 
 The earlier plan, still valid after that:
 

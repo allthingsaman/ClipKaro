@@ -8,6 +8,8 @@
     python run.py topics <project>                       join the parts' answers: topic map + clip candidates
     python run.py sound <project>                        sound cues: laughter, applause, lively spots (fetch runs it)
     python run.py critic <project>                       a blind second opinion on every clip idea (clip score)
+    python run.py deep <project>                         deep clips: stories spread across the video (when asked)
+    python run.py honesty <project>                      deep clips: three judges check nothing changes what was meant
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
@@ -33,6 +35,8 @@ COMMANDS = {
     'topics': 'clipper.topics',
     'sound': 'clipper.sound',
     'critic': 'clipper.critic',
+    'deep': 'clipper.deep',
+    'honesty': 'clipper.honesty',
     'frames': 'clipper.frames',
     'gpu': 'clipper.gpu',
 }
