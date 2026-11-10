@@ -45,7 +45,10 @@ video). Then plan how to read the transcript:
 python run.py parts <project>
 ```
 **One part** (up to about 28 minutes of Hinglish, longer for English): read `transcript.txt` in
-full and pick the clips.
+full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
+the detector can be wrong, so judge them only by the words). Write a **shortlist of about twice
+the clips wanted** (for 4 clips, 8 ideas; at most 16) to clips.json, in the normal format, then
+let the critic judge them (section 2a).
 
 **Several parts** (long videos): don't read the whole transcript at once. The file reader stops at
 256 KB, and long reads get skimmed; never use `allow_large` for it. Instead:
@@ -56,19 +59,63 @@ full and pick the clips.
    (memory). Without helpers, read the parts one at a time as `references/reading-parts.md` says,
    writing each `part-NN.json` before reading the next.
 3. `python run.py topics <project>` joins the answers and checks every quote. If it names a part
-   to redo, run only that part's helper again and pass it the problem lines.
-4. Read `topics.txt` (the topic map; look at its CHECK FIRST list) and `candidates.txt` (for a
-   very long video it names `candidates-1.txt`, `candidates-2.txt`, ...: read all of them). Rank
-   **all** candidates together: of candidates that overlap at all, keep the better one (clips
-   never share words); at most one pick per topic unless the ideas clearly differ; no quota per
-   part. If a third of the video has no pick but holds a candidate scored 8 or more, swap it in for
-   the weakest pick.
-5. Write clips.json with each pick's `ranges` copied exactly from the candidate list, plus
-   `"from": "<candidate id>"` (e.g. `"from": "p3-c1"`).
+   to redo, run only that part's helper again and pass it the problem lines. If it lists **focus
+   files** (a line from the creator's teaser, or a "most replayed" peak, that no candidate covers),
+   start one `clipkaro-part-reader` per focus file, all at once, then run `topics` again. Videos
+   without a teaser or a replay curve simply have none.
+4. Read `topics.txt` (the topic map; look at its CHECK FIRST list). Then let the critic judge
+   **all** candidates (section 2a) and pick from its list.
 
-Choose the best 3–8 self-contained clips (hook → story → payoff, 25–60 s ideal), and write
-`output/<project>/clips.json` in the format given there. Prefer continuous ranges; splice only
-when it clearly makes a better short.
+Good clip ideas are self-contained (hook → story → payoff, 25–60 s ideal), in the clips.json
+format of `references/picking-moments.md`. Prefer continuous ranges; splice only when it clearly
+makes a better short.
+
+## 2a. The critic: a blind second opinion (every video)
+```
+python run.py critic <project>
+```
+It writes 3 packets in `output/<project>/critic/`: every clip idea (all candidates of a long
+video, or the shortlist in clips.json) in a different random order each time, with neutral
+labels, sound markers like `[laughter ~2 s]` and the words right after each clip. The critic never
+sees your scores, titles, the replay curve or anything about the channel.
+1. Tell the user, e.g. "A second editor is checking all 20 ideas, three times; a few minutes."
+2. Start **3 `clipkaro-critic` helpers at once, in one message** (Agent tool; prompt e.g.
+   "Run 2 of 3: output/<project>/critic/run-2.txt"). If that helper type isn't available, start
+   general helpers with: "You are the ClipKaro critic. Read .claude/agents/clipkaro-critic.md;
+   everything after its front matter is your instructions. Run 2 of 3: <file>". Don't run them
+   while `fetch`, `cut` or `edit` is running (memory). Without helpers, judge the runs yourself
+   one at a time, writing each `run-N.json` before reading the next packet.
+3. Run `python run.py critic <project>` again. If it names a run with problems, run only that
+   helper again and pass it the problem lines. It writes `critic.txt`: KEPT (both pass/fail checks
+   passed, ranked by clip score, best first), DISPUTED, WEAK (under 5/10) and DROPPED (failed a
+   check: needs earlier context, or the payoff comes after the cut), with reasons. The score ranks
+   clips **within this video**; a calm, informative clip is not weak.
+4. Pick the final 3–8 clips from the top of KEPT. Read every DISPUTED clip yourself and decide
+   (a confident voice is not content; the picture may supply what the words lack, e.g. a photo
+   that names the people). Of clips that overlap at all, keep the better one; at most
+   one per topic unless the ideas clearly differ; if a third of a long video has no pick but holds
+   a KEPT clip of 8 or more, swap it in for the weakest pick. **Fewer clips beat weak ones**: never
+   fill up with WEAK or DROPPED clips. If nothing is kept, say so and offer the best two, marked
+   "weak". Where the critic suggests a stronger start (or a cold open: that line first, ~5 s, then
+   the clip) for a KEPT or DISPUTED clip, you may use it with `run.py find` if the clip still makes
+   sense. A WEAK or DROPPED clip comes back only after being judged again: put the improved
+   version in the shortlist and run `python run.py critic <project> --fresh`.
+5. **Repair round (once, when it helps).** Like an editor after notes, look at the DROPPED and
+   WEAK ideas that are good moments with a fixable flaw, and repair them:
+   - "never says who / what" or a teaser with no answer: add the short line that names it or
+     gives the answer, as a second piece in the order it was said (or a ~5 s cold open);
+   - opens on "जो / वो / so my point was" or a slow line: start where the subject is named, or at
+     the suggested stronger start;
+   - the payoff comes after the cut: end later, at the end of that sentence;
+   - two halves of one story dropped separately: join them (2–3 pieces, in the order said).
+   Follow "Never change what someone meant" in `references/picking-moments.md`. Then write a
+   shortlist to clips.json (the KEPT clips you'd pick, plus the repaired ones; at most 16) and run
+   `python run.py critic <project> --fresh --from clips`, start the 3 helpers again, and pick from
+   the new `critic.txt`. Skip this when the KEPT list already has enough strong clips.
+6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
+   third clip of a shortlist), its `ranges` exactly as listed, and `"clip_score"`. For the picked
+   clips, apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") in
+   `transcript/words.json`, one word entry at a time, keeping the times.
 
 **Deep clips** ("deep clip this: <link>", "clip this, then go deeper", "do a deep pass") are
 being built (roadmap item 17). For now, make the regular clips and tell the user that deep clips
@@ -83,8 +130,12 @@ python run.py find <project> "never give it to you"         -> ... end 474.95
 Use the `start` of the hook's first words and the `end` of the payoff's last words. Otherwise a
 clip can open with leftover words from the previous sentence.
 
-Before moving on, show the user a short table: #, title, length, hook line, score.
-Don't wait for approval unless they asked to review picks first. Keep going.
+Before moving on, show the user a short table: #, title, length, hook line, clip score (e.g.
+"8/10 Strong"). Below it, one line on how many ideas the critic dropped and why (e.g. "4 dropped:
+3 needed earlier context, 1 ended before the answer"), and this line: "Clip scores judge how
+well-made each clip looks from its words and sound; they are not a prediction of views."
+List clips the critic tagged `check-facts` with the claim to check (the user decides before
+posting). Don't wait for approval unless they asked to review picks first. Keep going.
 
 ## 2b. Roman Hinglish captions (Hindi/Hinglish projects only)
 Skip this for other languages, or if settings.json has `"hinglish_captions": "devanagari"`.
@@ -182,9 +233,10 @@ Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentenc
 Read `references/editing.md` if the user wants a different look.
 
 ## 6. Deliver
-Report the results as a short table: clip, length, file path. Point to
+Report the results as a short table: clip, length, clip score, file path. Under each clip, give
+two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
-from clips.json. Mention that the files are ready to upload to Shorts, Reels and TikTok.
+from clips.json. Repeat the line that clip scores are not a prediction of views. Mention that the files are ready to upload to Shorts, Reels and TikTok.
 
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.

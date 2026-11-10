@@ -6,6 +6,8 @@
     python run.py edit <project> [--engine python|remotion] [--clips 1,3]
     python run.py parts <project>                        split a long transcript into parts for careful reading
     python run.py topics <project>                       join the parts' answers: topic map + clip candidates
+    python run.py sound <project>                        sound cues: laughter, applause, lively spots (fetch runs it)
+    python run.py critic <project>                       a blind second opinion on every clip idea (clip score)
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
@@ -29,6 +31,8 @@ COMMANDS = {
     'find': 'clipper.find',
     'parts': 'clipper.parts',
     'topics': 'clipper.topics',
+    'sound': 'clipper.sound',
+    'critic': 'clipper.critic',
     'frames': 'clipper.frames',
     'gpu': 'clipper.gpu',
 }

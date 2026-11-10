@@ -28,7 +28,11 @@ Key points (details in the files above):
 - Long videos: run `python run.py parts <project>`. With several parts, don't read the whole
   transcript at once: read the parts one at a time as
   `.claude/skills/clip-video/references/reading-parts.md` says (write each `part-NN.json` before
-  reading the next), then run `python run.py topics <project>` and rank `candidates.txt`.
+  reading the next), then run `python run.py topics <project>` (and read any focus files it lists).
+- Every video: before cutting, `python run.py critic <project>` writes 3 blind packets of all clip
+  ideas (a short video's shortlist in clips.json, or a long video's candidates). Judge each packet
+  as `.claude/agents/clipkaro-critic.md` says (a fresh helper per run if you can), run `critic`
+  again, and pick the final clips from the top of `critic.txt`.
 - After `cut`, check clips with two people on screen (podcasts) or things being shown with
   `python run.py frames <project> --clips N`, and fix only what's wrong with `"framing"` /
   `"show_full"` in clips.json (details in the skill).

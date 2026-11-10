@@ -132,8 +132,12 @@ How to copy a file's path:
 
 Keep the video file where it is until the clips are finished.
 
-**Now wait.** Claude tells you what it's doing. First it shows a table of the moments it picked.
-At the end it shows your finished clips, each with a caption you can copy when you post.
+**Now wait.** Claude tells you what it's doing. Before anything is cut, a second AI editor checks
+every clip idea, like a strict friend who didn't pick them, and drops the ones that wouldn't make
+sense on their own. Then Claude shows a table of the moments it picked, each with a **clip score**
+out of 10 (for example "8/10 Strong") and the reasons. The score says how well-made the clip looks,
+not how many views it will get. At the end it shows your finished clips, each with a caption you
+can copy when you post.
 
 ---
 
@@ -216,7 +220,7 @@ Save the file. The next time you start Claude Code in the ClipKaro folder, it fo
 | | With an NVIDIA graphics card | Without one (not recommended) |
 |---|---|---|
 | Writing down the words of a 10-minute video | 1-2 minutes | English: a few minutes. Hindi/Hinglish: 10-40 minutes |
-| A whole video, from link to finished clips | usually 10-20 minutes | can take **a couple of hours** |
+| A whole video, from link to finished clips | usually 15-30 minutes (the second opinion on every clip idea adds 5-15 of them) | can take **a couple of hours** |
 
 The very first time also includes downloading (once).
 

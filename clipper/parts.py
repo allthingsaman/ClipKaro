@@ -24,6 +24,7 @@ import shutil
 import time
 import unicodedata
 
+from . import sound
 from .common import ROOT, die, fmt_ts, load_json, project_dir, save_json
 
 TOKEN_CAP = 20000          # estimated tokens per part file: one default Read (25k) with room to spare
@@ -96,7 +97,7 @@ def plan_stretches(lines, n, shift=0.0):
     return [0] + cuts + [len(lines)]
 
 
-def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts'):
+def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cues=None):
     """The part files' text for n stretches: [(header-free info, text)]."""
     idx = plan_stretches(lines, n, shift)
     total = len(idx) - 1
@@ -137,8 +138,12 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts'):
             head.append(chap)
         head += [f'# YOUR STRETCH: {fmt_ts(a).split(".")[0]}-{fmt_ts(b).split(".")[0]} ({a:.2f}-{b:.2f} s). '
                  f'Lines outside it are context only.',
-                 '# 5-MINUTE BLOCKS (start seconds): ' + ', '.join(f'{x:.2f}' for x, _ in blocks),
-                 '# format: [start_seconds-end_seconds] text', '']
+                 '# 5-MINUTE BLOCKS (start seconds): ' + ', '.join(f'{x:.2f}' for x, _ in blocks)]
+        spots = sound.spots_in(cues, a, b)
+        if spots:
+            head.append('# LIVELY SPOTS from the sound (laughs, both talking at once; the detector can be wrong): '
+                        'look at the words there, and judge them only by the words: ' + sound.spots_line(spots))
+        head += ['# format: [start_seconds-end_seconds] text', '']
         body = [line_text(ln) for ln in before]
         body += [f'# ===== YOUR STRETCH STARTS ({a:.2f}) =====']
         body += [line_text(ln) for ln in own]
@@ -178,12 +183,13 @@ def main():
     if a.margin < 45:
         die('--margin must be at least 45 s, so a 90 s clip always fits inside one part')
 
+    cues = sound.load(pdir)
     whole = '\n'.join(line_text(ln) for ln in lines)
     whole_tokens = est_tokens(whole) + 400
     span_min = (lines[-1]['e'] - lines[0]['s']) / 60
     n = 1 if whole_tokens <= TOKEN_CAP and not a.shift else max(1, math.ceil(span_min / a.minutes))
     while True:
-        parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir)
+        parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir, cues)
         if all(p['tokens'] <= TOKEN_CAP and p['bytes'] <= BYTE_CAP for p in parts) or n >= 80:
             break
         n += 1                                      # a fast talker: one more, smaller part
@@ -217,8 +223,16 @@ def main():
         s, e = p['stretch']
         print(f"   {p['part']:>4}  {fmt_ts(s):>9}-{fmt_ts(e):<9}  {p['lines']:>5}  {p['tokens']:>6,}  {p['bytes'] / 1024:.0f} KB")
     if len(parts) == 1:
-        print('\nnext: one part. Read it (or transcript.txt) and pick the clips as usual; for a topic map, write '
-              f'{a.dir}/part-01.json as the brief says, then  python run.py topics {pdir.name}')
+        spots = (cues or {}).get('lively') or []
+        if spots:
+            print('\nlively spots from the sound (laughs, both talking at once; the detector can be wrong). '
+                  'Look at the words there, and judge them only by the words:')
+            for sp in spots:
+                print(f"   {fmt_ts(sp['start']).split('.')[0]:>8}  {sp['why']}")
+        elif cues is None:
+            print(f'\n(no sound cues yet: python run.py sound {pdir.name})')
+        print('\nnext: one part. Read transcript.txt in full and write a SHORTLIST of about twice the clips '
+              f'wanted to clips.json, then  python run.py critic {pdir.name}')
     else:
         print(f'\nnext: one reader per part, all at once (brief: {BRIEF}); each writes '
               f'{a.dir}/part-NN.json. Then:  python run.py topics {pdir.name}')

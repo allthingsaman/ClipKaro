@@ -493,6 +493,18 @@ def main():
         save_json(pdir / 'project.json', project)
         tx, n = write_transcript(pdir, words, project)
         print(f'-> {len(words)} words, {n} lines in {time.time() - t0:.0f}s')
+        del words
+        import gc
+        gc.collect()                    # the speech model's memory is free before the sound pass
+
+    # laughter, applause, both talking at once, lively spots: hints every video has (about 1 minute
+    # for 3 hours). Never fatal: without it, clips are picked from the words alone, as in v1.1.
+    try:
+        from . import sound
+        to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav')
+        sound.ensure(pdir)
+    except Exception as e:
+        print(f'   (sound cues skipped: {type(e).__name__}: {e})')
 
     print('\nDONE')
     print(f'project:    {pdir.name}')

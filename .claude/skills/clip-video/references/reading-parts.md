@@ -127,3 +127,13 @@ UTF-8 JSON, no comments, exactly these keys:
    "hook_type": "question", "score": 8, "why": "<reason>", "needs_context": null}],
  "note": "<3-4 sentences on what this part covers>"}
 ```
+
+## Focus reads
+Sometimes you get a small `focus-NN.txt` file instead of a part. It points at one line marked
+`<== HINT`: a line the creator also used in the video's opening teaser, or a stretch that viewers
+replayed more than the rest ("most replayed"). No reader proposed a clip there yet.
+- Look closely at that stretch and propose **up to 2 candidates that include the HINT line**, with
+  the setup it needs and its payoff, in the candidate format above (the middle inside YOUR
+  STRETCH). If no good, self-contained clip exists there, propose none: a hint is not proof.
+  A replayed stretch can also be a confusing moment, a chapter jump or the end of an ad.
+- Write `{"topics": [], "blocks": [], "candidates": [...]}` to the file named in the TASK lines.

@@ -65,8 +65,10 @@ flowchart TD
     AU -->|"ffmpeg: 16 kHz mono wav"| LD["Language detection<br/>Whisper base, CPU"]
     LD --> TR["Transcription with word timestamps<br/>faster-whisper on NVIDIA GPU or CPU"]
     TR --> TX["transcript/words.json<br/>sentences.json, transcript.txt"]
-    TX --> PICK["AI editor reads the whole transcript<br/>and picks the moments"]
-    PICK --> CJ["clips.json"]
+    TX --> SND["Sound cues: laughter, applause,<br/>both talking at once, lively spots"]
+    SND --> PICK["AI editor reads the whole transcript (or readers, part by part)<br/>and writes about twice the clip ideas needed"]
+    PICK --> CRI["run.py critic: 3 blind runs judge every idea<br/>gates + clip score; AI editor picks the best"]
+    CRI --> CJ["clips.json"]
     CJ --> HQ{"Hindi or Hinglish?"}
     HQ -->|yes| RO["run.py romanize<br/>AI fills romanize.json"]
     HQ -->|no| CK
@@ -86,7 +88,9 @@ flowchart TD
 | Step | Command | Reads | Writes | Who decides |
 |---|---|---|---|---|
 | 1. Get the transcript | `run.py fetch <link or file>` | the video link or file | `project.json`, `source/`, `transcript/` | scripts |
-| 2. Pick the moments | *(the AI editor)* | `transcript/transcript.txt` | `clips.json` | AI editor |
+| 1b. Sound cues | `run.py sound <project>` (`fetch` runs it) | `source/audio16k.wav`, `words.json` | `transcript/cues.json` | scripts |
+| 2. Clip ideas | *(the AI editor)* | `transcript/transcript.txt` | a shortlist in `clips.json` (short videos) | AI editor |
+| 2c. The critic | `run.py critic <project>`, 3 critic helpers, `run.py critic <project>` again | `clips.json` shortlist or `candidates.json` | `critic/`, `critic.txt`, `output/clip-log.csv`; then the final `clips.json` | AI critic + scripts + AI editor |
 | 2b. Roman captions (Hindi/Hinglish only) | `run.py romanize <project>` | `clips.json`, `words.json` | `romanize.json` (the AI fills it) | AI editor |
 | 3. Cut to vertical | `run.py cut <project>` | `clips.json`, `words.json`, the video | `clips/NN-title.mp4` + `.json` | scripts |
 | 4. Caption colour (optional) | `run.py brand <project>` | the video | `brand.json` | AI editor or scripts |
@@ -131,7 +135,9 @@ clipper/                     the toolbox (Python)
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog
     find.py       word-accurate phrase search in the transcript
     parts.py      splits a long transcript into parts for careful reading
-    topics.py     joins the part readers' answers: the topic map and the clip candidates
+    topics.py     joins the part readers' answers: the topic map, the clip candidates, focus reads
+    sound.py      sound cues for the whole video: laughter, applause, both talking at once, lively spots
+    critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
     gpu.py        NVIDIA GPU detection, CUDA libraries, GPU self-test
     models.py     Whisper model downloads from Hugging Face (with retry/resume)
     common.py     shared helpers: paths, settings, JSON, text, ffmpeg/ffprobe wrappers
@@ -182,14 +188,18 @@ output/<project>/
         words.json               every word with its start/end time
         sentences.json           words grouped into sentence lines
         transcript.txt           the readable transcript the AI editor reads
-    clips.json                   the AI editor's picks
+        cues.json                sound cues: laughter, applause, both talking at once, lively spots
+    clips.json                   the AI editor's picks (for a short video, first its shortlist)
+    critic/                      the critic's packets (run-N.txt), answers (run-N.json), plan.json, critic.json
+    critic.txt                   every clip idea with its clip score and reasons (KEPT, DISPUTED, WEAK, DROPPED)
     romanize.json                Roman spellings of Hindi words (Hindi/Hinglish only)
     brand.json                   caption colours
     clips/
         01-title.mp4             raw vertical cut (already postable)
         01-title.json            timing, words, shots, focus points for the edit
     speakers.json                the speaker register: each voice of the video and its side
-    parts/                       long videos: part-NN.txt to read, part-NN.json answers, plan.json
+    parts/                       long videos: part-NN.txt to read, part-NN.json answers, plan.json,
+                                 focus-NN.txt/.json (a second look at a hinted moment)
     topics.json, topics.txt      the topic map (long videos)
     candidates.json, .txt        every reader's clip candidates with exact ranges (long videos)
     frames/01-title.jpg          picture sheets made by run.py frames
@@ -201,7 +211,8 @@ output/<project>/
 ```
 
 For a **local file**, nothing is copied: `project.json` stores the path and `cut` reads the file
-where it is.
+where it is. One file sits outside the project folders: `output/clip-log.csv`, one row per clip idea
+the critic judged (its scores, cues and hints), to tune the critic later from what the user keeps.
 
 ### project.json
 ```json
@@ -409,8 +420,12 @@ transcript is 272 KB), and very long inputs get skimmed, especially in the middl
    start; starts under 20 s apart become one), and checks everything: labels from closed lists, no
    gaps, quotes found, no candidate in an ad, teaser, intro or outro, signs of skimming. An error
    names the part whose reader must run again.
-4. **The AI editor ranks all candidates together** from `candidates.txt` and copies their exact
-   `ranges` into clips.json with `"from": "<candidate id>"`.
+4. **Focus reads.** If a line from the creator's own cold-open teaser comes back later in the
+   video, or YouTube's "most replayed" curve has a strong peak, and no candidate covers it,
+   `topics` writes a small `parts/focus-NN.txt` around it (90 s before to 60 s after) for one more
+   reader (at most 3 per kind of hint). Its candidates (ids `f1-c1`, ...) must include the hinted
+   line. A video without a teaser or a curve simply gets none.
+5. **The critic judges all candidates** (5.4c) and the AI editor picks from its list.
 
 **The topic map** (`topics.json`, readable as `topics.txt`): topics of about 1-5 minutes in time
 order, each with a title, a summary that says who claims what, a role (story, explanation,
@@ -425,6 +440,64 @@ open. These links are what deep clips (roadmap item 17) will build on.
 **No extra model.** Topic boundaries come from the AI reading, not from an embedding model: in
 published tests on spoken transcripts, asking a language model for a table of contents with quoted
 opening lines beat embedding methods by a wide margin.
+
+### 5.4b Sound cues for every video (`sound.py`)
+YouTube's "most replayed" curve only exists for popular videos (none of a small creator's videos,
+and not even every interview with millions of views). So ClipKaro also listens to every video
+itself, right after transcribing:
+- **YAMNet** (the laughter model the director already uses) over the whole audio, read in 60 s
+  blocks: laughter (a frame at least 0.30 sure and two frames in a row; the director's own rule is
+  0.15), applause and cheering, music. Laughs and applause during music don't count (game sound,
+  jingles).
+- **pyannote segmentation 3.0** in 10 s windows: two people talking at once, and quick turn
+  switches. Both models run on onnxruntime; no new download.
+- **Loudness and talking speed** per 10 s, as z-scores within this one video (never compared
+  between videos).
+- **Lively spots:** the 30 s windows with the highest rank sum of laughter, both talking / turns,
+  loudness and speed, each with at least one clear reason (about 10% of the video). They go into
+  the part files and the `parts` output as places to check; a spot becomes a clip only if its
+  words make one.
+- **Markers** for the critic: `[laughter ~2 s]`, `[applause]`, `[both talk at once]`.
+
+Cost: about 25 s for 2 hours (measured: 23 s and under 500 MB for the Khan Sir podcast; 36 s for 3
+hours). Evidence: in recorded meetings, laughter was the strongest single cue for lively stretches,
+then the words, then who talks when, then loudness and pitch (Makhervaks et al., ICASSP 2020). So
+the words stay the main judge, and no cue ever lowers a clip.
+
+### 5.4c The critic: a blind second opinion (`critic.py`, `.claude/agents/clipkaro-critic.md`)
+The most common complaint about AI clippers is "10 clips, only 3 good". So before anything is cut,
+a second AI editor judges every clip idea: all candidates of a long video, or the shortlist of
+about twice the clips wanted that the AI editor writes for a short video.
+- **Blind:** `run.py critic` writes 3 packets. Each has every idea in a different random order,
+  with neutral labels (K7, B2), the exact words with times from the clip's start, the sound markers,
+  and the next ~15 s marked NOT IN THE CLIP. The critic never sees the reader's score, title or
+  reasons, the rank, the replay curve, the teaser or anything about the channel: in research, such
+  hints pulled AI judges' scores (Claude's the most of eight models tested) and warnings didn't undo
+  it. Three runs in different orders, because the order of a list changes AI judgments.
+- **The sheet:** two gates, pass / fail / unsure with a quoted reason: *stands alone* (no earlier
+  setup, no "he / woh / that thing" pointing outside the clip) and *complete ending* (the payoff is
+  inside, not in the words after the cut). Then five scores from 0 to 5, each level described in
+  words: hook (weight 3), payoff (3), emotion (2), "who would a viewer send this to?" (2), a line
+  worth quoting (1).
+- **Merging (code):** a gate failed in 2 of 3 runs drops the clip. Clip score = the weighted mean,
+  shown out of 10 (9+ Standout, 7+ Strong, 6+ Good, 5+ OK). Under 5 a clip is weak and never used.
+  The score **ranks the clips of one video**: a calm, informative clip is not weak (a fixed bar of
+  6 rejected half of a good interview in testing). Runs that split on a gate make a clip
+  "disputed": the AI editor reads it itself. Close calls are not settled by comparing two clips
+  side by side: in research, such judges pick the more confident-sounding one.
+- **Hints, after scoring:** the creator's teaser, a clean replay peak and laughter add a small bonus
+  (at most 0.3) that only reorders near-ties; a video without them loses nothing. Replay peaks: the
+  first bin and ads / intros left out, a local maximum at least half the highest bin and 1.5x the
+  median, at most 5 (our own starting values).
+- **Checks:** the score's link with clip length and with the place in the packet (a sign of bias),
+  how often the gates agree, and how much the runs differ.
+- **Repair round (once):** the AI editor fixes good moments dropped for a fixable reason (adds the
+  line that answers a teaser or names "he", starts later, joins two halves of one story, always in
+  the order said) and runs `critic --fresh --from clips` on a shortlist of KEPT and repaired clips.
+- **Extras that never change a score:** `check-facts` tags (a claim that looks wrong) and caption
+  fixes (misheard words, applied to `words.json` for the picked clips before cutting).
+- **Output:** `critic.txt` (KEPT best first, DISPUTED, WEAK, DROPPED, with reasons) and
+  `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
 
 ### 5.5 Checking the cut points (`cut.snap_range`, `cut.boundary_warnings`)
 - Every range is **snapped to whole words**: it starts 0.12 s before the first word and ends

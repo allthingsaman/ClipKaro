@@ -43,6 +43,7 @@ VAGUE = re.compile(r'^(story|part|topic|discussion|segment|chapter|conversation|
 NEAR = 60.0            # a quote is looked for within this many seconds of the line it cites
 MERGE_GAP = 20.0       # topic starts closer than this are one topic
 CAND_TOKENS = 18000    # candidates.txt is split above this
+BRIEF_FOCUS = '.claude/skills/clip-video/references/reading-parts.md (section "Focus reads")'
 
 
 class Transcript:
@@ -416,6 +417,107 @@ def teaser_hits(tr, topics):
     return topics_hits
 
 
+FOCUS_BEFORE, FOCUS_AFTER = 90.0, 60.0     # a focused re-read looks this far around a hint (our own choice)
+FOCUS_CONTEXT = 60.0
+FOCUS_MAX = 3                              # at most this many re-reads per kind of hint
+
+
+def uncovered_hints(project, doc, cands):
+    """Hints with no candidate at all: a line from the creator's own teaser found later in the video,
+    or a strong "most replayed" peak. Videos without these hints simply get none."""
+    from .critic import peaks
+    out = []
+    hits, groups = sorted(doc.get('teaser_lines_found_later') or []), []
+    for t in hits:
+        if groups and t - groups[-1][-1] < 60:
+            groups[-1].append(t)
+        else:
+            groups.append([t])
+    covered = lambda a, b: any(e > a and s < b for c in cands for s, e in c['ranges'])
+    # the teaser moments where most of a teaser line comes back first (more matched pieces)
+    open_groups = [g for g in groups if not covered(g[0] - 10, g[-1] + 10)]
+    for g in sorted(open_groups, key=lambda g: (-len(g), g[0]))[:FOCUS_MAX]:
+        out.append({'kind': 'teaser', 't': g[0], 'end': g[-1],
+                    'why': "the creator used this line in the video's opening teaser"})
+    n = 0
+    for p in peaks(project, doc):
+        if n < FOCUS_MAX and not covered(p['start'], p['end']) and len(p['flags']) < 2:
+            out.append({'kind': 'replay', 't': p['start'], 'end': p['end'],
+                        'why': 'viewers replayed this stretch more than the rest' +
+                               (f" ({', '.join(p['flags'])}: maybe navigation, not interest)" if p['flags'] else '')})
+            n += 1
+    return sorted(out, key=lambda h: h['t'])
+
+
+def write_focus(pdir, out, hints, lines):
+    """One small file per uncovered hint, for a part reader: 90 s before to 60 s after it."""
+    from .parts import line_text
+    plan = []
+    for k, h in enumerate(hints, 1):
+        a, b = max(lines[0]['s'], h['t'] - FOCUS_BEFORE), min(lines[-1]['e'], h['end'] + FOCUS_AFTER)
+        ctx = [ln for ln in lines if ln['e'] > a - FOCUS_CONTEXT and ln['s'] < b + FOCUS_CONTEXT]
+        num = f'{k:02d}'
+        rel = (out / f'focus-{num}.json').relative_to(pdir.parent.parent).as_posix()
+        body = [f'# ClipKaro FOCUS READ {k} of {len(hints)}: a second, careful look at one stretch.',
+                f'# Why: {h["why"]}, at {fmt_ts(h["t"]).split(".")[0]}. No clip idea covers it yet.',
+                f'# YOUR STRETCH: {fmt_ts(a).split(".")[0]}-{fmt_ts(b).split(".")[0]} ({a:.2f}-{b:.2f} s). '
+                f'Lines outside it are context only.', '# format: [start_seconds-end_seconds] text', '']
+        state = 'before'
+        for ln in ctx:
+            if state == 'before' and ln['s'] >= a - 0.01:
+                body.append(f'# ===== YOUR STRETCH STARTS ({a:.2f}) =====')
+                state = 'in'
+            if state == 'in' and ln['s'] >= b:
+                body.append(f'# ===== YOUR STRETCH ENDS ({b:.2f}) =====')
+                state = 'after'
+            body.append(line_text(ln) + ('   <== HINT' if ln['s'] <= h['t'] < ln['e'] + 0.5 else ''))
+        if state == 'in':
+            body.append(f'# ===== YOUR STRETCH ENDS ({b:.2f}) =====')
+        body += ['', f'# TASK (full brief: {BRIEF_FOCUS})',
+                 '# Up to 2 clip candidates that include the line marked HINT, with the setup and the payoff it needs,',
+                 '# or none if no good, self-contained clip exists here. Same candidate format and rules as a part.',
+                 f'# Write {rel} as {{"topics": [], "blocks": [], "candidates": [...]}}, then reply in at most 3 lines.']
+        (out / f'focus-{num}.txt').write_text('\n'.join(body) + '\n', encoding='utf-8')
+        plan.append({'part': f'f{k}', 'file': f'focus-{num}.txt', 'json': f'focus-{num}.json',
+                     'stretch': [round(a, 2), round(b, 2)],
+                     'context': [round(ctx[0]['s'], 2), round(ctx[-1]['e'], 2)], 'hint': h})
+    save_json(out / 'focus.json', {'focus': plan})
+    return plan
+
+
+def read_focus(tr, pb, out):
+    """Candidates from the focused re-reads that have answered (ids f1-c1, ...)."""
+    plan = (load_json(out / 'focus.json') or {}).get('focus', [])
+    got = []
+    for fp in plan:
+        f = out / fp['json']
+        if not f.exists():
+            continue
+        try:
+            ans = json.loads(f.read_text(encoding='utf-8'))
+        except json.JSONDecodeError as e:
+            pb.err(fp['part'], f'{fp["json"]} is not valid JSON ({e})')
+            continue
+        if isinstance(ans, dict):                # a focus read has no topics or 5-minute blocks
+            ans = {**ans, 'topics': [], 'blocks': []}
+        # quotes are checked as for a part, but a focus candidate may reach anywhere in the context;
+        # what it must do is include the hinted line. Its problems only skip that candidate.
+        fpb = Problems()
+        _, cands, _, _ = read_part(tr, fpb, {**fp, 'stretch': fp['context'], 'blocks': []}, ans,
+                                   tr.lines[0]['s'] if tr.lines else 0.0)
+        for where, msg in fpb.errors:
+            pb.warn(f"focus {fp['part']}", f'{msg} (skipped)')
+        h = fp['hint']
+        for c in cands[:2]:
+            if not any(e > h['t'] - 1 and s < h['end'] + 1 for s, e in c['ranges']):
+                pb.warn(f"focus {fp['part']}", f"candidate {c['id']} doesn't include the hinted line (skipped)")
+                continue
+            c['id'] = c['id'].replace(f"p{fp['part']}-", f"{fp['part']}-")
+            c['focus'] = h['kind']
+            got.append(c)
+    return plan, got
+
+
 def build(pdir, plan, args):
     pb = Problems()
     words = load_json(pdir / 'transcript' / 'words.json')
@@ -442,6 +544,8 @@ def build(pdir, plan, args):
         per_part.append({'part': pp['part'], 'stretch': pp['stretch'], 'lead_in': lead, 'blocks': blocks,
                          'note': ans.get('note') if isinstance(ans, dict) else None,
                          'n_topics': len(topics), 'n_candidates': len(cands)})
+    focus_plan, focus_cands = read_focus(tr, pb, out)
+    all_cands += focus_cands
     if pb.errors:
         return None, pb
 
@@ -773,11 +877,26 @@ def main():
     names = write_candidates(pdir, cands) if not suffix else []
     report(pb, 'joined')
     print(f'-> {len(doc["topics"])} topics, {len(cands)} candidates from {len(doc["parts"])} part(s)')
+    out = pdir / a.dir
+    focus_plan = (load_json(out / 'focus.json') or {}).get('focus')
+    if focus_plan is None and not suffix:
+        hints = uncovered_hints(load_json(pdir / 'project.json', {}) or {}, doc, cands)
+        focus_plan = write_focus(pdir, out, hints, load_json(pdir / 'transcript' / 'sentences.json'))
+        if focus_plan:
+            print(f'\n{len(focus_plan)} hint(s) have no candidate yet (the creator\'s teaser or a replay peak): '
+                  'start one `clipkaro-part-reader` per focus file, all at once:')
+            for fp in focus_plan:
+                print(f"   {out / fp['file']}   ({fp['hint']['why']}, {fmt_ts(fp['hint']['t']).split('.')[0]})")
+            print(f'then run  python run.py topics {pdir.name}  again')
+            return
+    elif focus_plan:
+        waiting = [fp['file'] for fp in focus_plan if not (out / fp['json']).exists()]
+        if waiting:
+            print(f"   (focus read(s) not answered yet: {', '.join(waiting)})")
     print(f'   map: {pdir / f"topics{suffix}.txt"}')
     if names:
         print('   candidates: ' + ', '.join(str(pdir / n) for n in names))
-        print('next: read the map and the candidates, rank all candidates together, and write clips.json '
-              '(copy each pick\'s "ranges" and add "from": "<id>")')
+        print(f'next: let the critic judge all candidates:  python run.py critic {pdir.name}')
 
 
 if __name__ == '__main__':

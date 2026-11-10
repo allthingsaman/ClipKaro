@@ -153,14 +153,14 @@ def boundary_warnings(ranges, words):
 
 
 def drift_warnings(clip, cands):
-    """A clip picked from a candidate list (long videos read in parts) should keep the candidate's
-    exact ranges; say so when they differ, or when the candidate doesn't exist."""
+    """A clip picked from a candidate list (long videos read in parts) or from the critic's list
+    should keep its exact ranges; say so when they differ, or when the id doesn't exist."""
     src = clip.get('from')
     if not src:
         return []
     c = cands.get(src)
     if not c:
-        return [f'"from": "{src}" is not in candidates.json']
+        return [f'"from": "{src}" is not in candidates.json or the critic\'s list']
     mine, theirs = clip['ranges'], c['ranges']
     if len(mine) != len(theirs) or any(abs(a - x) > 1.0 or abs(b - y) > 1.0
                                        for (a, b), (x, y) in zip(mine, theirs)):
@@ -444,6 +444,8 @@ def main():
 
     flagged = 0
     cands = {c['id']: c for c in load_json(pdir / 'candidates.json', []) or []}
+    for c in (load_json(pdir / 'critic' / 'plan.json') or {}).get('clips', []):
+        cands.setdefault(c['id'], c)             # a short video's shortlist ("s3") judged by the critic
     taken = []                                   # (clip id, start, end) of every range so far
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))

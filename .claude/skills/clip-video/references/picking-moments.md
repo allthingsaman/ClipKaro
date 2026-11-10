@@ -111,8 +111,11 @@ Write `output/<project>/clips.json`:
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key
   noun). They stay highlighted in the brand colour in the captions. Use the exact word as spoken.
 - `ranges`: one `[start, end]` pair, or 2–3 pairs for a splice (they play in the listed order).
-- `from` (long videos read in parts): the id of the candidate the clip comes from, e.g. `"p3-c1"`.
-  Copy its `ranges` from `candidates.txt`; `cut --check` warns when they differ.
+- `from`: the id the critic gave the clip idea: a candidate id for long videos (`"p3-c1"`, copy its
+  `ranges` from `candidates.txt`; `cut --check` warns when they differ), or `"s3"` for the third
+  clip of a short video's shortlist.
+- `clip_score` (from `critic.txt`): the clip score out of 10, e.g. `7.8`. `score` stays your own
+  first impression from picking.
 - `show_full` (optional): `[[a, b]]` source-time stretches shown as the whole landscape frame over
   a blurred background, when what matters lies outside a 9:16 crop (a product held up, a screen,
   a slide, a gesture across the room). Use sentence edges.

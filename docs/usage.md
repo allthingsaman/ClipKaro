@@ -115,8 +115,20 @@ scenes; you don't need to type that part.
 ### Long videos (podcasts of an hour or more)
 | You write | What happens |
 |---|---|
-| (nothing: it's automatic) | a long video is read in parts of about 20 minutes, all at the same time, so no part is skimmed; then all the moments found are ranked together |
+| (nothing: it's automatic) | a long video is read in parts of about 20 minutes, all at the same time, so no part is skimmed; then all the moments found are judged together |
+| (nothing: it's automatic) | if the creator's own teaser at the start, or YouTube's "most replayed" graph, points at a moment nobody picked, that stretch is read again carefully |
 | "show me the topic map" | Claude shows `topics.txt`: every topic with its time, what it's about, and the key lines |
+
+### The second opinion (every video)
+| You write | What happens |
+|---|---|
+| (nothing: it's automatic) | before anything is cut, a second AI editor, the **critic**, checks every clip idea three times, without knowing who picked it. A clip that needs earlier context, or whose punchline comes after the cut, is dropped. The rest get a **clip score** out of 10, with reasons |
+| "show me why you dropped those" | Claude shows `critic.txt`: every idea with its score, the reasons and what was wrong |
+| "give me only clips with 7 or more" | only clips with a clip score of 7/10 or more are used |
+
+A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,
+how shareable it is), compared with the other moments of the same video. It is **not** a
+prediction of views: views also depend on your channel, the timing and luck.
 
 ### Can I write anything else?
 Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
@@ -151,7 +163,8 @@ Everything goes into `output/<project>/`. `<project>` is a folder named after th
 | `edited/01-title.mp4` | **the finished short videos** (1080x1920, ready for phones): upload these |
 | `edited/01-title.srt` | the captions as a separate subtitle file, for apps that accept one |
 | `clips/01-title.mp4` | the cut videos without zooms, captions or sounds (also fine to post) |
-| `clips.json` | the chosen moments: titles, times, scores, highlighted words and **captions to post** |
+| `clips.json` | the chosen moments: titles, times, clip scores, highlighted words and **captions to post** |
+| `critic.txt` | every clip idea with its clip score and the critic's reasons, also the ones that were dropped |
 | `transcript/transcript.txt` | everything that was said, with times |
 
 Claude's last message lists each clip with its length, file and a caption to post.
@@ -189,6 +202,7 @@ folder (`python3` instead of `python` on Mac/Linux):
 ```bash
 python run.py fetch "<link or file>"            # 1. download the sound, write down the words; shows the <project> name
 # 2. write output/<project>/clips.json yourself (format: docs/architecture.md, part 4)
+python run.py critic <project>                  # 2a. optional: packets for a blind second opinion (see the skill)
 python run.py romanize <project>                # 2b. Hindi/Hinglish: lists the words for romanize.json
 python run.py cut <project> --check             # 3a. check where the clips start and end (cuts nothing)
 python run.py cut <project>                     # 3b. standing clips → output/<project>/clips/
@@ -207,6 +221,8 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
+| `run.py sound <project>` | measures laughs, applause, both talking at once, and lively spots (`fetch` does this by itself) |
+| `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates` (what to judge), `--runs 3` |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 

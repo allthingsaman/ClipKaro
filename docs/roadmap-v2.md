@@ -138,13 +138,40 @@ and **how we'll measure** it.
 - **Measure:** the same picks whether a video is 20 minutes or 3 hours; no part of the video skipped.
 
 #### 4. A second opinion before cutting (S)
-- **Status: next**, as phase 2 of deep clips (item 17).
+- **Status: built (November 2026), phase 2 of deep clips (item 17); the user's blind check is next.**
+  `run.py critic` + the `clipkaro-critic` helper (3 blind runs), sound cues for every video
+  (`run.py sound`), focus reads for the creator's teaser and replay peaks, and a repair round.
+- **Tested on 5 videos** (a 2-hour and a 3-hour Hinglish podcast, a 68-minute English interview, a
+  7-minute review and a 24-minute story video; 3 without a replay curve, 2 without any hint):
+  - **Consistent:** 20 ideas judged in two separate rounds ranked almost the same (rank correlation
+    0.91, scores 0.23 apart on average, 7 of the top 8 the same). Within a round the pass/fail
+    checks agreed 96-98% of the time. No link between the score and clip length or packet place.
+  - **Agrees with picks the user liked:** Khan Sir's top two were v1.1's first clip and a phase-1
+    favourite; all 14 earlier Khan Sir clips among the ideas were kept; the market video's top 4
+    were 4 of its 8 phase-1 picks.
+  - **Hints pay off where they exist:** the re-read of the Sam Altman teaser found the best idea of
+    that video (7.4/10). Videos without hints lose nothing (the scores never see them).
+  - **The repair round matters:** the critic only filters, so a weak shortlist stays weak. On the
+    story video it dropped exactly what v1.1 had fixed by hand (a teaser without its answer, an
+    unnamed "he"). After one repair round by a fresh editor who never saw v1.1's picks, two pairs
+    of dropped pieces became the video's two best clips (7.3 and 6.9).
+  - **Design change from testing:** a fixed bar of 6/10 rejected half of a good interview (calm,
+    informative answers score low on emotion). The score now ranks clips within a video; only
+    clips under 5/10 are left out.
+  - **Known limit:** on close calls in story videos, a "stands alone" verdict can flip between two
+    rounds (one clip passed in round 1 and failed in round 2). The majority of 3 runs reduces it.
+  - **By-products:** the critic flags likely factual slips (`check-facts`, e.g. a surrender placed
+    at the wrong battle) and misheard caption words ("farts" for "fads"); neither changes a score.
+  - **Time:** the sound pass takes 13-36 s; the critic 2.5-4 minutes for 8-26 ideas and 8-11
+    minutes for 40-56 Hinglish ideas (its 3 runs work at the same time).
 - **Lesson from phase 1:** the readers' 30 candidates covered 7 of the 10 "most replayed" peaks of
   the Khan Sir podcast, but the top 10 picked from them covered only 2: rankers judge the words, and
   replay peaks can barely be predicted from words (position explains most of them; text adds about
-  0.02-0.03 mAP, "Text Barely Beats Timing", NeurIPS 2026). So the critic should get viewer
-  replay peaks as a separate, local hint, and a strong peak with no good candidate should trigger
-  a focused re-read of that stretch. Opus Clip and Headliner already cut around replay peaks.
+  0.02-0.03 mAP; Arora & Arora, "Text Barely Beats Timing", a poster at the NewInML event of
+  NeurIPS 2026). So the critic should get viewer replay peaks as a separate, local hint, and a
+  strong peak with no good candidate should trigger a focused re-read of that stretch. Headliner
+  and a few small clippers say they cut around replay peaks (vendor claims); Opus Clip only
+  suggests it as a recipe for your own AI agent.
   Replay graphs exist only for videos with tens of thousands of views, so it stays optional, and
   quality must then be judged by blind human ratings (replay peaks can't be both input and test).
 - Two rankers reading the same candidates in opposite orders agreed on 9 of 10 picks.
@@ -276,7 +303,9 @@ and **how we'll measure** it.
 - **Measure:** edit time under 30% of the clip length on a GPU machine.
 
 #### 17. Deep clips: stories spread across the whole video (M)
-- **Status: approved (November 2026). Phase 1 is built (item 3 and the topic map); phase 2 next.**
+- **Status: approved (November 2026). Phase 1 (item 3, the topic map) and phase 2 (the critic, item
+  4) are built, on the branch `deep-clipping`; phase 3 next. The branch is merged only after all
+  phases and a blind comparison with v1.1 on fresh videos.**
 - **Why:** In a long podcast the best story is often in pieces: the setup at minute 3, the story at
   minute 41, the punchline at minute 88. A normal clip takes one stretch, so these stories are lost.
   We're not the first: Opus Clip's ClipAnything says it "stitches together scenes from different
@@ -396,7 +425,7 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 ## 8. What to build next
 
 **Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
-item 3) is built; next is phase 2 (the critic, item 4), then the deep pass itself. Phases 1 and 2 also make the
+item 3) and phase 2 (the critic, item 4) are built; next is the deep pass itself (phase 3). Phases 1 and 2 also make the
 regular clips better.
 
 The earlier plan, still valid after that:
