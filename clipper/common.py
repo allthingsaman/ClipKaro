@@ -12,6 +12,7 @@ OUTPUT = ROOT / 'output'
 ASSETS = ROOT / 'assets'
 FPS = 30          # default / maximum output frame rate
 W, H = 1080, 1920
+JUMP_FLASH = 20.0  # a join that skips more than this many seconds of the video is shown (flash, whoosh)
 
 # settings.json at the repo root holds the user's defaults (all optional)
 DEFAULT_SETTINGS = {
@@ -21,6 +22,7 @@ DEFAULT_SETTINGS = {
     'hinglish_captions': 'roman',  # roman ("aaj hum baat karenge") | devanagari ("आज हम बात करेंगे")
     'layout': 'auto',              # auto (facecam layout when a webcam overlay is found) | facecam | crop
     'facecam': None,               # optional fixed cam box: {"x","y","w","h" (fractions), "shape": "circle"|"rect"}
+    'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

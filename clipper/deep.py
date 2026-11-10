@@ -265,37 +265,98 @@ def build_candidates(pdir, tr, doc, plan, regular):
                 continue
             c['kind'] = 'deep'
             c['twin'] = twin['id'].replace(f'pd{k}-', f'd{k}-') if twin else None
-            rs = c['ranges']
-            if len(rs) < 2:
-                pb.err(f'thread {k}', f"{c['id']}: a deep clip has 2-3 pieces (one piece is a regular clip)")
-                continue
-            if max(rs[j + 1][0] - rs[j][1] for j in range(len(rs) - 1)) < MIN_GAP:
-                pb.warn(f'thread {k}', f"{c['id']}: its pieces are less than {MIN_GAP:.0f} s apart")
-            bad = None
-            for a, b in rs:
-                for t in doc['topics']:
-                    if t['start'] < b and a < t['end'] and t['role'] in STRUCT_BAN:
-                        bad = f"uses the {t['role']} at {ts(t['start'])}"
-                    elif t['start'] < b and a < t['end'] and t['role'] in OPENERS:
-                        if (a, b) != tuple(rs[0]):
-                            bad = f"uses the {t['role']} at {ts(t['start'])} after the start (only an opening line may come from it)"
-                        elif montage(tr, a, b, first_content):
-                            bad = f"its opening comes from a montage teaser (the line comes again at a later time): use that later line"
-            if bad:
-                pb.err(f'thread {k}', f"{c['id']}: {bad}")
-                continue
-            for r in regular:
-                if overlap_share(rs, r) > 0.5:
-                    pb.err(f'thread {k}', f"{c['id']}: more than half of it is a regular clip already made")
-                    bad = True
-                    break
-            if bad:
-                continue
-            c['moments'] = [ts(a) for a, _ in rs]
-            for w in boundary_warnings(rs, tr.words):     # Hindi transcripts have few full stops
-                pb.warn(f'thread {k}', f"{c['id']}: {w}")
-            out.append(c)
+            if check_deep(c, doc, tr, regular, first_content, pb, f'thread {k}'):
+                out.append(c)
     return out, pb, notes
+
+
+def check_deep(c, doc, tr, regular, first_content, pb, where):
+    """The code checks of one deep clip (composed or repaired): 2-3 pieces, no ads, outros or
+    montage teasers, not a regular clip's core. Adds its moments and cut-point warnings; False
+    when it can't be used."""
+    rs = c['ranges']
+    if len(rs) < 2:
+        pb.err(where, f"{c['id']}: a deep clip has 2-3 pieces (one piece is a regular clip)")
+        return False
+    if max(rs[j + 1][0] - rs[j][1] for j in range(len(rs) - 1)) < MIN_GAP:
+        pb.warn(where, f"{c['id']}: its pieces are less than {MIN_GAP:.0f} s apart")
+    bad = None
+    for a, b in rs:
+        for t in doc['topics']:
+            if t['start'] < b and a < t['end'] and t['role'] in STRUCT_BAN:
+                bad = f"uses the {t['role']} at {ts(t['start'])}"
+            elif t['start'] < b and a < t['end'] and t['role'] in OPENERS:
+                if (a, b) != tuple(rs[0]):
+                    bad = f"uses the {t['role']} at {ts(t['start'])} after the start (only an opening line may come from it)"
+                elif montage(tr, a, b, first_content):
+                    bad = "its opening comes from a montage teaser (the line comes again at a later time): use that later line"
+    if not bad and any(overlap_share(rs, r) > 0.5 for r in regular):
+        bad = 'more than half of it is a regular clip already made'
+    if bad:
+        pb.err(where, f"{c['id']}: {bad}")
+        return False
+    c['moments'] = [ts(a) for a, _ in rs]
+    for w in boundary_warnings(rs, tr.words):     # Hindi transcripts have few full stops
+        pb.warn(where, f"{c['id']}: {w}")
+    return True
+
+
+def show(pb, header):
+    """Print a check's problems and its warnings (the topic map's own report only counts warnings)."""
+    for where, msg in pb.errors:
+        print(f'   ! {where}: {msg}')
+    for where, msg in pb.warnings:
+        print(f'   ? {where}: {msg}')
+    if pb.errors or pb.warnings:
+        print(f'   ({header}: {len(pb.errors)} problem(s), {len(pb.warnings)} thing(s) to check)')
+
+
+# ---------------------------------------------------------------- the repair round (once)
+
+def apply_repairs(pdir, tr, doc, regular, cands):
+    """deep/repairs.json: the AI editor's fixed versions of deep clips the honesty judges rejected
+    (the missing softener or question kept, a piece started earlier). Each repair is checked like a
+    composed clip and added as <id>r, with the original's thread and twin. Once only: a repair is
+    never repaired again. Returns (added clips, problems)."""
+    pb = tp.Problems()
+    ans = load_json(pdir / 'deep' / 'repairs.json')
+    if not isinstance(ans, dict) or not isinstance(ans.get('repairs'), list):
+        pb.err('repairs', 'deep/repairs.json must be {"repairs": [{"from": "<id>", "pieces": [...], ...}]}')
+        return [], pb
+    hon = {x['id']: x for x in (load_json(pdir / 'deep' / 'honesty.json') or {}).get('clips', [])}
+    by_id = {c['id']: c for c in cands}
+    end = tr.lines[-1]['e']
+    first_content = next((t['start'] for t in doc['topics'] if t['role'] not in OPENERS | STRUCT_BAN), 0.0)
+    added = []
+    for j, r in enumerate(ans['repairs'], 1):
+        src = by_id.get(r.get('from')) if isinstance(r, dict) else None
+        where = f"repair {j}"
+        if not src or src.get('kind') != 'deep':
+            pb.err(where, f'"from" must be the id of a deep clip in deep/candidates.json')
+            continue
+        new_id = src['id'] + 'r'
+        if new_id in by_id or any(c['id'] == new_id for c in added):
+            continue                                   # already added
+        if src.get('repaired_from'):
+            pb.err(where, f"{src['id']} is itself a repair: there is one repair round only")
+            continue
+        if hon.get(src['id'], {}).get('verdict') != 'fail':
+            pb.err(where, f"{src['id']} was not rejected by the honesty judges: only rejected clips are repaired")
+            continue
+        fake = {'topics': [], 'blocks': [], 'candidates': [dict(r, id='c1')]}
+        part = {'part': f'r{j}', 'stretch': [0.0, end], 'context': [0.0, end], 'blocks': []}
+        tpb = tp.Problems()
+        _, got, _, _ = tp.read_part(tr, tpb, part, fake, tr.lines[0]['s'])
+        for _, msg in tpb.errors:
+            pb.err(where, msg)
+        if not got:
+            continue
+        c = got[0]
+        c.update(id=new_id, kind='deep', thread=src['thread'], pattern=src.get('pattern'), twin=src.get('twin'),
+                 repaired_from=src['id'], repair_why=r.get('why'))
+        if check_deep(c, doc, tr, regular, first_content, pb, where):
+            added.append(c)
+    return added, pb
 
 
 # ---------------------------------------------------------------- stage 4: report
@@ -307,6 +368,7 @@ def report(pdir, cands):
         return None
     score = {x['id']: x for x in crit['clips']}
     verdict = {x['id']: x for x in hon.get('clips', [])}
+    repairable = []
     rows, kept = ['# Deep clips: kept only when the critic scores them at least as high as their own continuous',
                   '# version AND at most one of the three honesty judges objects (that one becomes a note).', ''], []
     for c in [c for c in cands if c['kind'] == 'deep']:
@@ -321,6 +383,11 @@ def report(pdir, cands):
             why.append('no honesty verdict')
         elif h['verdict'] == 'fail':
             why.append(f"honesty: {h['verdict']} ({h.get('reason') or ''})")
+            fixed = next((x['id'] for x in cands if x.get('repaired_from') == c['id']), None)
+            if fixed:
+                why.append(f'repaired as {fixed}')
+            elif not c.get('repaired_from'):
+                repairable.append(c['id'])
         ok = not why
         note = h.get('reason') if ok and h and h['verdict'] == 'check' else None
         line = (f"{'KEEP' if ok else 'no  '} {c['id']:<7} {me['clip_score'] if me else '-':>4}/10 "
@@ -344,6 +411,10 @@ def report(pdir, cands):
     if dropped:
         rows.append(f"(same story, a weaker version, left out: {', '.join(dropped)})")
     rows += ['', f'{len(kept)} deep clip(s) kept.' if kept else 'No deep clip passed: a normal answer.']
+    if repairable and not (pdir / 'deep' / 'repairs.json').exists():
+        rows += ['', f"REPAIR ROUND (once): {', '.join(repairable)} lost only on honesty. If the judges' reasons name "
+                 f"something a few seconds fix (a cut 'but...', the question it answers, a piece starting on 'he / वो'), "
+                 f"write deep/repairs.json (references/deep-clips.md, 'Repair round') and run deep again."]
     (pdir / 'deep' / 'report.txt').write_text('\n'.join(rows) + '\n', encoding='utf-8')
     save_json(pdir / 'deep' / 'kept.json', kept)
     return kept, rows
@@ -420,7 +491,7 @@ def main():
         cands, pb, notes = build_candidates(pdir, tr, doc, plan, regular)
         for n in notes:
             print(f'   {n}')
-        tp.report(pb, 'deep candidates')
+        show(pb, 'deep candidates')
         if pb.errors or pb.warnings:
             print('Run that thread\'s composer again and pass it the problem lines (a sentence cut in the middle '
                   'loses to its continuous twin), or accept fewer clips.')
@@ -436,6 +507,19 @@ def main():
               f'      then the honesty check:  python run.py honesty {pdir.name}\n'
               f'      then  python run.py deep {pdir.name}  for the report')
         return
+    # stage 3b: the repair round (once), when the AI editor wrote deep/repairs.json
+    cands = load_json(ddir / 'candidates.json')
+    if (ddir / 'repairs.json').exists():
+        added, pb = apply_repairs(pdir, tr, doc, regular, cands)
+        show(pb, 'repairs')
+        if added:
+            save_json(ddir / 'candidates.json', cands + added)
+            for c in added:
+                print(f"   {c['id']:<7} {c['duration']:>4.0f} s  {' · '.join(c['moments'])}  repaired from {c['repaired_from']}")
+            print(f'-> {len(added)} repaired clip(s) added. next: score them with the rest:  python run.py critic '
+                  f'{pdir.name} --from deep --fresh  (3 critics, then critic again), then  python run.py honesty '
+                  f'{pdir.name}  (judges for the new packets only), then  python run.py deep {pdir.name}')
+            return
     # stage 4
     res = report(pdir, load_json(ddir / 'candidates.json'))
     if not res:

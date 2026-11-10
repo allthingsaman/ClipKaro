@@ -85,6 +85,7 @@ scenes; you don't need to type that part.
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
 | "use the creator's brand colour" | Claude uses it if it knows it for sure; otherwise it picks a colour from the video |
 | "Hindi captions in Hindi letters" | captions in Devanagari instead of English letters |
+| "show how much time was skipped" / "add a time label at the jumps" | a small "27 MIN LATER" label for 1.6 s where a joined clip jumps in time (`--jump-label`) |
 | "render with Remotion" | uses the optional second editor (slower; needs `python install.py --remotion`; free for individuals and small companies, [larger companies need a license](https://www.remotion.dev/license)) |
 
 ### Framing
@@ -141,7 +142,9 @@ prediction of views: views also depend on your channel, the timing and luck.
 A deep clip is kept only when it scores at least as well as the best single stretch, **and** at
 least two of three separate honesty judges agree it keeps what the person meant. If one judge has
 a doubt, the clip is kept and Claude tells you that judge's reason, so you can check it before
-posting. Often no deep clip passes: that's
+posting. A clip the judges reject for something a few seconds would fix (a "but..." cut off right
+after a piece, or an answer without its question) gets one repair: Claude keeps those seconds, and
+the clip is scored and judged again from scratch. Often no deep clip passes: that's
 normal, and Claude says so. A kept clip shows a short white flash where it jumps in time, and its
 posting caption starts with a line like "From 2 moments of the full video: 35:30 · 1:03:01" and the
 full video link. A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for
@@ -198,7 +201,8 @@ Claude to change them.
   "device": "auto",
   "hinglish_captions": "roman",
   "layout": "auto",
-  "facecam": null
+  "facecam": null,
+  "jump_label": false
 }
 ```
 
@@ -209,6 +213,7 @@ Claude to change them.
 | `device` | `auto` | `auto` (the NVIDIA card if it works, otherwise the processor), `cuda` (the NVIDIA card), `cpu` (the processor) |
 | `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
+| `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 
 ## 6. Doing the steps by hand (optional)
@@ -234,7 +239,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py romanize <project>` | `--clips 1,3` |
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
-| `run.py edit <project>` | `--clips 2`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |

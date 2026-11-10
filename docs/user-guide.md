@@ -178,7 +178,8 @@ deeper". After the normal clips, Claude looks for a story that is spread across 
 question at minute 3 and its answer at minute 41, and joins those moments into one short, always in
 the order they were said. Three separate checks make sure the joined clip doesn't change what
 anyone meant (if only one of them has a doubt, Claude keeps the clip and tells you why, so you can
-decide), and a short white flash shows where it jumps in time. Often no deep clip is good
+decide), and a short white flash with a soft whoosh shows where it jumps in time (ask "show how
+much time was skipped" to also see a small "27 MIN LATER"). Often no deep clip is good
 enough, and Claude tells you so. It takes about 10-15 minutes more.
 
 **Podcasts and interviews with two people** need no special words. ClipKaro shows the person who

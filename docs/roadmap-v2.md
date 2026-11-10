@@ -312,9 +312,14 @@ and **how we'll measure** it.
 - **Measure:** edit time under 30% of the clip length on a GPU machine.
 
 #### 17. Deep clips: stories spread across the whole video (M)
-- **Status: phases 1-3 built (November 2026), on the branch `deep-clipping`: the topic map (item
-  3), the critic (item 4) and the deep pass itself. Phase 4 (join polish) next. The branch is
-  merged only after all phases and a blind comparison with v1.1 on fresh videos.**
+- **Status: phases 1-4 built (November 2026), on the branch `deep-clipping`: the topic map (item
+  3), the critic (item 4), the deep pass itself and the join polish. Phase 5 (a blind comparison
+  with v1.1 on fresh videos) next; the branch is merged only after it.**
+- **Phase 4 results:** joins fade only in the quiet between words (longer at jumps across time,
+  20-100 ms as dialogue editors blend a change of room sound); a soft whoosh with the flash at each
+  jump; an optional "27 MIN LATER" label; `cut --check` warns when a later piece opens on a
+  pointing or answer word; and a one-time repair round for deep clips the honesty judges rejected
+  for something a few seconds fix. Tested on the Khan Sir podcast: a rejected clip came back, passed, and is now that video's one deep clip (with a note from one judge).
 - **Phase 3 results:** the honesty check (pass B) was tested on clips built to mislead, each with
   an honest twin, never seen while the judges' instructions were written: all 29 misleading clips
   caught (the true miss rate is very likely under 10%). With "any one judge rejects", 3 of 27
@@ -378,7 +383,7 @@ and **how we'll measure** it.
   | 1 | Long-video handling (item 3) and the topic map (`topics.json`) | M | Yes: the AI reads every part carefully |
   | 2 | The critic and a viral score with reasons (item 4) | S | Yes: fewer weak clips |
   | 3 | The deep pass: threads, candidates, critic (must beat its single-stretch twin), honesty check (two of three objections reject). **Built** | M | |
-  | 4 | Join polish: full-sentence checks, no missing references, gentler audio fade, optional soft whoosh on long jumps | S | Yes: better 2-part clips |
+  | 4 | Join polish: full-sentence checks, no missing references, gentler audio fade, soft whoosh on long jumps, optional time label, repair round. **Built** | S | Yes: better 2-part clips |
   | 5 | Test on three long videos and compare deep clips with regular clips | S | |
 
 - **Research behind it:** editing a long video step by step (understand the story, then plan, then
@@ -453,7 +458,7 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 
 **Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
 item 3), phase 2 (the critic, item 4) and phase 3 (the deep pass with its honesty check) are built;
-next is phase 4, polishing the joins. Phases 1 and 2 also make the regular clips better.
+phase 4 (smoother joins and a repair round) is built too; next is phase 5, the blind comparison with v1.1 on fresh videos. Phases 1, 2 and 4 also make the regular clips better.
 
 The earlier plan, still valid after that:
 

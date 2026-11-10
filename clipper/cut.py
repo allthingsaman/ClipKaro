@@ -16,14 +16,13 @@ import sys
 from pathlib import Path
 
 from . import facecam as fclib
-from .common import (H, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
+from .common import (H, JUMP_FLASH, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
                      settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
 PAD_IN, PAD_OUT = 0.12, 0.30
 MIN_PIECE = 0.25          # a framing boundary never leaves a sliver shorter than this
 HOWS = ('full', 'left', 'right', 'center', 'split')
-JUMP_FLASH = 20.0        # a join that skips more than this many seconds of the video gets a short flash
 
 
 def framing_spans(clip):
@@ -135,10 +134,20 @@ def snap_range(s, e, words):
     return max(0.0, start), end, i0, i1
 
 
+# a later piece of a joined clip that opens on one of these may point at (or answer) words that were cut
+PIECE_POINTERS = {'he', 'she', 'they', 'him', 'her', 'his', 'their', 'them', 'it', 'its', 'that', 'this', 'those',
+                  'these', 'which', 'जो', 'जिसने', 'जिसको', 'जिसका', 'जिसकी', 'जिन्होंने',
+                  'वो', 'वह', 'वे', 'उसने', 'उसको', 'उसे', 'उसका', 'उसकी', 'उनका', 'उनकी', 'उनको', 'उन्होंने',
+                  'यह', 'ये', 'इसका', 'इसकी', 'इसको', 'इसलिए', 'वही', 'उसी', 'wo', 'woh', 'isliye', 'usne', 'unhone'}
+PIECE_ANSWERS = {'yes', 'yeah', 'yep', 'no', 'nope', 'exactly', 'absolutely', 'correct',
+                 'हाँ', 'हां', 'जी', 'बिल्कुल', 'बिलकुल', 'नहीं', 'haan', 'han', 'bilkul', 'nahi', 'ji'}
+
+
 def boundary_warnings(ranges, words):
-    """Flag clips that start or end mid-sentence (the most common clipping mistake)."""
+    """Flag clips that start or end mid-sentence (the most common clipping mistake), and a later
+    piece of a joined clip that opens on a word pointing at (or answering) words that were cut."""
     warns = []
-    for s, e in ranges:
+    for k, (s, e) in enumerate(ranges):
         snapped = snap_range(s, e, words)
         if not snapped:
             continue
@@ -150,6 +159,11 @@ def boundary_warnings(ranges, words):
         if nxt and not is_sentence_end(last['w']) and nxt['s'] - last['e'] < 0.6:
             warns.append(f'ends mid-sentence: "...{" ".join(w["w"] for w in words[max(0, i1 - 5):i1 + 1])}" '
                          f'is followed by "{" ".join(w["w"] for w in words[i1 + 1:i1 + 7])}..."')
+        first = norm_token(words[i0]['w'])
+        if k > 0 and (first in PIECE_POINTERS or first in PIECE_ANSWERS):
+            what = 'answer a question' if first in PIECE_ANSWERS else 'point at words'
+            warns.append(f'piece {k + 1} opens on "{words[i0]["w"].strip()}", which may {what} that were cut out: '
+                         f'start it earlier, or make sure the clip still says what was meant')
         fs = false_start(words, i0, i1)
         if fs:
             warns.append(f'may start with a false start: "{fs[0]}" is said again {fs[1]:.1f} s later; if it is '
@@ -318,6 +332,31 @@ def two_person(pdir, video, plans, words):
     return out
 
 
+def join_fade(gap):
+    """(fade in, fade out) seconds at a join that skips `gap` seconds of the video. Dialogue editors
+    use a few ms at a plain cut and 20-100 ms where the room sound changes (more is heard)."""
+    if abs(gap) > JUMP_FLASH:
+        return 0.06, 0.08
+    if abs(gap) > 2.0:
+        return 0.03, 0.05
+    return 0.01, 0.03
+
+
+def piece_fades(ranges, k, start, end, dur, first_word, last_word):
+    """The afade filters of piece k: a click-free start and end, kept inside the quiet before the
+    first word and after the last one, so a fade never touches speech. A clip of one piece (and the
+    clip's own start and end) fades exactly as before."""
+    last = k == len(ranges) - 1
+    f_in, f_out, curve = 0.01, (0.12 if last else 0.03), ''
+    if k > 0:
+        f_in = max(0.01, min(join_fade(ranges[k][0] - ranges[k - 1][1])[0], first_word['s'] - start - 0.01))
+        curve = ':curve=qsin'
+    if not last:
+        f_out = max(0.03, min(join_fade(ranges[k + 1][0] - ranges[k][1])[1], end - last_word['e'] - 0.01))
+    return (f'afade=t=in:d={f_in:.3f}{curve},'
+            f'afade=t=out:st={max(0, dur - f_out):.3f}:d={f_out:.3f}{":curve=qsin" if not last else ""}')
+
+
 def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, planned=None, auto=None):
     src_w, src_h = info['width'], info['height']
     planned_by_start = {round(p[0], 3): p[2] for p in planned or []}
@@ -361,9 +400,7 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
                     chains.append(shot_filter(f'{n}s{j}', sh, src_w, src_h, f'v{n}_{j}', fps))
                 chains.append(''.join(f'[v{n}_{j}]' for j in range(len(shots))) +
                               f'concat=n={len(shots)}:v=1:a=0[v{n}]')
-        fade = 0.12 if k == len(clip['ranges']) - 1 else 0.03   # softer tail on the clip's last word
-        chains.append(f'[{n}:a]aresample=48000,afade=t=in:d=0.01,'
-                      f'afade=t=out:st={max(0, dur - fade):.3f}:d={fade}[a{n}]')
+        chains.append(f'[{n}:a]aresample=48000,{piece_fades(clip["ranges"], k, start, end, dur, words[i0], words[i1])}[a{n}]')
         labels.append(f'[v{n}][a{n}]')
         for w in words[i0:i1 + 1]:
             clip_words.append({**w, 's': round(w['s'] - start + timeline, 3),

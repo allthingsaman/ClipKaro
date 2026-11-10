@@ -131,7 +131,13 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
    once, one per role (prompt e.g. "Role: viewer. Packet: output/<project>/deep/honesty/d1-c1.txt").
    Run it again to merge: two or more fail / unsure reject the clip (never override that); one
    keeps it with a `check` note quoting that judge.
-6. `python run.py deep <project>` again: `deep/report.txt` lists the kept deep clips. Add them to
+6. `python run.py deep <project>` again: `deep/report.txt` lists the kept deep clips. If it
+   ends with **REPAIR ROUND**, do it once: for each listed clip whose judges name something a few
+   seconds fix (a cut "but..." or "just kidding", the question it answers, a piece starting on
+   "he / वो"), write `deep/repairs.json` (`references/deep-clips.md`, "Repair round"), run `deep`
+   again, then `critic --from deep --fresh` with 3 critics, `honesty` (judges for the new packets
+   only) and `deep` once more. Never repair a repair; skip clips the judges call twisted at heart.
+7. Add the kept deep clips to
    clips.json as extra clips, each with `"deep": {"moments": [...]}` and its `source_line`
    ("From 2 moments of the full video: 0:08 · 22:53") at the start of its caption, plus "Full
    video: <link>". `cut` shows each jump across time with a short flash. When a kept clip has an
@@ -171,8 +177,9 @@ First check the boundaries (it takes a second and cuts nothing):
 ```
 python run.py cut <project> --check
 ```
-It warns when a clip starts or ends mid-sentence, or falls outside 15–90 s. For every warning,
-look at the quoted words. Fix the range with `run.py find` unless the cut is clearly intentional
+It warns when a clip starts or ends mid-sentence, falls outside 15–90 s, or (for a clip joined
+from pieces) a later piece opens on "he / वो / that" or "haan / exactly", which may point at or
+answer words that were cut. For every warning, look at the quoted words. Fix the range with `run.py find` unless the cut is clearly intentional
 (e.g. a splice point, or a start right after "but"). Then cut:
 ```
 python run.py cut <project>
@@ -244,11 +251,14 @@ For each clip this adds:
   the accent colour, and the `emphasis` words from clips.json stay highlighted. An `.srt` is also
   written. Hinglish projects use the Roman spellings from romanize.json; any word still in
   Devanagari switches that clip to the Poppins font (it has Hindi letters) in normal case.
-- **Sound**: at most 2 subtle whooshes: one on the opening zoom and one on an emphasis zoom. The voice is lightly compressed, and the
+- **Sound**: at most 2 subtle whooshes: one on the opening zoom and one on an emphasis zoom (in a
+  joined clip that jumps in time, a softer one on the jump instead, with the flash). The voice is lightly compressed, and the
   whole mix is normalised to -14 LUFS.
 
 Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentence case),
-`--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`.
+`--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
+`--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
+or `"jump_label": true` in settings.json).
 Read `references/editing.md` if the user wants a different look.
 
 ## 6. Deliver

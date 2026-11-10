@@ -210,15 +210,17 @@ def main():
         save_json(pdir / 'deep' / 'honesty.json', {'clips': []})
         print('-> no deep clip to check (none scored at least as high as its continuous version).')
         return
-    fresh = a.fresh or not all((hdir / f"{c['id']}.txt").exists() for c in deep)
-    if fresh:
-        for c in deep:
+    # packets for clips that have none yet (all of them with --fresh); a clip judged earlier keeps its
+    # verdicts, so a repaired clip added later is the only one judged again
+    new = [c for c in deep if a.fresh or not (hdir / f"{c['id']}.txt").exists()]
+    if new:
+        for c in new:
             text, n = build_packet(pdir, tr, doc, c['id'], c['ranges'], c.get('title', ''))
             (hdir / f"{c['id']}.txt").write_text(text, encoding='utf-8')
             print(f"   {c['id']}.txt  ({n:,} tokens)")
         rel = hdir.relative_to(pdir.parent.parent).as_posix()
-        print(f'-> {len(deep)} packet(s). next: for EACH packet start 3 `clipkaro-honesty` helpers at once, one per '
-              f'role (prompt e.g. "Role: advocate. Packet: {rel}/{deep[0]["id"]}.txt"); each writes '
+        print(f'-> {len(new)} new packet(s). next: for EACH new packet start 3 `clipkaro-honesty` helpers at once, '
+              f'one per role (prompt e.g. "Role: advocate. Packet: {rel}/{new[0]["id"]}.txt"); each writes '
               f'<id>-<role>.json next to it. Then run  python run.py honesty {pdir.name}  again')
         return
     out, probs, missing = merge(hdir, deep)

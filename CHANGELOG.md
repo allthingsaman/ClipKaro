@@ -84,6 +84,23 @@
   plus the full video link.
 - New commands: `run.py deep` and `run.py honesty`.
 
+### Deep clips, phase 4: smoother joins and a repair round
+- **Joins sound smooth.** Where a clip is joined from pieces, the sound now fades out and in only
+  in the quiet between words, a little longer where the video jumps in time (the background sound
+  changes there), so a join never clicks and never clips a word. Clips of one piece sound exactly
+  as before.
+- **A jump is heard, too:** a soft whoosh plays with the white flash where a clip skips more than
+  20 seconds.
+- **Optional time label:** ask for it ("show how much time was skipped") or set
+  `"jump_label": true`, and a small "27 MIN LATER" appears for a moment at each jump. Off by
+  default.
+- **A second chance for deep clips:** when the honesty judges reject a deep clip for something a
+  few seconds would fix (a "but..." cut off, an answer without its question), Claude repairs it once
+  and it is scored and judged again from scratch. Tested on the Khan Sir podcast: a rejected clip came back, passed, and is now that video's one deep clip (with a note from one judge).
+- **One more check for joined clips:** `cut --check` warns when a later piece starts on "he",
+  "that", "वो" or "haan", which may point at (or answer) words that were cut out.
+- Fixed: the deep pass now prints its warnings (it only counted them).
+
 ## v1.1 (November 2026): better framing
 
 ### Podcasts with two people on screen

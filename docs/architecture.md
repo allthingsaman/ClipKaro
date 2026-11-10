@@ -549,12 +549,25 @@ and does the next stage by itself:
    and the owner, who checks every clip anyway, preferred fewer lost clips.) The judges never see
    the critic's opinion or who made the clip.
 6. **The report** (`deep/report.txt`, `deep/kept.json`): one clip per thread, the best that passed
-   both (a clip without a note wins a tie). It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
+   both (a clip without a note wins a tie).
+7. **The repair round (once).** A clip the honesty judges rejected for something a few seconds fix
+   (a "but..." cut off after a piece, an answer without its question, a piece opening on "he / वो")
+   is fixed by the AI editor in `deep/repairs.json`, in the composers' quote format. `deep` checks
+   it like any composed clip and adds it as `<id>r` with the same thread and twin; then the critic
+   scores all deep clips again (`--fresh`) and three new honesty judges read only the new packet. A
+   repair is never repaired again, and a clip whose link itself was wrong is not repaired. Tested
+   on the Khan Sir podcast: the farmers clip that two judges had rejected (it opened on a line from the host's intro list and stopped before Khan Sir called his plan coaching classes for farmers) was repaired to open on the host's real question and keep that line; it scored 5.5 against 3.9 for its single stretch, and two new judges passed it, the third left a note (it ends 2 s before "but for that a big area is needed"). So the video now has one deep clip instead of none. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
    caption: "From 2 moments of the full video: 0:08 · 22:53", plus the full video link.
 
-**Joins are shown, not hidden.** At a join that skips more than 20 s, `cut` adds a short white
-flash (about a fifth of a second), so a viewer can see that time was skipped (PBS asks for "an
-audio or visual cue" at such edits).
+**Joins are shown, not hidden, and sound smooth.** At a join that skips more than 20 s, `cut` adds
+a short white flash (about a fifth of a second) and `edit` a soft whoosh (-19 dB), so a viewer can
+see and hear that time was skipped (PBS asks for "an audio or visual cue" at such edits). The
+sound at every join fades out and in, only inside the quiet after the last word and before the
+next first word, so a fade never touches speech: 30 ms + 10 ms at a plain cut (as before), and
+longer where the room sound may change: 50 + 30 ms when a few seconds are skipped, 80 + 60 ms at a
+jump across time (dialogue editors use a few ms at a plain cut and 20-100 ms to blend a change of
+room tone; much more is heard). On request, `edit --jump-label` (or `"jump_label": true`) also
+shows a small "27 MIN LATER" for 1.6 s at each jump.
 
 **Tested before trusting it.** A helper built misleading clips from our 5 test videos (an answer
 moved to another question, a "just kidding" cut off, a quote played as the speaker's own view, two
@@ -577,6 +590,9 @@ answer to a question from the host's intro). "No deep clip" is a normal answer.
 - `cut --check` warns when a clip **starts or ends mid-sentence** (the previous or next word is
   less than 0.6 s away and there's no sentence end in between) or is **outside 15-90 s**. The AI
   editor then fixes the range or confirms the cut is intentional.
+- For a clip **joined from pieces**, it also warns when a later piece **opens on a pointing word**
+  ("he", "that", "वो", "उसने", "इसलिए") or an **answer word** ("haan", "exactly", "नहीं"): it may
+  point at, or answer, words that were cut out.
 
 ### 5.6 Reframing 16:9 to 9:16 (`reframe.py`)
 1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut,
@@ -701,7 +717,8 @@ detection; `--layout crop` turns the layout off.
   `swish`/`swipe`, `hit`/`impact`/`boom`, `click`/`pop`/`tick`). A file holding several sounds is
   split at the silences, and each sound becomes a variant. The result is cached in `catalog.json`.
 - **Cues** (`--sfx auto`, the default): one whoosh on the opening zoom (-15 dB) and one on the first
-  emphasis zoom (-17 dB), each lined up so its loudest moment lands on the move. `--sfx light` keeps
+  emphasis zoom (-17 dB), each lined up so its loudest moment lands on the move. In a joined clip
+  that jumps in time, a softer one (-19 dB) lands on each jump instead of the emphasis one. `--sfx light` keeps
   only the opening one, `--sfx none` none. `hit` and `click` sounds are catalogued for custom edits
   but not placed automatically.
 - **Mix**: the voice gets a 70 Hz high-pass and gentle compression (2.5:1 from -20 dB); the effects

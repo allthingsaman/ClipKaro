@@ -71,3 +71,29 @@ Each piece is `{"first": the first 5+ words exactly, "first_line": that line's s
 `hook_type` is one of contrarian, question, fact, story, desire, reframe; `score` is 1-10. With no
 good deep clip: `"candidates": []` and `"none_because": "<why>"` (still give the continuous clip if
 there is a good one).
+
+## Repair round (once, by the AI editor)
+When `deep/report.txt` ends with REPAIR ROUND, some deep clips lost only because two or more
+honesty judges objected. Read each listed clip's reasons (in the report and in
+`deep/honesty/<id>-<role>.json`) and the transcript around its pieces. Repair a clip only when a
+few seconds fix what the judges named, and the story still fits in 75 s:
+- a softener, correction or "but..." right after a piece: end the piece after it;
+- an answer without its question: start with the question it really answered (not a line from
+  the intro, which only lists topics);
+- a piece opening on "he / वो / that" or "isliye": start it where the thing is named;
+- a line that sounds like the speaker's own view but was a quote or impression: keep the words
+  that show whose view it is.
+Don't repair a clip whose link itself was wrong (two topics joined to make a cause nobody said, a
+reordered story): leave it out. Never repair a repair.
+
+`deep/repairs.json` uses the composer's piece format; `from` is the rejected clip's id:
+```json
+{"repairs": [
+  {"from": "d2-c1",
+   "pieces": [{"first": "...", "first_line": 6004.74, "last": "...", "last_line": 6010.39},
+              {"first": "...", "first_line": 6123.24, "last": "...", "last_line": 6162.44}],
+   "title": "<3-7 words>", "hook_type": "desire", "score": 7,
+   "why": "<what the judges named and what changed>", "needs_context": null}]}
+```
+Then `python run.py deep <project>` adds it as `d2-c1r` (same thread, same continuous twin), and
+the critic and fresh honesty judges look at it like any other deep clip.

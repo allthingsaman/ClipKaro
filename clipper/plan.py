@@ -15,7 +15,7 @@ Zoom style (adapted from a tested short-form editing engine):
 import math
 import re
 
-from .common import FPS, H, W, has_devanagari, is_sentence_end, norm_token
+from .common import FPS, H, JUMP_FLASH, W, has_devanagari, is_sentence_end, norm_token
 from . import sfx as sfxlib
 
 # caption fonts (assets/fonts): Montserrat has no Hindi letters, so captions that contain Devanagari
@@ -284,7 +284,9 @@ def cut_at_seams(caps, shots, fps=FPS):
 
 # ---------- sound effects ----------
 
-def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS):
+def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=()):
+    """Sound cues: a whoosh on the opening zoom, and one on the emphasis zoom or, in a joined clip
+    that jumps in time, a softer one at each jump (with the flash: a jump is heard, not hidden)."""
     if mode == 'none':
         return []
     cues, used = [], set()
@@ -307,10 +309,35 @@ def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS):
     add('whoosh', OPEN_FRAMES / fps * 0.5, -15, prefer_len=0.9)          # opening zoom
     if mode == 'light':
         return cues
+    for t in jumps:                                                      # a jump across time
+        if t > 0.5:
+            add('whoosh', t, -19, prefer_len=0.7)
     snap = next((t for t in transitions if t['kind'] == 'snap'), None)
-    if snap:                                                             # whoosh on the emphasis zoom
+    if snap and not jumps:              # whoosh on the emphasis zoom (a clip with a jump has that one)
         add('whoosh', snap['t'] + SNAP_FRAMES / fps * 0.4, -17, prefer_len=0.9)
     return cues
+
+
+def long_jumps(meta):
+    """Joins that skip more than JUMP_FLASH seconds of the video (the ones cut shows with a flash)."""
+    return [j for j in meta.get('jumps', []) if abs(j['gap']) > JUMP_FLASH]
+
+
+def jump_labels(jumps, duration, upper=True):
+    """Optional small labels at long jumps: "27 MIN LATER" for 1.6 s (off unless asked for)."""
+    out = []
+    for j in jumps:
+        g, when = abs(j['gap']), ('later' if j['gap'] > 0 else 'earlier')
+        if g >= 3600:
+            h, m = int(g // 3600), int(round(g % 3600 / 60))
+            txt = f'{h} hr {m} min {when}' if m else f'{h} hr {when}'
+        elif g >= 90:
+            txt = f'{int(round(g / 60))} min {when}'
+        else:
+            txt = f'{int(round(g))} sec {when}'
+        out.append({'start': round(j['t'], 3), 'end': round(min(duration, j['t'] + 1.6), 3),
+                    'text': txt.upper() if upper else txt})
+    return out
 
 
 # ---------- the plan ----------
@@ -352,6 +379,8 @@ def build(meta, brand, opts):
             'spacing': 0 if hindi else 1,
         },
         'brand': brand,
-        'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps),
+        'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps,
+                        jumps=[j['t'] for j in long_jumps(meta)]),
+        'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
         'transitions': transitions,
     }
