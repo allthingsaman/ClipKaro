@@ -15,6 +15,7 @@
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
     python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
     python run.py relisten <project>                     listen again to unclear speech (game voices): fix or drop its captions
+    python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """
@@ -42,6 +43,7 @@ COMMANDS = {
     'frames': 'clipper.frames',
     'post': 'clipper.post',
     'relisten': 'clipper.relisten',
+    'asr-bench': 'clipper.asrbench',
     'gpu': 'clipper.gpu',
 }
 

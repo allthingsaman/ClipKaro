@@ -393,6 +393,19 @@ other device would help.
   over 0.8 s, at a comma once a line has 30 words, and at most every 60 words. So a line end is a
   real sentence end in most cases, which matters when the AI chooses where to cut.
 
+### 5.3a Keeping up with new speech models (`asrbench.py`)
+No newer open Whisper than large-v3-turbo exists (Nov 2026); the 2026 releases (GPT-Realtime-Whisper,
+ElevenLabs Scribe v2, Sarvam) are paid cloud services that would upload the audio. Open Hinglish
+fine-tunes exist but only report their own numbers. So a model is chosen by a test on the owner's
+own videos: `asr-bench make` cuts four ~3-minute snippets (anime narration, talking to the camera,
+gameplay with an English game voice, an English podcast) and drafts a reference text from the current
+transcript, which the owner corrects by ear once. `asr-bench run <model>` transcribes them the way
+`fetch` does (re-listening included) and scores the share of words wrong. Words are compared by a
+sound key (`sound_key`): Devanagari turned into simple Roman (`roman`), long vowels and aspiration
+folded, doubled letters merged, so क्या, kya and kyaa are the same word and a model writing Roman
+Hinglish is not punished. Only Hindi, Hinglish and English; only faster-whisper (CTranslate2) models.
+A model is downloaded only when someone runs it.
+
 ### 5.4 Picking the moments (the AI editor)
 The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-video/references/picking-moments.md):
 
