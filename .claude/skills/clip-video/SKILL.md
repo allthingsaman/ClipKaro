@@ -96,13 +96,24 @@ sees your scores, titles, the replay curve or anything about the channel.
    holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
    content: read close calls yourself.
 5. **Repair round (once, when it helps).** Like an editor after notes, fix the clips you'd pick (or
-   good ones just below) that have a `fix?` note, a false start, or a weak hook:
+   good ones just below) that have a `fix?` or `trim?` note, a false start, or a weak hook:
    - "never says who / what" or a teaser with no answer: add the short line that names it or
      gives the answer, as a second piece in the order it was said (or a ~5 s cold open);
    - opens on "जो / वो / so my point was", a false start or a slow line: start where the subject
      is named, at the second take, or at the suggested stronger start;
-   - the payoff comes after the cut, or the sentence goes on: end later, at the end of that thought;
-   - two halves of one story: join them (2–3 pieces, in the order said).
+   - the payoff comes after the cut, or the sentence goes on: end at the end of **that** thought,
+     its last sentence, not later; if that is more than ~10 s away, end the first piece earlier and
+     add only the payoff line as a second piece;
+   - two halves of one story: join them (2–3 pieces, in the order said);
+   - **tighten** (`trim?` notes, and your own read of every clip you pick): start on the hook (cut a
+     warm-up lead-in), end on the payoff (cut after-thoughts and restating), and cut detours out of
+     a long answer as pieces in the order said, so it still plays like one take. Never cut the hook
+     line, a line the payoff needs, a funny line or a reaction; never end before the speaker
+     finishes the point.
+
+   **Every second you keep or add must carry something.** Of two cuts that say the same thing, keep
+   the shorter. (The owner's blind test, Nov 2026: where both versions cut the same moment, the
+   tighter cut won 8 of 8; the longer one only wins when its extra seconds are funny or needed.)
    Follow "Never change what someone meant" in `references/picking-moments.md`. When you changed
    any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16),
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
@@ -111,9 +122,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    third clip of a shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
-   readers' candidates have none, so write them here. For the picked
-   clips, apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") in
-   `transcript/words.json`, one word entry at a time, keeping the times.
+   readers' candidates have none, so write them here. The critic's caption fixes come last (2e).
 
 ## 2d. Deep clips (only when asked)
 "deep clip this: <link>", "clip this, then go deeper", "do a deep pass on <video>": first make the
@@ -164,6 +173,12 @@ now names who he is, one ends on the answer"), and this line: "Clip scores judge
 each clip looks from its words and sound; they are not a prediction of views."
 List clips the critic tagged `check-facts` with the claim to check (the user decides before
 posting). Don't wait for approval unless they asked to review picks first. Keep going.
+
+## 2e. Caption fixes (last, after the deep pass if there is one)
+Copy `transcript/words.json` to `transcript/words-before-fixes.json` once, then apply the critic's
+**caption fixes** (misheard words, e.g. "farts" -> "fads") for the picked clips in `words.json`, one
+word entry at a time, keeping the times. The deep pass and the topic map match quotes against the
+words as first heard (`words-before-fixes.json`), so fixes never break them.
 
 ## 2b. Roman Hinglish captions (Hindi/Hinglish projects only)
 Skip this for other languages, or if settings.json has `"hinglish_captions": "devanagari"`.

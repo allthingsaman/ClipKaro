@@ -411,6 +411,10 @@ def report(pdir, cands):
     if dropped:
         rows.append(f"(same story, a weaker version, left out: {', '.join(dropped)})")
     rows += ['', f'{len(kept)} deep clip(s) kept.' if kept else 'No deep clip passed: a normal answer.']
+    # a story that already has a kept deep clip needs no repaired version (phase 5: CIA d3-c2 was offered
+    # although d3-c1, the same story with the same score, was kept)
+    repairable = [r for r in repairable if not any(k['thread'] == next((c['thread'] for c in cands if c['id'] == r), None)
+                                                   for k in kept)]
     if repairable and not (pdir / 'deep' / 'repairs.json').exists():
         rows += ['', f"REPAIR ROUND (once): {', '.join(repairable)} lost only on honesty. If the judges' reasons name "
                  f"something a few seconds fix (a cut 'but...', the question it answers, a piece starting on 'he / वो'), "
@@ -437,7 +441,8 @@ def main():
     if not doc or not doc.get('topics'):
         die(f'no topic map yet: run  python run.py parts {pdir.name}  and the part reader(s), then  '
             f'python run.py topics {pdir.name}  (a short video has one part)')
-    words = load_json(pdir / 'transcript' / 'words.json')
+    # quotes are matched against the words as first heard: the critic's caption fixes come later
+    words = load_json(pdir / 'transcript' / 'words-before-fixes.json') or load_json(pdir / 'transcript' / 'words.json')
     lines = load_json(pdir / 'transcript' / 'sentences.json')
     tr = tp.Transcript(words, lines)
     project = load_json(pdir / 'project.json', {}) or {}

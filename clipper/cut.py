@@ -528,6 +528,12 @@ def main():
         if total and not 15 <= total <= 90:
             msgs.append(f'length {total:.0f}s is outside 15-90 s')
         msgs += drift_warnings(clip, cands)
+        for r0, r1 in clip['ranges']:            # unclear speech (relisten marked it): no captions there
+            uw = [w for w in words if w.get('unsure') and r0 <= w['s'] < r1]
+            if uw:
+                msgs.append(f"no captions at {fmt_ts(uw[0]['s'])}-{fmt_ts(uw[-1]['e'])} ({len(uw)} words): the "
+                            f"speech there was unclear (a game voice, music or noise). Fine if the game shows "
+                            f"its own subtitles")
         for r0, r1 in clip['ranges']:
             for other, x, y in taken:
                 if r0 < y - 1.0 and x < r1 - 1.0:

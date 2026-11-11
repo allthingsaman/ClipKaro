@@ -520,7 +520,8 @@ def read_focus(tr, pb, out):
 
 def build(pdir, plan, args):
     pb = Problems()
-    words = load_json(pdir / 'transcript' / 'words.json')
+    # quotes are matched against the words as first heard: the critic's caption fixes come later
+    words = load_json(pdir / 'transcript' / 'words-before-fixes.json') or load_json(pdir / 'transcript' / 'words.json')
     lines = load_json(pdir / 'transcript' / 'sentences.json')
     project = load_json(pdir / 'project.json', {}) or {}
     tr = Transcript(words, lines)
@@ -842,7 +843,8 @@ def main():
     ap.add_argument('--dir', default='parts', help='the parts folder inside the project (default parts)')
     a = ap.parse_args()
     pdir = project_dir(a.project)
-    words = load_json(pdir / 'transcript' / 'words.json')
+    # quotes are matched against the words as first heard: the critic's caption fixes come later
+    words = load_json(pdir / 'transcript' / 'words-before-fixes.json') or load_json(pdir / 'transcript' / 'words.json')
     if not words:
         die(f'no transcript in {pdir}')
 

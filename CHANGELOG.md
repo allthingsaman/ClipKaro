@@ -101,6 +101,19 @@
   "that", "वो" or "haan", which may point at (or answer) words that were cut out.
 - Fixed: the deep pass now prints its warnings (it only counted them).
 
+### Tighter cuts, and game voices captioned right
+- **Tighter cuts.** In the owner's blind comparison, where both versions cut the same moment, the
+  tighter cut won 8 of 8: the new version had made 7 of them longer. Now the second-opinion critic
+  also marks dead weight (a slow lead-in, after-thoughts at the end, a detour inside a long answer),
+  and the repair round starts on the hook, ends on the payoff and cuts detours out. Every second kept
+  must carry something.
+- **Game voices.** In a gameplay video transcribed as Hindi, a game character speaking English came out
+  as Hindi-letter nonsense in the captions. Unclear stretches are now heard again: clear English
+  replaces the nonsense ("…he may yet rise again"), and anything still unclear gets no captions
+  instead of wrong ones. `run.py relisten <project>` fixes videos transcribed before.
+- Fixed: caption fixes made before the deep pass broke its quotes; the deep pass offered a repair for a
+  story that already had a kept clip.
+
 ### Captions always fit the frame
 - **No more captions cut off at the sides.** Some captions ran out of the frame: a whole line stuck in
   one caption (a misheard phrase fixed as one entry, or a Hindi word whose Roman spelling is several

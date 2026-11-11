@@ -14,6 +14,7 @@
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
     python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
+    python run.py relisten <project>                     listen again to unclear speech (game voices): fix or drop its captions
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """
@@ -40,6 +41,7 @@ COMMANDS = {
     'honesty': 'clipper.honesty',
     'frames': 'clipper.frames',
     'post': 'clipper.post',
+    'relisten': 'clipper.relisten',
     'gpu': 'clipper.gpu',
 }
 

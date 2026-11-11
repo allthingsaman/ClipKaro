@@ -285,6 +285,56 @@ def locate(tr, ranges, quote):
     return None
 
 
+def locate_end(tr, ranges, quote):
+    """End time of a quoted line inside the clip (its last quoted word), or None."""
+    q = [t for t in (norm_token(x) for x in quote.split()) if t]
+    if len(q) < 2:
+        return None
+    ws = [w for a, b in ranges for w in tr.words_in(a, b)]
+    toks = [norm_token(w['w']) for w in ws]
+    n = min(len(q), 6)
+    for i in range(len(toks) - n + 1):
+        if toks[i:i + n] == q[:n]:
+            j = i + n - 1
+            while j + 1 < len(toks) and j + 1 - i < len(q) and toks[j + 1] == q[j + 1 - i]:
+                j += 1
+            return ws[j]['e']
+    return None
+
+
+def merge_trims(tr, ranges, runs):
+    """Trims ("dead weight") that most runs agree on, with their times: lead-in (start later), tail (end
+    earlier), detour (cut out of the middle). Proposed by at least 2 of 3 runs (times within 1.5 s)."""
+    start, end = ranges[0][0], ranges[-1][1]
+    found = []
+    for x in runs:
+        for t in x.get('trim') or []:
+            if not isinstance(t, dict):
+                continue
+            k = t.get('kind')
+            if k == 'lead-in' and t.get('until'):
+                a = locate(tr, ranges, t['until'])
+                if a is not None and a - start >= 1.0:
+                    found.append({'kind': k, 'a': start, 'b': a, 'text': t['until'], 'run': x['run']})
+            elif k == 'tail' and t.get('after'):
+                b = locate_end(tr, ranges, t['after'])
+                if b is not None and end - b >= 1.0:
+                    found.append({'kind': k, 'a': b, 'b': end, 'text': t['after'], 'run': x['run']})
+            elif k == 'detour' and t.get('from') and t.get('to'):
+                a, b = locate(tr, ranges, t['from']), locate_end(tr, ranges, t['to'])
+                if a is not None and b is not None and b - a >= 2.0 and a > start and b < end:
+                    found.append({'kind': k, 'a': a, 'b': b, 'text': f"{t['from']} ... {t['to']}", 'run': x['run']})
+    need = len(runs) // 2 + 1
+    out = []
+    for f in found:
+        same = [g for g in found if g['kind'] == f['kind'] and abs(g['a'] - f['a']) <= 1.5 and abs(g['b'] - f['b']) <= 1.5]
+        if len({g['run'] for g in same}) >= need and not any(o['kind'] == f['kind'] and abs(o['a'] - f['a']) <= 1.5
+                                                            and abs(o['b'] - f['b']) <= 1.5 for o in out):
+            out.append({'kind': f['kind'], 'a': round(f['a'], 2), 'b': round(f['b'], 2), 'text': f['text'],
+                        'saves': round(f['b'] - f['a'], 1)})
+    return out
+
+
 def peaks(project, topics):
     """Strong "most replayed" regions, or [] for a video without a curve.
     Bins of 1% of the video; the first bin and structural topics (teaser, intro, sponsor, outro) are
@@ -431,7 +481,12 @@ def merge(pdir, plan, answers):
         notes = [f"fix? {GATES[g]}: {gates[g]['why'][0] if gates[g]['why'] else 'failed'}" for g in failed]
         notes += [f"check {GATES[g]} ({gates[g]['pass']} of {len(runs)} runs passed): {gates[g]['why'][0]}"
                   for g in split]
-        res['status'] = 'fix' if failed else 'check' if split else 'clean'
+        res['trims'] = merge_trims(tr, c['ranges'], runs)
+        for t in res['trims']:          # dead weight most runs would cut: for the repair round
+            notes.append({'lead-in': f"trim? lead-in: start at {fmt_ts(t['b'])} (\"{t['text']}\"), saves {t['saves']} s",
+                          'tail': f"trim? tail: end at {fmt_ts(t['a'])} (after \"{t['text']}\"), saves {t['saves']} s",
+                          'detour': f"trim? detour {fmt_ts(t['a'])}-{fmt_ts(t['b'])}: cut \"{t['text']}\" out, saves {t['saves']} s"}[t['kind']])
+        res['status'] = 'fix' if failed else 'check' if split or res['trims'] else 'clean'
         res['notes'] = notes
         res['reason'] = '; '.join(notes)
         res['hints'] = hints(c, pk, teased, cues)
@@ -478,7 +533,8 @@ def write_txt(pdir, doc, path):
             f"{count['fix']} have a note to fix, {count['check']} a note to check.",
             '# A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,',
             '# shareability), compared with the other moments of this video. It is not a prediction of views.',
-            '# Pick from the top (the rank includes a tiny hint bonus that only reorders near-ties). A "fix?" note',
+            '# Pick from the top (the rank includes a tiny hint bonus that only reorders near-ties). "trim?" notes are dead',
+            '# weight most runs would cut (lead-in, tail, detour): tighten in the repair round. A "fix?" note',
             '# (needs context, the payoff comes after the cut) is for the repair round, not a reason to drop a',
             '# clip. Phase-1 rules still apply: no overlap, one per topic, coverage.', '']
     for n, x in enumerate(cl, 1):

@@ -256,6 +256,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates\|deep` (what to judge), `--runs 3` |
 | `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |
 | `run.py honesty <project>` | first run: one packet per deep clip for the three honesty judges; second run: merges their verdicts; `--fresh` (start over) |
+| `run.py relisten <project>` | listens again to unclear speech (game voices, film clips) in videos transcribed before Nov 2026: clear English replaces nonsense, the rest gets no captions; then re-cut the clips it names |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py post <project>` | `--open` (open the PostKaro link in the browser). Writes `post.json`; prints the PostKaro link when PostKaro is installed |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |

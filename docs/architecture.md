@@ -379,6 +379,16 @@ other device would help.
   recovered words in.
 - **Clean-up** (`clean_words`): removes broken characters, a vowel sign looping inside a Hindi word,
   and the same word repeated 4+ times in a row.
+- **Re-listening to unclear speech** (`unsure_stretches`, `relisten`): a run of 4+ words whose mean
+  confidence is under 0.45 (with the unsure words right next to it) is heard again. If Whisper's top
+  language guess for it is English in a Hindi/Hinglish video (a game character, a film clip) and the
+  English words come out clearly more confident (0.6+, and 0.15 above before), they replace the
+  nonsense; otherwise the words are marked `unsure` and get **no captions** (`cut --check` names the
+  stretch; `transcript.txt` marks the line "(unclear …)"). Only English is accepted as a second
+  language: in tests, Korean, Japanese and Chinese "recognitions" of game audio were loops and made-up
+  text. Measured: podcasts and talking videos have 0-2 such stretches; a 44-minute gameplay video had
+  90, of which 29 became correct English game lines ("…he may yet rise again"). `run.py relisten
+  <project>` does the same for videos transcribed before (from `words-before-relisten.json`).
 - **Sentence lines** (`sentences`): words are grouped into lines at `.` `?` `!` `।` `॥`, at pauses
   over 0.8 s, at a comma once a line has 30 words, and at most every 60 words. So a line end is a
   real sentence end in most cases, which matters when the AI chooses where to cut.
@@ -509,11 +519,21 @@ about twice the clips wanted that the AI editor writes for a short video.
   median, at most 5 (our own starting values).
 - **Checks:** the score's link with clip length and with the place in the packet (a sign of bias),
   how often the gates agree, and how much the runs differ.
+- **Trims (dead weight):** each run may list a `lead-in` (warm-up before the hook), a `tail`
+  (after-thoughts after the payoff) or a `detour` (a side story inside a long answer), quoting the
+  words. A trim proposed by 2 of 3 runs (times within 1.5 s) becomes a `trim?` note with its times
+  and the seconds it saves (`merge_trims`).
 - **Repair round (once):** the AI editor fixes the top clips that have a note, a false start or a
   weak hook (adds the line that answers a teaser or names "he", starts later, joins two halves of
-  one story, always in the order said) and runs `critic --fresh --from clips` on that shortlist.
+  one story, always in the order said), **and tightens them**: starts on the hook, ends on the
+  payoff, cuts detours out as pieces. Every second kept must carry something; of two cuts that say
+  the same, the shorter wins. Then it runs `critic --fresh --from clips` on that shortlist. Why: in
+  the owner's blind test (Nov 2026), where both versions cut the same moment, the tighter cut won 8
+  of 8; v2's repairs had made 7 of them longer ("end later", "add the line").
 - **Extras that never change a score:** `check-facts` tags (a claim that looks wrong) and caption
-  fixes (misheard words, applied to `words.json` for the picked clips before cutting).
+  fixes (misheard words), applied to `words.json` for the picked clips as the last step of picking,
+  after a backup to `words-before-fixes.json`. The topic map and the deep pass match quotes against
+  that backup, so fixes never break them.
 - **Output:** `critic.txt` (every idea best first, with reasons and notes) and
   `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
 

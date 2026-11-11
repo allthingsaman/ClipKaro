@@ -316,6 +316,9 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, sty
         text = display(w['w'], upper)
         if not text:
             continue
+        if w.get('unsure'):             # the recogniser was guessing (a game voice, music): no caption
+            flush()
+            continue
         if cur:
             line = ' '.join([c['text'] for c in cur] + [text])
             too_wide = caption_width(line, style) > max_w if style else len(line) > max_chars

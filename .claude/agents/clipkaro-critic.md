@@ -82,7 +82,8 @@ Use "unsure" only when you really can't tell.
 - 5: a line people would screenshot or argue about
 
 ## Rules
-- Judge each clip on its own. Don't let length sway you: shorter is not better or worse in itself.
+- Judge each clip on its own. Don't let length sway your scores: shorter is not better or worse in
+  itself. But seconds that add nothing are a flaw the creator wants cut: list them under `trim`.
 - Confident delivery is not content. Judge what is said.
 - Hinglish (Hindi in Devanagari plus English words) is normal, not a flaw. Feelings and jokes often
   sit in the Hindi phrases: read them closely.
@@ -103,6 +104,17 @@ words"]` pairs, e.g. `["stop chasing farts", "stop chasing fads"]`, `["state of 
 of Hormuz"]`. Only when you are sure what was said; quote the heard words exactly. Never lower a
 score for them. Otherwise `[]`.
 
+## trim (optional list)
+Dead weight a viewer would skip, which the creator wants cut. Quote exact words from the clip:
+- `{"kind": "lead-in", "until": "<first words of the line it should start on>"}`: a warm-up before
+  the hook (a greeting, "so basically", a question repeated, a slow run-up).
+- `{"kind": "tail", "after": "<last words of the line it should end on>"}`: after-thoughts after the
+  payoff (restating the point, "so yeah", a summary that adds nothing).
+- `{"kind": "detour", "from": "<first words of the detour>", "to": "<last words of the detour>"}`: a
+  side story, a repeat or a tangent in the middle of a long answer, when the clip still flows without it.
+Never trim the hook line, a line the payoff needs, a funny line or a reaction, and never end before
+the speaker finishes the point. Only what the viewer truly wouldn't miss; otherwise `[]`.
+
 ## better_start
 If the hook is 0 or 1, quote (exact words from the clip) a later line that would make a stronger
 first line, but only if everything the viewer needs still follows it. Otherwise `null`.
@@ -114,6 +126,6 @@ first line, but only if everything the viewer needs still follows it. Otherwise 
    "alone": ["pass", "<reason>"], "ending": ["fail", "the answer comes after: \"...\""],
    "hook": [4, "<reason>"], "payoff": [3, "<reason>"], "emotion": [2, "<reason>"],
    "share": [3, "<reason>"], "quote": [4, "<reason>"],
-   "tags": [], "fixes": [], "better_start": null}
+   "tags": [], "fixes": [], "trim": [], "better_start": null}
 ]}
 ```

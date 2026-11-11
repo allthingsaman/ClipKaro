@@ -86,6 +86,17 @@ on camera, not a slide). Put the best clip first.
 - Times don't need to be perfect: the cutter snaps them to whole words and adds natural handles.
   Never cut inside a sentence, though.
 
+## Tight cuts (the owner's taste)
+From the owner's blind comparison of two versions on the same videos (Nov 2026), where the tighter cut
+won every time the two cut the same moment:
+- **Open on the hook.** Drop the warm-up: the clip starts on the first line worth hearing.
+- **End on the payoff.** Stop after the line that lands the point; cut after-thoughts and restating.
+- **Cut detours inside long answers.** A long continuous answer whose hook gets lost midway is worse
+  than the same answer with the side story or repeat cut out (pieces in the order said, smooth).
+- **Keep extra seconds only when they carry something**: a funny line, the fight the talk is about,
+  the setup the payoff needs.
+- **Never cut the hook line** out of the middle, and **never end before the speaker finishes the point.**
+
 ## clips.json format
 Write `output/<project>/clips.json`:
 
