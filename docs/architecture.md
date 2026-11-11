@@ -65,8 +65,10 @@ flowchart TD
     AU -->|"ffmpeg: 16 kHz mono wav"| LD["Language detection<br/>Whisper base, CPU"]
     LD --> TR["Transcription with word timestamps<br/>faster-whisper on NVIDIA GPU or CPU"]
     TR --> TX["transcript/words.json<br/>sentences.json, transcript.txt"]
-    TX --> PICK["AI editor reads the whole transcript<br/>and picks the moments"]
-    PICK --> CJ["clips.json"]
+    TX --> SND["Sound cues: laughter, applause,<br/>both talking at once, lively spots"]
+    SND --> PICK["AI editor reads the whole transcript (or readers, part by part)<br/>and writes about twice the clip ideas needed"]
+    PICK --> CRI["run.py critic: 3 blind runs judge every idea<br/>gates + clip score; AI editor picks the best"]
+    CRI --> CJ["clips.json"]
     CJ --> HQ{"Hindi or Hinglish?"}
     HQ -->|yes| RO["run.py romanize<br/>AI fills romanize.json"]
     HQ -->|no| CK
@@ -86,13 +88,17 @@ flowchart TD
 | Step | Command | Reads | Writes | Who decides |
 |---|---|---|---|---|
 | 1. Get the transcript | `run.py fetch <link or file>` | the video link or file | `project.json`, `source/`, `transcript/` | scripts |
-| 2. Pick the moments | *(the AI editor)* | `transcript/transcript.txt` | `clips.json` | AI editor |
+| 1b. Sound cues | `run.py sound <project>` (`fetch` runs it) | `source/audio16k.wav`, `words.json` | `transcript/cues.json` | scripts |
+| 2. Clip ideas | *(the AI editor)* | `transcript/transcript.txt` | a shortlist in `clips.json` (short videos) | AI editor |
+| 2c. The critic | `run.py critic <project>`, 3 critic helpers, `run.py critic <project>` again | `clips.json` shortlist or `candidates.json` | `critic/`, `critic.txt`, `output/clip-log.csv`; then the final `clips.json` | AI critic + scripts + AI editor |
 | 2b. Roman captions (Hindi/Hinglish only) | `run.py romanize <project>` | `clips.json`, `words.json` | `romanize.json` (the AI fills it) | AI editor |
 | 3. Cut to vertical | `run.py cut <project>` | `clips.json`, `words.json`, the video | `clips/NN-title.mp4` + `.json` | scripts |
 | 4. Caption colour (optional) | `run.py brand <project>` | the video | `brand.json` | AI editor or scripts |
 | 5. Edit | `run.py edit <project>` | `clips/*.json`, `brand.json`, `romanize.json` | `edited/NN-title.mp4` + `.srt` | scripts |
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
 | Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
+| 2a. Long videos | `run.py parts <project>`, readers, `run.py topics <project>` | `transcript/` | `parts/`, `topics.json`, `topics.txt`, `candidates.json`, `candidates.txt` | AI readers + scripts |
+| 2d. Deep clips (only when asked) | `run.py deep <project>` between helper steps, `run.py critic <project> --from deep`, `run.py honesty <project>` | `topics.json`, `transcript/`, `clips.json` | `deep/` (map, threads, candidates, critic, honesty, report) | AI helpers + scripts |
 | Helper | `run.py gpu [model]` | nothing | nothing (prints the GPU test result) | |
 
 `<project>` is the folder name inside `output/` that `fetch` prints, for example
@@ -129,6 +135,13 @@ clipper/                     the toolbox (Python)
     edit.py       renders the plan (python or Remotion engine) and mixes the audio
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog
     find.py       word-accurate phrase search in the transcript
+    parts.py      splits a long transcript into parts for careful reading
+    topics.py     joins the part readers' answers: the topic map, the clip candidates, focus reads
+    sound.py      sound cues for the whole video: laughter, applause, both talking at once, lively spots
+    critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
+    deep.py       deep clips: the map for the thread finder, thread files, checks, the report
+    honesty.py    deep clips: honesty packets for three judges, and merging their verdicts
+    post.py       hands the finished clips to PostKaro: post.json, and PostKaro's link when installed
     gpu.py        NVIDIA GPU detection, CUDA libraries, GPU self-test
     models.py     Whisper model downloads from Hugging Face (with retry/resume)
     common.py     shared helpers: paths, settings, JSON, text, ffmpeg/ffprobe wrappers
@@ -179,13 +192,23 @@ output/<project>/
         words.json               every word with its start/end time
         sentences.json           words grouped into sentence lines
         transcript.txt           the readable transcript the AI editor reads
-    clips.json                   the AI editor's picks
+        cues.json                sound cues: laughter, applause, both talking at once, lively spots
+    clips.json                   the AI editor's picks (for a short video, first its shortlist)
+    critic/                      the critic's packets (run-N.txt), answers (run-N.json), plan.json, critic.json
+    critic.txt                   every clip idea ranked by clip score, with reasons and fix / check notes
     romanize.json                Roman spellings of Hindi words (Hindi/Hinglish only)
     brand.json                   caption colours
     clips/
         01-title.mp4             raw vertical cut (already postable)
         01-title.json            timing, words, shots, focus points for the edit
     speakers.json                the speaker register: each voice of the video and its side
+    parts/                       long videos: part-NN.txt to read, part-NN.json answers, plan.json,
+                                 focus-NN.txt/.json (a second look at a hinted moment)
+    topics.json, topics.txt      the topic map (long videos)
+    candidates.json, .txt        every reader's clip candidates with exact ranges (long videos)
+    deep/                        deep clips (only when asked): map.txt, threads.json, thread-NN.txt/.json,
+                                 candidates.json, critic/, honesty/ (packets and verdicts), honesty.json,
+                                 report.txt, kept.json
     frames/01-title.jpg          picture sheets made by run.py frames
     edited/
         01-title.mp4             the finished short
@@ -195,7 +218,8 @@ output/<project>/
 ```
 
 For a **local file**, nothing is copied: `project.json` stores the path and `cut` reads the file
-where it is.
+where it is. One file sits outside the project folders: `output/clip-log.csv`, one row per clip idea
+the critic judged (its scores, cues and hints), to tune the critic later from what the user keeps.
 
 ### project.json
 ```json
@@ -210,6 +234,14 @@ where it is.
 }
 ```
 `facecam` holds the detected webcam box (or `false`) after the first `cut`, so detection runs once.
+For YouTube links, `fetch` also keeps what the video page says, when it has it: `description`
+(up to 3,000 characters), `chapters` (the creator's own, `[{"start", "end", "title"}]`) and
+`heatmap` (YouTube's "most replayed" curve, `[[start, end, value]]`). Reading in parts uses them as
+hints. Running `fetch` again on an existing project refreshes them and keeps the transcript.
+
+If you correct words in `transcript/words.json` by hand, rebuild the two files made from it
+(`sentences.json` and `transcript.txt`) the same way `fetch` does (`fetch.write_transcript`), so
+the AI reads the corrected words too.
 
 ### transcript/words.json
 A list of words, each with its text, start and end time in seconds, and Whisper's confidence:
@@ -242,11 +274,19 @@ What the AI editor reads. A header, then one sentence per line with `[start-end]
       "hook_type": "contrarian",
       "why": "One sentence: why this works as a standalone short",
       "emphasis": ["broke", "ten", "million"],
-      "caption": "Ready-to-post caption, 1-2 lines + 3-5 hashtags"
+      "caption": "Ready-to-post caption, 1-2 lines + 3-5 hashtags",
+      "post": {
+        "youtube": {"title": "Up to 100 characters", "description": "1-2 lines + up to 3 hashtags"},
+        "instagram": {"caption": "Hook + question, at most 5 hashtags"},
+        "facebook": {"caption": "1-2 lines, 0-3 hashtags"}
+      }
     }
   ]
 }
 ```
+`caption` and `post` are the posting text (every clip has them); `run.py post` copies them into
+`post.json` for PostKaro (section 5.13).
+
 `ranges` can hold 2-3 pairs to splice parts of the video together; they play in the listed order.
 
 Two optional fields change the framing of a stretch (source seconds); they always win over the
@@ -313,6 +353,19 @@ fails it retries automatically: `cuda float16` → (only after an out-of-memory 
 other device would help.
 
 ### 5.3 Transcription (`fetch._transcribe_once`)
+- **Long audio in pieces** (`split_points`): Whisper first turns all the audio it is given into one
+  big table of sound features. For 3 hours that took about 7 GB of memory and crashed a 16 GB
+  laptop. So audio longer than 30 minutes (`LONG_S`) is transcribed in pieces of at most 20 minutes
+  (`PIECE_S`). Each cut lies in the longest pause within 90 s of the even split point, found with
+  the voice detector (or, if there is no pause, at the quietest tenth of a second). Each piece gets
+  the same settings and its own gap filling, and its word times are shifted back to the full
+  video's time. Whisper reads 30 s windows, and in the last, shorter window of the audio it is
+  given it makes up words and misplaces times (in a 3-hour test: junk words at one of 9 cuts; with
+  only 10 s of overlap, a sentence lost 5 s before a cut). So each piece hears 45 s past its cut
+  (`OVERLAP_S`, more than one window) and keeps only the words before the cut; the next piece starts
+  right at the cut, in the pause. Memory then stays at about 3.5 GB for any length. Shorter audio is one piece, as
+  before. Language detection on long audio listens to 4 stretches of 2.5 minutes instead of all of
+  it, for the same reason.
 - **Hindi / Hinglish**: decoded one 30 s window at a time (Devanagari needs 3-4x more tokens than
   English, and Whisper has a 448-token limit per window; sequential decoding resumes where a
   window stopped instead of dropping words), beam size 5, VAD on (Whisper invents text in silence),
@@ -326,14 +379,37 @@ other device would help.
   recovered words in.
 - **Clean-up** (`clean_words`): removes broken characters, a vowel sign looping inside a Hindi word,
   and the same word repeated 4+ times in a row.
+- **Re-listening to unclear speech** (`unsure_stretches`, `relisten`): a run of 4+ words whose mean
+  confidence is under 0.45 (with the unsure words right next to it) is heard again. If Whisper's top
+  language guess for it is English in a Hindi/Hinglish video (a game character, a film clip) and the
+  English words come out clearly more confident (0.6+, and 0.15 above before), they replace the
+  nonsense; otherwise the words are marked `unsure` and get **no captions** (`cut --check` names the
+  stretch; `transcript.txt` marks the line "(unclear …)"). Only English is accepted as a second
+  language: in tests, Korean, Japanese and Chinese "recognitions" of game audio were loops and made-up
+  text. Measured: podcasts and talking videos have 0-2 such stretches; a 44-minute gameplay video had
+  90, of which 29 became correct English game lines ("…he may yet rise again"). `run.py relisten
+  <project>` does the same for videos transcribed before (from `words-before-relisten.json`).
 - **Sentence lines** (`sentences`): words are grouped into lines at `.` `?` `!` `।` `॥`, at pauses
   over 0.8 s, at a comma once a line has 30 words, and at most every 60 words. So a line end is a
   real sentence end in most cases, which matters when the AI chooses where to cut.
 
+### 5.3a Keeping up with new speech models (`asrbench.py`)
+No newer open Whisper than large-v3-turbo exists (Nov 2026); the 2026 releases (GPT-Realtime-Whisper,
+ElevenLabs Scribe v2, Sarvam) are paid cloud services that would upload the audio. Open Hinglish
+fine-tunes exist but only report their own numbers. So a model is chosen by a test on the owner's
+own videos: `asr-bench make` cuts four ~3-minute snippets (anime narration, talking to the camera,
+gameplay with an English game voice, an English podcast) and drafts a reference text from the current
+transcript, which the owner corrects by ear once. `asr-bench run <model>` transcribes them the way
+`fetch` does (re-listening included) and scores the share of words wrong. Words are compared by a
+sound key (`sound_key`): Devanagari turned into simple Roman (`roman`), long vowels and aspiration
+folded, doubled letters merged, so क्या, kya and kyaa are the same word and a model writing Roman
+Hinglish is not punished. Only Hindi, Hinglish and English; only faster-whisper (CTranslate2) models.
+A model is downloaded only when someone runs it.
+
 ### 5.4 Picking the moments (the AI editor)
 The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-video/references/picking-moments.md):
 
-- **Read the whole transcript first**, then choose.
+- **Read the whole transcript first**, then choose. Long videos are read in parts (5.4a).
 - **One self-contained idea** that a stranger understands with zero context.
 - **Hook in the first 1-3 seconds**: the clip starts on the hook line itself. Six hook types:
   contrarian claim, a question viewers ask themselves, a surprising fact or number, a story opener,
@@ -358,16 +434,215 @@ The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-v
 It also writes for each clip: a 3-7 word title (used as the file name), 2-6 emphasis words that
 stay highlighted in the captions, and a ready-to-post caption with hashtags.
 
+### 5.4a Long videos: reading in parts, and the topic map (`parts.py`, `topics.py`)
+A 2-hour transcript can't be read well in one go: the AI's file reader stops at 256 KB (Khan Sir's
+transcript is 272 KB), and very long inputs get skimmed, especially in the middle.
+
+1. **`run.py parts`** splits the transcript into parts when it's bigger than about 20,000 tokens
+   (about 28 minutes of Hinglish). Each part has its own **stretch** of about 21 minutes plus 2
+   minutes of context on each side, so a clip (90 s at most) never falls into a gap. Cuts go at the
+   longest pause near the planned time, never inside a line. Each part file is checked to stay under
+   20,000 estimated tokens (weights measured on Hinglish: 0.73 per Devanagari letter, 0.29 per Latin
+   letter, 0.78 per digit, 0.28 per space or mark, 6 per line). A 2-hour video gives 6 parts.
+   The file starts with the title, a cleaned description and the creator's chapters (when the
+   video has them), and ends with the task (long data first, the question last).
+2. **One reader per part, all at once** (the `clipkaro-part-reader` helper,
+   `.claude/agents/clipkaro-part-reader.md`, following `references/reading-parts.md`). Each writes
+   `parts/part-NN.json`: the topics that **start** in its stretch, the best moment of **every
+   5-minute block** (so nothing is skimmed), and up to 5 clip candidates. A reader copies line times
+   and quotes words; it never writes a time of its own (in research, models that wrote their own
+   timestamps were about 4x less accurate).
+3. **`run.py topics`** does the mechanics: it finds every quote in the transcript (exact, or at
+   least 80% of the words in order), takes exact word times from there and stores the transcript's
+   own words, joins the parts at their seams (a topic belongs to the part whose stretch holds its
+   start; starts under 20 s apart become one), and checks everything: labels from closed lists, no
+   gaps, quotes found, no candidate in an ad, teaser, intro or outro, signs of skimming. An error
+   names the part whose reader must run again.
+4. **Focus reads.** If a line from the creator's own cold-open teaser comes back later in the
+   video, or YouTube's "most replayed" curve has a strong peak, and no candidate covers it,
+   `topics` writes a small `parts/focus-NN.txt` around it (90 s before to 60 s after) for one more
+   reader (at most 3 per kind of hint). Its candidates (ids `f1-c1`, ...) must include the hinted
+   line. A video without a teaser or a curve simply gets none.
+5. **The critic judges all candidates** (5.4c) and the AI editor picks from its list.
+
+**The topic map** (`topics.json`, readable as `topics.txt`): topics of about 1-5 minutes in time
+order, each with a title, a summary that says who claims what, a role (story, explanation,
+argument, advice, debate, banter, reaction, digression, or structural: teaser, sponsor, intro,
+outro, housekeeping), its opening words, 1-4 key lines with their own role (hook, question, claim,
+example, setup, turn, punchline, conclusion, callback, reaction) and how they were said (own view,
+quoting, hypothetical, sarcasm, impression, game), names in both scripts, energy, sensitive
+subjects, back-references and open ends (questions or setups paid off later), plus two hints the
+code adds: a peak of YouTube's "most replayed" curve, and lines the creator also used in the cold
+open. These links are what deep clips (roadmap item 17) will build on.
+
+**No extra model.** Topic boundaries come from the AI reading, not from an embedding model: in
+published tests on spoken transcripts, asking a language model for a table of contents with quoted
+opening lines beat embedding methods by a wide margin.
+
+### 5.4b Sound cues for every video (`sound.py`)
+YouTube's "most replayed" curve only exists for popular videos (none of a small creator's videos,
+and not even every interview with millions of views). So ClipKaro also listens to every video
+itself, right after transcribing:
+- **YAMNet** (the laughter model the director already uses) over the whole audio, read in 60 s
+  blocks: laughter (a frame at least 0.30 sure and two frames in a row; the director's own rule is
+  0.15), applause and cheering, music. Laughs and applause during music don't count (game sound,
+  jingles).
+- **pyannote segmentation 3.0** in 10 s windows: two people talking at once, and quick turn
+  switches. Both models run on onnxruntime; no new download.
+- **Loudness and talking speed** per 10 s, as z-scores within this one video (never compared
+  between videos).
+- **Lively spots:** the 30 s windows with the highest rank sum of laughter, both talking / turns,
+  loudness and speed, each with at least one clear reason (about 10% of the video). They go into
+  the part files and the `parts` output as places to check; a spot becomes a clip only if its
+  words make one.
+- **Markers** for the critic: `[laughter ~2 s]`, `[applause]`, `[both talk at once]`.
+
+Cost: about 25 s for 2 hours (measured: 23 s and under 500 MB for the Khan Sir podcast; 36 s for 3
+hours). Evidence: in recorded meetings, laughter was the strongest single cue for lively stretches,
+then the words, then who talks when, then loudness and pitch (Makhervaks et al., ICASSP 2020). So
+the words stay the main judge, and no cue ever lowers a clip.
+
+### 5.4c The critic: a blind second opinion (`critic.py`, `.claude/agents/clipkaro-critic.md`)
+The most common complaint about AI clippers is "10 clips, only 3 good". So before anything is cut,
+a second AI editor judges every clip idea: all candidates of a long video, or the shortlist of
+about twice the clips wanted that the AI editor writes for a short video.
+- **Blind:** `run.py critic` writes 3 packets. Each has every idea in a different random order,
+  with neutral labels (K7, B2), the exact words with times from the clip's start, the sound markers,
+  and the next ~15 s marked NOT IN THE CLIP. The critic never sees the reader's score, title or
+  reasons, the rank, the replay curve, the teaser or anything about the channel: in research, such
+  hints pulled AI judges' scores (Claude's the most of eight models tested) and warnings didn't undo
+  it. Three runs in different orders, because the order of a list changes AI judgments.
+- **The sheet:** two gates, pass / fail / unsure with a quoted reason: *stands alone* (no earlier
+  setup, no "he / woh / that thing" pointing outside the clip) and *complete ending* (the payoff is
+  inside, not in the words after the cut). Then five scores from 0 to 5, each level described in
+  words: hook (weight 3), payoff (3), emotion (2), "who would a viewer send this to?" (2), a line
+  worth quoting (1).
+- **Merging (code):** clip score = the weighted mean, shown out of 10 (9+ Standout, 7+ Strong, 6+
+  Good, 5+ OK, below that Weak), and it **ranks the clips of one video**. A gate failed in 2 of 3
+  runs becomes a `fix?` note and a split gate a `check` note: they feed the repair round and
+  **never throw a clip away**. Two tests shaped this: a fixed bar of 6 rejected half of a good
+  interview (calm, informative answers score low on emotion), and in the user's blind check
+  (23 unseen clips) all 11 clips the critic had dropped or rated weak were ones they'd post.
+  Hard facts come from code and are shown to the critic: a sentence that goes on after the clip,
+  or a possible false start (`cut.false_start`). Close calls are not settled by comparing two
+  clips side by side: in research, such judges pick the more confident-sounding one.
+- **Hints, after scoring:** the creator's teaser, a clean replay peak and laughter add a small bonus
+  (at most 0.3) that only reorders near-ties; a video without them loses nothing. Replay peaks: the
+  first bin and ads / intros left out, a local maximum at least half the highest bin and 1.5x the
+  median, at most 5 (our own starting values).
+- **Checks:** the score's link with clip length and with the place in the packet (a sign of bias),
+  how often the gates agree, and how much the runs differ.
+- **Trims (dead weight):** each run may list a `lead-in` (warm-up before the hook), a `tail`
+  (after-thoughts after the payoff) or a `detour` (a side story inside a long answer), quoting the
+  words. A trim proposed by 2 of 3 runs (times within 1.5 s) becomes a `trim?` note with its times
+  and the seconds it saves (`merge_trims`).
+- **Repair round (once):** the AI editor fixes the top clips that have a note, a false start or a
+  weak hook (adds the line that answers a teaser or names "he", starts later, joins two halves of
+  one story, always in the order said), **and tightens them**: starts on the hook, ends on the
+  payoff, cuts detours out as pieces. Every second kept must carry something; of two cuts that say
+  the same, the shorter wins. Then it runs `critic --fresh --from clips` on that shortlist. Why: in
+  the owner's blind test (Nov 2026), where both versions cut the same moment, the tighter cut won 8
+  of 8; v2's repairs had made 7 of them longer ("end later", "add the line").
+- **Extras that never change a score:** `check-facts` tags (a claim that looks wrong) and caption
+  fixes (misheard words), applied to `words.json` for the picked clips as the last step of picking,
+  after a backup to `words-before-fixes.json`. The topic map and the deep pass match quotes against
+  that backup, so fixes never break them.
+- **Output:** `critic.txt` (every idea best first, with reasons and notes) and
+  `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
+
+### 5.4d Deep clips: one story from moments far apart (`deep.py`, `honesty.py`)
+Only when the user asks ("deep clip this", "do a deep pass on <video>"), after the regular clips.
+In a long podcast the best story is often in pieces: a question at minute 3 and its answer at
+minute 41, or the narrator's opening line and the story's payoff 20 minutes later. A deep clip
+joins 2-3 such pieces into one short. `run.py deep <project>` is run again after each helper step
+and does the next stage by itself:
+1. **The map** (`deep/map.txt`): the topic map made small (no transcript), plus seeds found by
+   code: open questions and back-references that no topic answers, teaser lines that come again
+   later, rare names shared by topics far apart.
+2. **Threads:** one `clipkaro-thread-finder` helper reads the map and proposes up to 8 threads
+   (`deep/threads.json`), best patterns first: a question and its own answer much later; the
+   narrator's intro line and the story's payoff; setup, story, punchline. Never "he contradicts
+   himself" or a supercut. Code checks every id and quote, and that the pieces are at least 60 s
+   apart (closer ones are just a regular clip), then writes `deep/thread-NN.txt`: the real words
+   around each piece (±90 s), with the setup and payoff marked.
+3. **Composers:** one `clipkaro-composer` per thread, all at once. Each checks the link on the real
+   words and writes up to 2 deep clips (2-3 pieces in the order said, whole sentences, 30-75 s, a
+   guest's answer keeps the host's question) **plus the best continuous clip around the payoff**,
+   its "twin". Code then checks the quotes, the order, and bans ads, outros and montage teasers (a
+   line re-cut from later in the video; the narrator's own spoken intro may open a clip). A deep
+   clip that overlaps a regular clip by more than half is dropped, and cut-point warnings are added
+   (`deep/candidates.json`).
+4. **Pass A, is it better?** The normal blind critic (5.4c) scores the deep clips and their twins
+   in one shuffled packet (`critic --from deep`, saved in `deep/critic/`). A deep clip goes on only
+   if its clip score is at least its twin's: if one stretch tells the story as well, joining pieces
+   adds nothing. No side-by-side judging (it favours the confident voice).
+5. **Pass B, is it honest?** (`run.py honesty`). Each deep clip gets a packet of at most about 6,500
+   tokens (long inputs blur judges): the words as viewers will hear them; each piece inside its
+   original stretch (75 s before to 60 s after, shrunk if the packet is too long); what was cut
+   between pieces (word for word up to 3 minutes, else a scan for corrections, jokes, negations
+   and the same names, as quotes, because a summary drops exactly the softener that matters);
+   other moments about the same names; and flags from code (a piece opening on "he / वो / isliye"
+   or on "haan / exactly", a possible softener within 20 s after a piece). Three fresh
+   `clipkaro-honesty` judges read it, each in a role: a **rules auditor**, the **speaker's
+   advocate** ("would they object?") and a **viewer** who then watches the full video. **When two
+   or three say fail or unsure, the clip is rejected; when only one does, it is kept with a
+   `check` note** quoting that judge, for the owner to look at before posting. (The first rule was
+   "any one rejects", but every honest clip a single judge rejected had at most a mild problem,
+   and the owner, who checks every clip anyway, preferred fewer lost clips.) The judges never see
+   the critic's opinion or who made the clip.
+6. **The report** (`deep/report.txt`, `deep/kept.json`): one clip per thread, the best that passed
+   both (a clip without a note wins a tie).
+7. **The repair round (once).** A clip the honesty judges rejected for something a few seconds fix
+   (a "but..." cut off after a piece, an answer without its question, a piece opening on "he / वो")
+   is fixed by the AI editor in `deep/repairs.json`, in the composers' quote format. `deep` checks
+   it like any composed clip and adds it as `<id>r` with the same thread and twin; then the critic
+   scores all deep clips again (`--fresh`) and three new honesty judges read only the new packet. A
+   repair is never repaired again, and a clip whose link itself was wrong is not repaired. Tested
+   on the Khan Sir podcast: the farmers clip that two judges had rejected (it opened on a line from the host's intro list and stopped before Khan Sir called his plan coaching classes for farmers) was repaired to open on the host's real question and keep that line; it scored 5.5 against 3.9 for its single stretch, and two new judges passed it, the third left a note (it ends 2 s before "but for that a big area is needed"). So the video now has one deep clip instead of none. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
+   caption: "From 2 moments of the full video: 0:08 · 22:53", plus the full video link.
+
+**Joins are shown, not hidden, and sound smooth.** At a join that skips more than 20 s, `cut` adds
+a short white flash (about a fifth of a second) and `edit` a soft whoosh (-19 dB), so a viewer can
+see and hear that time was skipped (PBS asks for "an audio or visual cue" at such edits). The
+sound at every join fades out and in, only inside the quiet after the last word and before the
+next first word, so a fade never touches speech: 30 ms + 10 ms at a plain cut (as before), and
+longer where the room sound may change: 50 + 30 ms when a few seconds are skipped, 80 + 60 ms at a
+jump across time (dialogue editors use a few ms at a plain cut and 20-100 ms to blend a change of
+room tone; much more is heard). On request, `edit --jump-label` (or `"jump_label": true`) also
+shows a small "27 MIN LATER" for 1.6 s at each jump.
+
+**Tested before trusting it.** A helper built misleading clips from our 5 test videos (an answer
+moved to another question, a "just kidding" cut off, a quote played as the speaker's own view, two
+topics joined so a cause appears), each with an honest twin made from the same moments; another
+helper checked every label. The judges never knew which was which. On a practice set of 10 + 10 the
+prompt was tuned; then a held-back set of 29 misleading and 27 honest clips was judged once, exactly as in real use:
+**all 29 misleading clips were caught** (the true miss rate is very likely under 10%), and 3 of the
+27 honest ones were rejected too, each by one judge on a close call (for example a clip ending
+7 s before the speaker adds "but in Bihar your life is in danger"). That was too strict for the
+owner, so the rule became "two objections reject, one is a note", and the test was scored again
+with a second judge for every clip: still **29 of 29 caught** (every misleading clip drew at least
+two objections), 2 of 27 honest clips rejected and 1 kept with a note.
+On real videos: the Sam Altman interview kept 2 deep clips; on the Khan Sir podcast none passed (the
+continuous versions scored higher twice, and the judges rejected a clip that pinned Khan Sir's
+answer to a question from the host's intro). "No deep clip" is a normal answer.
+
 ### 5.5 Checking the cut points (`cut.snap_range`, `cut.boundary_warnings`)
 - Every range is **snapped to whole words**: it starts 0.12 s before the first word and ends
   0.30 s after the last one, without ever running into the neighbouring words.
 - `cut --check` warns when a clip **starts or ends mid-sentence** (the previous or next word is
   less than 0.6 s away and there's no sentence end in between) or is **outside 15-90 s**. The AI
   editor then fixes the range or confirms the cut is intentional.
+- For a clip **joined from pieces**, it also warns when a later piece **opens on a pointing word**
+  ("he", "that", "वो", "उसने", "इसलिए") or an **answer word** ("haan", "exactly", "नहीं"): it may
+  point at, or answer, words that were cut out.
 
 ### 5.6 Reframing 16:9 to 9:16 (`reframe.py`)
-1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut
-   (shots shorter than 0.8 s are merged).
+1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut,
+   and so is a jump above 0.08 that is at least 4x the median score of the 12 frames on each side
+   (shots shorter than 0.8 s are merged). The second rule is for dark studios: against a black
+   background real cuts score only 0.1-0.2 while still frames score about 0.001, and with the fixed
+   0.30 alone a whole Sam Altman clip was one "shot" (the idea of PySceneDetect's adaptive
+   detector). In bright videos it finds the same cuts.
 2. **Face detection**: YuNet on 5 frames per shot (at 640 px); the largest face per frame; the
    **median** position over the frames, so a single bad detection can't move the crop. A shot
    needs a face in at least a third of its samples.
@@ -391,11 +666,14 @@ For podcasts and interviews where two people sit too far apart for one crop (a s
 picture, or a wide shot of the room). It runs only on those stretches; all other shots are framed
 exactly as above.
 
-**Signals**, measured once per clip (cached in `.work/signals-NN.json`):
+**Signals**, measured once per clip (cached in `.work/signals-NN.json`; raising `SIGNALS_V` in
+`speakers.py` makes every cached clip measure again, so a fix reaches clips cut before it):
 - **voices**: who speaks when (pyannote segmentation 3.0 + 3D-Speaker ERes2Net voice prints,
   clustered, run with sherpa-onnx on the clip's parts ±10 s);
 - **laughter**: YAMNet laughter scores every 0.48 s;
-- **mouth movement** of each face (only used summed up over many calm moments).
+- **mouth movement** of each face (only used summed up over many calm moments). Per side only the
+  biggest face counts: small faces in wall art behind a guest never move, and measuring one of them
+  once made a talking guest look silent, so every clip showed the listener.
 
 **Speaker register** (`speakers.json`, one per video): voice prints are matched across all clips
 (similarity ≥ 0.55 is the same person; a voice disturbed by laughter still counts when it clearly
@@ -454,8 +732,19 @@ detection; `--layout crop` turns the layout off.
 
 ### 5.9 Captions (`plan.caption_groups`, `edit.write_ass`)
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
-- Groups of **1-3 words**, at most 15 characters and 1.6 s; a new group starts after a pause over
-  0.35 s, at a sentence end and at a splice.
+- Groups of **1-3 words** and at most 1.6 s; a new group starts after a pause over 0.35 s, at a
+  sentence end and at a splice.
+- **A [noun] for a pronoun** (`plan.add_clarify`, clips.json `clarify`): when a clip says "इस movie"
+  or "he" and never names it, the noun is shown in brackets right after the first mention ("IS MOVIE
+  [RAMAYANA] KA"), at the same moment. Brackets mark an editor's addition. It doesn't count towards the
+  3 words of a group; `edit` reads it from clips.json, so it can be added after cutting.
+- **Every caption line fits the frame.** A group is measured in pixels with the real font (its
+  letter widths are read straight from the font file, `plan.font_advances`) and may be at most 940
+  px wide: the 1080 frame minus 70 px on each side. A single word wider than that (MISUNDERSTANDING)
+  is shrunk just enough for its caption only (`scale`, an `\fs` size in the `.ass` file, the same in
+  Remotion). A word entry holding several words (a Roman spelling like "main na", or a fixed
+  misheard phrase) is split into one caption word per word, its time shared out by length; before,
+  one entry holding a whole poem line made a caption five times the frame width.
 - Each word **pops in** as it's spoken (squashed to 60 % height, growing to full size in 110 ms),
   shown in the accent colour while spoken, then white; **emphasis words stay in the accent colour**.
 - Font: **Montserrat ExtraBold**, UPPERCASE. If any word is in Devanagari the clip switches to
@@ -481,7 +770,8 @@ detection; `--layout crop` turns the layout off.
   `swish`/`swipe`, `hit`/`impact`/`boom`, `click`/`pop`/`tick`). A file holding several sounds is
   split at the silences, and each sound becomes a variant. The result is cached in `catalog.json`.
 - **Cues** (`--sfx auto`, the default): one whoosh on the opening zoom (-15 dB) and one on the first
-  emphasis zoom (-17 dB), each lined up so its loudest moment lands on the move. `--sfx light` keeps
+  emphasis zoom (-17 dB), each lined up so its loudest moment lands on the move. In a joined clip
+  that jumps in time, a softer one (-19 dB) lands on each jump instead of the emphasis one. `--sfx light` keeps
   only the opening one, `--sfx none` none. `hit` and `click` sounds are catalogued for custom edits
   but not placed automatically.
 - **Mix**: the voice gets a 70 Hz high-pass and gentle compression (2.5:1 from -20 dB); the effects
@@ -498,6 +788,17 @@ detection; `--layout crop` turns the layout off.
   sources become 30.
 
 ---
+
+### 5.13 Posting: the hand-off to PostKaro (`post.py`)
+PostKaro is a separate app (its own repo) that posts clips to YouTube Shorts, Instagram Reels and a
+Facebook Page from the user's laptop. ClipKaro never uploads anything itself. `run.py post
+<project>` writes `output/<project>/post.json` (format: PostKaro's `docs/post-kit.md`): for each
+finished clip the file in `edited/` (or `clips/`), its length, clip score, honesty note and the
+`post` texts, plus the source channel and link. Then it looks for PostKaro's `app.json`
+(`~/.config/postkaro/` on Linux, `~/Library/Application Support/postkaro/` on macOS,
+`%LOCALAPPDATA%\postkaro\` on Windows). If PostKaro is installed, it runs `run.py link <folder>`
+inside PostKaro, which adds the clips and returns the page link that the AI editor prints as
+"Post them: <link>". Without PostKaro it only writes `post.json` and says so.
 
 ## 6. GPU support (`gpu.py`, `run.py`)
 - `gpu.cuda_device_count()` asks CTranslate2 how many NVIDIA GPUs it can use.
@@ -537,5 +838,8 @@ detection; `--layout crop` turns the layout off.
 | Languages | [adding-a-language.md](adding-a-language.md) |
 | The facecam layout | `clipper/facecam.py`: `TOP_H`, `geometry` |
 | Two-person framing rules | `clipper/director.py`: `HOLD`, `PRE`, `POST`, `LAUGH_ON`, `WIDE_SOLO`, `FLOOR` |
+| How long videos are split | `clipper/parts.py`: `--minutes` (21), `--margin` (120 s), `TOKEN_CAP`, `SNAP_WINDOW` |
+| What a part reader writes | `.claude/skills/clip-video/references/reading-parts.md`; the closed label lists in `clipper/topics.py` |
+| How answers are checked and joined | `clipper/topics.py`: quote matching (`Transcript.find`, 80%), `MERGE_GAP`, the warnings |
 | Voice and laughter models | `clipper/speakers.py`: `MODELS`, `VOICE_THRESHOLD`, `SAME_VOICE` |
 | The split-screen layout | `clipper/reframe.py`: `split_box`; `clipper/cut.py`: `_framed` |

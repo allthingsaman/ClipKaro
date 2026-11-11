@@ -132,8 +132,12 @@ How to copy a file's path:
 
 Keep the video file where it is until the clips are finished.
 
-**Now wait.** Claude tells you what it's doing. First it shows a table of the moments it picked.
-At the end it shows your finished clips, each with a caption you can copy when you post.
+**Now wait.** Claude tells you what it's doing. Before anything is cut, a second AI editor checks
+every clip idea, like a strict friend who didn't pick them, ranks them, and points out what to
+fix (for example a clip that needs earlier context); Claude then fixes those. Then Claude shows a table of the moments it picked, each with a **clip score**
+out of 10 (for example "8/10 Strong") and the reasons. The score says how well-made the clip looks,
+not how many views it will get. At the end it shows your finished clips, each with a caption you
+can copy when you post.
 
 ---
 
@@ -146,6 +150,11 @@ Your finished videos are in:
 Or just ask Claude: **"open the folder with my clips"**.
 
 The `edited` videos are ready to upload to YouTube Shorts, Instagram Reels and TikTok.
+
+**Want ClipKaro's partner to post them for you?** PostKaro is a separate app that posts your clips to
+YouTube Shorts, Instagram Reels and your Facebook Page, each at the time you choose. Once it is
+installed, Claude ends with a **"Post them"** link: click it, check the titles and captions, and press
+Schedule.
 
 ---
 
@@ -163,6 +172,20 @@ Some examples:
 - "use yellow captions" · "use #00E5FF as the caption colour"
 - "Hindi captions in Hindi letters" (instead of English letters)
 - "it's a gameplay video"
+
+**Long videos** need no special words either. A video of an hour or more is read in parts of
+about 20 minutes, all at the same time (Claude says, for example, "Reading the video in 6 parts at
+once"), so the middle of a long podcast gets the same attention as the start. It takes a few
+minutes more. Afterwards you can ask "show me the topic map" to see every topic with its time.
+
+**Deep clips** (only when you ask): write "deep clip this: (link)" or "clip this, then go
+deeper". After the normal clips, Claude looks for a story that is spread across the video, like a
+question at minute 3 and its answer at minute 41, and joins those moments into one short, always in
+the order they were said. Three separate checks make sure the joined clip doesn't change what
+anyone meant (if only one of them has a doubt, Claude keeps the clip and tells you why, so you can
+decide), and a short white flash with a soft whoosh shows where it jumps in time (ask "show how
+much time was skipped" to also see a small "27 MIN LATER"). Often no deep clip is good
+enough, and Claude tells you so. It takes about 10-15 minutes more.
 
 **Podcasts and interviews with two people** need no special words. ClipKaro shows the person who
 is talking. When someone laughs, or both talk at once, it shows both of them, one above the other
@@ -211,7 +234,7 @@ Save the file. The next time you start Claude Code in the ClipKaro folder, it fo
 | | With an NVIDIA graphics card | Without one (not recommended) |
 |---|---|---|
 | Writing down the words of a 10-minute video | 1-2 minutes | English: a few minutes. Hindi/Hinglish: 10-40 minutes |
-| A whole video, from link to finished clips | usually 10-20 minutes | can take **a couple of hours** |
+| A whole video, from link to finished clips | usually 15-30 minutes (the second opinion on every clip idea adds 5-15 of them) | can take **a couple of hours** |
 
 The very first time also includes downloading (once).
 

@@ -4,9 +4,18 @@
     python run.py romanize <project>                     Roman Hinglish captions for Hindi/Hinglish videos
     python run.py cut <project>                          cut the picked clips to 9:16
     python run.py edit <project> [--engine python|remotion] [--clips 1,3]
+    python run.py parts <project>                        split a long transcript into parts for careful reading
+    python run.py topics <project>                       join the parts' answers: topic map + clip candidates
+    python run.py sound <project>                        sound cues: laughter, applause, lively spots (fetch runs it)
+    python run.py critic <project>                       a blind second opinion on every clip idea (clip score)
+    python run.py deep <project>                         deep clips: stories spread across the video (when asked)
+    python run.py honesty <project>                      deep clips: three judges check nothing changes what was meant
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
+    python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
+    python run.py relisten <project>                     listen again to unclear speech (game voices): fix or drop its captions
+    python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """
@@ -25,7 +34,16 @@ COMMANDS = {
     'brand': 'clipper.brand',
     'edit': 'clipper.edit',
     'find': 'clipper.find',
+    'parts': 'clipper.parts',
+    'topics': 'clipper.topics',
+    'sound': 'clipper.sound',
+    'critic': 'clipper.critic',
+    'deep': 'clipper.deep',
+    'honesty': 'clipper.honesty',
     'frames': 'clipper.frames',
+    'post': 'clipper.post',
+    'relisten': 'clipper.relisten',
+    'asr-bench': 'clipper.asrbench',
     'gpu': 'clipper.gpu',
 }
 

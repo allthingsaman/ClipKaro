@@ -4,5 +4,6 @@
   "device": "auto",
   "hinglish_captions": "roman",
   "layout": "auto",
-  "facecam": null
+  "facecam": null,
+  "jump_label": false
 }

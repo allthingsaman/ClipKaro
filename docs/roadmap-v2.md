@@ -109,6 +109,26 @@ and **how we'll measure** it.
 - **Measure:** blind test: "would you stop scrolling?"
 
 #### 3. Built-in handling of long videos (M)
+- **Status: built (phase 1 of deep clips, item 17).** `run.py parts` splits a long transcript into
+  parts of about 21 minutes with 2 minutes of context on each side; one reader per part works at
+  the same time; `run.py topics` joins their answers into a topic map and one candidate list. On
+  the 2-hour Khan Sir podcast the readers found 62% of the creator's own chapter starts within
+  10 s (chapters hidden from them), copied all 254 key lines exactly, and spread their candidates
+  10 / 10 / 10 over the video's thirds (one reading by hand: 5 / 2 / 3). Moving every cut by half a
+  part changed little: 75% of topic starts stayed within 10 s. Without seeing the existing clips,
+  the readers found 9 of the 10 moments picked by hand earlier.
+- **Tested again (November 2026)** on a 3-hour Hinglish podcast (10 parts, 90 topics, 50
+  candidates spread 15 / 17 / 18) and a 68-minute English interview (4 parts, 41 topics, 20
+  candidates). Every quote was found in the transcript. Both creators open with a teaser of their
+  own best lines: the 3-hour video's candidates covered 6 of its 9 teaser moments, the interview's
+  only 1 of 10 (the short personal ones, "who were you then, who are you now", were left out), and
+  the 8 picks per video covered 2 and 1. So the creator's teaser is a second free hint for item 4,
+  next to replay peaks, and it exists for every video, even one with few views.
+- **Long audio no longer crashes a laptop.** Transcribing 3 hours of Hindi at once needed ~7 GB of
+  memory and the system killed other programs; it is now done in 20-minute pieces cut in pauses,
+  each hearing 45 s past its cut (see `docs/architecture.md`, 5.3). Lesson: Whisper's Hindi output
+  changes a little from run to run, so compare transcripts with measures over many places, not by
+  reading one spot.
 - **Why:** Podcasts are long. Reading a 2-hour transcript in one go makes the AI skim. For our
   Khan Sir test we split it into four parts by hand, which gave much better picks.
 - **How:** a `run.py segments <project>` step that splits the transcript into ~25-minute windows
@@ -118,6 +138,55 @@ and **how we'll measure** it.
 - **Measure:** the same picks whether a video is 20 minutes or 3 hours; no part of the video skipped.
 
 #### 4. A second opinion before cutting (S)
+- **Status: built and blind-checked (November 2026), phase 2 of deep clips (item 17).**
+  `run.py critic` + the `clipkaro-critic` helper (3 blind runs), sound cues for every video
+  (`run.py sound`), focus reads for the creator's teaser and replay peaks, and a repair round.
+- **Tested on 5 videos** (a 2-hour and a 3-hour Hinglish podcast, a 68-minute English interview, a
+  7-minute review and a 24-minute story video; 3 without a replay curve, 2 without any hint):
+  - **Consistent:** 20 ideas judged in two separate rounds ranked almost the same (rank correlation
+    0.91, scores 0.23 apart on average, 7 of the top 8 the same). Within a round the pass/fail
+    checks agreed 96-98% of the time. No link between the score and clip length or packet place.
+  - **Agrees with picks the user liked:** Khan Sir's top two were v1.1's first clip and a phase-1
+    favourite; all 14 earlier Khan Sir clips among the ideas were kept; the market video's top 4
+    were 4 of its 8 phase-1 picks.
+  - **Hints pay off where they exist:** the re-read of the Sam Altman teaser found the best idea of
+    that video (7.4/10). Videos without hints lose nothing (the scores never see them).
+  - **The repair round matters:** the critic only filters, so a weak shortlist stays weak. On the
+    story video it dropped exactly what v1.1 had fixed by hand (a teaser without its answer, an
+    unnamed "he"). After one repair round by a fresh editor who never saw v1.1's picks, two pairs
+    of dropped pieces became the video's two best clips (7.3 and 6.9).
+  - **Design change from testing:** a fixed bar of 6/10 rejected half of a good interview (calm,
+    informative answers score low on emotion). The score now ranks clips within a video.
+  - **The user's blind check (23 clips they hadn't seen, plain cuts):** they would post 9 of the
+    critic's 12 favourites (2 no, 1 maybe) and **all 11** of the ideas it had dropped or rated
+    weak. So the critic's verdicts did not match the user's taste as a filter (n = 23, one
+    rater, who rated generously because the clips were unedited). The two "no"s: a clip cut
+    mid-sentence (code's boundary check catches it; the test skipped that step) and one without
+    context; the "maybe" had a slow hook; one more started on a false start ("1992 se leke,
+    1992..."). **Change:** the critic no longer throws clips away. Its gates became notes for the
+    repair round, all ideas are ranked, and hard facts (mid-sentence ends, false starts) come from
+    code and are shown to the critic. Because a yes/no test can't check a ranking when almost
+    everything is a yes, the final v1.1-vs-v2 test will ask "which of these two is better?".
+  - **Known limit:** on close calls in story videos, a "stands alone" verdict can flip between two
+    rounds (one clip passed in round 1 and failed in round 2). The majority of 3 runs reduces it.
+  - **By-products:** the critic flags likely factual slips (`check-facts`, e.g. a surrender placed
+    at the wrong battle) and misheard caption words ("farts" for "fads"); neither changes a score.
+  - **Time:** the sound pass takes 13-36 s; the critic 2.5-4 minutes for 8-26 ideas and 8-11
+    minutes for 40-56 Hinglish ideas (its 3 runs work at the same time).
+- **Lesson from phase 1:** the readers' 30 candidates covered 7 of the 10 "most replayed" peaks of
+  the Khan Sir podcast, but the top 10 picked from them covered only 2: rankers judge the words, and
+  replay peaks can barely be predicted from words (position explains most of them; text adds about
+  0.02-0.03 mAP; Arora & Arora, "Text Barely Beats Timing", a poster at the NewInML event of
+  NeurIPS 2026). So the critic should get viewer replay peaks as a separate, local hint, and a
+  strong peak with no good candidate should trigger a focused re-read of that stretch. Headliner
+  and a few small clippers say they cut around replay peaks (vendor claims); Opus Clip only
+  suggests it as a recipe for your own AI agent.
+  Replay graphs exist only for videos with tens of thousands of views, so it stays optional, and
+  quality must then be judged by blind human ratings (replay peaks can't be both input and test).
+- Two rankers reading the same candidates in opposite orders agreed on 9 of 10 picks.
+- **Second hint: the creator's own teaser.** Many podcasts open with 1-3 minutes of their best lines.
+  `topics` already finds where those lines come back later (`teaser_hits`). A teaser moment with
+  no candidate should get a focused re-read, the same as a replay peak.
 - **Why:** The most common complaint about AI clippers: "10 clips, only 3 good".
 - **How:** Pick about twice as many candidates as needed, then a separate "critic" pass scores each
   one on a fixed sheet: hook (0-10), makes sense alone (0-10), payoff (0-10), emotion/energy
@@ -136,6 +205,11 @@ and **how we'll measure** it.
   - Join split tokens automatically (letters split by dots, numbers split from letters).
   - Mark every word Whisper is unsure about (confidence below ~0.4), so the AI checks those first
     when it writes the captions.
+  - **Repetition loops**: Whisper sometimes repeats one phrase for 20 s ("उसको क्या जाता है" again
+    and again in the Khan Sir podcast). Detect and collapse them.
+  - **One fix, three files**: a corrected word must reach `words.json`, `sentences.json` and
+    `transcript.txt` together (a hand fix that changed only `words.json` showed up in v1.1 testing).
+    A small `run.py` command for word fixes should rebuild all three.
   - **Stretched words** (found in v1.1 testing): sometimes Whisper writes one long "word" over a
     stretch where several words were said, so those words are missing from the captions (a Khan
     Sir clip lost "ki ye America ki chaal hai"). Find words longer than about 1 s over continuous
@@ -237,6 +311,89 @@ and **how we'll measure** it.
   parallel.
 - **Measure:** edit time under 30% of the clip length on a GPU machine.
 
+#### 17. Deep clips: stories spread across the whole video (M)
+- **Status: released in v2.0 (November 2026).** Phases 1-4 (the topic map, the critic, the deep pass,
+  the join polish) and phase 5, the blind comparison with v1.1 on five fresh videos: v2 found more
+  postable moments, all 4 deep clips were postable and none misleading; it lost every same-moment
+  pair at first (its cuts ran long), and after the tight-cut fix tied 1-1 with 6 ties
+  (`research/phase5`, CHANGELOG v2.0).
+- **Phase 4 results:** joins fade only in the quiet between words (longer at jumps across time,
+  20-100 ms as dialogue editors blend a change of room sound); a soft whoosh with the flash at each
+  jump; an optional "27 MIN LATER" label; `cut --check` warns when a later piece opens on a
+  pointing or answer word; and a one-time repair round for deep clips the honesty judges rejected
+  for something a few seconds fix. Tested on the Khan Sir podcast: a rejected clip came back, passed, and is now that video's one deep clip (with a note from one judge).
+- **Phase 3 results:** the honesty check (pass B) was tested on clips built to mislead, each with
+  an honest twin, never seen while the judges' instructions were written: all 29 misleading clips
+  caught (the true miss rate is very likely under 10%). With "any one judge rejects", 3 of 27
+  honest clips were rejected; the owner found that too strict (it only costs good clips), so now
+  **two judges must object** to reject a clip, and one objection becomes a note for the owner.
+  With that rule: still 29 of 29 caught (every misleading clip had at least two objections), 2 of
+  27 honest clips rejected, 1 kept with a note. On the practice set: 10 of 10 caught, 3 of 10
+  honest rejected (all three judges agreed; a spot-check found real but mild problems in them: a
+  made-up link between two topics, a qualification cut off). On real
+  videos, the Sam Altman interview kept 2 deep clips (both beat their best single stretch, 6.5 vs
+  5.8 and 4.8 vs 3.3); on the Khan Sir podcast none passed (the single stretch scored higher twice,
+  and the judges rejected a clip that pinned Khan Sir's answer to a question from the host's intro,
+  a real catch). A deep pass took 10 minutes on the 68-minute interview and 13 on the 2-hour
+  podcast. Decided with the owner: the narrator's own spoken intro may open a deep clip; a montage
+  teaser (lines re-cut from later in the video) never.
+- **Why:** In a long podcast the best story is often in pieces: the setup at minute 3, the story at
+  minute 41, the punchline at minute 88. A normal clip takes one stretch, so these stories are lost.
+  We're not the first: Opus Clip's ClipAnything says it "stitches together scenes from different
+  parts of the video to highlight a specific theme", and Kapwing says its clip maker stitches
+  relevant sections together. We can do it better by building a real story, explaining every choice
+  with exact times, never changing what someone meant, and doing it in Hinglish, free and locally.
+- **What already works:** a clip can join pieces from different times (`ranges`), and since v1.1
+  the joins are frame-accurate. The AI editor already does it in simple cases: in the gamer video
+  (AyushGG, clip 3) a hook from 0:09-0:53 is joined to the reveal "and that player was Scout" two
+  minutes later; in the MCU video (clip 1) a line from 6:02 is moved to the front as a cold open.
+- **How to ask:** "deep clip this: <link>", "clip this, then go deeper", or, for a video that's
+  already clipped, "do a deep pass on <video>". Without these words nothing changes.
+- **How it works:**
+  1. The regular clips are made first, exactly as today.
+  2. **Topic map:** the AI reads the whole video in parts (about 25 minutes each) and writes every
+     topic, where it appears, and what each part does (a question, a story, an answer, a punchline).
+  3. **Threads:** topics that come back several times across the video.
+  4. **Candidates:** 2-4 pieces, 30-75 s in all, each piece a complete thought. Pieces keep their
+     original order; only a short hook line may move to the front (a cold open).
+  5. **Critic, in two passes:** pass A is the normal blind critic (item 4), which scores each deep
+     clip next to the best single stretch around the same payoff (its "twin"); the deep clip goes
+     on only if it scores at least as high (a fixed bar of 8 was dropped: in phase 2 fixed bars
+     threw away good clips). Pass B is a separate **honesty check, pass or fail**: three judges
+     (rules auditor, the speaker's advocate, a viewer who then watches the full video) read every
+     piece with up to 75 s of the original before it and 60 s after, and what was cut between
+     pieces, and ask whether the speaker would be surprised or a viewer misled. Two judges saying
+     fail or unsure reject the clip, whatever its score (one gives a note for the owner) (the BBC Panorama edit, which joined real lines
+     spoken almost an hour apart, would pass A and fail B). No deep clip at all is a fine answer.
+  6. Cut and edit as usual, but **show joins across time instead of hiding them**: a 4-6 frame
+     flash or whip, an optional time chip ("1:28:10" or "later"), and a short audio crossfade (PBS
+     asks for "an audio or visual cue" at such edits). The posting caption gets a ready line:
+     "From 3 moments of the full video: 3:12 · 41:05 · 1:28:40".
+- **Safety rules:** a stitched clip must never make someone seem to say something they didn't. No
+  joining a question to a different answer, no pronoun pointing at something that was cut out ("he",
+  "that thing"), no changing the order of an argument, and no reusing a regular clip's core. The
+  full list is in `references/picking-moments.md` ("Never change what someone meant").
+- **Decided: deep clips work on every subject**, politics and religion included. The research
+  suggested switching them off for sensitive subjects (both well-known splice scandals, BBC
+  Panorama and Zee News, were political), but the owner reviews every clip before posting and
+  decides then. The map still tags sensitive subjects, so the review can show them clearly, and
+  the honesty rules above apply to every clip.
+- **Phases:**
+
+  | Phase | What | Size | Also helps regular clips? |
+  |---|---|---|---|
+  | 1 | Long-video handling (item 3) and the topic map (`topics.json`) | M | Yes: the AI reads every part carefully |
+  | 2 | The critic and a viral score with reasons (item 4) | S | Yes: fewer weak clips |
+  | 3 | The deep pass: threads, candidates, critic (must beat its single-stretch twin), honesty check (two of three objections reject). **Built** | M | |
+  | 4 | Join polish: full-sentence checks, no missing references, gentler audio fade, soft whoosh on long jumps, optional time label, repair round. **Built** | S | Yes: better 2-part clips |
+  | 5 | Test on three long videos and compare deep clips with regular clips | S | |
+
+- **Research behind it:** editing a long video step by step (understand the story, then plan, then
+  cut) gives more coherent results than doing it in one go (HIVE, EMNLP 2025); keeping selected
+  pieces in their original order keeps a cut coherent (RankCut, IUI 2026).
+- **Measure:** the blind test (section 6): are deep clips rated "I'd post this" at least as often as
+  regular clips, and does any viewer feel misled?
+
 ### v3: learning and reach
 
 #### 14. Learn from what actually goes viral
@@ -299,7 +456,13 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 
 ---
 
-## 8. The first five things to build
+## 8. What to build next
+
+**Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
+item 3), phase 2 (the critic, item 4) and phase 3 (the deep pass with its honesty check) are built;
+phase 4 (smoother joins and a repair round) is built too; next is phase 5, the blind comparison with v1.1 on fresh videos. Phases 1, 2 and 4 also make the regular clips better.
+
+The earlier plan, still valid after that:
 
 | Order | What | Size | Why first |
 |---|---|---|---|

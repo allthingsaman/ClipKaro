@@ -32,8 +32,14 @@ you:  clip this video: https://youtu.be/...
   face in the middle. Slides and other shots are shown whole over a blurred background.
 - 🎙️ **Podcasts with two people.** It listens to who is talking and shows that person. When
   someone laughs or both talk at once, it shows both of them in a split screen. *(new in v1.1)*
+- 🧵 **Deep clips** *(new in v2)*. Ask for them on a long podcast: the question at minute 8 and its
+  answer at minute 52 become one short, with a white flash where it jumps. Three AI judges check that
+  the join never changes what was meant.
+- 🧐 **A second opinion on every clip** *(new in v2)*. A blind AI critic scores each idea three times,
+  ranks them, and points out what to fix: a slow start, an unfinished ending, seconds nobody needs.
 - 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
-  the captions in between.
+  the captions in between. Game characters' lines are captioned right, or left without captions when
+  they're unclear *(new in v2)*.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
   that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
@@ -45,7 +51,8 @@ you:  clip this video: https://youtu.be/...
 
 ## How it works
 1. **Listen**: it downloads the sound and writes down every word with its exact time.
-2. **Pick**: the AI (Claude Code) reads the words and chooses the best moments.
+2. **Pick**: the AI (Claude Code) reads the words and chooses the best moments. A long podcast is
+   read in parts of about 20 minutes, all at once, so nothing in the middle gets skimmed.
 3. **Captions**: for Hindi/Hinglish, it writes every Hindi word in English letters.
 4. **Cut**: each moment is cut to a standing video, framed on the speaker's face.
 5. **Edit**: zooms, captions and sound effects are added, and the volume is evened out.
@@ -172,9 +179,14 @@ output/<video>/
     edited/01-title.mp4     the finished short videos: upload these
     edited/01-title.srt     the captions as a separate subtitle file
     clips/01-title.mp4      the cut videos without the edit (also fine to post)
-    clips.json              the chosen moments, with a caption to post for each one
+    clips.json              the chosen moments, with the text to post on each platform
+    post.json               the finished clips with their posting text, for PostKaro
     transcript/             everything that was said, with times
 ```
+
+Want them posted for you? **PostKaro**, ClipKaro's partner app (a separate install), posts them to
+YouTube Shorts, Instagram Reels and your Facebook Page from your laptop, each at its own time. With
+PostKaro installed, Claude ends with a "Post them" link that opens every clip ready to schedule.
 
 ## Languages
 | Language | How well |
@@ -241,7 +253,7 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 ## Folder layout
 ```
 .claude/skills/clip-video/   the instructions Claude follows to make clips
-clipper/                     the program's steps: fetch, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
+clipper/                     the program's steps: fetch, parts, topics, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
 remotion/                    an optional second way to draw the edit
 assets/                      fonts, the face-finding model, sound effects
 docs/                        documentation

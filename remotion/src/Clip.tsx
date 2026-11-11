@@ -3,7 +3,7 @@ import {loadFont} from '@remotion/fonts';
 import {AbsoluteFill, Easing, OffthreadVideo, interpolate, staticFile, useCurrentFrame} from 'remotion';
 
 type Word = {text: string; s: number; e: number; emph?: boolean};
-type Group = {start: number; end: number; words: Word[]; y?: number; cont?: boolean; nolead?: boolean};
+type Group = {start: number; end: number; words: Word[]; y?: number; cont?: boolean; nolead?: boolean; scale?: number};
 // y: set on the split-screen seam; cont / nolead: no one-frame early start (it would fall in the other layout)
 
 export type ClipProps = {
@@ -17,6 +17,7 @@ export type ClipProps = {
   caption_style: {font: string; font_file: string; size: number; y: number; outline: number; spacing?: number};
   brand: {accent: string; text: string; outline: string};
   camera_keys?: {f: number; ease: string}[];
+  labels?: {start: number; end: number; text: string}[]; // optional "27 MIN LATER" at a jump across time
 };
 
 const loaded = new Set<string>();
@@ -77,7 +78,7 @@ const Captions: React.FC<Pick<ClipProps, 'captions' | 'caption_style' | 'brand' 
           transform: 'translateY(-50%)',
           textAlign: 'center',
           fontFamily: `'${st.font}'`,
-          fontSize: st.size,
+          fontSize: st.size * (g.scale ?? 1), // a caption with one very long word is shrunk to fit the frame
           lineHeight: 1.15,
           letterSpacing: st.spacing ?? 1, // 0 for Devanagari, so the letters stay joined
           whiteSpace: 'nowrap',
@@ -119,6 +120,25 @@ const Captions: React.FC<Pick<ClipProps, 'captions' | 'caption_style' | 'brand' 
   );
 };
 
+// ------------------------------------------------------------ jump labels (optional)
+const JumpLabels: React.FC<{labels?: ClipProps['labels']; fps: number; font: string}> = ({labels, fps, font}) => {
+  const t = useCurrentFrame() / fps;
+  const l = (labels ?? []).find((x) => t >= x.start && t < x.end);
+  if (!l) return null;
+  const opacity = Math.max(0, Math.min(1, (t - l.start) / 0.12, (l.end - t) / 0.25));
+  return (
+    <AbsoluteFill>
+      <div style={{position: 'absolute', top: 250, left: 0, right: 0, display: 'flex', justifyContent: 'center',
+                   transform: 'translateY(-50%)', opacity}}>
+        <div style={{fontFamily: `'${font}'`, fontSize: 50, color: 'white', background: 'rgba(0,0,0,0.65)',
+                     padding: '10px 26px', borderRadius: 16, letterSpacing: 1}}>
+          {l.text}
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const Clip: React.FC<ClipProps> = (p) => {
   useFont(p.caption_style?.font ?? 'Montserrat ExtraBold', p.caption_style?.font_file ?? 'Montserrat-ExtraBold.ttf');
   if (!p.src) return <AbsoluteFill style={{backgroundColor: 'black'}} />;
@@ -126,6 +146,7 @@ export const Clip: React.FC<ClipProps> = (p) => {
     <AbsoluteFill style={{backgroundColor: 'black'}}>
       <Camera src={p.src} cam={p.cam} keys={p.camera_keys} />
       <Captions captions={p.captions} caption_style={p.caption_style} brand={p.brand} fps={p.fps} />
+      <JumpLabels labels={p.labels} fps={p.fps} font={p.caption_style?.font ?? 'Montserrat ExtraBold'} />
     </AbsoluteFill>
   );
 };

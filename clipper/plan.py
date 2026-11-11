@@ -14,12 +14,17 @@ Zoom style (adapted from a tested short-form editing engine):
 """
 import math
 import re
+import struct
+from pathlib import Path
 
-from .common import FPS, H, W, has_devanagari, is_sentence_end, norm_token
+from .common import FPS, H, JUMP_FLASH, W, has_devanagari, is_sentence_end, norm_token
 from . import sfx as sfxlib
 
 # caption fonts (assets/fonts): Montserrat has no Hindi letters, so captions that contain Devanagari
 # switch to Poppins, which has both Devanagari and Latin in the same bold geometric style
+FONTS = Path(__file__).resolve().parent.parent / 'assets' / 'fonts'
+# a caption line never gets wider than this (the frame is 1080 wide; 70 px stay free on each side)
+MAX_CAPTION_W = W - 140
 LATIN_FONT = ('Montserrat ExtraBold', 'Montserrat-ExtraBold.ttf')
 HINDI_FONT = ('Poppins ExtraBold', 'Poppins-ExtraBold.ttf')
 
@@ -212,8 +217,112 @@ def merge_tokens(words):
     return out
 
 
-def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
-    words = merge_tokens(meta['words'])
+_METRICS = {}
+
+
+def font_advances(font_file):
+    """({character: advance width}, units per em) read straight from the TTF file, or None. Used to keep
+    caption lines inside the frame (no extra library needed)."""
+    if font_file in _METRICS:
+        return _METRICS[font_file]
+    res = None
+    try:
+        data = (FONTS / font_file).read_bytes()
+        u16 = lambda o: struct.unpack('>H', data[o:o + 2])[0]                 # noqa: E731
+        u32 = lambda o: struct.unpack('>I', data[o:o + 4])[0]                 # noqa: E731
+        tables = {data[12 + 16 * i:16 + 16 * i]: u32(20 + 16 * i) for i in range(u16(4))}
+        upm = u16(tables[b'head'] + 18)
+        n_h = u16(tables[b'hhea'] + 34)
+        hm = tables[b'hmtx']
+        adv = [u16(hm + 4 * i) for i in range(n_h)]
+        cm = tables[b'cmap']
+        subs = {(u16(cm + 4 + 8 * i), u16(cm + 6 + 8 * i)): cm + u32(cm + 8 + 8 * i) for i in range(u16(cm + 2))}
+        cmap = {}
+        sub = subs.get((3, 10)) or subs.get((0, 4))
+        if sub and u16(sub) == 12:
+            for g in range(u32(sub + 12)):
+                o = sub + 16 + 12 * g
+                start, end, gid = u32(o), u32(o + 4), u32(o + 8)
+                for cp in range(start, min(end, 0x2FFFF) + 1):
+                    cmap[cp] = gid + cp - start
+        else:
+            sub = subs.get((3, 1)) or subs.get((0, 3))
+            seg = u16(sub + 6) // 2
+            ends, starts = sub + 14, sub + 16 + 2 * seg
+            deltas, ranges = starts + 2 * seg, starts + 4 * seg
+            for i in range(seg):
+                e, s, d, r = u16(ends + 2 * i), u16(starts + 2 * i), u16(deltas + 2 * i), u16(ranges + 2 * i)
+                for cp in range(s, min(e, 0xFFFE) + 1):
+                    if r == 0:
+                        gid = (cp + d) & 0xFFFF
+                    else:
+                        gid = u16(ranges + 2 * i + r + 2 * (cp - s))
+                        gid = (gid + d) & 0xFFFF if gid else 0
+                    if gid:
+                        cmap[cp] = gid
+        res = ({chr(cp): adv[min(g, n_h - 1)] for cp, g in cmap.items()}, upm)
+    except Exception:
+        res = None
+    _METRICS[font_file] = res
+    return res
+
+
+def caption_width(text, style):
+    """How wide a caption line is on screen (px of the 1080 frame), with outline and letter spacing."""
+    m = font_advances(style.get('font_file', LATIN_FONT[1])) if style else None
+    size = (style or {}).get('size', 96)
+    if m:
+        adv, upm = m
+        em = sum(adv.get(ch, upm * 0.6) for ch in text) / upm
+    else:
+        em = 0.68 * len(text)                    # no font file: a fair estimate for bold capitals
+    return em * size + (style or {}).get('spacing', 1) * len(text) + 2 * (style or {}).get('outline', 8)
+
+
+def split_multi(words):
+    """A word entry holding several words (a Roman spelling like "main na", or a fix of a misheard
+    phrase) becomes one caption word per word, its time shared out by length. One entry holding a whole
+    poem line used to make a caption far wider than the frame."""
+    out = []
+    for w in words:
+        parts = w['w'].split()
+        if len(parts) <= 1:
+            out.append(w)
+            continue
+        total, t, dur = sum(len(p) for p in parts) or 1, w['s'], max(0.0, w['e'] - w['s'])
+        for p in parts:
+            d = dur * len(p) / total
+            out.append({**w, 'w': p, 's': round(t, 3), 'e': round(t + d, 3)})
+            t += d
+    return out
+
+
+def add_clarify(words, clarify):
+    """clips.json "clarify": [[spoken words, noun], ...]. Where a clip says "इस movie" or "he" but never
+    names who or what, the noun is shown in brackets right after the first time those words are said:
+    IS MOVIE [RAMAYANA] KA (brackets: the usual mark of an editor's addition, so nothing is put in the
+    speaker's mouth). Spoken words may be given in Devanagari or Roman. -> (words, phrases not found)."""
+    out, missing = list(words), []
+    for item in clarify or []:
+        if not isinstance(item, (list, tuple)) or len(item) != 2 or not str(item[1]).strip():
+            continue
+        spoken, noun = str(item[0]), str(item[1]).strip().strip('[]')
+        q = [t for t in (norm_token(x) for x in spoken.split()) if t]
+        toks = [{norm_token(w['w']), norm_token(w.get('orig', ''))} for w in out]
+        at = next((i for i in range(len(out) - len(q) + 1) if q and all(q[k] in toks[i + k] for k in range(len(q)))),
+                  None)
+        if at is None:
+            missing.append(spoken)
+            continue
+        for k in range(at, at + len(q)):             # the words it explains stay in one caption with it
+            out[k] = {**out[k], 'clar_phrase': True}
+        last = out[at + len(q) - 1]
+        out.insert(at + len(q), {'w': f'[{noun}]', 's': last['s'], 'e': last['e'], 'p': 1.0, 'clarify': True})
+    return out, missing
+
+
+def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, style=None, max_w=MAX_CAPTION_W):
+    words, _ = add_clarify(split_multi(merge_tokens(meta['words'])), meta.get('clarify'))
     splices = meta.get('splices', [])
     # in the split-screen layout the captions sit on the seam: a group never runs across a switch
     # into or out of it (it would cover a face)
@@ -231,16 +340,34 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
         text = display(w['w'], upper)
         if not text:
             continue
+        if w.get('unsure'):             # the recogniser was guessing (a game voice, music): no caption
+            flush()
+            continue
+        if w.get('clarify') and cur:    # a [noun] always shows with the words it explains
+            line = ' '.join([c['text'] for c in cur] + [text])
+            if (caption_width(line, style) > max_w if style else len(line) > max_chars):
+                k = len(cur)
+                while k > 0 and cur[k - 1].get('phrase'):
+                    k -= 1
+                if 0 < k < len(cur):    # too wide together: the caption breaks before the phrase instead
+                    groups.append(cur[:k])
+                    del cur[:k]
+            cur.append({'text': text, 's': w['s'], 'e': w['e'], 'emph': False, 'clarify': True})
+            continue
         if cur:
-            chars = sum(len(c['text']) + 1 for c in cur) + len(text)
+            line = ' '.join([c['text'] for c in cur] + [text])
+            too_wide = caption_width(line, style) > max_w if style else len(line) > max_chars
             gap = w['s'] - cur[-1]['e']
             crosses = any(cur[-1]['e'] <= s <= w['s'] + 0.01 for s in splices) or \
                 any(cur[0]['s'] < s <= w['s'] + 0.01 for s in seams)
-            if len(cur) >= max_words or chars > max_chars or gap > 0.35 or \
+            spoken = sum(1 for c in cur if not c.get('clarify'))      # a [noun] doesn't count as a word
+            if (spoken >= max_words and not w.get('clarify')) or too_wide or gap > 0.35 or \
                     w['e'] - cur[0]['s'] > max_dur or crosses:
                 flush()
         cur.append({'text': text, 's': w['s'], 'e': w['e'],
                     'emph': bool(emph & {norm_token(w['w']), norm_token(w.get('orig', ''))})})
+        if w.get('clar_phrase'):
+            cur[-1]['phrase'] = True
         if is_sentence_end(w['w']):
             flush()
     flush()
@@ -251,7 +378,12 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6):
             end = nxt[0]['s'] if nxt[0]['s'] - g[-1]['e'] < 0.6 else min(end, nxt[0]['s'])
         end = min(end, meta['duration'])
         # (max 0: a first word that starts a hair before the clip would give a negative .srt time)
-        out.append({'start': round(max(0.0, g[0]['s']), 3), 'end': round(end, 3), 'words': g})
+        grp = {'start': round(max(0.0, g[0]['s']), 3), 'end': round(end, 3), 'words': g}
+        if style:                       # one word wider than the frame allows: shrink this caption to fit
+            wd = caption_width(' '.join(c['text'] for c in g), style)
+            if wd > max_w:
+                grp['scale'] = round(max_w / wd, 3)
+        out.append(grp)
     return out
 
 
@@ -284,7 +416,9 @@ def cut_at_seams(caps, shots, fps=FPS):
 
 # ---------- sound effects ----------
 
-def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS):
+def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=()):
+    """Sound cues: a whoosh on the opening zoom, and one on the emphasis zoom or, in a joined clip
+    that jumps in time, a softer one at each jump (with the flash: a jump is heard, not hidden)."""
     if mode == 'none':
         return []
     cues, used = [], set()
@@ -307,10 +441,35 @@ def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS):
     add('whoosh', OPEN_FRAMES / fps * 0.5, -15, prefer_len=0.9)          # opening zoom
     if mode == 'light':
         return cues
+    for t in jumps:                                                      # a jump across time
+        if t > 0.5:
+            add('whoosh', t, -19, prefer_len=0.7)
     snap = next((t for t in transitions if t['kind'] == 'snap'), None)
-    if snap:                                                             # whoosh on the emphasis zoom
+    if snap and not jumps:              # whoosh on the emphasis zoom (a clip with a jump has that one)
         add('whoosh', snap['t'] + SNAP_FRAMES / fps * 0.4, -17, prefer_len=0.9)
     return cues
+
+
+def long_jumps(meta):
+    """Joins that skip more than JUMP_FLASH seconds of the video (the ones cut shows with a flash)."""
+    return [j for j in meta.get('jumps', []) if abs(j['gap']) > JUMP_FLASH]
+
+
+def jump_labels(jumps, duration, upper=True):
+    """Optional small labels at long jumps: "27 MIN LATER" for 1.6 s (off unless asked for)."""
+    out = []
+    for j in jumps:
+        g, when = abs(j['gap']), ('later' if j['gap'] > 0 else 'earlier')
+        if g >= 3600:
+            h, m = int(g // 3600), int(round(g % 3600 / 60))
+            txt = f'{h} hr {m} min {when}' if m else f'{h} hr {when}'
+        elif g >= 90:
+            txt = f'{int(round(g / 60))} min {when}'
+        else:
+            txt = f'{int(round(g))} sec {when}'
+        out.append({'start': round(j['t'], 3), 'end': round(min(duration, j['t'] + 1.6), 3),
+                    'text': txt.upper() if upper else txt})
+    return out
 
 
 # ---------- the plan ----------
@@ -322,7 +481,12 @@ def build(meta, brand, opts):
     hindi = any(has_devanagari(w['w']) for w in meta['words'])
     # Devanagari has no capitals, so mixed captions stay in normal case (only Latin words would shout)
     upper = opts.get('uppercase', True) and not hindi
-    caps = caption_groups(meta, upper=upper) if opts.get('captions', True) else []
+    font, font_file = (opts['font'], opts['font_file']) if opts.get('font') else (HINDI_FONT if hindi else LATIN_FONT)
+    style = {'font': font, 'font_file': font_file, 'size': opts.get('size', 96), 'y': opts.get('caption_y', 1270),
+             'outline': 8, 'uppercase': upper,
+             # letter spacing splits Devanagari into loose letters (libass shapes glyph by glyph then)
+             'spacing': 0 if hindi else 1}
+    caps = caption_groups(meta, upper=upper, style=style) if opts.get('captions', True) else []
     caps = cut_at_seams(caps, meta.get('shots', []), fps)
     shot_frames = [(s.get('f0', int(round(s['t0'] * fps))), s.get('mode')) for s in meta.get('shots', [])]
 
@@ -338,20 +502,16 @@ def build(meta, brand, opts):
             g['y'] = H // 2
         if fs > 0 and not g.get('cont') and split_at(fs - 1) != split_at(fs):
             g['nolead'] = True          # its one-frame early start would fall in the other layout
-    font, font_file = (opts['font'], opts['font_file']) if opts.get('font') else (HINDI_FONT if hindi else LATIN_FONT)
     return {
         'fps': fps, 'width': W, 'height': H,
         'duration': meta['duration'], 'frames': len(cam),
         'title': meta.get('title'),
         'camera_keys': keys, 'cam': cam,
         'captions': caps,
-        'caption_style': {
-            'font': font, 'font_file': font_file,
-            'size': opts.get('size', 96), 'y': opts.get('caption_y', 1270), 'outline': 8, 'uppercase': upper,
-            # letter spacing splits Devanagari into loose letters (libass shapes glyph by glyph then)
-            'spacing': 0 if hindi else 1,
-        },
+        'caption_style': style,
         'brand': brand,
-        'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps),
+        'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps,
+                        jumps=[j['t'] for j in long_jumps(meta)]),
+        'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
         'transitions': transitions,
     }

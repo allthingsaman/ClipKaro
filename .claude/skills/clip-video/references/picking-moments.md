@@ -50,6 +50,27 @@ punchline, a rule or a call to action. Never end mid-thought, on "and…", or on
   Never build a sentence the speaker didn't say.
 - Ranges of different clips must not overlap.
 
+## Never change what someone meant (joins and cold opens)
+A clip made of pieces must stay true to the full video. Check every join:
+1. **The full-video test.** Would the speaker be surprised by the clip? Would a viewer who then
+   watched the full video feel misled? If maybe, use one continuous range.
+2. **Original order.** Pieces play in the order they were said. The one exception is a cold open:
+   one line of at most about 5 s that works without setup, raises a question instead of giving
+   away the answer, and means the same when heard first. Never a reaction, and never an answer
+   whose question isn't shown.
+3. **Answers and reactions stay with their own question.** An answer only follows its own
+   question; "haan", "bilkul", "exactly" or a laugh only follows the line it reacted to.
+4. **Keep how it was said.** Never cut a quote, a hypothetical, sarcasm, an impression or a game
+   character so that it sounds like the speaker's own view.
+5. **Keep the softener.** Never drop a "just kidding", "मज़ाक था", "not really" or a correction
+   that comes right after a piece.
+6. **Nothing points at cut-out words.** No piece opens with "he", "that", "wo", "isliye" or
+   "lekin" unless its setup is in the clip.
+7. **Never build a sentence the speaker didn't say**, and never add silence after a question
+   for effect.
+8. **Quotation marks only for words actually said**, in titles and captions.
+9. **Never use ads, sponsor reads, cold-open teasers, intros or outros** as pieces.
+
 ## How many
 Usually **3–8 clips** per video (about one per 4–8 minutes of strong content). Quality over count:
 3 great clips beat 8 average ones. If nothing is clip-worthy, say so.
@@ -64,6 +85,17 @@ on camera, not a slide). Put the best clip first.
   end at the **end** of the payoff line.
 - Times don't need to be perfect: the cutter snaps them to whole words and adds natural handles.
   Never cut inside a sentence, though.
+
+## Tight cuts (the owner's taste)
+From the owner's blind comparison of two versions on the same videos (Nov 2026), where the tighter cut
+won every time the two cut the same moment:
+- **Open on the hook.** Drop the warm-up: the clip starts on the first line worth hearing.
+- **End on the payoff.** Stop after the line that lands the point; cut after-thoughts and restating.
+- **Cut detours inside long answers.** A long continuous answer whose hook gets lost midway is worse
+  than the same answer with the side story or repeat cut out (pieces in the order said, smooth).
+- **Keep extra seconds only when they carry something**: a funny line, the fight the talk is about,
+  the setup the payoff needs.
+- **Never cut the hook line** out of the middle, and **never end before the speaker finishes the point.**
 
 ## clips.json format
 Write `output/<project>/clips.json`:
@@ -80,16 +112,49 @@ Write `output/<project>/clips.json`:
       "hook_type": "contrarian",
       "why": "One sentence: why this works as a standalone short",
       "emphasis": ["broke", "ten", "million"],
-      "caption": "Ready-to-post caption for TikTok/Reels/Shorts, 1-2 lines + 3-5 hashtags"
+      "caption": "Ready-to-post caption for TikTok/Reels/Shorts, 1-2 lines + 3-5 hashtags",
+      "clarify": [["इस movie", "Ramayana"]],
+      "post": {
+        "youtube": {"title": "Why Hard Work Isn't Enough (He Learned It at 40)",
+                    "description": "One or two lines on what the clip shows. #hardwork #success #podcast"},
+        "instagram": {"caption": "A hook line + a question to comment on 👇 #hardwork #success #mindset"},
+        "facebook": {"caption": "A hook line that makes people want to watch. #hardwork"}
+      }
     }
   ]
 }
 ```
 
+- `clarify` (optional): the clip points at something it never names ("इस movie", "ये film", "वो",
+  "उनका", "he", "this company") and a viewer couldn't know what. Add `[spoken words exactly as in the
+  transcript, the noun]`; the captions then show the noun in brackets after the first mention: "IS
+  MOVIE [RAMAYANA] KA". Brackets are the usual mark of an editor's addition, so nothing is put in the
+  speaker's mouth. Only what the video itself makes clear (its title, an earlier line), 1–3 words, never
+  an opinion. If the line that names it is short and close by, adding that line is better.
+- `caption` and `post` are needed for **every** clip, on every route (short videos, long videos read
+  in parts, deep clips). They are what the user posts, by hand or with PostKaro (`run.py post`).
+- `post`: the text for each platform, in the same language and script as the captions (Roman
+  Hinglish for Hindi/Hinglish videos unless settings.json says otherwise). Write each one for its
+  platform, not one copy-paste:
+  - `youtube.title`: at most 100 characters, what someone would search for or click (often the
+    `title` plus a few words of context). `youtube.description`: 1–2 lines + up to 3 hashtags. Don't
+    add the full-video link: ClipKaro/PostKaro add "Full video: <link>" themselves.
+  - `instagram.caption`: a hook line, then a question or call to comment, then **at most 5
+    hashtags** (Instagram allows no more). No `#shorts`.
+  - `facebook.caption`: 1–2 lines, 0–3 hashtags, no `#shorts`.
+  - Deep clips: start every platform's text with the clip's `source_line` ("From 2 moments of the
+    full video: 0:08 · 22:53"), so viewers know it is joined.
+  - Never put `<` or `>` in YouTube text (YouTube refuses them).
+
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key
   noun). They stay highlighted in the brand colour in the captions. Use the exact word as spoken.
 - `ranges`: one `[start, end]` pair, or 2–3 pairs for a splice (they play in the listed order).
+- `from`: the id the critic gave the clip idea: a candidate id for long videos (`"p3-c1"`, copy its
+  `ranges` from `candidates.txt`; `cut --check` warns when they differ), or `"s3"` for the third
+  clip of a short video's shortlist.
+- `clip_score` (from `critic.txt`): the clip score out of 10, e.g. `7.8`. `score` stays your own
+  first impression from picking.
 - `show_full` (optional): `[[a, b]]` source-time stretches shown as the whole landscape frame over
   a blurred background, when what matters lies outside a 9:16 crop (a product held up, a screen,
   a slide, a gesture across the room). Use sentence edges.

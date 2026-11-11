@@ -85,6 +85,7 @@ scenes; you don't need to type that part.
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
 | "use the creator's brand colour" | Claude uses it if it knows it for sure; otherwise it picks a colour from the video |
 | "Hindi captions in Hindi letters" | captions in Devanagari instead of English letters |
+| "show how much time was skipped" / "add a time label at the jumps" | a small "27 MIN LATER" label for 1.6 s where a joined clip jumps in time (`--jump-label`) |
 | "render with Remotion" | uses the optional second editor (slower; needs `python install.py --remotion`; free for individuals and small companies, [larger companies need a license](https://www.remotion.dev/license)) |
 
 ### Framing
@@ -111,6 +112,43 @@ scenes; you don't need to type that part.
 | You write | What happens |
 |---|---|
 | "YouTube says sign in to confirm you're not a bot" / "use my Firefox cookies" | downloads using your browser's YouTube login (Chrome, Firefox or Edge) |
+
+### Long videos (podcasts of an hour or more)
+| You write | What happens |
+|---|---|
+| (nothing: it's automatic) | a long video is read in parts of about 20 minutes, all at the same time, so no part is skimmed; then all the moments found are judged together |
+| (nothing: it's automatic) | if the creator's own teaser at the start, or YouTube's "most replayed" graph, points at a moment nobody picked, that stretch is read again carefully |
+| "show me the topic map" | Claude shows `topics.txt`: every topic with its time, what it's about, and the key lines |
+
+### The second opinion (every video)
+| You write | What happens |
+|---|---|
+| (nothing: it's automatic) | before anything is cut, a second AI editor, the **critic**, checks every clip idea three times, without knowing who picked it. Every idea gets a **clip score** out of 10, with reasons, and the best ones are used. A clip that needs earlier context, or whose punchline comes after the cut, gets a note, and Claude repairs it |
+| "show me all the clip ideas" | Claude shows `critic.txt`: every idea with its score, the reasons and any notes |
+| "give me all the good clips" | more clips than usual, taken from the top of the critic's list |
+| "give me only clips with 7 or more" | only clips with a clip score of 7/10 or more are used |
+
+A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,
+how shareable it is), compared with the other moments of the same video. It is **not** a
+prediction of views: views also depend on your channel, the timing and luck.
+
+### Deep clips: one story from moments far apart (only when you ask)
+| You write | What happens |
+|---|---|
+| "deep clip this: <link>" or "clip this, then go deeper" | the regular clips first, then Claude looks for stories spread across the video (a question and its answer much later, an opening line and the story's payoff) and joins 2-3 of those moments into one short |
+| "do a deep pass on <video>" | the same, for a video you've already clipped |
+| "show me the deep clip report" | Claude shows `deep/report.txt`: every deep clip tried, its clip score next to the best single stretch, and why it was kept or not |
+
+A deep clip is kept only when it scores at least as well as the best single stretch, **and** at
+least two of three separate honesty judges agree it keeps what the person meant. If one judge has
+a doubt, the clip is kept and Claude tells you that judge's reason, so you can check it before
+posting. A clip the judges reject for something a few seconds would fix (a "but..." cut off right
+after a piece, or an answer without its question) gets one repair: Claude keeps those seconds, and
+the clip is scored and judged again from scratch. Often no deep clip passes: that's
+normal, and Claude says so. A kept clip shows a short white flash where it jumps in time, and its
+posting caption starts with a line like "From 2 moments of the full video: 35:30 · 1:03:01" and the
+full video link. A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for
+a 68-minute interview, 13 for a 2-hour podcast).
 
 ### Can I write anything else?
 Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
@@ -145,10 +183,20 @@ Everything goes into `output/<project>/`. `<project>` is a folder named after th
 | `edited/01-title.mp4` | **the finished short videos** (1080x1920, ready for phones): upload these |
 | `edited/01-title.srt` | the captions as a separate subtitle file, for apps that accept one |
 | `clips/01-title.mp4` | the cut videos without zooms, captions or sounds (also fine to post) |
-| `clips.json` | the chosen moments: titles, times, scores, highlighted words and **captions to post** |
+| `clips.json` | the chosen moments: titles, times, clip scores, highlighted words and **the text to post** on YouTube, Instagram and Facebook |
+| `post.json` | the finished clips with their posting text, for PostKaro (see below) |
+| `critic.txt` | every clip idea, ranked by its clip score, with the critic's reasons and notes |
 | `transcript/transcript.txt` | everything that was said, with times |
 
 Claude's last message lists each clip with its length, file and a caption to post.
+
+### Posting your clips (PostKaro)
+PostKaro is ClipKaro's partner app: it posts the clips to YouTube Shorts, Instagram Reels and your
+Facebook Page from your own laptop, each at its own time. It is a separate install (its own folder
+and README). When it is installed, Claude's last message ends with **"Post them: <link>"**. Click it:
+every clip is there with its title and caption for each platform, ready to check and schedule.
+Without PostKaro, upload the files in `edited/` yourself; the text for each platform is in
+`clips.json` under `post`.
 
 ## 5. Your defaults: `settings.json`
 
@@ -162,7 +210,8 @@ Claude to change them.
   "device": "auto",
   "hinglish_captions": "roman",
   "layout": "auto",
-  "facecam": null
+  "facecam": null,
+  "jump_label": false
 }
 ```
 
@@ -173,6 +222,7 @@ Claude to change them.
 | `device` | `auto` | `auto` (the NVIDIA card if it works, otherwise the processor), `cuda` (the NVIDIA card), `cpu` (the processor) |
 | `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
+| `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 
 ## 6. Doing the steps by hand (optional)
@@ -183,6 +233,7 @@ folder (`python3` instead of `python` on Mac/Linux):
 ```bash
 python run.py fetch "<link or file>"            # 1. download the sound, write down the words; shows the <project> name
 # 2. write output/<project>/clips.json yourself (format: docs/architecture.md, part 4)
+python run.py critic <project>                  # 2a. optional: packets for a blind second opinion (see the skill)
 python run.py romanize <project>                # 2b. Hindi/Hinglish: lists the words for romanize.json
 python run.py cut <project> --check             # 3a. check where the clips start and end (cuts nothing)
 python run.py cut <project>                     # 3b. standing clips → output/<project>/clips/
@@ -197,9 +248,18 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py romanize <project>` | `--clips 1,3` |
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
-| `run.py edit <project>` | `--clips 2`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
+| `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
+| `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
+| `run.py sound <project>` | measures laughs, applause, both talking at once, and lively spots (`fetch` does this by itself) |
+| `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates\|deep` (what to judge), `--runs 3` |
+| `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |
+| `run.py honesty <project>` | first run: one packet per deep clip for the three honesty judges; second run: merges their verdicts; `--fresh` (start over) |
+| `run.py asr-bench make` / `run [model]` / `report` | a small speech-to-text test on your own videos (Hindi, Hinglish, English): `make` cuts four ~3-minute snippets and draft texts into `output/_asrbench/`; correct the texts by ear once; `run` scores a model (the share of words wrong, compared by sound so Devanagari and Roman Hinglish count the same); `report` lists every model tried, best first. Switch models only when one clearly wins |
+| `run.py relisten <project>` | listens again to unclear speech (game voices, film clips) in videos transcribed before Nov 2026: clear English replaces nonsense, the rest gets no captions; then re-cut the clips it names |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
+| `run.py post <project>` | `--open` (open the PostKaro link in the browser). Writes `post.json`; prints the PostKaro link when PostKaro is installed |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 
 Add `-h` to any command to see its help, for example `python run.py cut -h`.
@@ -207,7 +267,9 @@ Add `-h` to any command to see its help, for example `python run.py cut -h`.
 ### Command reference
 The same, as a quick list: `fetch` (listen) → `romanize` (Hindi captions) → `cut` (standing clips)
 → `brand` (colour, optional) → `edit` (the finished look). Helpers: `find` (exact times),
-`frames` (what the crop keeps), `gpu` (graphics-card test).
+`frames` (what the crop keeps), `gpu` (graphics-card test). Long videos: `parts` (split the
+transcript for careful reading) and `topics` (join the readers' answers into a topic map and one
+list of clip candidates).
 
 ## 7. Make it your own
 - **Your own sound effects**: put `.mp3` or `.wav` files into `assets/sfx/`, with `whoosh`, `hit` or

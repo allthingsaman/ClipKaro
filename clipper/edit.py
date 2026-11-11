@@ -26,6 +26,7 @@ from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, load_json, 
 from .sfx import SFX_DIR
 
 FONTS = ASSETS / 'fonts'
+JUMP_SIZE, JUMP_Y = 50, 250       # the optional "27 MIN LATER" label: size (CSS px) and centre line
 
 
 # ---------------- shared: audio mix ----------------
@@ -105,6 +106,7 @@ ScaledBorderAndShadow: yes
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{st['font']},{st['size']},{white},{white},{outline},&H64000000,0,0,0,0,100,100,{st.get('spacing', 1)},0,1,{st['outline']},3,5,60,60,0,1
+Style: Jump,{st['font']},{css_to_ass_size(JUMP_SIZE, st['font_file'])},&H00FFFFFF,&H00FFFFFF,&H5A000000,&H5A000000,0,0,0,0,100,100,1,0,3,14,0,5,60,60,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -147,8 +149,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                        f'\\t({a},{a + 1},\\alpha&H00&)\\t({a},{a + 110},0.6,\\fscy100)'
                        f'\\t({b},{b + 1},\\1c{col})}}')
             parts.append(tag + w['text'].replace('{', '(').replace('}', ')'))
-        text = f"{{\\pos({W // 2},{g.get('y', st['y'])})}}" + ' '.join(parts)
+        fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''   # shrunk to fit the frame
+        text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
+    for lb in plan.get('labels', []):        # "27 MIN LATER" at a jump across time (optional)
+        events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
+                      f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
 
 
@@ -157,7 +163,7 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
     ass = workdir / f'{out_mp4.stem}.ass'
     write_ass(plan, ass)
     fonts_rel = os.path.relpath(FONTS, workdir).replace('\\', '/')
-    vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan['captions'] else 'null'
+    vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan['captions'] or plan.get('labels') else 'null'
     dec = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', str(clip_mp4), '-f', 'rawvideo', '-pix_fmt', 'bgr24',
                             '-r', str(plan['fps']), '-s', f'{W}x{H}', '-'], stdout=subprocess.PIPE)
     tmp = out_mp4.with_suffix('.part.mp4')
@@ -250,6 +256,9 @@ def main():
                     help='caption centre line in px (0-1920); default 1270, or the seam in the facecam layout')
     ap.add_argument('--size', type=int, default=96, help='caption font size in px')
     ap.add_argument('--out', default=None, help='output folder (default <project>/edited)')
+    ap.add_argument('--jump-label', action=argparse.BooleanOptionalAction, default=None,
+                    help='a small "27 MIN LATER" label where a joined clip jumps in time '
+                         '(default: "jump_label" in settings.json, else off)')
     a = ap.parse_args()
 
     pdir = project_dir(a.project)
@@ -271,7 +280,8 @@ def main():
     if romanize.wants_roman(project, cfg):
         print('-> captions: Roman Hinglish (romanize.json)')
     opts = {'zoom': not a.no_zoom, 'captions': not a.no_captions, 'sfx': a.sfx,
-            'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size}
+            'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size,
+            'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
     done = []
     for mpath in metas:
         meta = load_json(mpath)
@@ -282,6 +292,12 @@ def main():
         t0 = time.time()
         print(f"-> editing clip {meta['id']}: {meta['title']} ({a.engine} engine)")
         meta = romanize.for_captions(pdir, project, meta, cfg)
+        picked = next((c for c in (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
+                       if int(c.get('id', 0)) == meta['id']), {})
+        meta['clarify'] = picked.get('clarify', [])
+        _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
+        for m in missing:
+            print(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
         clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270)
         if meta.get('layout') == 'facecam':
             clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around

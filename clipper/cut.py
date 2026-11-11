@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from . import facecam as fclib
-from .common import (H, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, probe, project_dir, save_json,
+from .common import (H, JUMP_FLASH, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
                      settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
@@ -134,10 +134,20 @@ def snap_range(s, e, words):
     return max(0.0, start), end, i0, i1
 
 
+# a later piece of a joined clip that opens on one of these may point at (or answer) words that were cut
+PIECE_POINTERS = {'he', 'she', 'they', 'him', 'her', 'his', 'their', 'them', 'it', 'its', 'that', 'this', 'those',
+                  'these', 'which', 'जो', 'जिसने', 'जिसको', 'जिसका', 'जिसकी', 'जिन्होंने',
+                  'वो', 'वह', 'वे', 'उसने', 'उसको', 'उसे', 'उसका', 'उसकी', 'उनका', 'उनकी', 'उनको', 'उन्होंने',
+                  'यह', 'ये', 'इसका', 'इसकी', 'इसको', 'इसलिए', 'वही', 'उसी', 'wo', 'woh', 'isliye', 'usne', 'unhone'}
+PIECE_ANSWERS = {'yes', 'yeah', 'yep', 'no', 'nope', 'exactly', 'absolutely', 'correct',
+                 'हाँ', 'हां', 'जी', 'बिल्कुल', 'बिलकुल', 'नहीं', 'haan', 'han', 'bilkul', 'nahi', 'ji'}
+
+
 def boundary_warnings(ranges, words):
-    """Flag clips that start or end mid-sentence (the most common clipping mistake)."""
+    """Flag clips that start or end mid-sentence (the most common clipping mistake), and a later
+    piece of a joined clip that opens on a word pointing at (or answering) words that were cut."""
     warns = []
-    for s, e in ranges:
+    for k, (s, e) in enumerate(ranges):
         snapped = snap_range(s, e, words)
         if not snapped:
             continue
@@ -149,7 +159,47 @@ def boundary_warnings(ranges, words):
         if nxt and not is_sentence_end(last['w']) and nxt['s'] - last['e'] < 0.6:
             warns.append(f'ends mid-sentence: "...{" ".join(w["w"] for w in words[max(0, i1 - 5):i1 + 1])}" '
                          f'is followed by "{" ".join(w["w"] for w in words[i1 + 1:i1 + 7])}..."')
+        first = norm_token(words[i0]['w'])
+        if k > 0 and (first in PIECE_POINTERS or first in PIECE_ANSWERS):
+            what = 'answer a question' if first in PIECE_ANSWERS else 'point at words'
+            warns.append(f'piece {k + 1} opens on "{words[i0]["w"].strip()}", which may {what} that were cut out: '
+                         f'start it earlier, or make sure the clip still says what was meant')
+        fs = false_start(words, i0, i1)
+        if fs:
+            warns.append(f'may start with a false start: "{fs[0]}" is said again {fs[1]:.1f} s later; if it is '
+                         f'a restart, begin at the second one ({fs[2]:.2f})')
     return warns
+
+
+def false_start(words, i0, i1, max_k=3, within=3.5, gap_words=5):
+    """A clip that opens with a restarted phrase ("1992 se leke, 1992 peak ho gaya"): the first 1-3
+    words come again within a few seconds. Returns (words, gap, start of the repeat) or None."""
+    toks = [norm_token(w['w']) for w in words[i0:i1 + 1]]
+    for k in range(max_k, 0, -1):
+        head = toks[:k]
+        if not all(head) or (k == 1 and len(head[0]) < 3):
+            continue                             # one short word ("to", "ki") repeats by chance
+        for j in range(k, min(len(toks) - k + 1, 2 * k + gap_words + 1)):
+            if toks[j:j + k] == head and words[i0 + j]['s'] - words[i0]['s'] <= within:
+                return ' '.join(w['w'].strip() for w in words[i0:i0 + k]), \
+                    words[i0 + j]['s'] - words[i0]['s'], words[i0 + j]['s'] - 0.12
+    return None
+
+
+def drift_warnings(clip, cands):
+    """A clip picked from a candidate list (long videos read in parts) or from the critic's list
+    should keep its exact ranges; say so when they differ, or when the id doesn't exist."""
+    src = clip.get('from')
+    if not src:
+        return []
+    c = cands.get(src)
+    if not c:
+        return [f'"from": "{src}" is not in candidates.json or the critic\'s list']
+    mine, theirs = clip['ranges'], c['ranges']
+    if len(mine) != len(theirs) or any(abs(a - x) > 1.0 or abs(b - y) > 1.0
+                                       for (a, b), (x, y) in zip(mine, theirs)):
+        return [f'ranges differ from candidate {src} {theirs}: on purpose?']
+    return []
 
 
 def range_shots(video, info, clip, words):
@@ -214,7 +264,8 @@ def two_person(pdir, video, plans, words):
         parts = [[round(start, 3), round(start + dur, 3)] for start, dur, _ in planned]
         cache = work / f'signals-{cid:02d}.json'
         old = load_json(cache)
-        if old and old.get('parts') == parts and old.get('pieces') == [list(x) for x in pieces]:
+        if old and old.get('parts') == parts and old.get('pieces') == [list(x) for x in pieces] \
+                and old.get('v') == speakers.SIGNALS_V:
             signals[cid] = old
             continue
         vo = speakers.voices(audio, parts)
@@ -229,7 +280,8 @@ def two_person(pdir, video, plans, words):
                 if _two_shot(sh):
                     two = sorted(f[0] for f in (sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]))
                     act += speakers.face_activity(cap, start + sh['a'], start + sh['b'], two)
-        signals[cid] = {'parts': parts, 'pieces': [list(x) for x in pieces], 'voices': vo, 'laughter': la,
+        signals[cid] = {'v': speakers.SIGNALS_V, 'parts': parts, 'pieces': [list(x) for x in pieces],
+                        'voices': vo, 'laughter': la,
                         'activity': act, 'prints': speakers.voice_prints(audio, vo) or {}}
         save_json(cache, signals[cid])
     cap.release()
@@ -280,6 +332,31 @@ def two_person(pdir, video, plans, words):
     return out
 
 
+def join_fade(gap):
+    """(fade in, fade out) seconds at a join that skips `gap` seconds of the video. Dialogue editors
+    use a few ms at a plain cut and 20-100 ms where the room sound changes (more is heard)."""
+    if abs(gap) > JUMP_FLASH:
+        return 0.06, 0.08
+    if abs(gap) > 2.0:
+        return 0.03, 0.05
+    return 0.01, 0.03
+
+
+def piece_fades(ranges, k, start, end, dur, first_word, last_word):
+    """The afade filters of piece k: a click-free start and end, kept inside the quiet before the
+    first word and after the last one, so a fade never touches speech. A clip of one piece (and the
+    clip's own start and end) fades exactly as before."""
+    last = k == len(ranges) - 1
+    f_in, f_out, curve = 0.01, (0.12 if last else 0.03), ''
+    if k > 0:
+        f_in = max(0.01, min(join_fade(ranges[k][0] - ranges[k - 1][1])[0], first_word['s'] - start - 0.01))
+        curve = ':curve=qsin'
+    if not last:
+        f_out = max(0.03, min(join_fade(ranges[k + 1][0] - ranges[k][1])[1], end - last_word['e'] - 0.01))
+    return (f'afade=t=in:d={f_in:.3f}{curve},'
+            f'afade=t=out:st={max(0, dur - f_out):.3f}:d={f_out:.3f}{":curve=qsin" if not last else ""}')
+
+
 def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, planned=None, auto=None):
     src_w, src_h = info['width'], info['height']
     planned_by_start = {round(p[0], 3): p[2] for p in planned or []}
@@ -323,9 +400,7 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
                     chains.append(shot_filter(f'{n}s{j}', sh, src_w, src_h, f'v{n}_{j}', fps))
                 chains.append(''.join(f'[v{n}_{j}]' for j in range(len(shots))) +
                               f'concat=n={len(shots)}:v=1:a=0[v{n}]')
-        fade = 0.12 if k == len(clip['ranges']) - 1 else 0.03   # softer tail on the clip's last word
-        chains.append(f'[{n}:a]aresample=48000,afade=t=in:d=0.01,'
-                      f'afade=t=out:st={max(0, dur - fade):.3f}:d={fade}[a{n}]')
+        chains.append(f'[{n}:a]aresample=48000,{piece_fades(clip["ranges"], k, start, end, dur, words[i0], words[i1])}[a{n}]')
         labels.append(f'[v{n}][a{n}]')
         for w in words[i0:i1 + 1]:
             clip_words.append({**w, 's': round(w['s'] - start + timeline, 3),
@@ -358,14 +433,26 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
     if masks:                       # the round-cam mask image, shared by every range of the clip
         inputs += ['-loop', '1', '-t', f'{timeline + 1:.3f}', '-i', str(fc['mask'])]
         chains.append(f'[{n}:v]format=gray,split={len(masks)}' + ''.join(f'[{m}]' for m in masks))
+    # joins across time (deep clips, long splices) are shown, not hidden: a short white flash
+    jumps = [{'t': splices[i], 'gap': round(parts[i + 1][0] - parts[i][1], 1)} for i in range(len(splices))]
+    flashes = [j['t'] for j in jumps if abs(j['gap']) > JUMP_FLASH]
+    out_v = 'outv'
+    if flashes:
+        out_v = 'outvf'
     chains.append(''.join(labels) + f'concat=n={n}:v=1:a=1[outv][outa]')
+    if flashes:
+        boxes = []
+        for t in flashes:                         # about 4 frames: soft, bright, soft
+            boxes.append(f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.45:t=fill:enable='between(t,{t - 0.09:.3f},{t + 0.12:.3f})'")
+            boxes.append(f"drawbox=x=0:y=0:w=iw:h=ih:color=white@0.55:t=fill:enable='between(t,{t - 0.04:.3f},{t + 0.06:.3f})'")
+        chains.append('[outv]' + ','.join(boxes) + '[outvf]')
     tmp = out_mp4.with_suffix('.part.mp4')
-    ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', '[outv]', '-map', '[outa]',
+    ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', f'[{out_v}]', '-map', '[outa]',
            '-c:v', 'libx264', '-preset', 'fast', '-crf', '17', '-pix_fmt', 'yuv420p', '-r', str(fps),
            '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', tmp)
     tmp.replace(out_mp4)
     meta = {'fps': fps, 'parts': [[round(a, 3), round(b, 3)] for a, b in parts], 'duration': round(timeline, 3),
-            'shots': shots_out, 'splices': splices, 'words': clip_words}
+            'shots': shots_out, 'splices': splices, 'jumps': jumps, 'words': clip_words}
     if exact:
         meta['splice_frames'] = splice_frames
     if fc:
@@ -425,6 +512,12 @@ def main():
     want = {int(x) for x in a.clips.split(',')} if a.clips else None
 
     flagged = 0
+    cands = {c['id']: c for c in load_json(pdir / 'candidates.json', []) or []}
+    for c in (load_json(pdir / 'critic' / 'plan.json') or {}).get('clips', []):
+        cands.setdefault(c['id'], c)             # a short video's shortlist ("s3") judged by the critic
+    for c in load_json(pdir / 'deep' / 'candidates.json', []) or []:
+        cands.setdefault(c['id'], c)             # a deep clip ("d1-c1") from the deep pass
+    taken = []                                   # (clip id, start, end) of every range so far
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
@@ -434,6 +527,18 @@ def main():
         msgs = boundary_warnings(clip['ranges'], words)
         if total and not 15 <= total <= 90:
             msgs.append(f'length {total:.0f}s is outside 15-90 s')
+        msgs += drift_warnings(clip, cands)
+        for r0, r1 in clip['ranges']:            # unclear speech (relisten marked it): no captions there
+            uw = [w for w in words if w.get('unsure') and r0 <= w['s'] < r1]
+            if uw:
+                msgs.append(f"no captions at {fmt_ts(uw[0]['s'])}-{fmt_ts(uw[-1]['e'])} ({len(uw)} words): the "
+                            f"speech there was unclear (a game voice, music or noise). Fine if the game shows "
+                            f"its own subtitles")
+        for r0, r1 in clip['ranges']:
+            for other, x, y in taken:
+                if r0 < y - 1.0 and x < r1 - 1.0:
+                    msgs.append(f'overlaps clip {other} ({x:.1f}-{y:.1f}): the same words twice')
+        taken += [(cid, r0, r1) for r0, r1 in clip['ranges']]
         for m in msgs:
             print(f'   WARNING clip {cid} "{clip.get("title")}": {m}')
         flagged += bool(msgs)

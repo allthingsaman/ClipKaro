@@ -25,6 +25,20 @@ Key points (details in the files above):
   your tool supports it) and keep the user posted.
 - Results go to `output/<project>/`. Never commit or upload user videos or anything in `output/`.
 - Never invent words: clips contain only what the speaker said.
+- Long videos: run `python run.py parts <project>`. With several parts, don't read the whole
+  transcript at once: read the parts one at a time as
+  `.claude/skills/clip-video/references/reading-parts.md` says (write each `part-NN.json` before
+  reading the next), then run `python run.py topics <project>` (and read any focus files it lists).
+- Every video: before cutting, `python run.py critic <project>` writes 3 blind packets of all clip
+  ideas (a short video's shortlist in clips.json, or a long video's candidates). Judge each packet
+  as `.claude/agents/clipkaro-critic.md` says (a fresh helper per run if you can), run `critic`
+  again, and pick the final clips from the top of `critic.txt`.
+- Deep clips (only when the user asks: "deep clip this", "do a deep pass"): after the regular
+  clips, follow section 2d of the skill and `references/deep-clips.md`. Run `python run.py deep
+  <project>` again after each helper step (thread finder, composers), then `critic --from deep` and
+  `honesty` (judge each packet three times, once per role, as `.claude/agents/clipkaro-honesty.md`
+  says). Two or more fail / unsure reject a deep clip (never override that); one gives a note to
+  show the user.
 - After `cut`, check clips with two people on screen (podcasts) or things being shown with
   `python run.py frames <project> --clips N`, and fix only what's wrong with `"framing"` /
   `"show_full"` in clips.json (details in the skill).
