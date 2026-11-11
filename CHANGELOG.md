@@ -1,6 +1,15 @@
 # What's new
 
-## Unreleased: long videos are read in parts (deep clips, phase 1)
+## v2.0 (November 2026): deep clips, a second opinion, tighter cuts
+
+The biggest update so far. In the owner's blind comparison with v1.1 on five fresh videos (21 pairs),
+v2 found more postable moments (v2 3, v1.1 1, "post both" 6), every deep clip was postable and none was
+misleading, and after the tight-cut fix the two cut the same moments equally well (1-1, 6 ties).
+Transcribing takes the same time and GPU; choosing clips takes a few minutes longer and uses more Claude
+(a long podcast with deep clips: about 30 minutes of picking and roughly 10x v1.1's Claude usage).
+Deep clips are only made when you ask for them.
+
+### Long videos are read in parts (deep clips, phase 1)
 
 - **Long podcasts get read properly.** A video of more than about half an hour is split into parts
   of about 21 minutes (with 2 minutes of overlap, so no moment falls into a gap), and one AI reader

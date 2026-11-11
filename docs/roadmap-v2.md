@@ -312,9 +312,11 @@ and **how we'll measure** it.
 - **Measure:** edit time under 30% of the clip length on a GPU machine.
 
 #### 17. Deep clips: stories spread across the whole video (M)
-- **Status: phases 1-4 built (November 2026), on the branch `deep-clipping`: the topic map (item
-  3), the critic (item 4), the deep pass itself and the join polish. Phase 5 (a blind comparison
-  with v1.1 on fresh videos) next; the branch is merged only after it.**
+- **Status: released in v2.0 (November 2026).** Phases 1-4 (the topic map, the critic, the deep pass,
+  the join polish) and phase 5, the blind comparison with v1.1 on five fresh videos: v2 found more
+  postable moments, all 4 deep clips were postable and none misleading; it lost every same-moment
+  pair at first (its cuts ran long), and after the tight-cut fix tied 1-1 with 6 ties
+  (`research/phase5`, CHANGELOG v2.0).
 - **Phase 4 results:** joins fade only in the quiet between words (longer at jumps across time,
   20-100 ms as dialogue editors blend a change of room sound); a soft whoosh with the flash at each
   jump; an optional "27 MIN LATER" label; `cut --check` warns when a later piece opens on a

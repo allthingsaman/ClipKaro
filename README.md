@@ -32,8 +32,14 @@ you:  clip this video: https://youtu.be/...
   face in the middle. Slides and other shots are shown whole over a blurred background.
 - 🎙️ **Podcasts with two people.** It listens to who is talking and shows that person. When
   someone laughs or both talk at once, it shows both of them in a split screen. *(new in v1.1)*
+- 🧵 **Deep clips** *(new in v2)*. Ask for them on a long podcast: the question at minute 8 and its
+  answer at minute 52 become one short, with a white flash where it jumps. Three AI judges check that
+  the join never changes what was meant.
+- 🧐 **A second opinion on every clip** *(new in v2)*. A blind AI critic scores each idea three times,
+  ranks them, and points out what to fix: a slow start, an unfinished ending, seconds nobody needs.
 - 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
-  the captions in between.
+  the captions in between. Game characters' lines are captioned right, or left without captions when
+  they're unclear *(new in v2)*.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
   that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
