@@ -113,6 +113,7 @@ Write `output/<project>/clips.json`:
       "why": "One sentence: why this works as a standalone short",
       "emphasis": ["broke", "ten", "million"],
       "caption": "Ready-to-post caption for TikTok/Reels/Shorts, 1-2 lines + 3-5 hashtags",
+      "clarify": [["इस movie", "Ramayana"]],
       "post": {
         "youtube": {"title": "Why Hard Work Isn't Enough (He Learned It at 40)",
                     "description": "One or two lines on what the clip shows. #hardwork #success #podcast"},
@@ -124,6 +125,12 @@ Write `output/<project>/clips.json`:
 }
 ```
 
+- `clarify` (optional): the clip points at something it never names ("इस movie", "ये film", "वो",
+  "उनका", "he", "this company") and a viewer couldn't know what. Add `[spoken words exactly as in the
+  transcript, the noun]`; the captions then show the noun in brackets after the first mention: "IS
+  MOVIE [RAMAYANA] KA". Brackets are the usual mark of an editor's addition, so nothing is put in the
+  speaker's mouth. Only what the video itself makes clear (its title, an earlier line), 1–3 words, never
+  an opinion. If the line that names it is short and close by, adding that line is better.
 - `caption` and `post` are needed for **every** clip, on every route (short videos, long videos read
   in parts, deep clips). They are what the user posts, by hand or with PostKaro (`run.py post`).
 - `post`: the text for each platform, in the same language and script as the captions (Roman

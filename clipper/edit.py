@@ -292,6 +292,12 @@ def main():
         t0 = time.time()
         print(f"-> editing clip {meta['id']}: {meta['title']} ({a.engine} engine)")
         meta = romanize.for_captions(pdir, project, meta, cfg)
+        picked = next((c for c in (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
+                       if int(c.get('id', 0)) == meta['id']), {})
+        meta['clarify'] = picked.get('clarify', [])
+        _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
+        for m in missing:
+            print(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
         clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270)
         if meta.get('layout') == 'facecam':
             clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around

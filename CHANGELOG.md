@@ -114,6 +114,11 @@
 - Fixed: caption fixes made before the deep pass broke its quotes; the deep pass offered a repair for a
   story that already had a kept clip.
 
+### A [noun] for "this movie"
+- When a clip says "इस movie" or "he" and never names it, Claude adds the noun in brackets to the captions
+  right after the first mention: IS MOVIE [RAMAYANA] KA (clips.json `clarify`; brackets mark an editor's
+  addition). It can be added after cutting: edit the clip again.
+
 ### Captions always fit the frame
 - **No more captions cut off at the sides.** Some captions ran out of the frame: a whole line stuck in
   one caption (a misheard phrase fixed as one entry, or a Hindi word whose Roman spelling is several

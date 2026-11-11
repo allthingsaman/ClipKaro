@@ -98,7 +98,8 @@ sees your scores, titles, the replay curve or anything about the channel.
 5. **Repair round (once, when it helps).** Like an editor after notes, fix the clips you'd pick (or
    good ones just below) that have a `fix?` or `trim?` note, a false start, or a weak hook:
    - "never says who / what" or a teaser with no answer: add the short line that names it or
-     gives the answer, as a second piece in the order it was said (or a ~5 s cold open);
+     gives the answer, as a second piece in the order it was said (or a ~5 s cold open); when that
+     line is far away, add a `clarify` note instead ("इस movie" -> [Ramayana] in the captions);
    - opens on "जो / वो / so my point was", a false start or a slow line: start where the subject
      is named, at the second take, or at the suggested stronger start;
    - the payoff comes after the cut, or the sentence goes on: end at the end of **that** thought,
@@ -122,7 +123,9 @@ sees your scores, titles, the replay curve or anything about the channel.
    third clip of a shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
-   readers' candidates have none, so write them here. The critic's caption fixes come last (2e).
+   readers' candidates have none, so write them here. A clip that says "इस movie" / "he" / "वो" and
+   never names it gets a `clarify` note (`references/picking-moments.md`). The critic's caption fixes
+   come last (2e).
 
 ## 2d. Deep clips (only when asked)
 "deep clip this: <link>", "clip this, then go deeper", "do a deep pass on <video>": first make the

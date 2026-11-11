@@ -734,6 +734,10 @@ detection; `--layout crop` turns the layout off.
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
 - Groups of **1-3 words** and at most 1.6 s; a new group starts after a pause over 0.35 s, at a
   sentence end and at a splice.
+- **A [noun] for a pronoun** (`plan.add_clarify`, clips.json `clarify`): when a clip says "इस movie"
+  or "he" and never names it, the noun is shown in brackets right after the first mention ("IS MOVIE
+  [RAMAYANA] KA"), at the same moment. Brackets mark an editor's addition. It doesn't count towards the
+  3 words of a group; `edit` reads it from clips.json, so it can be added after cutting.
 - **Every caption line fits the frame.** A group is measured in pixels with the real font (its
   letter widths are read straight from the font file, `plan.font_advances`) and may be at most 940
   px wide: the 1080 frame minus 70 px on each side. A single word wider than that (MISUNDERSTANDING)

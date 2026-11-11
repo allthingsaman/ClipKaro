@@ -297,8 +297,32 @@ def split_multi(words):
     return out
 
 
+def add_clarify(words, clarify):
+    """clips.json "clarify": [[spoken words, noun], ...]. Where a clip says "इस movie" or "he" but never
+    names who or what, the noun is shown in brackets right after the first time those words are said:
+    IS MOVIE [RAMAYANA] KA (brackets: the usual mark of an editor's addition, so nothing is put in the
+    speaker's mouth). Spoken words may be given in Devanagari or Roman. -> (words, phrases not found)."""
+    out, missing = list(words), []
+    for item in clarify or []:
+        if not isinstance(item, (list, tuple)) or len(item) != 2 or not str(item[1]).strip():
+            continue
+        spoken, noun = str(item[0]), str(item[1]).strip().strip('[]')
+        q = [t for t in (norm_token(x) for x in spoken.split()) if t]
+        toks = [{norm_token(w['w']), norm_token(w.get('orig', ''))} for w in out]
+        at = next((i for i in range(len(out) - len(q) + 1) if q and all(q[k] in toks[i + k] for k in range(len(q)))),
+                  None)
+        if at is None:
+            missing.append(spoken)
+            continue
+        for k in range(at, at + len(q)):             # the words it explains stay in one caption with it
+            out[k] = {**out[k], 'clar_phrase': True}
+        last = out[at + len(q) - 1]
+        out.insert(at + len(q), {'w': f'[{noun}]', 's': last['s'], 'e': last['e'], 'p': 1.0, 'clarify': True})
+    return out, missing
+
+
 def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, style=None, max_w=MAX_CAPTION_W):
-    words = split_multi(merge_tokens(meta['words']))
+    words, _ = add_clarify(split_multi(merge_tokens(meta['words'])), meta.get('clarify'))
     splices = meta.get('splices', [])
     # in the split-screen layout the captions sit on the seam: a group never runs across a switch
     # into or out of it (it would cover a face)
@@ -319,17 +343,31 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, sty
         if w.get('unsure'):             # the recogniser was guessing (a game voice, music): no caption
             flush()
             continue
+        if w.get('clarify') and cur:    # a [noun] always shows with the words it explains
+            line = ' '.join([c['text'] for c in cur] + [text])
+            if (caption_width(line, style) > max_w if style else len(line) > max_chars):
+                k = len(cur)
+                while k > 0 and cur[k - 1].get('phrase'):
+                    k -= 1
+                if 0 < k < len(cur):    # too wide together: the caption breaks before the phrase instead
+                    groups.append(cur[:k])
+                    del cur[:k]
+            cur.append({'text': text, 's': w['s'], 'e': w['e'], 'emph': False, 'clarify': True})
+            continue
         if cur:
             line = ' '.join([c['text'] for c in cur] + [text])
             too_wide = caption_width(line, style) > max_w if style else len(line) > max_chars
             gap = w['s'] - cur[-1]['e']
             crosses = any(cur[-1]['e'] <= s <= w['s'] + 0.01 for s in splices) or \
                 any(cur[0]['s'] < s <= w['s'] + 0.01 for s in seams)
-            if len(cur) >= max_words or too_wide or gap > 0.35 or \
+            spoken = sum(1 for c in cur if not c.get('clarify'))      # a [noun] doesn't count as a word
+            if (spoken >= max_words and not w.get('clarify')) or too_wide or gap > 0.35 or \
                     w['e'] - cur[0]['s'] > max_dur or crosses:
                 flush()
         cur.append({'text': text, 's': w['s'], 'e': w['e'],
                     'emph': bool(emph & {norm_token(w['w']), norm_token(w.get('orig', ''))})})
+        if w.get('clar_phrase'):
+            cur[-1]['phrase'] = True
         if is_sentence_end(w['w']):
             flush()
     flush()
