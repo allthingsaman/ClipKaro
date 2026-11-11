@@ -149,7 +149,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                        f'\\t({a},{a + 1},\\alpha&H00&)\\t({a},{a + 110},0.6,\\fscy100)'
                        f'\\t({b},{b + 1},\\1c{col})}}')
             parts.append(tag + w['text'].replace('{', '(').replace('}', ')'))
-        text = f"{{\\pos({W // 2},{g.get('y', st['y'])})}}" + ' '.join(parts)
+        fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''   # shrunk to fit the frame
+        text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
     for lb in plan.get('labels', []):        # "27 MIN LATER" at a jump across time (optional)
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"

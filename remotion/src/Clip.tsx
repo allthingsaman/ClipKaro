@@ -3,7 +3,7 @@ import {loadFont} from '@remotion/fonts';
 import {AbsoluteFill, Easing, OffthreadVideo, interpolate, staticFile, useCurrentFrame} from 'remotion';
 
 type Word = {text: string; s: number; e: number; emph?: boolean};
-type Group = {start: number; end: number; words: Word[]; y?: number; cont?: boolean; nolead?: boolean};
+type Group = {start: number; end: number; words: Word[]; y?: number; cont?: boolean; nolead?: boolean; scale?: number};
 // y: set on the split-screen seam; cont / nolead: no one-frame early start (it would fall in the other layout)
 
 export type ClipProps = {
@@ -78,7 +78,7 @@ const Captions: React.FC<Pick<ClipProps, 'captions' | 'caption_style' | 'brand' 
           transform: 'translateY(-50%)',
           textAlign: 'center',
           fontFamily: `'${st.font}'`,
-          fontSize: st.size,
+          fontSize: st.size * (g.scale ?? 1), // a caption with one very long word is shrunk to fit the frame
           lineHeight: 1.15,
           letterSpacing: st.spacing ?? 1, // 0 for Devanagari, so the letters stay joined
           whiteSpace: 'nowrap',

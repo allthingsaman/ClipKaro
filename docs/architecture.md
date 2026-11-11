@@ -699,8 +699,15 @@ detection; `--layout crop` turns the layout off.
 
 ### 5.9 Captions (`plan.caption_groups`, `edit.write_ass`)
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
-- Groups of **1-3 words**, at most 15 characters and 1.6 s; a new group starts after a pause over
-  0.35 s, at a sentence end and at a splice.
+- Groups of **1-3 words** and at most 1.6 s; a new group starts after a pause over 0.35 s, at a
+  sentence end and at a splice.
+- **Every caption line fits the frame.** A group is measured in pixels with the real font (its
+  letter widths are read straight from the font file, `plan.font_advances`) and may be at most 940
+  px wide: the 1080 frame minus 70 px on each side. A single word wider than that (MISUNDERSTANDING)
+  is shrunk just enough for its caption only (`scale`, an `\fs` size in the `.ass` file, the same in
+  Remotion). A word entry holding several words (a Roman spelling like "main na", or a fixed
+  misheard phrase) is split into one caption word per word, its time shared out by length; before,
+  one entry holding a whole poem line made a caption five times the frame width.
 - Each word **pops in** as it's spoken (squashed to 60 % height, growing to full size in 110 ms),
   shown in the accent colour while spoken, then white; **emphasis words stay in the accent colour**.
 - Font: **Montserrat ExtraBold**, UPPERCASE. If any word is in Devanagari the clip switches to

@@ -101,6 +101,13 @@
   "that", "वो" or "haan", which may point at (or answer) words that were cut out.
 - Fixed: the deep pass now prints its warnings (it only counted them).
 
+### Captions always fit the frame
+- **No more captions cut off at the sides.** Some captions ran out of the frame: a whole line stuck in
+  one caption (a misheard phrase fixed as one entry, or a Hindi word whose Roman spelling is several
+  words), or a group of long words. Caption lines are now measured with the real font and kept at
+  most 940 px wide; one very long word (like MISUNDERSTANDING) is shrunk just enough to fit. Out of
+  6,698 captions in 30 test videos, none is wider than the frame any more.
+
 ### Posting: ready for PostKaro
 - **Text for each platform.** Every clip now gets its own posting text for YouTube (a title of up to
   100 characters plus a short description), Instagram (a caption with at most 5 hashtags, Instagram's
