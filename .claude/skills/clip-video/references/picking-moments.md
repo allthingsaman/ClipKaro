@@ -143,7 +143,8 @@ Write `output/<project>/clips.json`:
     hashtags** (Instagram allows no more). No `#shorts`.
   - `facebook.caption`: 1–2 lines, 0–3 hashtags, no `#shorts`.
   - Deep clips: start every platform's text with the clip's `source_line` ("From 2 moments of the
-    full video: 0:08 · 22:53"), so viewers know it is joined.
+    full video: 0:08 · 22:53"), so viewers know it is joined. The one exception is the YouTube
+    title: end it with "(2 moments joined)" instead, so the title stays a title.
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).

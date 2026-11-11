@@ -155,7 +155,8 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
 7. Add the kept deep clips to
    clips.json as extra clips, each with `"deep": {"moments": [...]}`, a real `caption` that starts
    with its `source_line` ("From 2 moments of the full video: 0:08 · 22:53") and ends with "Full
-   video: <link>", and a `post` block whose texts also start with the source line. `cut` shows each jump across time with a short flash. When a kept clip has an
+   video: <link>", and a `post` block whose texts also start with the source line (the YouTube
+   title ends with "(2 moments joined)" instead). `cut` shows each jump across time with a short flash. When a kept clip has an
    `honesty_note` (one judge objected), tell the user that judge's reason in your final message.
 New helper types appear after Claude Code restarts; until then start general helpers and tell
 them to read `.claude/agents/<name>.md` (everything after its front matter is their instructions).

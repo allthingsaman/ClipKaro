@@ -49,6 +49,15 @@ def clip_files(pdir):
     return files
 
 
+def honesty_note(c):
+    """A deep clip's honesty note: the deep pass keeps it inside "deep", older clips.json files at the top."""
+    deep = c.get('deep') if isinstance(c.get('deep'), dict) else {}
+    note = c.get('honesty_note') or deep.get('honesty_note')
+    if isinstance(note, dict):              # {"role": ..., "reason": ...} from the judges
+        note = note.get('reason') or note.get('note') or json.dumps(note, ensure_ascii=False)
+    return note or None
+
+
 def build(pdir):
     """-> (kit, notes): the post kit and a list of things worth telling the user."""
     clips = load_json(pdir / 'clips.json', {}).get('clips', [])
@@ -72,7 +81,7 @@ def build(pdir):
                          '(PostKaro will use the caption)')
         out.append({'id': c['id'], 'file': str(f.relative_to(pdir)), 'duration': dur,
                     'clip_score': c.get('clip_score', c.get('score')), 'title': c.get('title'),
-                    'caption': c.get('caption'), 'note': c.get('honesty_note'), 'deep': bool(c.get('deep')),
+                    'caption': c.get('caption'), 'note': honesty_note(c), 'deep': bool(c.get('deep')),
                     'text': {p: text[p] for p in PLATFORMS if p in text}})
     kit = {'postkit': KIT_VERSION, 'made_by': 'ClipKaro', 'project': pdir.name, 'title': proj.get('title'),
            'source': {'channel': proj.get('channel'), 'channel_url': proj.get('channel_url'),
