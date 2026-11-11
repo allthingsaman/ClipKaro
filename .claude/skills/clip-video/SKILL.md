@@ -108,7 +108,10 @@ sees your scores, titles, the replay curve or anything about the channel.
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
-   third clip of a shortlist), its `ranges` exactly as listed, and `"clip_score"`. For the picked
+   third clip of a shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
+   `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
+   `references/picking-moments.md`). Every clip needs them, long videos included: the part
+   readers' candidates have none, so write them here. For the picked
    clips, apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") in
    `transcript/words.json`, one word entry at a time, keeping the times.
 
@@ -138,9 +141,9 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
    again, then `critic --from deep --fresh` with 3 critics, `honesty` (judges for the new packets
    only) and `deep` once more. Never repair a repair; skip clips the judges call twisted at heart.
 7. Add the kept deep clips to
-   clips.json as extra clips, each with `"deep": {"moments": [...]}` and its `source_line`
-   ("From 2 moments of the full video: 0:08 · 22:53") at the start of its caption, plus "Full
-   video: <link>". `cut` shows each jump across time with a short flash. When a kept clip has an
+   clips.json as extra clips, each with `"deep": {"moments": [...]}`, a real `caption` that starts
+   with its `source_line` ("From 2 moments of the full video: 0:08 · 22:53") and ends with "Full
+   video: <link>", and a `post` block whose texts also start with the source line. `cut` shows each jump across time with a short flash. When a kept clip has an
    `honesty_note` (one judge objected), tell the user that judge's reason in your final message.
 New helper types appear after Claude Code restarts; until then start general helpers and tell
 them to read `.claude/agents/<name>.md` (everything after its front matter is their instructions).
@@ -262,13 +265,21 @@ or `"jump_label": true` in settings.json).
 Read `references/editing.md` if the user wants a different look.
 
 ## 6. Deliver
+Run `python run.py post <project>`. It writes `post.json` (the clips with each platform's text)
+and, when PostKaro (the posting app) is installed, prints **`Post them: <link>`**. Lines starting
+with `?` name clips without posting text: add their `caption` / `post` in clips.json and run it
+again.
+
 Report the results as a short table: clip, length, clip score, file path. Under each clip, give
 two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
-from clips.json. Repeat the line that clip scores are not a prediction of views. Mention that the files are ready to upload to Shorts, Reels and TikTok.
+from clips.json. Repeat the line that clip scores are not a prediction of views. If `post` printed
+a link, end with it: "Post them: <link>" (it opens PostKaro with every clip filled in; it only works
+on this computer). Otherwise mention that the files are ready to upload to Shorts, Reels and TikTok.
 
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.
-- Never commit anything in `output/` (it's gitignored). Don't upload anything anywhere.
+- Never commit anything in `output/` (it's gitignored). Don't upload anything anywhere yourself:
+  posting only happens in PostKaro, when the user presses Schedule there.
 - Remind users to clip only videos they own or have permission to use.
 - If a step fails, read the error. The scripts print the fix (missing tool, cookies, etc.).

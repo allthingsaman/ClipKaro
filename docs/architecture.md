@@ -141,6 +141,7 @@ clipper/                     the toolbox (Python)
     critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
     deep.py       deep clips: the map for the thread finder, thread files, checks, the report
     honesty.py    deep clips: honesty packets for three judges, and merging their verdicts
+    post.py       hands the finished clips to PostKaro: post.json, and PostKaro's link when installed
     gpu.py        NVIDIA GPU detection, CUDA libraries, GPU self-test
     models.py     Whisper model downloads from Hugging Face (with retry/resume)
     common.py     shared helpers: paths, settings, JSON, text, ffmpeg/ffprobe wrappers
@@ -273,11 +274,19 @@ What the AI editor reads. A header, then one sentence per line with `[start-end]
       "hook_type": "contrarian",
       "why": "One sentence: why this works as a standalone short",
       "emphasis": ["broke", "ten", "million"],
-      "caption": "Ready-to-post caption, 1-2 lines + 3-5 hashtags"
+      "caption": "Ready-to-post caption, 1-2 lines + 3-5 hashtags",
+      "post": {
+        "youtube": {"title": "Up to 100 characters", "description": "1-2 lines + up to 3 hashtags"},
+        "instagram": {"caption": "Hook + question, at most 5 hashtags"},
+        "facebook": {"caption": "1-2 lines, 0-3 hashtags"}
+      }
     }
   ]
 }
 ```
+`caption` and `post` are the posting text (every clip has them); `run.py post` copies them into
+`post.json` for PostKaro (section 5.13).
+
 `ranges` can hold 2-3 pairs to splice parts of the video together; they play in the listed order.
 
 Two optional fields change the framing of a stretch (source seconds); they always win over the
@@ -735,6 +744,17 @@ detection; `--layout crop` turns the layout off.
   sources become 30.
 
 ---
+
+### 5.13 Posting: the hand-off to PostKaro (`post.py`)
+PostKaro is a separate app (its own repo) that posts clips to YouTube Shorts, Instagram Reels and a
+Facebook Page from the user's laptop. ClipKaro never uploads anything itself. `run.py post
+<project>` writes `output/<project>/post.json` (format: PostKaro's `docs/post-kit.md`): for each
+finished clip the file in `edited/` (or `clips/`), its length, clip score, honesty note and the
+`post` texts, plus the source channel and link. Then it looks for PostKaro's `app.json`
+(`~/.config/postkaro/` on Linux, `~/Library/Application Support/postkaro/` on macOS,
+`%LOCALAPPDATA%\postkaro\` on Windows). If PostKaro is installed, it runs `run.py link <folder>`
+inside PostKaro, which adds the clips and returns the page link that the AI editor prints as
+"Post them: <link>". Without PostKaro it only writes `post.json` and says so.
 
 ## 6. GPU support (`gpu.py`, `run.py`)
 - `gpu.cuda_device_count()` asks CTranslate2 how many NVIDIA GPUs it can use.

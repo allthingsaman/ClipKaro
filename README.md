@@ -173,9 +173,14 @@ output/<video>/
     edited/01-title.mp4     the finished short videos: upload these
     edited/01-title.srt     the captions as a separate subtitle file
     clips/01-title.mp4      the cut videos without the edit (also fine to post)
-    clips.json              the chosen moments, with a caption to post for each one
+    clips.json              the chosen moments, with the text to post on each platform
+    post.json               the finished clips with their posting text, for PostKaro
     transcript/             everything that was said, with times
 ```
+
+Want them posted for you? **PostKaro**, ClipKaro's partner app (a separate install), posts them to
+YouTube Shorts, Instagram Reels and your Facebook Page from your laptop, each at its own time. With
+PostKaro installed, Claude ends with a "Post them" link that opens every clip ready to schedule.
 
 ## Languages
 | Language | How well |

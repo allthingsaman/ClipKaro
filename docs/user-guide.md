@@ -151,6 +151,11 @@ Or just ask Claude: **"open the folder with my clips"**.
 
 The `edited` videos are ready to upload to YouTube Shorts, Instagram Reels and TikTok.
 
+**Want ClipKaro's partner to post them for you?** PostKaro is a separate app that posts your clips to
+YouTube Shorts, Instagram Reels and your Facebook Page, each at the time you choose. Once it is
+installed, Claude ends with a **"Post them"** link: click it, check the titles and captions, and press
+Schedule.
+
 ---
 
 ## Asking for something different

@@ -101,11 +101,32 @@ Write `output/<project>/clips.json`:
       "hook_type": "contrarian",
       "why": "One sentence: why this works as a standalone short",
       "emphasis": ["broke", "ten", "million"],
-      "caption": "Ready-to-post caption for TikTok/Reels/Shorts, 1-2 lines + 3-5 hashtags"
+      "caption": "Ready-to-post caption for TikTok/Reels/Shorts, 1-2 lines + 3-5 hashtags",
+      "post": {
+        "youtube": {"title": "Why Hard Work Isn't Enough (He Learned It at 40)",
+                    "description": "One or two lines on what the clip shows. #hardwork #success #podcast"},
+        "instagram": {"caption": "A hook line + a question to comment on 👇 #hardwork #success #mindset"},
+        "facebook": {"caption": "A hook line that makes people want to watch. #hardwork"}
+      }
     }
   ]
 }
 ```
+
+- `caption` and `post` are needed for **every** clip, on every route (short videos, long videos read
+  in parts, deep clips). They are what the user posts, by hand or with PostKaro (`run.py post`).
+- `post`: the text for each platform, in the same language and script as the captions (Roman
+  Hinglish for Hindi/Hinglish videos unless settings.json says otherwise). Write each one for its
+  platform, not one copy-paste:
+  - `youtube.title`: at most 100 characters, what someone would search for or click (often the
+    `title` plus a few words of context). `youtube.description`: 1–2 lines + up to 3 hashtags. Don't
+    add the full-video link: ClipKaro/PostKaro add "Full video: <link>" themselves.
+  - `instagram.caption`: a hook line, then a question or call to comment, then **at most 5
+    hashtags** (Instagram allows no more). No `#shorts`.
+  - `facebook.caption`: 1–2 lines, 0–3 hashtags, no `#shorts`.
+  - Deep clips: start every platform's text with the clip's `source_line` ("From 2 moments of the
+    full video: 0:08 · 22:53"), so viewers know it is joined.
+  - Never put `<` or `>` in YouTube text (YouTube refuses them).
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key

@@ -183,11 +183,20 @@ Everything goes into `output/<project>/`. `<project>` is a folder named after th
 | `edited/01-title.mp4` | **the finished short videos** (1080x1920, ready for phones): upload these |
 | `edited/01-title.srt` | the captions as a separate subtitle file, for apps that accept one |
 | `clips/01-title.mp4` | the cut videos without zooms, captions or sounds (also fine to post) |
-| `clips.json` | the chosen moments: titles, times, clip scores, highlighted words and **captions to post** |
+| `clips.json` | the chosen moments: titles, times, clip scores, highlighted words and **the text to post** on YouTube, Instagram and Facebook |
+| `post.json` | the finished clips with their posting text, for PostKaro (see below) |
 | `critic.txt` | every clip idea, ranked by its clip score, with the critic's reasons and notes |
 | `transcript/transcript.txt` | everything that was said, with times |
 
 Claude's last message lists each clip with its length, file and a caption to post.
+
+### Posting your clips (PostKaro)
+PostKaro is ClipKaro's partner app: it posts the clips to YouTube Shorts, Instagram Reels and your
+Facebook Page from your own laptop, each at its own time. It is a separate install (its own folder
+and README). When it is installed, Claude's last message ends with **"Post them: <link>"**. Click it:
+every clip is there with its title and caption for each platform, ready to check and schedule.
+Without PostKaro, upload the files in `edited/` yourself; the text for each platform is in
+`clips.json` under `post`.
 
 ## 5. Your defaults: `settings.json`
 
@@ -248,6 +257,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |
 | `run.py honesty <project>` | first run: one packet per deep clip for the three honesty judges; second run: merges their verdicts; `--fresh` (start over) |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
+| `run.py post <project>` | `--open` (open the PostKaro link in the browser). Writes `post.json`; prints the PostKaro link when PostKaro is installed |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 
 Add `-h` to any command to see its help, for example `python run.py cut -h`.

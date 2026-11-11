@@ -101,6 +101,17 @@
   "that", "वो" or "haan", which may point at (or answer) words that were cut out.
 - Fixed: the deep pass now prints its warnings (it only counted them).
 
+### Posting: ready for PostKaro
+- **Text for each platform.** Every clip now gets its own posting text for YouTube (a title of up to
+  100 characters plus a short description), Instagram (a caption with at most 5 hashtags, Instagram's
+  limit) and Facebook, instead of one caption for all.
+- **Fixed: long videos lost their captions.** On long podcasts most clips had no posting caption
+  (for example 1 of 7). Every clip now gets one, deep clips included (they start with their "From 2
+  moments of the full video" line).
+- **`run.py post <project>`** writes `post.json`: the finished clips with each platform's text. If PostKaro
+  (the separate posting app) is installed, it prints a **"Post them"**
+  link that opens PostKaro with every clip filled in. Without PostKaro nothing changes.
+
 ## v1.1 (November 2026): better framing
 
 ### Podcasts with two people on screen

@@ -13,6 +13,7 @@
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
+    python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """
@@ -38,6 +39,7 @@ COMMANDS = {
     'deep': 'clipper.deep',
     'honesty': 'clipper.honesty',
     'frames': 'clipper.frames',
+    'post': 'clipper.post',
     'gpu': 'clipper.gpu',
 }
 
