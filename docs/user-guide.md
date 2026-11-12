@@ -133,8 +133,10 @@ How to copy a file's path:
 Keep the video file where it is until the clips are finished.
 
 **Now wait.** Claude tells you what it's doing. Before anything is cut, a second AI editor checks
-every clip idea, like a strict friend who didn't pick them, ranks them, and points out what to
-fix (for example a clip that needs earlier context); Claude then fixes those. Then Claude shows a table of the moments it picked, each with a **clip score**
+every clip idea, like a fair friend who didn't pick them, ranks them, and points out what to
+fix (for example a clip that needs earlier context); Claude then fixes those. It judges only how
+the clip is made (its start, its end, whether it makes sense alone), never the topic: a clip about
+politics or religion is judged like any other, and what to post is always your choice. Then Claude shows a table of the moments it picked, each with a **clip score**
 out of 10 (for example "8/10 Strong") and the reasons. The score says how well-made the clip looks,
 not how many views it will get. At the end it shows your finished clips, each with a caption you
 can copy when you post.

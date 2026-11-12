@@ -458,6 +458,9 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 
 ## 8. What to build next
 
+> After v2.0 the order changed: see [roadmap-v3.md](roadmap-v3.md) for what's next. The table below
+> is kept as the v2 plan.
+
 **Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
 item 3), phase 2 (the critic, item 4) and phase 3 (the deep pass with its honesty check) are built;
 phase 4 (smoother joins and a repair round) is built too; next is phase 5, the blind comparison with v1.1 on fresh videos. Phases 1, 2 and 4 also make the regular clips better.

@@ -517,6 +517,11 @@ about twice the clips wanted that the AI editor writes for a short video.
   inside, not in the words after the cut). Then five scores from 0 to 5, each level described in
   words: hook (weight 3), payoff (3), emotion (2), "who would a viewer send this to?" (2), a line
   worth quoting (1).
+- **Craft, not subject:** the critic judges how a clip is made, never what it is about. A clip on
+  politics, religion, caste or crime, a rude joke or a view the critic disagrees with gets the same
+  gates and scores as any other; outrage earns no extra points either. Topics only get a
+  `sensitive` tag from the part readers, so the owner sees it when reviewing. The owner watches
+  every clip and decides what to post.
 - **Merging (code):** clip score = the weighted mean, shown out of 10 (9+ Standout, 7+ Strong, 6+
   Good, 5+ OK, below that Weak), and it **ranks the clips of one video**. A gate failed in 2 of 3
   runs becomes a `fix?` note and a split gate a `check` note: they feed the repair round and

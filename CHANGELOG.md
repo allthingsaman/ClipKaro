@@ -1,5 +1,16 @@
 # What's new
 
+## Not released yet
+
+- **The critic judges craft, never the topic.** It looks at how a clip starts, whether it makes sense
+  alone, how it ends and what could be cut. A clip about politics, religion or anything controversial
+  gets the same scores as any other. What to post is always your choice.
+- **Deep clips' YouTube titles** end with "(2 moments joined)" instead of starting with the time
+  stamps. The description and the captions still start with "From 2 moments of the full video: ...".
+- **PostKaro gets the honesty note.** When one of the three honesty judges objected to a deep clip,
+  post.json now passes that judge's reason on to PostKaro.
+- **What's next:** [docs/roadmap-v3.md](docs/roadmap-v3.md), in order, with a rough time for each item.
+
 ## v2.0 (November 2026): deep clips, a second opinion, tighter cuts
 
 The biggest update so far. In the owner's blind comparison with v1.1 on five fresh videos (21 pairs),
