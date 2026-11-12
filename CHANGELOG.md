@@ -30,6 +30,15 @@
     too, while the video downloads.
   - `"deep_clips": "always"` or `"never"` in settings.json stops the question.
 - **The video downloads during transcription** instead of at `cut`, so cutting starts right away.
+- **Game characters' English is caught more often.**
+  - The old check missed a whole English game line written as Hindi-letter nonsense when your
+    own clear words came right after it. It now finds the unclear core first, so clear words next
+    to it can't hide it. It still catches everything the old check caught.
+  - Before turning a line into English, ClipKaro checks that it isn't your Hinglish being
+    *translated* ("usko ghar jaana hai" must not become "I have to go to his house").
+  - If a line can't be heard well in either language, it gets no captions.
+  - Listening again is also much faster: it now gives Whisper only those few seconds, not the
+    whole video each time.
 - New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
   stream? gameplay? break screens?).
 - **What's next:** [docs/roadmap-v3.md](docs/roadmap-v3.md), in order, with a rough time for each item.

@@ -393,15 +393,34 @@ other device would help.
   recovered words in.
 - **Clean-up** (`clean_words`): removes broken characters, a vowel sign looping inside a Hindi word,
   and the same word repeated 4+ times in a row.
-- **Re-listening to unclear speech** (`unsure_stretches`, `relisten`): a run of 4+ words whose mean
-  confidence is under 0.45 (with the unsure words right next to it) is heard again. If Whisper's top
-  language guess for it is English in a Hindi/Hinglish video (a game character, a film clip) and the
-  English words come out clearly more confident (0.6+, and 0.15 above before), they replace the
-  nonsense; otherwise the words are marked `unsure` and get **no captions** (`cut --check` names the
+- **Re-listening to unclear speech** (`unsure_stretches`, `relisten`): a run of 4+ words (1.5 s+)
+  whose mean confidence is under 0.45 is heard again. Runs are found two ways and both are taken:
+  the stretch whose confidence sums furthest below 0.45 (no pause of 1 s or more inside), so clear
+  words next to it can't hide it, and the first version's word-by-word runs (good at short ones).
+  Two runs with only a short, shaky bit between them (6 words, 2.5 s, mean under 0.75, e.g. a
+  hallucinated "कर दो कर दो") become one, and unsure words right next to it join too. (The first
+  version alone grew a run word by word and dropped all of it when the clear words after it pushed
+  the mean over 0.45: a game character's English reply kept Devanagari-nonsense captions.) If
+  Whisper's top language guess for it is English in a Hindi/Hinglish video (a game character, a film
+  clip), it is decoded in English: only that stretch's audio (giving Whisper the whole video made it
+  prepare all of it for every stretch: 18 minutes instead of 5 for an 83-minute stream), one fixed
+  decode (temperature 0), and a thin answer is tried again with a tighter window, then as two halves
+  (a window a few tenths of a second wider once gave only "Oh" for a 13 s line). New words stay
+  between the kept neighbours, and an edge word that repeats its neighbour is dropped ("How am" +
+  "am I"). The English replaces the nonsense when it is sure (0.6+, and 0.15 above before), with one
+  check: forced into English, a streamer's own Hinglish comes back *translated* ("usko ghar jaana
+  hai" -> "I have to go to his house"). So the stretch is also decoded as Hindi: English speech comes
+  back in Roman letters there ("don't push me ..."), Hinglish in Devanagari ("इसको घर जाना है"). Mostly
+  Devanagari and surer than the English means a translation: no English. That decode is never used
+  for captions (it loops: "कर दो कर दो ..."; Whisper's 2.4 compression-ratio test drops loops).
+  Everything not replaced is marked `unsure` and gets **no captions** (`cut --check` names the
   stretch; `transcript.txt` marks the line "(unclear …)"). Only English is accepted as a second
   language: in tests, Korean, Japanese and Chinese "recognitions" of game audio were loops and made-up
-  text. Measured: podcasts and talking videos have 0-2 such stretches; a 44-minute gameplay video had
-  90, of which 29 became correct English game lines ("…he may yet rise again"). `run.py relisten
+  text. Measured (Nov 2026): podcasts and talking videos have 0-24 such stretches (at most 0.6 % of
+  their words: cross-talk and laughter heard as nonsense); a 44-minute gameplay video had 90 with the
+  first version, of which 29 became correct English game lines ("…he may yet rise again"); an
+  83-minute GTA stream has 93 now, of which 26 became English and 8 were caught as translations of
+  the streamer's own Hinglish. `run.py relisten
   <project>` does the same for videos transcribed before (from `words-before-relisten.json`).
 - **Sentence lines** (`sentences`): words are grouped into lines at `.` `?` `!` `।` `॥`, at pauses
   over 0.8 s, at a comma once a line has 30 words, and at most every 60 words. So a line end is a

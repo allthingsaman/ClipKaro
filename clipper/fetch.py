@@ -369,11 +369,32 @@ def fill_gaps(model, audio, words, language, beam_size, rounds=2):
 UNSURE_P = 0.45       # mean word confidence below this over a stretch: the recogniser was guessing
 
 
-def unsure_stretches(words, thr=UNSURE_P, min_words=4, min_s=1.5):
-    """[(first word index, last word index)] of stretches the recogniser was unsure of: at least 4
-    words and 1.5 s, mean confidence under 0.45. Mostly a second voice in another language (a game
-    character, a film clip, a song), music or noise. Measured (Nov 2026): podcasts and talking-head
-    videos have 0-2 such stretches; a 44-minute gameplay video had 91 (its game cutscenes)."""
+BRIDGE_WORDS, BRIDGE_S, BRIDGE_P = 6, 2.5, 0.75   # a short, shaky gap between two unsure cores joins them
+
+
+def _cores(vals, lo, hi, out):
+    """Stretches of vals[lo:hi] with the largest positive sum (= mean confidence under the threshold),
+    best first, then the same left and right of it."""
+    if hi - lo <= 0:
+        return
+    best, cur, cur_lo, b_lo, b_hi = 0.0, 0.0, lo, None, None
+    for k in range(lo, hi):
+        if cur <= 0:
+            cur, cur_lo = 0.0, k
+        cur += vals[k]
+        if cur > best:
+            best, b_lo, b_hi = cur, cur_lo, k + 1
+    if b_lo is None:
+        return
+    out.append((b_lo, b_hi - 1))
+    _cores(vals, lo, b_lo, out)
+    _cores(vals, b_hi, hi, out)
+
+
+def _greedy_stretches(words, thr, min_words, min_s):
+    """The first version's runs: grown word by word while the mean stays under thr + 0.08, kept when
+    the whole run's mean is under thr. Finds short runs well; misses a run whose clear words after
+    it push the mean over thr (see unsure_stretches)."""
     out, i = [], 0
     while i < len(words):
         if words[i].get('p', 1.0) >= 0.5:
@@ -386,14 +407,66 @@ def unsure_stretches(words, thr=UNSURE_P, min_words=4, min_s=1.5):
         run = words[i:j + 1]
         if len(run) >= min_words and run[-1]['e'] - run[0]['s'] >= min_s and \
                 sum(w.get('p', 1.0) for w in run) / len(run) < thr:
-            # take in unsure words right next to it (the tail of a game line: "वह राइज हैं")
-            while i > 0 and words[i - 1].get('p', 1.0) < 0.5 and words[i]['s'] - words[i - 1]['e'] < 1.2 \
-                    and not (out and i - 1 <= out[-1][1]):
-                i -= 1
-            while j + 1 < len(words) and words[j + 1].get('p', 1.0) < 0.5 and words[j + 1]['s'] - words[j]['e'] < 1.2:
-                j += 1
             out.append((i, j))
         i = j + 1
+    return out
+
+
+def unsure_stretches(words, thr=UNSURE_P, min_words=4, min_s=1.5):
+    """[(first word index, last word index)] of stretches the recogniser was unsure of: at least 4
+    words and 1.5 s, mean confidence under 0.45. Mostly a second voice in another language (a game
+    character, a film clip, a song), music or noise. Measured (Nov 2026): podcasts and talking-head
+    videos have 0-2 such stretches; a 44-minute gameplay video had 91 (its game cutscenes).
+
+    Each stretch is the run of words (no pause of 1 s or more inside) whose confidence sums furthest
+    below the threshold, so clear words next to it can't hide it. (The first version grew a stretch
+    word by word and dropped all of it when the clear words after it pushed the mean over 0.45: a game
+    character's English line, heard as Devanagari nonsense, kept its wrong captions. Its runs are
+    still taken too, so nothing it found is missed.) Two stretches with only a short, shaky bit
+    between them (6 words, 2.5 s, mean confidence under 0.75: a hallucinated "कर दो कर दो") become one."""
+    groups, g0 = [], 0
+    for k in range(1, len(words) + 1):
+        if k == len(words) or words[k]['s'] - words[k - 1]['e'] >= 1.0:
+            groups.append((g0, k))
+            g0 = k
+    found = []
+    for lo, hi in groups:
+        vals = [thr - w.get('p', 1.0) for w in words[lo:hi]]
+        cores = []
+        _cores(vals, 0, len(vals), cores)
+        found += [(lo + a, lo + b) for a, b in cores]
+    found = sorted((i, j) for i, j in found if j > i)          # one odd word alone is no stretch
+    merged = []
+    for i, j in found:
+        if merged:
+            pi, pj = merged[-1]
+            between = words[pj + 1:i]
+            if (len(between) <= BRIDGE_WORDS and words[i]['s'] - words[pj]['e'] <= BRIDGE_S
+                    and all(b['s'] - a['e'] < 1.0 for a, b in zip(words[pj:i], words[pj + 1:i + 1]))
+                    and (not between or sum(w.get('p', 1.0) for w in between) / len(between) < BRIDGE_P)):
+                merged[-1] = (pi, j)
+                continue
+        merged.append((i, j))
+    joined = []                                 # + the first version's runs, overlaps joined
+    for i, j in sorted(merged + _greedy_stretches(words, thr, min_words, min_s)):
+        if joined and i <= joined[-1][1] + 1:
+            joined[-1] = (joined[-1][0], max(joined[-1][1], j))
+        else:
+            joined.append((i, j))
+    out = []
+    for i, j in joined:
+        # take in unsure words right next to it (the tail of a game line: "वह राइज हैं")
+        while i > 0 and words[i - 1].get('p', 1.0) < 0.5 and words[i]['s'] - words[i - 1]['e'] < 1.2 \
+                and not (out and i - 1 <= out[-1][1]):
+            i -= 1
+        while j + 1 < len(words) and words[j + 1].get('p', 1.0) < 0.5 and words[j + 1]['s'] - words[j]['e'] < 1.2:
+            j += 1
+        if out and i <= out[-1][1]:
+            i = out[-1][1] + 1
+        run = words[i:j + 1]
+        if len(run) >= min_words and run[-1]['e'] - run[0]['s'] >= min_s and \
+                sum(w.get('p', 1.0) for w in run) / len(run) < thr + 0.05:     # mostly unsure, even when joined
+            out.append((i, j))
     return out
 
 
@@ -403,12 +476,81 @@ def unsure_stretches(words, thr=UNSURE_P, min_words=4, min_s=1.5):
 SECOND_LANGS = {'hi': {'en'}, 'en': set()}
 
 
+RELISTEN_P = 0.6        # a second listen must be at least this sure (and 0.15 surer than the first)
+
+
+def _looping(words):
+    """Whisper's own test for a decode stuck in a loop ("कर दो कर दो कर दो ..."): the text
+    compresses more than 2.4 times."""
+    import zlib
+    text = ' '.join(w['w'] for w in words).encode('utf-8')
+    return len(text) >= 40 and len(text) / len(zlib.compress(text)) > 2.4
+
+
+def _decode(model, audio, windows, lang, beam_size, keep, prompt=None):
+    """Words heard in `lang` in each (lo, hi) window, kept only inside keep=(lo, hi). One fixed
+    decode (temperature 0): the random retries Whisper makes otherwise gave a different answer each
+    run. -> (words, mean confidence)."""
+    got = []
+    for lo, hi in windows:
+        try:
+            # only this window's audio: given the whole video (clip_timestamps), Whisper prepares all
+            # of it again for every window (18 minutes for 105 stretches of an 83-minute video)
+            segs, _ = model.transcribe(audio[int(lo * SR):int(hi * SR)], language=lang, beam_size=beam_size,
+                                       word_timestamps=True, condition_on_previous_text=False,
+                                       temperature=0.0, hotwords=prompt)
+            got += [{**_word(w), 's': round(lo + w.start, 3), 'e': round(lo + w.end, 3)}
+                    for s in segs for w in (s.words or [])
+                    if w.word.strip() and keep[0] <= lo + (w.start + w.end) / 2 <= keep[1]]
+        except Exception:
+            pass
+    got = clean_words(got)                 # loops and broken characters out first
+    if _looping(got):                      # stuck in a loop: heard nothing usable
+        return [], 0.0
+    return got, (sum(w['p'] for w in got) / len(got) if got else 0.0)
+
+
+def _listen_again(model, audio, words, i0, i1, lang, beam_size):
+    """The stretch heard again in `lang`: with a little room around it, then without, then as two
+    halves split at its longest pause. Whisper sometimes drops a whole line for a window a few tenths
+    of a second wider (a 13 s game line came back as just "Oh"), so a thin answer gets another try.
+    -> (words, mean confidence), or ([], 0.0)."""
+    a, b = words[i0]['s'], words[i1]['e']
+    # new words only between the kept neighbours, so a word just outside is never heard twice
+    keep = (max(a - 0.3, words[i0 - 1]['e']) if i0 > 0 else max(0.0, a - 0.3),
+            min(b + 0.3, words[i1 + 1]['s']) if i1 + 1 < len(words) else b + 0.3)
+    tries = [[(max(0.0, a - 0.3), b + 0.3)], [(a, b)]]
+    if i1 > i0 + 3:
+        k = max(range(i0 + 1, i1 + 1), key=lambda m: words[m]['s'] - words[m - 1]['e'])
+        tries.append([(max(0.0, a - 0.2), words[k - 1]['e'] + 0.1), (words[k]['s'] - 0.1, b + 0.2)])
+    best = ([], 0.0)
+    for windows in tries:
+        got, p = _decode(model, audio, windows, lang, beam_size, keep)
+        same = lambda x, y: norm_token(x['w']) == norm_token(y['w'])
+        if got and i1 + 1 < len(words) and same(got[-1], words[i1 + 1]):
+            got = got[:-1]                                  # "How am" + the kept "am I meant ..."
+        if got and i0 > 0 and same(got[0], words[i0 - 1]):
+            got = got[1:]
+        full = len(got) >= max(2, 0.25 * (b - a))          # speech is 2-3 words a second
+        if full and p >= RELISTEN_P:
+            return got, p
+        if full and p > best[1]:
+            best = (got, p)
+    return best
+
+
 def relisten(model, audio, words, base_lang, beam_size, sr=16000):
-    """Listen again to each unsure stretch in the language Whisper hears there. A video transcribed as
-    Hindi whose game character speaks English got that English forced into Devanagari nonsense, which
-    became wrong captions. If the stretch is clearly another language and decodes confidently in it,
-    its words are replaced; otherwise its words are marked "unsure" and get no captions (no captions
-    beat wrong ones; a game shows its own subtitles). -> (words, summary dict)."""
+    """Listen again to each unsure stretch. A video transcribed as Hindi whose game character speaks
+    English got that English forced into Devanagari nonsense, which became wrong captions.
+    - Whisper hears English there: the stretch is decoded in English, and it replaces the nonsense
+      when it is sure (0.6, and 0.15 surer than the first listen). One check first: forced into
+      English, a streamer's own Hinglish comes back *translated* ("usko ghar jaana hai" -> "I have to
+      go to his house"). So the stretch is also decoded in the video's own language: English speech
+      comes back in English letters there ("don't push me ..."), Hinglish in Hindi letters ("इसको घर
+      जाना है"). Mostly Hindi letters, heard surer than the English: no English. That decode is only
+      a check, never used for captions (alone, it loops: "कर दो कर दो ...").
+    - Otherwise the words are marked "unsure" and get no captions (no captions beat wrong ones; a
+      game shows its own subtitles). -> (words, summary dict)."""
     found = unsure_stretches(words)
     if not found:
         return words, {}
@@ -426,18 +568,15 @@ def relisten(model, audio, words, base_lang, beam_size, sr=16000):
         # English must be Whisper's top guess for the stretch (Hindi speech is guessed as Hindi, so it
         # is never turned into English); a game line mixed with music can guess as low as 0.49
         if lang and lang != base_lang and prob >= 0.3 and lang in SECOND_LANGS.get(base_lang, set()):
-            try:
-                segs, _ = model.transcribe(audio, language=lang, beam_size=beam_size, word_timestamps=True,
-                                           condition_on_previous_text=False, clip_timestamps=[lo, hi])
-                got = [_word(w) for s in segs for w in (s.words or [])
-                       if w.word.strip() and lo <= (w.start + w.end) / 2 <= hi]
-            except Exception:
-                got = []
-            got = clean_words(got)                 # loops and broken characters out first
-            p = sum(w['p'] for w in got) / len(got) if got else 0.0
-            if got and p >= 0.6 and p >= old_p + 0.15:
-                new = [{**w, 'lang': lang} for w in got]
-                info['langs'][lang] = info['langs'].get(lang, 0) + 1
+            got, p = _listen_again(model, audio, words, i0, i1, lang, beam_size)
+            if got and p >= RELISTEN_P and p >= old_p + 0.15:
+                own, own_p = _listen_again(model, audio, words, i0, i1, base_lang, beam_size)
+                hindi = sum(has_devanagari(w['w']) for w in own) / len(own) if own else 0.0
+                if hindi >= 0.5 and own_p > p:     # Hindi words, heard surer: the English is a translation
+                    info['own'] = info.get('own', 0) + 1
+                else:
+                    new = [{**w, 'lang': lang} for w in got]
+                    info['langs'][lang] = info['langs'].get(lang, 0) + 1
         res += words[last:i0]
         if new:
             res += new
@@ -457,9 +596,10 @@ def relisten_report(info):
     if not info:
         return
     langs = ', '.join(f'{k}: {v}' for k, v in info['langs'].items())
+    own = info.get('own', 0)
     print(f"   re-listened to {info['stretches']} unclear stretch(es): {info['fixed']} recognised in another "
-          f"language{f' ({langs})' if langs else ''}, {info['unsure']} left without captions "
-          f"(game voices, music or noise)", flush=True)
+          f"language{f' ({langs})' if langs else ''}, {info['unsure']} left without captions (game voices, "
+          f"music or noise{f'; {own} of them sounded like translated speech' if own else ''})", flush=True)
 
 
 def split_points(audio, piece_s=PIECE_S, search_s=90):
