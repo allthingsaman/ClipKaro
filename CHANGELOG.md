@@ -5,6 +5,9 @@
 - **The critic judges craft, never the topic.** It looks at how a clip starts, whether it makes sense
   alone, how it ends and what could be cut. A clip about politics, religion or anything controversial
   gets the same scores as any other. What to post is always your choice.
+- **Fuller YouTube titles.** Each one uses up to 100 characters: the hook, then the game, show or
+  person it's about, then 2-3 matching hashtags ending in #Shorts. For example: "Final Boss Yahin La Diya, Mar
+  Gaya | Black Myth Wukong Hindi Gameplay #BlackMythWukong #Shorts". Instagram and Facebook texts stay as they were.
 - **Deep clips' YouTube titles** end with "(2 moments joined)" instead of starting with the time
   stamps. The description and the captions still start with "From 2 moments of the full video: ...".
 - **PostKaro gets the honesty note.** When one of the three honesty judges objected to a deep clip,

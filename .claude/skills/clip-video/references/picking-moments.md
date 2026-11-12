@@ -136,8 +136,13 @@ Write `output/<project>/clips.json`:
 - `post`: the text for each platform, in the same language and script as the captions (Roman
   Hinglish for Hindi/Hinglish videos unless settings.json says otherwise). Write each one for its
   platform, not one copy-paste:
-  - `youtube.title`: at most 100 characters, what someone would search for or click (often the
-    `title` plus a few words of context). `youtube.description`: 1–2 lines + up to 3 hashtags. Don't
+  - `youtube.title`: use the 100 characters well (aim for 85–100, never over), so a stranger knows
+    what it is: the hook (often the `title`, a little fuller), then `|` and who or what it's about
+    (the game, show, person or podcast: "Black Myth Wukong Hindi Gameplay", "Khan Sir on Raj
+    Shamani"), then 2–3 hashtags that match the clip, the last one `#Shorts`, e.g. "Final Boss
+    Yahin La Diya, Mar Gaya | Black Myth Wukong Hindi Gameplay #BlackMythWukong #Shorts". No
+    unrelated tags like #viral or #trending: YouTube's rules allow only hashtags about the video.
+    `youtube.description`: 1–2 lines + up to 3 hashtags. Don't
     add the full-video link: ClipKaro/PostKaro add "Full video: <link>" themselves.
   - `instagram.caption`: a hook line, then a question or call to comment, then **at most 5
     hashtags** (Instagram allows no more). No `#shorts`.
