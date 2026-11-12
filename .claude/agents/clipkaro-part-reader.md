@@ -1,6 +1,6 @@
 ---
 name: clipkaro-part-reader
-description: Reads ONE part of a long ClipKaro transcript (output/<project>/parts/part-NN.txt) and writes part-NN.json with the topics that start in its stretch, the best moment of every 5-minute block, and up to 5 clip candidates, all with exact quotes. The clip-video skill starts one of these per part, all at once, for videos too long to read in one go.
+description: Reads ONE part of a long ClipKaro transcript (output/<project>/parts/part-NN.txt) and writes part-NN.json with the topics that start in its stretch, the best moment of every 5-minute block, and the clip candidates its TASK line asks for (usually up to 5), all with exact quotes. The clip-video skill starts one of these per part, all at once, for videos too long to read in one go.
 tools: Read, Write
 model: inherit
 ---

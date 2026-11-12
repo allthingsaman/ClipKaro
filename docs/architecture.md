@@ -60,20 +60,24 @@ video (if you give a link) and, once, the speech models.
 ```mermaid
 flowchart TD
     U["You: clip this video: link or file"] --> A["AI editor reads CLAUDE.md and the clip-video skill"]
-    A --> F["run.py fetch"]
-    F -->|"yt-dlp downloads the audio only"| AU["source/audio.m4a"]
+    A --> INF["run.py info: length, live stream?<br/>over 21 min: ask about deep clips"]
+    INF --> F["run.py fetch"]
+    F -->|"yt-dlp downloads the audio"| AU["source/audio.m4a"]
+    F -.->|"and the video, in the background"| VID["source/video.mp4"]
     AU -->|"ffmpeg: 16 kHz mono wav"| LD["Language detection<br/>Whisper base, CPU"]
     LD --> TR["Transcription with word timestamps<br/>faster-whisper on NVIDIA GPU or CPU"]
     TR --> TX["transcript/words.json<br/>sentences.json, transcript.txt"]
     TX --> SND["Sound cues: laughter, applause,<br/>both talking at once, lively spots"]
-    SND --> PICK["AI editor reads the whole transcript (or readers, part by part)<br/>and writes about twice the clip ideas needed"]
+    SND --> KIND["run.py kind: live stream? gameplay?<br/>break screens left out of the transcript"]
+    VID -.-> KIND
+    KIND --> PICK["AI editor reads the whole transcript (or readers, part by part)<br/>and writes about twice the clip ideas needed"]
     PICK --> CRI["run.py critic: 3 blind runs judge every idea<br/>gates + clip score; AI editor picks the best"]
     CRI --> CJ["clips.json"]
     CJ --> HQ{"Hindi or Hinglish?"}
     HQ -->|yes| RO["run.py romanize<br/>AI fills romanize.json"]
     HQ -->|no| CK
     RO --> CK["run.py cut --check<br/>AI fixes any bad boundaries"]
-    CK --> CUT["run.py cut<br/>yt-dlp downloads the video, up to 1080p"]
+    CK --> CUT["run.py cut<br/>uses source/video.mp4 (downloads it if fetch didn't)"]
     CUT --> RF["Shot detection, face detection<br/>9:16 reframe, fit or facecam layout"]
     RF --> TWO{"Two people too far apart<br/>for one crop?"}
     TWO -->|yes| DIR["Director: voices, laughter, speaker register<br/>speaker crop or split screen"]
@@ -87,7 +91,9 @@ flowchart TD
 
 | Step | Command | Reads | Writes | Who decides |
 |---|---|---|---|---|
+| 0. A quick look | `run.py info <link or file>` | the video page or file | nothing (prints length, live stream?, the deep-clip question) | scripts; the AI editor asks the user |
 | 1. Get the transcript | `run.py fetch <link or file>` | the video link or file | `project.json`, `source/`, `transcript/` | scripts |
+| 1c. Kind of video, break screens | `run.py kind <project>` (`fetch` runs it) | the video, `words.json`, `project.json` | `project.json` (`video_kind`, `breaks`, `facecam`), `breaks.jpg`, markers in `transcript.txt` | scripts |
 | 1b. Sound cues | `run.py sound <project>` (`fetch` runs it) | `source/audio16k.wav`, `words.json` | `transcript/cues.json` | scripts |
 | 2. Clip ideas | *(the AI editor)* | `transcript/transcript.txt` | a shortlist in `clips.json` (short videos) | AI editor |
 | 2c. The critic | `run.py critic <project>`, 3 critic helpers, `run.py critic <project>` again | `clips.json` shortlist or `candidates.json` | `critic/`, `critic.txt`, `output/clip-log.csv`; then the final `clips.json` | AI critic + scripts + AI editor |
@@ -98,7 +104,7 @@ flowchart TD
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
 | Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
 | 2a. Long videos | `run.py parts <project>`, readers, `run.py topics <project>` | `transcript/` | `parts/`, `topics.json`, `topics.txt`, `candidates.json`, `candidates.txt` | AI readers + scripts |
-| 2d. Deep clips (only when asked) | `run.py deep <project>` between helper steps, `run.py critic <project> --from deep`, `run.py honesty <project>` | `topics.json`, `transcript/`, `clips.json` | `deep/` (map, threads, candidates, critic, honesty, report) | AI helpers + scripts |
+| 2d. Deep clips (when the user said yes) | `run.py deep <project>` between helper steps, `run.py critic <project> --from deep`, `run.py honesty <project>` | `topics.json`, `transcript/`, `clips.json` | `deep/` (map, threads, candidates, critic, honesty, report) | AI helpers + scripts |
 | Helper | `run.py gpu [model]` | nothing | nothing (prints the GPU test result) | |
 
 `<project>` is the folder name inside `output/` that `fetch` prints, for example
@@ -130,6 +136,8 @@ clipper/                     the toolbox (Python)
     speakers.py   who speaks when (voices), laughter, and the video's speaker register
     frames.py     picture sheets of what the crop keeps (checked by the AI editor)
     facecam.py    webcam-overlay detection and the stacked gameplay layout
+    kind.py       what kind of video (live stream, gameplay) and its break screens
+    info.py       a quick look at a link or file before anything is downloaded
     brand.py      caption accent colour (override or picked from the video)
     plan.py       the edit plan: camera zooms, caption groups, sound cues
     edit.py       renders the plan (python or Remotion engine) and mixes the audio
@@ -187,12 +195,14 @@ output/<project>/
     source/
         audio.m4a                downloaded audio (links only)
         audio16k.wav             16 kHz mono copy for Whisper
-        video.mp4                downloaded video, up to 1080p (links only, made by cut)
+        video.mp4                downloaded video, up to 1080p (links only; fetch downloads it in the background)
+        video-download.log       what yt-dlp said while downloading it
     transcript/
         words.json               every word with its start/end time
         sentences.json           words grouped into sentence lines
         transcript.txt           the readable transcript the AI editor reads
         cues.json                sound cues: laughter, applause, both talking at once, lively spots
+    breaks.jpg                   one picture of each break screen found (live streams)
     clips.json                   the AI editor's picks (for a short video, first its shortlist)
     critic/                      the critic's packets (run-N.txt), answers (run-N.json), plan.json, critic.json
     critic.txt                   every clip idea ranked by clip score, with reasons and fix / check notes
@@ -206,7 +216,7 @@ output/<project>/
                                  focus-NN.txt/.json (a second look at a hinted moment)
     topics.json, topics.txt      the topic map (long videos)
     candidates.json, .txt        every reader's clip candidates with exact ranges (long videos)
-    deep/                        deep clips (only when asked): map.txt, threads.json, thread-NN.txt/.json,
+    deep/                        deep clips (when the user said yes): map.txt, threads.json, thread-NN.txt/.json,
                                  candidates.json, critic/, honesty/ (packets and verdicts), honesty.json,
                                  report.txt, kept.json
     frames/01-title.jpg          picture sheets made by run.py frames
@@ -233,7 +243,11 @@ the critic judged (its scores, cues and hints), to tune the critic later from wh
   "facecam": false
 }
 ```
-`facecam` holds the detected webcam box (or `false`) after the first `cut`, so detection runs once.
+`facecam` holds the detected webcam box (or `false`), so detection runs once (`kind` or the first `cut`).
+`fetch` also keeps `live_status`, `was_live` and `categories` from YouTube. `run.py kind` adds
+`video_kind` (`{"live", "gaming", "facecam", "why": [...]}`), `breaks` (`[{"n", "start", "end", "where":
+"start" | "middle" | "end", "kept"}]`) and `break_scan` (what the scan looked at). `parts` adds `wish`:
+the user's own clip numbers and deep-clip answer (`{"at_least", "at_most", "deep"}`).
 For YouTube links, `fetch` also keeps what the video page says, when it has it: `description`
 (up to 3,000 characters), `chapters` (the creator's own, `[{"start", "end", "title"}]`) and
 `heatmap` (YouTube's "most replayed" curve, `[[start, end, value]]`). Reading in parts uses them as
@@ -421,8 +435,11 @@ The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-v
   subscribe", tangents, retakes.
 - **Continuous ranges first**; splice 2-3 ranges only when it clearly makes a better short, with
   whole sentences, never building a sentence the speaker didn't say. Clips never overlap.
-- **How many**: usually 3-8 per video (about one per 4-8 minutes of strong content). Quality over
-  count.
+- **How many**: `parts` prints the number. A number the user asked for ("at least 10", "at most 5",
+  "give me 8") always wins. Otherwise about one clip per 7 minutes of real video (break screens
+  don't count), at least 3, at most `max_clips` (20): fewer only when there aren't that many decent
+  moments, never padded. Each part reader is asked for about 2.5 ideas per clip wanted, spread over
+  the parts (5-10 per part), so the critic has enough to rank.
 - **Ranking** (score 1-10): hook strength > clear payoff > emotional energy > quotability > visual
   clarity. Best clip first.
 - **Exact times**: when a hook starts or a payoff ends inside a transcript line, the AI looks up
@@ -708,6 +725,29 @@ side-by-side picture each box stays inside its own half, so no strip of the othe
 the time, an acceptable one 91%, and a single wrong face 1%. If sherpa-onnx or the models are
 missing, these shots keep the framing of 5.6.
 
+### 5.6b Live streams, gameplay and break screens (`kind.py`)
+`fetch` ends with `kind.run`, which works out what kind of video it is:
+- **Live stream**: YouTube's `live_status` is `was_live` / `post_live`, or the link is a `/live/` link.
+  For a file on the computer, a break screen in the middle gives it away.
+- **Gameplay**: YouTube's category is Gaming, or `facecam.detect` finds a webcam overlay.
+- **Break screens** ("Starting soon", "Be right back", stream ending). Only the keyframes are decoded
+  (at most one per 2 s), each shrunk to 64x36 grey, and neighbours compared (mean change, 0-255).
+  A stretch where the change stays under `STILL` (8) for at least `MIN_BREAK_S` (30 s) is a still
+  picture. A single odd keyframe inside doesn't end it (a flicker). Then:
+  - a webcam overlay was found: a break when no face is in the cam box in at least half of 4 pictures;
+  - no overlay, but faces are common in the video: no face, and words over less than 30 % of it;
+  - no faces anywhere: words over less than 30 % of it.
+  Measured on a 1:40 GTA stream: gameplay changed by 15-60 per keyframe, the animated "Starting
+  soon" and "Be right back" screens by 4-6, pause menus and maps by about 1 (those had the streamer
+  in the cam, so they stay). The scan took 28 s, and it found all three breaks.
+
+A break's lines (often song lyrics from the break music) are replaced by one `# ===== ... SCREEN
+=====` marker line in `transcript.txt` and in the part files (`kind.hide_breaks`), and lively spots
+inside breaks are dropped. `cut --check` warns when a clip touches a break, and, for live streams and
+gameplay, when a clip holds 8 s or more without talk (`QUIET_GAP_S`). `breaks.jpg` shows one picture
+per break. `kind --keep N` turns a wrongly found break back into normal video; `--redo` scans again.
+Live streams and gameplay also get the stream rules (`kind.RULES`) in every part file's header.
+
 ### 5.7 Gameplay with a webcam overlay (`facecam.py`)
 Detection runs once per video, on 24 frames spread across it. A webcam overlay is a face that:
 - sits at the same spot (within 3 % of the frame width) in at least half of the frames,
@@ -843,6 +883,9 @@ inside PostKaro, which adds the clips and returns the page link that the AI edit
 | Languages | [adding-a-language.md](adding-a-language.md) |
 | The facecam layout | `clipper/facecam.py`: `TOP_H`, `geometry` |
 | Two-person framing rules | `clipper/director.py`: `HOLD`, `PRE`, `POST`, `LAUGH_ON`, `WIDE_SOLO`, `FLOOR` |
+| What counts as a break screen | `clipper/kind.py`: `STILL`, `MIN_BREAK_S`, `QUIET`, `RULES` |
+| How many clips by default | `clipper/parts.py`: `MINUTES_PER_CLIP` (7), `MIN_CLIPS`, `IDEAS_PER_CLIP`; `"max_clips"` in settings.json |
+| When to ask about deep clips | `clipper/parts.py`: `DEEP_ASK_MIN` (21); `"deep_clips"` in settings.json |
 | How long videos are split | `clipper/parts.py`: `--minutes` (21), `--margin` (120 s), `TOKEN_CAP`, `SNAP_WINDOW` |
 | What a part reader writes | `.claude/skills/clip-video/references/reading-parts.md`; the closed label lists in `clipper/topics.py` |
 | How answers are checked and joined | `clipper/topics.py`: quote matching (`Transcript.find`, 80%), `MERGE_GAP`, the warnings |

@@ -2,6 +2,9 @@
 
     python run.py parts <project>                 # plan the parts and write them
     python run.py parts <project> --minutes 21    # each part's own stretch (default 21 minutes)
+    python run.py parts <project> --at-least 10   # the user asked for a number of clips (also --at-most N,
+                                                  # --clips N for exactly N, --any-count to forget it)
+    python run.py parts <project> --deep yes      # the user's answer about deep clips (yes / no)
 
 A 2-hour transcript is too big to read well in one go (the AI's file reader stops at 256 KB, and
 long inputs get skimmed). So the transcript is cut into parts of at most ~25 minutes: each part has
@@ -14,6 +17,14 @@ and the task at the end) and parts/plan.json. Each part is read by one helper, w
 parts/part-NN.json (see .claude/skills/clip-video/references/reading-parts.md); then
 `python run.py topics <project>` checks and joins them.
 
+How many clips: unless the user asked for a number, about one per 7 minutes of real video (break
+screens don't count), at least 3, at most "max_clips" from settings.json (20). A number the user asked
+for always wins and is remembered in project.json ("wish"), so running parts again keeps it. Each
+part's reader is asked for enough ideas (about 2.5 per clip wanted, spread over the parts).
+
+Live streams and gameplay (see `run.py kind`): lines said during break screens are replaced by one
+marker line, and every part's header carries the stream rules.
+
 Test-only options: --no-chapters hides the creator's chapters, --shift 0.5 moves every cut by half
 a stretch (the seam test), --dir parts-test writes somewhere else.
 """
@@ -24,14 +35,18 @@ import shutil
 import time
 import unicodedata
 
-from . import sound
-from .common import ROOT, die, fmt_ts, load_json, project_dir, save_json
+from . import kind, sound
+from .common import ROOT, die, fmt_ts, load_json, project_dir, save_json, settings
 
 TOKEN_CAP = 20000          # estimated tokens per part file: one default Read (25k) with room to spare
 BYTE_CAP = 240_000         # the Read tool refuses whole files over 256 KB
 SNAP_WINDOW = 60.0         # a cut moves to the longest pause within this many seconds
 BLOCK = 300.0              # "the best moment in every 5 minutes"
 BRIEF = '.claude/skills/clip-video/references/reading-parts.md'
+MINUTES_PER_CLIP = 7.0     # the default count: about one clip per 7 minutes of real video
+MIN_CLIPS = 3
+IDEAS_PER_CLIP = 2.5       # clip ideas the readers bring per clip wanted (the critic ranks them all)
+DEEP_ASK_MIN = 21.0        # longer than one part's stretch: worth asking about deep clips
 
 
 def est_tokens(text):
@@ -67,7 +82,56 @@ def clean_about(desc, limit=600):
 
 
 def line_text(ln):
+    if 'marker' in ln:                          # a break screen's lines, left out (run.py kind)
+        return ln['marker']
     return f"[{ln['s']:.2f}-{ln['e']:.2f}] {ln['text']}"
+
+
+def clip_target(project, first, last, wish, max_clips):
+    """{'auto', 'aim', 'at_least', 'at_most', 'usable_min'}: how many clips to make."""
+    usable_min = kind.usable_seconds(project, first, last) / 60
+    auto = max(MIN_CLIPS, min(int(max_clips), round(usable_min / MINUTES_PER_CLIP)))
+    lo, hi = wish.get('at_least'), wish.get('at_most')
+    aim = auto
+    if lo:
+        aim = max(aim, lo)
+    if hi:
+        aim = min(aim, hi)
+    return {'auto': auto, 'aim': aim, 'at_least': lo, 'at_most': hi, 'usable_min': round(usable_min, 1)}
+
+
+def update_wish(project, a):
+    """The user's own numbers (and deep-clip answer) from the flags, merged into project.json's "wish"."""
+    wish = dict(project.get('wish') or {})
+    if a.any_count:
+        wish.pop('at_least', None)
+        wish.pop('at_most', None)
+    if a.clips:
+        wish['at_least'] = wish['at_most'] = a.clips
+    if a.at_least is not None:
+        wish['at_least'] = a.at_least or None
+    if a.at_most is not None:
+        wish['at_most'] = a.at_most or None
+    if a.deep:
+        wish['deep'] = a.deep == 'yes'
+    if wish.get('at_least') and wish.get('at_most') and wish['at_least'] > wish['at_most']:
+        die(f"at least {wish['at_least']} and at most {wish['at_most']} can't both hold")
+    return {k: v for k, v in wish.items() if v is not None}
+
+
+def deep_line(project, wish, minutes):
+    """What to do about deep clips, for the summary."""
+    if 'deep' in wish:
+        return 'yes (the user said so)' if wish['deep'] else 'no (the user said so)'
+    mode = str(settings().get('deep_clips', 'ask')).lower()
+    if mode == 'always':
+        return 'yes (settings.json "deep_clips": "always")'
+    if mode == 'never':
+        return 'no (settings.json "deep_clips": "never")'
+    if minutes > DEEP_ASK_MIN:
+        return (f'not decided: the video is longer than {DEEP_ASK_MIN:.0f} minutes, so ask the user once, unless '
+                f'their message already said; record the answer with  --deep yes|no')
+    return f'no (a short video; only when the user asks)'
 
 
 def plan_stretches(lines, n, shift=0.0):
@@ -97,7 +161,7 @@ def plan_stretches(lines, n, shift=0.0):
     return [0] + cuts + [len(lines)]
 
 
-def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cues=None):
+def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cues=None, per_part=5):
     """The part files' text for n stretches: [(header-free info, text)]."""
     idx = plan_stretches(lines, n, shift)
     total = len(idx) - 1
@@ -140,6 +204,11 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
                  f'Lines outside it are context only.',
                  '# 5-MINUTE BLOCKS (start seconds): ' + ', '.join(f'{x:.2f}' for x, _ in blocks)]
         spots = sound.spots_in(cues, a, b)
+        if kind.is_irregular(project):
+            head.append(f'# VIDEO KIND: {kind.describe(project)}. Rules: {kind.RULES}.')
+        if any('marker' in ln for ln in before + own + after):
+            head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) are marked with ===== lines: '
+                        'their words are left out. Never take a topic, best moment or clip from them.')
         if spots:
             head.append('# LIVELY SPOTS from the sound (laughs, both talking at once; the detector can be wrong): '
                         'look at the words there, and judge them only by the words: ' + sound.spots_line(spots))
@@ -152,7 +221,7 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
         foot = ['', f'# TASK (full brief: {BRIEF})',
                 '# 1. Topics that START in your stretch: copy the opening line\'s start time, quote its first words exactly.',
                 '# 2. The best moment in each 5-minute block of your stretch, or "best": null with a "why".',
-                '# 3. Up to 5 clip candidates whose middle is in your stretch. Quote first and last words exactly.',
+                f'# 3. Up to {per_part} clip candidates whose middle is in your stretch. Quote first and last words exactly.',
                 f'# Write {where}/part-{num}.json, then reply in at most 5 lines.']
         text = '\n'.join(head + body + foot) + '\n'
         parts.append({'part': k + 1, 'file': f'part-{num}.txt', 'json': f'part-{num}.json',
@@ -173,6 +242,11 @@ def main():
     ap.add_argument('--no-chapters', action='store_true', help="don't show the creator's chapters (tests)")
     ap.add_argument('--shift', type=float, default=0.0, help='move every cut by this share of a stretch (tests)')
     ap.add_argument('--dir', default='parts', help='folder for the parts inside the project (default parts)')
+    ap.add_argument('--at-least', type=int, default=None, help='the user wants at least N clips (0 forgets it)')
+    ap.add_argument('--at-most', type=int, default=None, help='the user wants at most N clips (0 forgets it)')
+    ap.add_argument('--clips', type=int, default=None, help='the user wants exactly N clips')
+    ap.add_argument('--any-count', action='store_true', help='forget a number asked for earlier')
+    ap.add_argument('--deep', choices=['yes', 'no'], default=None, help="the user's answer about deep clips")
     a = ap.parse_args()
 
     pdir = project_dir(a.project)
@@ -183,13 +257,24 @@ def main():
     if a.margin < 45:
         die('--margin must be at least 45 s, so a 90 s clip always fits inside one part')
 
+    wish = update_wish(project, a)
+    if wish != (project.get('wish') or {}):
+        project['wish'] = wish
+        save_json(pdir / 'project.json', project)
+    breaks = kind.active_breaks(project)
+    target = clip_target(project, lines[0]['s'], lines[-1]['e'], wish, settings().get('max_clips', 20))
+    lines = kind.hide_breaks(lines, breaks)
     cues = sound.load(pdir)
+    if cues and breaks:                         # break music isn't a lively spot
+        cues = dict(cues, lively=[sp for sp in cues.get('lively') or []
+                                  if not kind.in_break(sp['start'], sp['end'], breaks)])
     whole = '\n'.join(line_text(ln) for ln in lines)
     whole_tokens = est_tokens(whole) + 400
     span_min = (lines[-1]['e'] - lines[0]['s']) / 60
     n = 1 if whole_tokens <= TOKEN_CAP and not a.shift else max(1, math.ceil(span_min / a.minutes))
     while True:
-        parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir, cues)
+        per_part = max(5, min(10, math.ceil(IDEAS_PER_CLIP * target['aim'] / n)))
+        parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir, cues, per_part)
         if all(p['tokens'] <= TOKEN_CAP and p['bytes'] <= BYTE_CAP for p in parts) or n >= 80:
             break
         n += 1                                      # a fast talker: one more, smaller part
@@ -214,7 +299,8 @@ def main():
     save_json(out / 'plan.json', {'project': pdir.name, 'minutes': a.minutes, 'margin': a.margin, 'shift': a.shift,
                                   'chapters_shown': not a.no_chapters and bool(project.get('chapters')),
                                   'first': round(lines[0]['s'], 2), 'last': round(lines[-1]['e'], 2),
-                                  'whole_tokens': whole_tokens, 'parts': parts})
+                                  'whole_tokens': whole_tokens, 'clips': dict(target, per_part=per_part),
+                                  'parts': parts})
 
     print(f'-> {pdir.name}: {fmt_ts(lines[-1]["e"])} of speech, about {whole_tokens:,} tokens in all')
     print(f'   {len(parts)} part(s) in {pdir / a.dir}')
@@ -222,6 +308,22 @@ def main():
     for p in parts:
         s, e = p['stretch']
         print(f"   {p['part']:>4}  {fmt_ts(s):>9}-{fmt_ts(e):<9}  {p['lines']:>5}  {p['tokens']:>6,}  {p['bytes'] / 1024:.0f} KB")
+    print(f'\n-> video: {kind.describe(project)}')
+    if breaks:
+        gone = sum(b['end'] - b['start'] for b in breaks)
+        print(f'-> break screens left out: {len(breaks)} ({gone / 60:.1f} min); {target["usable_min"]:.0f} min of real video')
+    asked = [f"at least {target['at_least']}" if target['at_least'] else '',
+             f"at most {target['at_most']}" if target['at_most'] else '']
+    asked = ' and '.join(x for x in asked if x)
+    if asked and target['at_least'] == target['at_most']:
+        asked = f"exactly {target['at_least']}"
+    how = (f"the user asked for {asked}" if asked else
+           f"about one per {MINUTES_PER_CLIP:.0f} min of real video, at least {MIN_CLIPS}, at most "
+           f"{settings().get('max_clips', 20)} (settings.json max_clips)")
+    print(f"-> clips: aim for {target['aim']} ({how}). Deep clips count too.")
+    if not asked:
+        print('   fewer only when there aren\'t that many decent moments; never pad with weak ones')
+    print(f'-> deep clips: {deep_line(project, wish, (lines[-1]["e"] - lines[0]["s"]) / 60)}')
     if len(parts) == 1:
         spots = (cues or {}).get('lively') or []
         if spots:
@@ -231,8 +333,8 @@ def main():
                 print(f"   {fmt_ts(sp['start']).split('.')[0]:>8}  {sp['why']}")
         elif cues is None:
             print(f'\n(no sound cues yet: python run.py sound {pdir.name})')
-        print('\nnext: one part. Read transcript.txt in full and write a SHORTLIST of about twice the clips '
-              f'wanted to clips.json, then  python run.py critic {pdir.name}')
+        print(f"\nnext: one part. Read transcript.txt in full and write a SHORTLIST of about {2 * target['aim']} "
+              f'clip ideas (twice the clips wanted) to clips.json, then  python run.py critic {pdir.name}')
     else:
         print(f'\nnext: one reader per part, all at once (brief: {BRIEF}); each writes '
               f'{a.dir}/part-NN.json. Then:  python run.py topics {pdir.name}')

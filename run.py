@@ -1,6 +1,8 @@
 """Single entry point. Always runs inside the project's .venv (created by install.py).
 
-    python run.py fetch <youtube-url | local-file>       download audio + transcribe
+    python run.py info <youtube-url | local-file>        a quick look first: length, live stream?, deep clips?
+    python run.py fetch <youtube-url | local-file>       download audio + transcribe (and the video, for YouTube)
+    python run.py kind <project>                         live stream? gameplay? break screens to leave out (fetch runs it)
     python run.py romanize <project>                     Roman Hinglish captions for Hindi/Hinglish videos
     python run.py cut <project>                          cut the picked clips to 9:16
     python run.py edit <project> [--engine python|remotion] [--clips 1,3]
@@ -28,7 +30,9 @@ ROOT = Path(__file__).resolve().parent
 PY = ROOT / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
 
 COMMANDS = {
+    'info': 'clipper.info',
     'fetch': 'clipper.fetch',
+    'kind': 'clipper.kind',
     'romanize': 'clipper.romanize',
     'cut': 'clipper.cut',
     'brand': 'clipper.brand',

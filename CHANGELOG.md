@@ -12,6 +12,26 @@
   stamps. The description and the captions still start with "From 2 moments of the full video: ...".
 - **PostKaro gets the honesty note.** When one of the three honesty judges objected to a deep clip,
   post.json now passes that judge's reason on to PostKaro.
+- **"Clip this video" is enough, even for live streams.**
+  - ClipKaro sees by itself when a video was a live stream (YouTube says so, or a "Be right back"
+    screen sits in the middle) or is gameplay (Gaming category, or a webcam in a corner).
+  - "Starting soon", "Be right back" and stream-ending screens are left out: a still picture for
+    30 seconds or more with nobody on the webcam. Pause menus where you talk on cam stay in.
+  - Streams also get their own rules: clips built around what you say, quiet stretches are
+    normal, no "hello chat" or "is the audio OK" in clips.
+  - On a 1:40 GTA stream it found all three break screens in 28 seconds.
+- **The number of clips follows the video's length.**
+  - About one clip per 7 minutes of real video, at least 3, at most 20 (`max_clips` in
+    settings.json).
+  - "At least 10", "at most 5" or "give me 8" in your message always wins. A 2-hour stream no
+    longer stops at 8 clips.
+- **Long videos: one question about deep clips.**
+  - For a video longer than 21 minutes, Claude asks once at the start whether you want deep clips
+    too, while the video downloads.
+  - `"deep_clips": "always"` or `"never"` in settings.json stops the question.
+- **The video downloads during transcription** instead of at `cut`, so cutting starts right away.
+- New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
+  stream? gameplay? break screens?).
 - **What's next:** [docs/roadmap-v3.md](docs/roadmap-v3.md), in order, with a rough time for each item.
 
 ## v2.0 (November 2026): deep clips, a second opinion, tighter cuts

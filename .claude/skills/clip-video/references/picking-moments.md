@@ -71,9 +71,33 @@ A clip made of pieces must stay true to the full video. Check every join:
 8. **Quotation marks only for words actually said**, in titles and captions.
 9. **Never use ads, sponsor reads, cold-open teasers, intros or outros** as pieces.
 
+## Live streams and gameplay
+`fetch` says when a video is a live stream or gameplay (`-> video: live stream + gameplay with a
+facecam`). Then these rules apply too:
+- **Break screens are never clip material.** "Starting soon", "Be right back" and stream-ending
+  screens are already left out (a `# ===== ... SCREEN =====` marker line shows where). Don't take a
+  clip that runs into one; `cut --check` warns if one does.
+- **Build clips around the streamer's own talk and reactions.** The transcript also holds the game's
+  characters, cut-scenes and music; they are context, not the clip's voice. A game line may stay in
+  when the streamer's reaction needs it.
+- **Quiet stretches are normal.** The streamer plays without talking for a while; that is not a dead
+  video. Inside a clip, though, a silence of more than ~8 s loses viewers unless the gameplay itself
+  is the point (a chase, a crash, a boss fight): end before it, or join the pieces around it
+  (`cut --check` points these out). Good moments separated by long quiet stretches are what deep
+  clips are for.
+- **Leave out stream housekeeping**: hello chat, "is the audio OK", viewer counts, subscribe
+  requests, "I'm back", reading donations, setting up the scene.
+
 ## How many
-Usually **3–8 clips** per video (about one per 4–8 minutes of strong content). Quality over count:
-3 great clips beat 8 average ones. If nothing is clip-worthy, say so.
+`parts` prints the number to make (`-> clips: aim for N`):
+- **The user asked for a number** ("at least 10", "at most 5", "give me 8"): follow it exactly.
+  "At least 10" means 10 or more, never fewer: if the video is thin, take the 10 best anyway and
+  say which ones are weaker.
+- **No number**: about one clip per 7 minutes of real video (break screens don't count), at least 3,
+  at most `"max_clips"` from settings.json (20). Make fewer only when there aren't that many decent
+  moments; never pad with weak ones. The owner posts almost any decent clip, so don't hold good
+  ones back either. If nothing is clip-worthy, say so.
+- Deep clips count towards the number.
 
 ## Ranking (score 1–10)
 Rank by: hook strength (curiosity + relevance) > a clear payoff > emotional energy (conviction,

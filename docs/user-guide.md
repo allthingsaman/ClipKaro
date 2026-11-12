@@ -165,7 +165,7 @@ Schedule.
 Write your wishes in the same message, in normal words. English, Hindi or Hinglish all work.
 Some examples:
 
-- "clip this video: (link), but only the 3 best"
+- "clip this video: (link), but only the 3 best" · "at least 10 clips" · "at most 5 clips"
 - "clips under 30 seconds"
 - "only the parts about money"
 - "show me the moments before you cut them"
@@ -173,15 +173,25 @@ Some examples:
 - "captions a bit lower" · "bigger captions" · "captions not in capital letters"
 - "use yellow captions" · "use #00E5FF as the caption colour"
 - "Hindi captions in Hindi letters" (instead of English letters)
-- "it's a gameplay video"
+- "it's a gameplay video" (usually not needed: see below)
 
 **Long videos** need no special words either. A video of an hour or more is read in parts of
 about 20 minutes, all at the same time (Claude says, for example, "Reading the video in 6 parts at
 once"), so the middle of a long podcast gets the same attention as the start. It takes a few
 minutes more. Afterwards you can ask "show me the topic map" to see every topic with its time.
 
-**Deep clips** (only when you ask): write "deep clip this: (link)" or "clip this, then go
-deeper". After the normal clips, Claude looks for a story that is spread across the video, like a
+**How many clips?** If you don't say, ClipKaro decides from the length of the video: about one clip
+for every 7 minutes, at least 3 (a 1-hour video gives about 9). Say "at least 10" or "at most 5" and
+it follows that.
+
+**Live streams and gameplay** need no special words. ClipKaro sees by itself when a video was a
+live stream or is gameplay with your webcam in a corner. It then leaves out the "Starting soon",
+"Be right back" and stream-ending screens, builds clips around what *you* say (not the game's
+characters), and doesn't mind the quiet stretches where you just play.
+
+**Deep clips**: for a video longer than 21 minutes, Claude asks you once at the start whether you
+want them. You can also say so in your first message: "deep clip this: (link)" or "clip this,
+use deep clipping". After the normal clips, Claude looks for a story that is spread across the video, like a
 question at minute 3 and its answer at minute 41, and joins those moments into one short, always in
 the order they were said. Three separate checks make sure the joined clip doesn't change what
 anyone meant (if only one of them has a doubt, Claude keeps the clip and tells you why, so you can

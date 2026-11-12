@@ -3,14 +3,17 @@
     python run.py fetch "https://www.youtube.com/watch?v=..."
     python run.py fetch "C:/videos/my-podcast.mp4"            # a video file on your computer
     options: --lang auto|hinglish|en|hi|...   --model auto|large-v3-turbo|large-v3|medium|small.en|...
-             --device auto|cuda|cpu   --cookies-from-browser chrome   --retranscribe
+             --device auto|cuda|cpu   --cookies-from-browser chrome   --retranscribe   --no-video
 
 Hindi / Hinglish is detected automatically (force it with --lang hinglish). Whisper then writes Hindi
 in Devanagari and English words in Roman ("आज हम business की बात करेंगे।"); `run.py romanize`
 turns the picked clips into Roman Hinglish captions later. Defaults come from settings.json.
 
 Creates output/<slug>/ with project.json, source/audio.*, transcript/words.json and transcript.txt.
-Only the audio is downloaded here; the video is downloaded by `cut`, once clips are picked.
+For a YouTube link the video (max 1080p) downloads in the background while the audio is transcribed:
+`cut` needs it anyway, and the picture shows what kind of video it is (`run.py kind`: a live stream?
+gameplay with a facecam? break screens like "Starting soon" or "Be right back", whose lines are then
+left out of the transcript). --no-video skips that; `cut` downloads the video later.
 """
 import argparse
 import hashlib
@@ -85,6 +88,23 @@ def video_extras(meta):
     return out
 
 
+def page_facts(meta):
+    """Whether it was a live stream, and YouTube's category: what `run.py kind` goes by."""
+    return {'live_status': meta.get('live_status'), 'was_live': bool(meta.get('was_live')),
+            'categories': meta.get('categories') or []}
+
+
+def length_line(project):
+    """'1:40:09, was a live stream' for the first line of fetch / info."""
+    from .kind import live_info
+    bits = [fmt_ts(project['duration']).split('.')[0]] if project.get('duration') else []
+    if live_info(project)[0]:
+        bits.append('was a live stream')
+    if 'Gaming' in (project.get('categories') or []):
+        bits.append('Gaming')
+    return ', '.join(bits)
+
+
 def download_audio(url, proj, cookies):
     import json
     meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', url], cookies))
@@ -94,8 +114,10 @@ def download_audio(url, proj, cookies):
     src = pdir / 'source'
     src.mkdir(parents=True, exist_ok=True)
     existing = list(src.glob('audio.*'))
+    facts = {'duration': meta.get('duration'), 'source': url, **page_facts(meta)}
+    print(f'-> {title}  ({length_line(facts)})', flush=True)
     if not existing:
-        print(f'-> downloading audio: {title}')
+        print('-> downloading audio')
         ytdlp(['-f', 'ba[ext=m4a]/ba/b', '-o', str(src / 'audio.%(ext)s'), url], cookies)
         existing = list(src.glob('audio.*'))
     if not existing:
@@ -105,13 +127,71 @@ def download_audio(url, proj, cookies):
         'source': url, 'kind': 'youtube', 'id': meta.get('id'), 'title': title,
         'channel': meta.get('channel') or meta.get('uploader'), 'channel_url': meta.get('channel_url'),
         'duration': meta.get('duration'), 'slug': pdir.name, 'audio': existing[0].name,
-        'width': meta.get('width'), 'height': meta.get('height'),
+        'width': meta.get('width'), 'height': meta.get('height'), **page_facts(meta),
     })
     project.update(video_extras(meta))
     if cookies:
         project['cookies_from_browser'] = cookies
     save_json(pdir / 'project.json', project)
     return pdir, project
+
+
+VIDEO_FORMAT = 'bv*[height<=1080][vcodec^=avc1]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/b'
+
+
+def video_file(pdir):
+    """source/video.mp4 (or .mkv/.webm) once it is complete. yt-dlp's half-done pieces
+    (video.f137.mp4, video.mp4.part) never count."""
+    found = [p for p in (pdir / 'source').glob('video.*') if p.stem == 'video' and p.suffix in ('.mp4', '.mkv', '.webm')]
+    return found[0] if found else None
+
+
+def video_download_cmd(pdir, project):
+    import subprocess  # noqa: F401  (kept next to its use)
+    cmd = [sys.executable, '-m', 'yt_dlp', *YTDLP_BASE]
+    if shutil.which('node'):
+        cmd += ['--js-runtimes', 'node']
+    if project.get('cookies_from_browser'):
+        cmd += ['--cookies-from-browser', project['cookies_from_browser']]
+    return cmd + ['-f', VIDEO_FORMAT, '--merge-output-format', 'mp4',
+                  '-o', str(pdir / 'source' / 'video.%(ext)s'), project['source']]
+
+
+def start_video_download(pdir, project):
+    """Start downloading the video in the background (YouTube only). Returns the process, or None."""
+    import subprocess
+    if project.get('kind') != 'youtube' or video_file(pdir):
+        return None
+    log = open(pdir / 'source' / 'video-download.log', 'w', encoding='utf-8')
+    print('-> downloading the video in the background (max 1080p; cut needs it, and the picture shows '
+          'break screens and the facecam)', flush=True)
+    return subprocess.Popen(video_download_cmd(pdir, project), stdout=log, stderr=subprocess.STDOUT)
+
+
+def finish_video_download(pdir, proc):
+    """Wait for the background download. Returns the video path, or None (never fatal)."""
+    if proc is None:
+        return video_file(pdir)
+    if proc.poll() is None:
+        print('-> waiting for the video download to finish ...', flush=True)
+    code = proc.wait()
+    if code != 0 or not video_file(pdir):
+        tail = (pdir / 'source' / 'video-download.log').read_text(encoding='utf-8', errors='replace').strip()
+        tail = '\n'.join('     ' + ln for ln in tail.splitlines()[-4:])
+        print(f'   ! the video download failed (cut tries again later):\n{tail}')
+        return None
+    return video_file(pdir)
+
+
+def download_video(pdir, project):
+    """Download the video now and wait for it (what `cut` does when fetch didn't)."""
+    print('-> downloading video (max 1080p, first time only) ...', flush=True)
+    ytdlp(['-f', VIDEO_FORMAT, '--merge-output-format', 'mp4', '-o', str(pdir / 'source' / 'video.%(ext)s'),
+           project['source']], project.get('cookies_from_browser'))
+    found = video_file(pdir)
+    if not found:
+        die('video download produced no file')
+    return found
 
 
 def local_source(path):
@@ -130,6 +210,7 @@ def local_source(path):
         pdir = pdir.with_name(f'{pdir.name}-{hashlib.sha1(str(p).encode()).hexdigest()[:6]}')
     (pdir / 'source').mkdir(parents=True, exist_ok=True)
     project = load_json(pdir / 'project.json', {}) or {}
+    print(f"-> {p.name}  ({fmt_ts(info['duration']).split('.')[0]})", flush=True)
     project.update({'source': str(p), 'kind': 'local', 'title': p.stem, 'channel': None,
                     'duration': info['duration'], 'slug': pdir.name, 'video': str(p),
                     'width': info.get('width'), 'height': info.get('height')})
@@ -547,6 +628,14 @@ def write_transcript(pdir, words, project):
     save_json(tdir / 'words.json', words)
     lines = sentences(words)
     save_json(tdir / 'sentences.json', lines)
+    return render_transcript(pdir, project, lines), len(lines)
+
+
+def render_transcript(pdir, project, lines):
+    """transcript.txt from the sentence lines. Lines said during a break screen (see `run.py kind`)
+    are replaced by one marker line, so no clip is picked from them."""
+    from .kind import active_breaks, hide_breaks
+    tdir = pdir / 'transcript'
     lang = project.get('language') or '-'
     if is_hindi(lang):
         lang += '  (Hindi in Devanagari, English words in Roman; captions: python run.py romanize <project>)'
@@ -554,9 +643,10 @@ def write_transcript(pdir, words, project):
             f"# duration: {fmt_ts(project.get('duration') or (words[-1]['e'] if words else 0))}",
             f'# language: {lang}',
             '# format: [start_seconds-end_seconds] text   (seconds are what clips.json uses)', '']
-    body = [f"[{s['s']:.2f}-{s['e']:.2f}] {s['text']}" for s in lines]
+    body = [s['marker'] if 'marker' in s else f"[{s['s']:.2f}-{s['e']:.2f}] {s['text']}"
+            for s in hide_breaks(lines, active_breaks(project))]
     (tdir / 'transcript.txt').write_text('\n'.join(head + body) + '\n', encoding='utf-8')
-    return tdir / 'transcript.txt', len(lines)
+    return tdir / 'transcript.txt'
 
 
 def main():
@@ -571,11 +661,16 @@ def main():
     ap.add_argument('--beam', type=int, default=None, help='beam size (default 5 for Hindi or on GPU, else 1)')
     ap.add_argument('--cookies-from-browser', default=None, help='chrome / firefox / edge (if YouTube blocks)')
     ap.add_argument('--retranscribe', action='store_true')
+    ap.add_argument('--no-video', action='store_true',
+                    help="don't download the video now (cut does it later; break screens aren't checked then)")
     a = ap.parse_args()
 
+    video_job = None
     if is_url(a.source):
         pdir, project = download_audio(a.source, None, a.cookies_from_browser)
         audio_src = pdir / 'source' / project['audio']
+        if not a.no_video:
+            video_job = start_video_download(pdir, project)
     else:
         pdir, project = local_source(a.source)
         audio_src = Path(project['video'])
@@ -606,11 +701,20 @@ def main():
     except Exception as e:
         print(f'   (sound cues skipped: {type(e).__name__}: {e})')
 
+    # what kind of video: a live stream? gameplay with a facecam? break screens to leave out?
+    if not a.no_video:
+        finish_video_download(pdir, video_job)
+    try:
+        from . import kind
+        project = kind.run(pdir, load_json(pdir / 'project.json', {}) or project)
+    except Exception as e:
+        print(f'   (video kind check skipped: {type(e).__name__}: {e})')
+
     print('\nDONE')
     print(f'project:    {pdir.name}')
     print(f"language:   {project.get('language')}")
     print(f'transcript: {tx}')
-    print('next: read the transcript, write clips.json, then  python run.py cut ' + pdir.name)
+    print(f'next: python run.py parts {pdir.name}   (add --at-least N / --at-most N if the user asked for a number of clips)')
 
 
 if __name__ == '__main__':

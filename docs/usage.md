@@ -18,14 +18,20 @@ or, for a video on your computer, its path in quotes:
 > **clip this video: "/home/you/Videos/my podcast.mp4"** (Linux)
 > **clip this video: "/Users/you/Movies/my podcast.mp4"** (Mac)
 
-That's all. Claude then does every step by itself, without stopping to ask:
+That's all. Claude then does every step by itself. It asks at most one question: for a video longer
+than 21 minutes, "do you want deep clips too?" (see below). It asks right at the start, while the
+video downloads, so nothing waits for you.
 
-1. downloads the sound and writes down every word (using your NVIDIA graphics card if you have one),
-2. reads everything and picks the **3-8 best moments**, and shows you a table of them,
-3. for Hindi/Hinglish, writes the captions in English letters ("aaj hum business ki baat karenge"),
-4. cuts each moment into a standing (9:16) video and keeps the speaker's face in the middle,
-5. adds the edit: zooms, word-by-word captions, a couple of soft whooshes, phone-friendly volume,
-6. shows you a table of the finished clips, with a caption to post for each one.
+1. downloads the sound and the video, and writes down every word (using your NVIDIA graphics card if
+   you have one),
+2. looks at the picture: is it a **live stream**? **gameplay** with your webcam in a corner? It
+   leaves out "Starting soon", "Be right back" and stream-ending screens by itself,
+3. reads everything and picks the best moments: about **one clip per 7 minutes** of video (at least
+   3), unless you ask for a number, and shows you a table of them,
+4. for Hindi/Hinglish, writes the captions in English letters ("aaj hum business ki baat karenge"),
+5. cuts each moment into a standing (9:16) video and keeps the speaker's face in the middle,
+6. adds the edit: zooms, word-by-word captions, a couple of soft whooshes, phone-friendly volume,
+7. shows you a table of the finished clips, with a caption to post for each one.
 
 **Good to know**
 - "clip this video" isn't a magic phrase. "make shorts from this", "cut this into reels",
@@ -50,7 +56,10 @@ scenes; you don't need to type that part.
 ### How many clips, and how long
 | You write | What happens |
 |---|---|
-| "only the 3 best" / "give me 8 clips" | that many clips (normally 3-8, depending on how much good material there is) |
+| (nothing) | ClipKaro decides: about one clip per 7 minutes of video, at least 3, at most 20 (`max_clips` in settings.json). Break screens don't count. Fewer only when there aren't that many good moments |
+| "at least 10 clips" / "kam se kam 10" | 10 or more, never fewer (if the video is thin, Claude says which ones are weaker) |
+| "at most 5 clips" / "only the 3 best" | no more than that |
+| "give me 8 clips" | exactly 8 |
 | "clips under 30 seconds" / "around 45-60 seconds" | that length (normally 25-60 seconds, never under 15 or over 90) |
 | "one clip only, the strongest" | a single clip |
 
@@ -61,7 +70,7 @@ scenes; you don't need to type that part.
 | "include the part where she talks about her first business" | that moment becomes one of the clips |
 | "skip the first 10 minutes" / "only from 20:00 to 45:00" | moments only from that part |
 | "show me the moments first" / "let me approve the clips" | Claude stops after picking and waits for your OK |
-| "it's a gameplay video" | clips are built around what the player says, not the game's own voices |
+| "it's a gameplay video" | clips are built around what the player says, not the game's own voices (ClipKaro usually finds this out by itself, see "Live streams and gameplay" below) |
 
 ### Language and listening
 | You write | What happens |
@@ -132,10 +141,29 @@ A clip score judges how well-made a clip looks from its words and sound (hook, p
 how shareable it is), compared with the other moments of the same video. It is **not** a
 prediction of views: views also depend on your channel, the timing and luck.
 
-### Deep clips: one story from moments far apart (only when you ask)
+### Live streams and gameplay (nothing to say)
+ClipKaro finds out by itself when a video is a **live stream** (YouTube says it was live, or a "Be
+right back" screen sits in the middle) or **gameplay** (YouTube's Gaming category, or your webcam in
+a corner of the picture). Then:
+- **"Starting soon", "Be right back" and stream-ending screens are left out.** It looks for a
+  picture that stands still for 30 seconds or more with nobody in the webcam. A pause menu or a map
+  while you talk in the webcam is real video and stays in. Claude can show you a picture of each
+  break it found ("show me the break screens").
+- **Clips are built around what you say**, not the game's own characters and music.
+- **Quiet stretches are expected.** You play without talking for a while; that's normal. A clip
+  doesn't keep a long silence unless the gameplay itself is the point (a chase, a crash).
+- **Stream housekeeping is left out**: hello chat, "is the audio OK", viewer counts, "I'm back".
+
+If ClipKaro ever takes real video for a break screen, say "break 2 is real video" and it comes back.
+
+### Deep clips: one story from moments far apart
+For a video **longer than 21 minutes**, Claude asks once at the start: "do you want deep clips too?"
+You can answer in the first message instead, and then it doesn't ask. To never be asked, set
+`"deep_clips"` in settings.json to `"always"` or `"never"`.
+
 | You write | What happens |
 |---|---|
-| "deep clip this: <link>" or "clip this, then go deeper" | the regular clips first, then Claude looks for stories spread across the video (a question and its answer much later, an opening line and the story's payoff) and joins 2-3 of those moments into one short |
+| "deep clip this: <link>", "clip this, use deep clipping" or "clip this, then go deeper" | the regular clips first, then Claude looks for stories spread across the video (a question and its answer much later, an opening line and the story's payoff) and joins 2-3 of those moments into one short |
 | "do a deep pass on <video>" | the same, for a video you've already clipped |
 | "show me the deep clip report" | Claude shows `deep/report.txt`: every deep clip tried, its clip score next to the best single stretch, and why it was kept or not |
 
@@ -211,7 +239,9 @@ Claude to change them.
   "hinglish_captions": "roman",
   "layout": "auto",
   "facecam": null,
-  "jump_label": false
+  "jump_label": false,
+  "deep_clips": "ask",
+  "max_clips": 20
 }
 ```
 
@@ -222,6 +252,8 @@ Claude to change them.
 | `device` | `auto` | `auto` (the NVIDIA card if it works, otherwise the processor), `cuda` (the NVIDIA card), `cpu` (the processor) |
 | `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
+| `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
+| `max_clips` | `20` | the most clips ClipKaro makes when you don't ask for a number (a number you ask for always wins) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 

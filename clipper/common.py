@@ -23,6 +23,8 @@ DEFAULT_SETTINGS = {
     'layout': 'auto',              # auto (facecam layout when a webcam overlay is found) | facecam | crop
     'facecam': None,               # optional fixed cam box: {"x","y","w","h" (fractions), "shape": "circle"|"rect"}
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
+    'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
+    'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

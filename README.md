@@ -18,7 +18,7 @@ effects and sound effects. It's free, it runs on your own computer, and it works
 
 ```
 you:  clip this video: https://youtu.be/...
-      → listens to the video → picks the 3-8 best moments → cuts them standing (9:16) → edits them
+      → listens to the video → picks the best moments → cuts them standing (9:16) → edits them
       → output/<video>/edited/01-why-hard-work-isnt-enough.mp4  (+ a caption to post with each one)
 ```
 
@@ -40,6 +40,11 @@ you:  clip this video: https://youtu.be/...
 - 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
   the captions in between. Game characters' lines are captioned right, or left without captions when
   they're unclear *(new in v2)*.
+- 📺 **Live streams need no explaining.** It sees by itself that a video was a live stream, leaves out
+  the "Starting soon", "Be right back" and stream-ending screens, and expects the quiet stretches where
+  you just play.
+- 🔢 **The right number of clips.** About one per 7 minutes of video unless you say "at least 10" or
+  "at most 5". For long videos it asks once whether you want deep clips too.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
   that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
@@ -159,7 +164,7 @@ If a user asked you to install this repo, follow these steps (details per system
 ## What you can ask for
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
 
-- "clip this, but only the 3 best" · "clips under 30 seconds" · "only the parts about money"
+- "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money"
 - "show me the moments before you cut them" · "don't edit them, just cut"
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"
 - "use #00E5FF as the caption colour" · "Hindi captions in Hindi letters"
@@ -209,7 +214,8 @@ it's slow and not recommended for long videos.
 ## Settings
 Your defaults are in `settings.json`: the language (`auto`), the speech model (`auto`), whether to
 use the graphics card (`auto`), how Hindi captions are written (`roman` = English letters, or
-`devanagari` = Hindi letters) and the gameplay layout (`auto`). You can also just ask Claude to change
+`devanagari` = Hindi letters), the gameplay layout (`auto`), whether to ask about deep clips (`ask`)
+and the most clips to make when you don't give a number (`20`). You can also just ask Claude to change
 them. Details: [docs/usage.md](docs/usage.md#5-your-defaults-settingsjson).
 
 ## Running it by hand (optional)

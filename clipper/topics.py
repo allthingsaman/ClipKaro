@@ -338,8 +338,9 @@ def read_part(tr, pb, plan_part, ans, first_line_s):
                       'title': str(c.get('title') or '').strip(), 'hook_type': c.get('hook_type'), 'score': sc,
                       'why': c.get('why'), 'needs_context': c.get('needs_context') or None,
                       'text': ' … '.join(words_text(tr, s, e) for s, e in ranges)})
-    if len(cands) > 5:
-        pb.warn(f'part {k}', f'{len(cands)} candidates (up to 5 asked)')
+    cap = plan_part.get('per_part', 5)
+    if len(cands) > cap:
+        pb.warn(f'part {k}', f'{len(cands)} candidates (up to {cap} asked)')
     lead = ans.get('lead_in') if isinstance(ans.get('lead_in'), dict) else {}
     return topics, cands, blocks, (lead.get('summary') or None)
 
@@ -537,7 +538,8 @@ def build(pdir, plan, args):
         except json.JSONDecodeError as e:
             pb.err(pp['part'], f'{pp["json"]} is not valid JSON ({e})')
             continue
-        topics, cands, blocks, lead = read_part(tr, pb, pp, ans, lines[0]['s'])
+        cap = (plan.get('clips') or {}).get('per_part', 5)
+        topics, cands, blocks, lead = read_part(tr, pb, {**pp, 'per_part': cap}, ans, lines[0]['s'])
         if not topics:
             pb.err(pp['part'], 'no topic starts in its stretch')
         all_topics += topics

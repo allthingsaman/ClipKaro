@@ -3,6 +3,10 @@
 This repo turns long videos into vertical short-form clips. When the user pastes a video link or
 file, or asks for clips, shorts, reels or TikToks, **use the `clip-video` skill**
 (`.claude/skills/clip-video/SKILL.md`) and follow it end to end without stopping for confirmation.
+The one question it may ask: for a video longer than 21 minutes, whether the user wants deep clips
+too (only when settings.json `"deep_clips"` is `"ask"` and their message didn't already say). Ask it
+right at the start, while `fetch` runs. A number of clips in the message ("at least 10", "at most 5")
+goes to `parts`; without one, ClipKaro decides by the video's length.
 
 ## Rules
 - **Asked to install / set up this repo?** Follow "For AI agents installing ClipKaro" in README.md
@@ -26,6 +30,10 @@ file, or asks for clips, shorts, reels or TikToks, **use the `clip-video` skill*
   `"facecam"` in settings.json if the cam is found in the wrong place. In gameplay videos the
   transcript also holds the game's own dialogue: build clips around the creator's commentary and
   reactions, not the game characters' lines.
+- Live streams and gameplay are recognised automatically at the end of `fetch` (`run.py kind`):
+  "Starting soon", "Be right back" and stream-ending screens are left out of the transcript, and the
+  stream rules apply (quiet stretches are normal, no stream housekeeping in clips). The user never
+  has to explain that a video is a stream.
 - Podcasts and interviews with two people on screen are framed automatically at `cut` (speaker
   crop, split screen around laughs and cross-talk). After cutting, check those clips with
   `python run.py frames <project> --clips N` and fix only what's wrong with `"framing"` or

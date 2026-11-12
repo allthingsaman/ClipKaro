@@ -20,16 +20,52 @@ Install Remotion (`python install.py --remotion`) only if the user asks for the 
 `settings.json` holds the user's defaults (language, model, device, Hinglish caption script).
 
 ## 1. Get the transcript
+The user only has to say "clip this: <link>". Everything else has a default: how many clips, what
+kind of video it is, and (for long videos) one question about deep clips.
+
+**First, a quick look** (a few seconds, nothing is downloaded):
+```
+python run.py info "<youtube url or path to a video file>"
+```
+It prints the length, whether YouTube says it was a live stream or gameplay, and a `deep clips:`
+line. Then start `fetch` (below) in the background, and while it runs:
+- **Deep clips.** If the `deep clips:` line says **ASK THE USER NOW**, and the user's message didn't
+  already say (yes: "deep clip", "go deeper", "use deep clipping", "deep pass"; no: "no deep",
+  "only normal clips", "quick"), ask once with AskUserQuestion: "This video is 1:40:09 long. Do you
+  want deep clips too? They join moments that are far apart into one story (a question and its
+  answer 40 minutes later). It takes about 10-15 more minutes." Options: "Yes, deep clips too" /
+  "No, regular clips only". If you can't ask (no answer comes), make regular clips only and say at
+  the end that "deep clip this too" adds them later. settings.json `"deep_clips"`: `"ask"`
+  (default), `"always"` or `"never"`.
+- **How many clips.** Read the user's message (and "My preferences" in CLAUDE.md) for a number: "at
+  least 10" / "kam se kam 10" / "minimum 10" -> `--at-least 10`; "at most 5" / "max 5" / "only the 3
+  best" -> `--at-most 5` / `--at-most 3`; "give me 8 clips" / "8 clips" -> `--clips 8`. No number ->
+  nothing: ClipKaro decides by the video's length (about one per 7 minutes, at least 3, at most
+  `"max_clips"` from settings.json). You pass these to `parts` in step 2.
+
 ```
 python run.py fetch "<youtube url or path to a video file>"
 ```
 - A **local file** works the same as a link: pass its full path in quotes, e.g.
   `python run.py fetch "C:\Users\me\Videos\my talk.mp4"`. Nothing is uploaded or copied; `cut`
   reads the file in place, so it must stay where it is until the clips are done.
-- This downloads the **audio only** (fast) and transcribes it with word timestamps (Whisper). On an
+- This downloads the audio and transcribes it with word timestamps (Whisper). On an
   NVIDIA GPU it takes a few minutes even for a long video; on the CPU, roughly 1/4 to 1/2 of the
   video's length for English and 1-4x the video's length for Hindi/Hinglish (bigger
   model). Run it in the background for long videos and tell the user roughly how long it will take.
+  For a YouTube link the video (max 1080p) downloads at the same time; `cut` needs it anyway.
+- At the end it looks at the picture (`run.py kind`, about 30 s per hour of video) and prints what
+  kind of video it is:
+  - **live stream** (YouTube says it was live, or a break screen sits in the middle) and/or
+    **gameplay** (YouTube's Gaming category, or a webcam overlay near the side);
+  - **break screens**: "Starting soon", "Be right back", stream ending: the picture stands still and
+    nobody is on cam. Their lines (often song lyrics from the break music) are left out of
+    transcript.txt and the parts, with one `# ===== BREAK SCREEN ... =====` marker line instead. A
+    pause menu or map with the streamer talking in the cam is real video and stays.
+  When breaks were found, look at `output/<project>/breaks.jpg` once (one picture per break). If one
+  is real video after all, `python run.py kind <project> --keep 2` shows its lines again.
+  Live streams and gameplay get the **stream rules** (section "Live streams and gameplay" in
+  `references/picking-moments.md`); the part files carry them too.
 - It prints the project name, the detected language and the transcript path:
   `output/<project>/transcript/transcript.txt`.
 - If YouTube blocks the download ("confirm you're not a bot"), retry with
@@ -42,12 +78,19 @@ python run.py fetch "<youtube url or path to a video file>"
 Read `references/picking-moments.md` first (plus `docs/hinglish.md` for a Hindi/Hinglish
 video). Then plan how to read the transcript:
 ```
-python run.py parts <project>
+python run.py parts <project>                    # no number asked: ClipKaro decides
+python run.py parts <project> --at-least 10      # or --at-most 5, or --clips 8 (exactly)
+python run.py parts <project> --deep yes         # record the user's deep-clip answer (yes / no)
 ```
+`parts` remembers the number and the deep answer in project.json, and prints `-> clips: aim for N`
+and `-> deep clips: ...`. **N is the number of clips to deliver** (deep clips count too). With no
+number from the user, deliver fewer than N only when there aren't that many decent moments; never
+pad with weak ones. With "at least N", never fewer.
+
 **One part** (up to about 28 minutes of Hinglish, longer for English): read `transcript.txt` in
 full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
 the detector can be wrong, so judge them only by the words). Write a **shortlist of about twice
-the clips wanted** (for 4 clips, 8 ideas; at most 16) to clips.json, in the normal format, then
+the clips wanted** (`parts` prints the number) to clips.json, in the normal format, then
 let the critic judge them (section 2a).
 
 **Several parts** (long videos): don't read the whole transcript at once. The file reader stops at
@@ -91,7 +134,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    payoff comes after the cut) and `check` (the runs disagreed). Notes are for the repair round;
    the critic never throws a clip away (in the user's blind check, clips it would have dropped were
    ones they'd post). The score ranks clips **within this video**; calm, informative clips are fine.
-4. Pick the final 3–8 clips from the top. Of clips that overlap at all, keep the better one; at
+4. Pick the final clips from the top: as many as `parts` said to aim for (`-> clips: aim for N`). Of clips that overlap at all, keep the better one; at
    most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
    holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
    content: read close calls yourself.
@@ -116,7 +159,8 @@ sees your scores, titles, the replay curve or anything about the channel.
    the shorter. (The owner's blind test, Nov 2026: where both versions cut the same moment, the
    tighter cut won 8 of 8; the longer one only wins when its extra seconds are funny or needed.)
    Follow "Never change what someone meant" in `references/picking-moments.md`. When you changed
-   any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16),
+   any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16, or
+   twice the clips wanted when that is more),
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
@@ -127,8 +171,10 @@ sees your scores, titles, the replay curve or anything about the channel.
    never names it gets a `clarify` note (`references/picking-moments.md`). The critic's caption fixes
    come last (2e).
 
-## 2d. Deep clips (only when asked)
-"deep clip this: <link>", "clip this, then go deeper", "do a deep pass on <video>": first make the
+## 2d. Deep clips (when the user said yes)
+When the user asked for them ("deep clip this: <link>", "clip this, then go deeper", "use deep
+clipping"), said yes to the question in step 1, or settings.json says `"deep_clips": "always"`
+(`parts` prints `-> deep clips: yes`): first make the
 regular clips as usual, then join moments that are far apart into one story (a question and its
 own answer 40 minutes later, a narrator's opening line and the story's payoff). Rules and formats:
 `references/deep-clips.md`. A short video needs a topic map first: start one `clipkaro-part-reader`

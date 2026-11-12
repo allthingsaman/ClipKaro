@@ -77,9 +77,16 @@ one entry: `{"from": the block's start number as printed, "best": {"line": start
 exact quote, "why": one line} }`, or `"best": null` with `"why"` saying why nothing there works
 (sponsor read, slow logistics...). This makes sure no part of the video is skimmed.
 
-## 3. Clip candidates (up to 5, or none)
+## 3. Clip candidates (as many as the TASK line asks, or none)
 Read `references/picking-moments.md` once for what makes a good short. A candidate is a
-self-contained moment of 15-90 s (25-60 s ideal): hook first, payoff last.
+self-contained moment of 15-90 s (25-60 s ideal): hook first, payoff last. The TASK line at the end
+of your part says how many to bring at most (usually 5; more when the user wants many clips). Bring
+every decent one up to that number; never pad with weak ones.
+
+- **Live streams and gameplay** (the header has a `# VIDEO KIND` line): follow its rules, and the
+  section "Live streams and gameplay" in `references/picking-moments.md`. Lines marked
+  `# ===== ... SCREEN =====` are break screens ("Starting soon", "Be right back"): no topic, best
+  moment or candidate from them, and no candidate that runs into one.
 
 - Its **middle must lie inside your stretch** (it may run into the context lines).
 - One continuous range by default. A splice (2-3 pieces) only when it clearly wins, all pieces from

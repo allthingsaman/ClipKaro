@@ -22,6 +22,7 @@ from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter,
 
 PAD_IN, PAD_OUT = 0.12, 0.30
 MIN_PIECE = 0.25          # a framing boundary never leaves a sliver shorter than this
+QUIET_GAP_S = 8.0         # live streams / gameplay: `--check` points out a silence this long inside a clip
 HOWS = ('full', 'left', 'right', 'center', 'split')
 
 
@@ -105,18 +106,8 @@ def ensure_video(pdir, project):
     if project.get('kind') == 'local':
         die(f"the original video file is gone: {project.get('video')}\n"
             'Put it back at that path, or run fetch again with its new path.')
-    existing = [p for p in (pdir / 'source').glob('video.*') if p.suffix in ('.mp4', '.mkv', '.webm')]
-    if existing:
-        return existing[0]
-    from .fetch import ytdlp
-    print('-> downloading video (max 1080p, first time only) ...')
-    fmt = ('bv*[height<=1080][vcodec^=avc1]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/b')
-    ytdlp(['-f', fmt, '--merge-output-format', 'mp4', '-o', str(pdir / 'source' / 'video.%(ext)s'),
-           project['source']], project.get('cookies_from_browser'))
-    existing = list((pdir / 'source').glob('video.*'))
-    if not existing:
-        die('video download produced no file')
-    return existing[0]
+    from .fetch import download_video, video_file
+    return video_file(pdir) or download_video(pdir, project)
 
 
 def snap_range(s, e, words):
@@ -517,6 +508,9 @@ def main():
         cands.setdefault(c['id'], c)             # a short video's shortlist ("s3") judged by the critic
     for c in load_json(pdir / 'deep' / 'candidates.json', []) or []:
         cands.setdefault(c['id'], c)             # a deep clip ("d1-c1") from the deep pass
+    from .kind import active_breaks, is_irregular, NAMES
+    breaks = active_breaks(project)
+    quiet_s = QUIET_GAP_S if is_irregular(project) else None
     taken = []                                   # (clip id, start, end) of every range so far
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
@@ -534,6 +528,21 @@ def main():
                 msgs.append(f"no captions at {fmt_ts(uw[0]['s'])}-{fmt_ts(uw[-1]['e'])} ({len(uw)} words): the "
                             f"speech there was unclear (a game voice, music or noise). Fine if the game shows "
                             f"its own subtitles")
+        for r0, r1 in clip['ranges']:            # live streams: "Starting soon", "Be right back" ...
+            for br in breaks:
+                if min(r1, br['end']) - max(r0, br['start']) >= 1.0:
+                    msgs.append(f"touches the {NAMES[br['where']]} at {fmt_ts(br['start']).split('.')[0]}-"
+                                f"{fmt_ts(br['end']).split('.')[0]} (break {br['n']}): a still screen, nobody on "
+                                f"cam. Move the range off it (or `run.py kind <project> --keep {br['n']}` if it "
+                                f"is real video)")
+        if quiet_s:                              # gameplay: long quiet stretches inside a clip lose viewers
+            for r0, r1 in clip['ranges']:
+                inside = [w for w in words if r0 <= w['s'] < r1 and not w.get('unsure')]
+                for w0, w1 in zip(inside, inside[1:]):
+                    if w1['s'] - w0['e'] >= quiet_s:
+                        msgs.append(f"{w1['s'] - w0['e']:.0f} s without talk at {fmt_ts(w0['e'])}: fine if the "
+                                    f"gameplay there is the point (a chase, a crash), else end before it or "
+                                    f"join the pieces around it")
         for r0, r1 in clip['ranges']:
             for other, x, y in taken:
                 if r0 < y - 1.0 and x < r1 - 1.0:

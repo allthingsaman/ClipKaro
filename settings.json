@@ -5,5 +5,7 @@
   "hinglish_captions": "roman",
   "layout": "auto",
   "facecam": null,
-  "jump_label": false
+  "jump_label": false,
+  "deep_clips": "ask",
+  "max_clips": 20
 }
