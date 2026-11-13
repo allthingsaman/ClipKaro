@@ -110,19 +110,90 @@ def ensure_video(pdir, project):
     return video_file(pdir) or download_video(pdir, project)
 
 
-def snap_range(s, e, words):
+def snap_range(s, e, words, pad_in=PAD_IN, pad_out=PAD_OUT):
     """Expand/shrink [s, e] to whole words and add small natural handles."""
     inside = [i for i, w in enumerate(words) if w['e'] > s + 0.05 and w['s'] < e - 0.05]
     if not inside:
         return None
     i0, i1 = inside[0], inside[-1]
-    start = words[i0]['s'] - PAD_IN
+    start = words[i0]['s'] - pad_in
     if i0 > 0:
         start = max(start, words[i0 - 1]['e'] + 0.02)
-    end = words[i1]['e'] + PAD_OUT
+    end = words[i1]['e'] + pad_out
     if i1 + 1 < len(words):
         end = min(end, max(words[i1]['e'] + 0.08, words[i1 + 1]['s'] - 0.04))
     return max(0.0, start), end, i0, i1
+
+
+# ---------- jump cuts: long pauses and filler sounds inside a clip are cut out ----------
+# Shorts editors and silence-cutting tools keep about 0.1-0.2 s around a cut and leave gaps under
+# ~0.25 s alone, or word endings get clipped. A pause of JUMP_PAUSE or more keeps JUMP_PAD_OUT after the
+# word before it and JUMP_PAD_IN before the next one (~0.22 s of quiet). Never across a laugh or
+# applause; in gameplay and live streams only pauses up to GAME_PAUSE (a longer one may be the action).
+JUMP_PAUSE = 0.55
+JUMP_PAD_IN, JUMP_PAD_OUT = 0.08, 0.14
+JUMP_MIN_PIECE = 0.7       # a piece between two cuts never shorter than this (no flicker)
+GAME_PAUSE = 2.0
+FILLERS = {'um', 'uh', 'umm', 'uhh', 'uhm', 'hmm', 'hm', 'mm', 'er', 'erm', 'ah',
+           'उम्म', 'उम', 'अं', 'हम्म', 'उह', 'उंह'}
+
+
+def jump_pieces(s, e, words, quiet_ok, max_pause=None):
+    """[s, e] split at its long pauses and filler sounds: [[a, b], ...] in source seconds."""
+    snapped = snap_range(s, e, words)
+    if not snapped:
+        return [[s, e]]
+    _, _, i0, i1 = snapped
+    seg = words[i0:i1 + 1]
+    keep = [w for w in seg if norm_token(w['w']) not in FILLERS]
+    if len(keep) < 2:
+        return [[s, e]]
+    pieces = [[s, None]]
+    for a, b in zip(keep, keep[1:]):
+        fill = [w for w in seg if a['s'] < w['s'] < b['s'] and norm_token(w['w']) in FILLERS]
+        gap = b['s'] - a['e']
+        if not fill and (gap < JUMP_PAUSE or (max_pause and gap > max_pause)):
+            continue
+        c0 = max(a['e'] + 0.02, min(a['e'] + JUMP_PAD_OUT, fill[0]['s'] - 0.02 if fill else 1e9))
+        c1 = min(b['s'] - 0.02, max(b['s'] - JUMP_PAD_IN, fill[-1]['e'] + 0.02 if fill else -1e9))
+        if c1 - c0 < 0.2 or not quiet_ok(c0, c1):
+            continue
+        pieces[-1][1] = round(c0, 3)
+        pieces.append([round(c1, 3), None])
+    pieces[-1][1] = e
+    out = [pieces[0]]
+    for pc in pieces[1:]:                        # a sliver between two cuts: keep the pause instead
+        if out[-1][1] - out[-1][0] < JUMP_MIN_PIECE or pc[1] - pc[0] < JUMP_MIN_PIECE:
+            out[-1][1] = pc[1]
+        else:
+            out.append(pc)
+    return out
+
+
+def with_jump_cuts(clip, words, cues, gameplay):
+    """The clip with each range split at its long pauses (clips.json keeps the ranges as picked).
+    Adds 'jump_edges' (piece edges made by a jump cut: they get small handles) and 'jump_saved'."""
+    noisy = [(a, b) for kind in ('laughter', 'applause') for a, b, *_ in (cues or {}).get(kind, [])]
+
+    def quiet_ok(a, b):
+        return not any(x < b and a < y for x, y in noisy)
+    ranges, edges, saved = [], set(), 0.0
+    for s, e in clip['ranges']:
+        pcs = jump_pieces(s, e, words, quiet_ok, GAME_PAUSE if gameplay else None)
+        for x, y in zip(pcs, pcs[1:]):
+            edges |= {round(x[1], 3), round(y[0], 3)}
+            saved += y[0] - x[1]
+        ranges += pcs
+    if not edges:
+        return clip
+    return dict(clip, ranges=ranges, jump_edges=edges, jump_saved=round(saved, 1))
+
+
+def snap_piece(clip, s, e, words):
+    """snap_range, with small handles at the edges a jump cut made."""
+    edges = clip.get('jump_edges') or ()
+    return snap_range(s, e, words, JUMP_PAD_IN if round(s, 3) in edges else PAD_IN,
+                      JUMP_PAD_OUT if round(e, 3) in edges else PAD_OUT)
 
 
 # a later piece of a joined clip that opens on one of these may point at (or answer) words that were cut
@@ -203,7 +274,7 @@ def range_shots(video, info, clip, words):
     """[(start, dur, shots)] for each range of a clip, snapped to words and analysed (no framing yet)."""
     out = []
     for s, e in clip['ranges']:
-        snapped = snap_range(s, e, words)
+        snapped = snap_piece(clip, s, e, words)
         if not snapped:
             continue
         start, end, _, _ = snapped
@@ -366,8 +437,9 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
     # frames shifts the whole part's frame grid by a fraction of a frame)
     exact = abs(info.get('fps', 0) - fps) < 0.01
     frame_base, video_end, st0 = 0, 0, info.get('start_time', 0.0)
+    jump_splices = []
     for k, (s, e) in enumerate(clip['ranges']):
-        snapped = snap_range(s, e, words)
+        snapped = snap_piece(clip, s, e, words)
         if not snapped:
             print(f'   ! range {s}-{e} has no words, skipped')
             continue
@@ -415,6 +487,8 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
         if timeline > 0:
             splices.append(round(timeline, 3))
             splice_frames.append(video_end)
+            if round(s, 3) in (clip.get('jump_edges') or ()):
+                jump_splices.append(round(timeline, 3))     # a jump cut, not a join of two moments
         parts.append((start, end))
         timeline += dur
         # the next part starts after this part's video or its audio, whichever ends later; the encoder
@@ -449,7 +523,8 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
            '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-movflags', '+faststart', tmp)
     tmp.replace(out_mp4)
     meta = {'fps': fps, 'parts': [[round(a, 3), round(b, 3)] for a, b in parts], 'duration': round(timeline, 3),
-            'shots': shots_out, 'splices': splices, 'jumps': jumps, 'words': clip_words}
+            'shots': shots_out, 'splices': splices, 'jumps': jumps, 'words': clip_words,
+            'jump_cuts': jump_splices}
     if exact:
         meta['splice_frames'] = splice_frames
     if fc:
@@ -496,6 +571,8 @@ def main():
     ap.add_argument('--clips', default=None, help='comma list of clip ids, e.g. 1,3')
     ap.add_argument('--horizontal', action='store_true', help='keep the original 16:9 framing')
     ap.add_argument('--check', action='store_true', help='only check clip boundaries, cut nothing')
+    ap.add_argument('--jump-cuts', action=argparse.BooleanOptionalAction, default=None,
+                    help='cut long pauses and filler sounds out of each clip (default: settings.json "jump_cuts", on)')
     ap.add_argument('--layout', default=None, choices=['auto', 'facecam', 'crop'],
                     help='auto (default, from settings.json): facecam layout when a webcam overlay is found')
     a = ap.parse_args()
@@ -574,12 +651,22 @@ def main():
     layout = a.layout or settings().get('layout', 'auto')
     fc = None if a.horizontal else facecam_layout(pdir, project, video, info, layout)
 
+    # jump cuts: each clip's long pauses and filler sounds are cut out (clips.json keeps its ranges)
+    jc_on = settings().get('jump_cuts', True) if a.jump_cuts is None else a.jump_cuts
+    prepared = {}
+    if jc_on:
+        from . import sound
+        from .kind import is_irregular
+        cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
+    for i, clip in enumerate(picks['clips'], 1):
+        prepared[int(clip.get('id', i))] = with_jump_cuts(clip, words, cues, game) if jc_on else clip
+
     plans = {}
     if not a.horizontal and not fc:
         for i, clip in enumerate(picks['clips'], 1):
             cid = int(clip.get('id', i))
             if not want or cid in want:
-                plans[cid] = (clip, range_shots(video, info, clip, words))
+                plans[cid] = (prepared[cid], range_shots(video, info, prepared[cid], words))
     auto = two_person(pdir, video, plans, words) if plans else {}
 
     done = []
@@ -590,7 +677,10 @@ def main():
         name = f'{cid:02d}-{slugify(clip.get("title", "clip"), 40)}'
         out = out_dir / f'{name}.mp4'
         print(f'-> clip {cid}: "{clip.get("title")}"  ranges={clip["ranges"]}')
-        meta = build_clip(video, info, clip, words, out, a.horizontal, fc,
+        pc = prepared[cid]
+        if pc.get('jump_edges'):
+            print(f"   jump cuts: {len(pc['ranges']) - len(clip['ranges'])}, {pc['jump_saved']} s of pauses taken out")
+        meta = build_clip(video, info, pc, words, out, a.horizontal, fc,
                           plans.get(cid, (None, None))[1], auto.get(cid))
         if not meta:
             print('   ! skipped (no words in its ranges)')

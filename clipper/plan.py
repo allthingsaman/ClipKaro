@@ -34,6 +34,7 @@ PUNCH = [1.16, 1.22, 1.13, 1.2]
 DRIFT = 0.03
 OPEN_SCALE, OPEN_FRAMES = 1.18, 9
 SNAP_FRAMES = 8
+JUMP_GAP = 1.2     # a jump cut (a pause cut out) changes the zoom when the last change is this long ago
 CUT_GAP = 2.8      # a camera cut changes the zoom only this long after the last change, like any other beat;
                    # sooner (anime, trailers: a cut every second) the framing just follows the new face
 
@@ -103,14 +104,15 @@ def mode_at(shots, t):
     return shots[-1].get('mode') if shots else None
 
 
-def beat_bounds(words, shots, splices, duration):
+def beat_bounds(words, shots, splices, duration, jump_cuts=()):
     """(times where the framing changes, the must-cuts among them, camera cuts the framing only follows).
     Must-cuts: splices, cuts into or out of a whole-frame / split shot, and camera cuts at least CUT_GAP
     after the last change. A camera cut that comes sooner keeps the zoom and only re-centres on the new
     shot's face: an anime clip with a cut every second got 48 zoom changes in 68 seconds."""
     wide = ('fit', 'split')
-    cuts = {round(s['t0'], 3) for s in shots if s['t0'] > 0.3}
-    always = {sp for sp in splices if sp > 0.3}
+    jumpc = {round(j, 3) for j in jump_cuts}
+    cuts = {round(s['t0'], 3) for s in shots if s['t0'] > 0.3} | {j for j in jumpc if j > 0.3}
+    always = {sp for sp in splices if sp > 0.3 and round(sp, 3) not in jumpc}
     for prev, sh in zip(shots, shots[1:]):            # the zoom must switch off (or on) there
         if sh['t0'] > 0.3 and (prev.get('mode') in wide) != (sh.get('mode') in wide):
             always.add(round(sh['t0'], 3))
@@ -126,7 +128,7 @@ def beat_bounds(words, shots, splices, duration):
         if c >= duration - 1.2:
             break
         if c in must:
-            if c - last >= (0.5 if c in always else CUT_GAP):
+            if c - last >= (0.5 if c in always else JUMP_GAP if c in jumpc else CUT_GAP):
                 bounds.append(c)
                 last = c
             else:
@@ -159,7 +161,7 @@ def build_camera(meta):
     words, shots, dur = meta['words'], meta['shots'], meta['duration']
     fps = meta.get('fps', FPS)
     frames = int(round(dur * fps))
-    bounds, must, follow = beat_bounds(words, shots, meta.get('splices', []), dur)
+    bounds, must, follow = beat_bounds(words, shots, meta.get('splices', []), dur, meta.get('jump_cuts', []))
     exact = exact_frames(meta)
     starts = [0.0] + bounds
     ends = bounds + [dur]

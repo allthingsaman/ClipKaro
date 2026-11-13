@@ -22,6 +22,7 @@ SAFE_W = 2 * (SAFE_RIGHT - W // 2)      # centred text no wider than this (800 p
 CAP_H = 130                             # one caption line (96 px text, outline included)
 MAX_ZOOM = 1.22                         # the strongest punch-in of the edit (plan.PUNCH)
 CHIN = 0.30                             # room below a face box for the chin and mouth (share of its height)
+BROW = 0.15                             # and above it for the forehead
 SAMPLES = 4                             # frames checked per shot
 
 
@@ -47,6 +48,7 @@ def face_boxes(clip_mp4, shots):
                 if bh < 0.04 * H:               # a face in the background, a poster: not what we keep clear
                     continue
                 y1 = y + bh * (1 + CHIN)
+                y = y - bh * BROW
                 # the zoom scales around the focus point: the box grows with it
                 z = MAX_ZOOM
                 boxes.append((fx + (x - fx) * z, fy + (y - fy) * z, fx + (x + bw - fx) * z, fy + (y1 - fy) * z))

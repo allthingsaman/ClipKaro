@@ -198,6 +198,10 @@ much lighter, but the picks get no second opinion.
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
 Sir video" and get them in a few minutes, without the video being read again.
 
+**Tight clips.** Pauses inside a clip are shortened and "um" / "uh" are cut out (jump cuts), so
+it feels quick. Laughs are never cut, and in gameplay a long quiet stretch stays (it may be the
+action). Say "keep the pauses" if you want a clip without them.
+
 **A title on screen, captions out of the way.** Every clip opens with a big 3-6 word title for
 the first 2-3 seconds, so it stops the scroll even with the sound off. It sits in the upper part of
 the picture, never on a face. The captions keep clear of faces and of the apps' buttons (TikTok's

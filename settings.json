@@ -9,5 +9,6 @@
   "deep_clips": "ask",
   "max_clips": 20,
   "hook_title": true,
-  "safe_zones": true
+  "safe_zones": true,
+  "jump_cuts": true
 }

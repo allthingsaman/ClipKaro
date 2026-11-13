@@ -27,6 +27,7 @@ DEFAULT_SETTINGS = {
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
     'hook_title': True,            # a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text)
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
+    'jump_cuts': True,             # cut long pauses (0.55 s+) and filler sounds out of each clip
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

@@ -98,6 +98,10 @@ ones were added.
   clip. Joins between pieces and normal speech still change it as before. *(2026-11-13)*
   - Way back: no setting, because the zoom at every cut was the problem; `edit --no-zoom` still
     turns zooms off completely.
+- ↔ **Jump cuts.** v1.1 played every pause inside a clip. Now pauses of half a second or more are
+  shortened to a natural 0.2 s and "um" / "uh" are cut out, never across a laugh, and in gameplay
+  only pauses up to 2 s. About 6 % of a clip on average. *(2026-11-13)*
+  - Way back: `"jump_cuts": false` in settings.json (or `cut --no-jump-cuts`, or "keep the pauses").
 - ↔ **Captions clear of faces and the apps' buttons; a hook title.** v1.1 put captions on one line,
   up to 940 px wide, whatever was under them. Now they keep out of TikTok's button column and the
   apps' top and bottom bars (at most 800 px wide), and a shot whose caption line would cover a face

@@ -12,6 +12,10 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **Jump cuts.** Pauses of half a second or more inside a clip are shortened to a natural 0.2 s,
+  and "um" / "uh" are cut out, so clips feel tight (about 6 % shorter on average, up to 13 seconds in
+  a slow interview clip). Laughs are never cut; in gameplay only pauses up to 2 s. Every word stays.
+  `"jump_cuts": false` keeps the pauses.
 - **A hook title on screen.** Every clip opens with a big 3-6 word title on a box in the video's
   accent colour for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), so it stops the scroll with the
   sound off. It goes in the upper part of the picture, never on a face. Claude writes it with the

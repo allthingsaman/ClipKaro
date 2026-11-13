@@ -718,6 +718,19 @@ answer to a question from the host's intro). "No deep clip" is a normal answer.
   ("he", "that", "वो", "उसने", "इसलिए") or an **answer word** ("haan", "exactly", "नहीं"): it may
   point at, or answer, words that were cut out.
 
+### 5.5a Jump cuts (`cut.with_jump_cuts`, `cut.jump_pieces`)
+Before a clip is analysed and cut, each of its ranges is split at long pauses and filler sounds
+(clips.json keeps the ranges as picked). Silence-cutting tools keep about 0.1-0.2 s around a cut and
+leave gaps under ~0.25 s alone, or word endings get clipped, so: a pause of 0.55 s or more between
+two words keeps 0.14 s after the first and 0.08 s before the next (~0.22 s of quiet); a filler
+(um, uh, hmm, उम्म, अं ...) is cut with its pause. Never across a laugh or applause (the sound pass),
+never leaving a piece under 0.7 s; in live streams and gameplay (or a facecam layout) only pauses up
+to 2 s. The pieces then go through the normal multi-piece path (fades in the quiet, words remapped);
+jump-cut edges get those small handles instead of the usual 0.12 / 0.30 s (`snap_piece`). The clip's
+`jump_cuts` times change the zoom when the last change is at least 1.2 s back (`plan.JUMP_GAP`), else
+the framing only follows. Measured on 106 clips: 267 cuts, 6.4 % of the time (up to 13 s in a slow
+interview clip). Off: `"jump_cuts": false` / `cut --no-jump-cuts`.
+
 ### 5.6 Reframing 16:9 to 9:16 (`reframe.py`)
 1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut,
    and so is a jump above 0.08 that is at least 4x the median score of the 12 frames on each side
