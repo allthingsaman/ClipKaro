@@ -331,7 +331,9 @@ Claude to change them.
   "jump_cuts": true,
   "caption_look": "classic",
   "emoji": true,
-  "music": true
+  "music": true,
+  "encoder": "auto",
+  "render_workers": "auto"
 }
 ```
 
@@ -348,6 +350,8 @@ Claude to change them.
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `true` | `false`: no background music, even when you have tracks |
+| `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
+| `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
 | `jump_cuts` | `true` | `false`: no pauses or filler sounds cut out of the clips |
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (they may cover a chin in a close-up or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |

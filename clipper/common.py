@@ -31,6 +31,8 @@ DEFAULT_SETTINGS = {
     'caption_look': 'classic',     # classic | box | karaoke | minimal | bold | comic
     'emoji': True,                 # emojis on the strong words Claude marks (clips.json emoji)
     'music': True,                 # background music where a clip names a mood (only with your own tracks)
+    'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
+    'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

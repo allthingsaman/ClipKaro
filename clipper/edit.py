@@ -244,6 +244,29 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
 
 
+# The NVIDIA encoder, when it works, is 3x faster than libx264 at the same picture quality (measured on a
+# 42 s clip: SSIM 0.9966 for libx264 -crf 18, 0.9967 at -cq 22 and 0.9960 at -cq 24, with adaptive
+# quantisation and B-frames); files are about 1.3x bigger at -cq 23. Without one, libx264 as before.
+X264 = ['-c:v', 'libx264', '-preset', 'medium', '-crf', '18']
+NVENC = ['-c:v', 'h264_nvenc', '-preset', 'p6', '-tune', 'hq', '-rc', 'vbr', '-cq', '23', '-b:v', '0',
+         '-spatial-aq', '1', '-temporal-aq', '1', '-bf', '3', '-b_ref_mode', 'middle']
+_ENCODER = {}
+
+
+def video_encoder(cfg):
+    """(ffmpeg arguments, encoder name): settings.json "encoder": auto (NVIDIA if a test encode works) |
+    nvenc | x264."""
+    want = str(os.environ.get('CLIPKARO_ENCODER') or cfg.get('encoder', 'auto')).lower()
+    if want not in _ENCODER:
+        ok = False
+        if want in ('auto', 'nvenc'):
+            r = subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:r=30:d=0.2',
+                                '-c:v', 'h264_nvenc', '-f', 'null', '-'], capture_output=True)
+            ok = r.returncode == 0
+        _ENCODER[want] = (NVENC, 'h264_nvenc') if ok else (X264, 'libx264')
+    return _ENCODER[want]
+
+
 def load_emojis(marks):
     """The emoji pictures (BGRA, full size) for the frame loop."""
     out = []
@@ -289,7 +312,7 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
     tmp = out_mp4.with_suffix('.part.mp4')
     enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-s', f'{W}x{H}',
                             '-r', str(plan['fps']), '-i', '-', '-i', str(audio_wav), '-vf', vf,
-                            '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '18',
+                            '-map', '0:v', '-map', '1:a', *(plan.get('encoder') or video_encoder(settings())[0]),
                             '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest',
                             '-movflags', '+faststart', str(tmp.resolve())],
                            stdin=subprocess.PIPE, cwd=workdir)
@@ -366,6 +389,96 @@ def render_remotion(clip_mp4, plan, audio_wav, out_mp4, workdir):
 
 # ---------------- main ----------------
 
+def edit_one(job):
+    """Edit one clip (run in a worker process when two clips render at once). -> (out file, messages)."""
+    a, opts, cfg, brand = job['a'], job['opts'], job['cfg'], job['brand']
+    pdir, out_dir, work, clips_dir = job['pdir'], job['out_dir'], job['work'], job['clips_dir']
+    project = load_json(pdir / 'project.json')
+    meta = load_json(job['meta'])
+    msgs = []
+    say = msgs.append
+    clip_mp4 = clips_dir / meta['file']
+    out = out_dir / meta['file']
+    t0 = time.time()
+    say(f"-> editing clip {meta['id']}: {meta['title']} ({a.engine} engine)")
+    meta = romanize.for_captions(pdir, project, meta, cfg)
+    picked = next((c for c in (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
+                   if int(c.get('id', 0)) == meta['id']), {})
+    meta['clarify'] = picked.get('clarify', [])
+    _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
+    for m in missing:
+        say(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
+    clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270,
+                     caption_y_fixed=a.caption_y is not None)
+    safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
+    hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
+    clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
+    emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
+    clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
+    clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
+                     hook_text=picked.get('hook_text') or picked.get('title'))
+    if safe or clip_opts['hook']:
+        clip_opts['faces'] = layoutlib.face_boxes(clip_mp4, meta.get('shots', []))
+    if meta.get('layout') == 'facecam':
+        clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around
+    plan = planlib.build(meta, brand, clip_opts)
+    for m in plan.get('emoji_missing', []):
+        say(f'   ! emoji left out: "{m}" (a word not said in this clip, or no free spot)')
+    for e in plan.get('emoji', []):
+        e['png'] = str(emojilib.png(e['char']) or '')
+        if not e['png']:
+            say(f"   ! emoji {e['char']}: its picture couldn't be downloaded (offline?), left out")
+    plan['emoji'] = [e for e in plan.get('emoji', []) if e['png']]
+    if a.engine == 'remotion' and (plan['emoji'] or plan['caption_style'].get('look') != 'classic'):
+        say('   (the Remotion engine draws the classic caption look and no emojis: use the python engine for those)')
+    if any(has_devanagari(w['text']) for g in plan['captions'] for w in g['words']):
+        say(f"   captions include Devanagari -> font {plan['caption_style']['font']}")
+    save_json(work / f"{meta['name']}.plan.json", {k: v for k, v in plan.items() if k != 'cam'})
+    plan['encoder'] = video_encoder(cfg)[0]
+    wav = work / f"{meta['name']}.mix.wav"
+    track = None
+    music_on = cfg.get('music', True) if a.music is None else a.music
+    if music_on and picked.get('music') and opts['sfx'] != 'none':
+        track = musiclib.pick(picked['music'], meta['name'])
+        if not track:
+            say(f"   ! music \"{picked['music']}\": no tracks in music/{picked['music']}/ (`python run.py music`)")
+    mix_audio(clip_mp4, plan['sfx'], wav, plan['duration'], track)
+    (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, wav, out, work)
+    if plan['captions']:
+        write_srt(plan, out.with_suffix('.srt'))
+    wav.unlink(missing_ok=True)
+    sfx = ', '.join(f"{c['role']}@{c['at'] + 0:.1f}s" for c in plan['sfx']) or 'none'
+    moved = len({g['y'] for g in plan['captions'] if g.get('y') not in (None, H // 2)})
+    extra = (f"  hook: \"{' / '.join(plan['hook']['lines'])}\" at y={plan['hook']['y']}" if plan.get('hook') else '') + \
+            (f"  captions moved off a face in {moved} place(s)" if moved and safe else '')
+    if track:
+        extra += f'  music: {track.parent.name}/{track.name}'
+    say(f"   ok {out.name}  zooms:{len(plan['transitions'])}  captions:{len(plan['captions'])}  "
+          f"sfx: {sfx}  ({time.time() - t0:.0f}s){extra}")
+    return out, msgs
+
+
+def workers(cfg, n_clips, engine):
+    """How many clips render at once: 2 with 4+ CPU cores and 4+ GB of free memory (each render holds
+    about 1 GB), else 1. settings.json "render_workers" can fix it."""
+    want = cfg.get('render_workers', 'auto')
+    if isinstance(want, int) and want > 0:
+        return min(want, n_clips)
+    if engine != 'python' or n_clips < 2 or (os.cpu_count() or 1) < 4:
+        return 1
+    free_gb = 0.0
+    try:
+        with open('/proc/meminfo') as f:
+            free_gb = next(int(l.split()[1]) for l in f if l.startswith('MemAvailable')) / 1e6
+    except (OSError, StopIteration):
+        try:
+            import psutil
+            free_gb = psutil.virtual_memory().available / 1e9
+        except Exception:
+            return 1
+    return 2 if free_gb >= 4 else 1
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('project')
@@ -383,6 +496,9 @@ def main():
     ap.add_argument('--out', default=None, help='output folder (default <project>/edited)')
     ap.add_argument('--emoji', action=argparse.BooleanOptionalAction, default=None,
                     help='emojis on the words clips.json names (default: settings.json "emoji", on)')
+    ap.add_argument('--encoder', default=None, choices=['auto', 'nvenc', 'x264'],
+                    help='video encoder (default: settings.json "encoder", auto: the NVIDIA one if it works)')
+    ap.add_argument('--workers', type=int, default=None, help='clips edited at once (default: auto)')
     ap.add_argument('--music', action=argparse.BooleanOptionalAction, default=None,
                     help='background music where clips.json names a mood (default: settings.json "music", on)')
     ap.add_argument('--hook-title', action=argparse.BooleanOptionalAction, default=None,
@@ -396,6 +512,8 @@ def main():
 
     pdir = project_dir(a.project)
     clips_dir = pdir / 'clips'
+    if a.encoder:
+        os.environ['CLIPKARO_ENCODER'] = a.encoder
     metas = sorted(clips_dir.glob('*.json'))
     if not metas:
         die('no cut clips yet. Run: python run.py cut ' + pdir.name)
@@ -417,69 +535,28 @@ def main():
             'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size,
             'look': a.look or cfg.get('caption_look', 'classic'),
             'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
-    done = []
+    jobs = []
     for mpath in metas:
         meta = load_json(mpath)
         if want and meta['id'] not in want:
             continue
-        clip_mp4 = clips_dir / meta['file']
-        out = out_dir / meta['file']
-        t0 = time.time()
-        print(f"-> editing clip {meta['id']}: {meta['title']} ({a.engine} engine)")
-        meta = romanize.for_captions(pdir, project, meta, cfg)
-        picked = next((c for c in (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
-                       if int(c.get('id', 0)) == meta['id']), {})
-        meta['clarify'] = picked.get('clarify', [])
-        _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
-        for m in missing:
-            print(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
-        clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270,
-                         caption_y_fixed=a.caption_y is not None)
-        safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
-        hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
-        clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
-        emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
-        clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
-        clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
-                         hook_text=picked.get('hook_text') or picked.get('title'))
-        if safe or clip_opts['hook']:
-            clip_opts['faces'] = layoutlib.face_boxes(clip_mp4, meta.get('shots', []))
-        if meta.get('layout') == 'facecam':
-            clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around
-        plan = planlib.build(meta, brand, clip_opts)
-        for m in plan.get('emoji_missing', []):
-            print(f'   ! emoji left out: "{m}" (a word not said in this clip, or no free spot)')
-        for e in plan.get('emoji', []):
-            e['png'] = str(emojilib.png(e['char']) or '')
-            if not e['png']:
-                print(f"   ! emoji {e['char']}: its picture couldn't be downloaded (offline?), left out")
-        plan['emoji'] = [e for e in plan.get('emoji', []) if e['png']]
-        if a.engine == 'remotion' and (plan['emoji'] or plan['caption_style'].get('look') != 'classic'):
-            print('   (the Remotion engine draws the classic caption look and no emojis: use the python engine for those)')
-        if any(has_devanagari(w['text']) for g in plan['captions'] for w in g['words']):
-            print(f"   captions include Devanagari -> font {plan['caption_style']['font']}")
-        save_json(work / f"{meta['name']}.plan.json", {k: v for k, v in plan.items() if k != 'cam'})
-        wav = work / f"{meta['name']}.mix.wav"
-        track = None
-        music_on = cfg.get('music', True) if a.music is None else a.music
-        if music_on and picked.get('music') and opts['sfx'] != 'none':
-            track = musiclib.pick(picked['music'], meta['name'])
-            if not track:
-                print(f"   ! music \"{picked['music']}\": no tracks in music/{picked['music']}/ (`python run.py music`)")
-        mix_audio(clip_mp4, plan['sfx'], wav, plan['duration'], track)
-        (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, wav, out, work)
-        if plan['captions']:
-            write_srt(plan, out.with_suffix('.srt'))
-        wav.unlink(missing_ok=True)
-        sfx = ', '.join(f"{c['role']}@{c['at'] + 0:.1f}s" for c in plan['sfx']) or 'none'
-        moved = len({g['y'] for g in plan['captions'] if g.get('y') not in (None, H // 2)})
-        extra = (f"  hook: \"{' / '.join(plan['hook']['lines'])}\" at y={plan['hook']['y']}" if plan.get('hook') else '') + \
-                (f"  captions moved off a face in {moved} place(s)" if moved and safe else '')
-        if track:
-            extra += f'  music: {track.parent.name}/{track.name}'
-        print(f"   ok {out.name}  zooms:{len(plan['transitions'])}  captions:{len(plan['captions'])}  "
-              f"sfx: {sfx}  ({time.time() - t0:.0f}s){extra}")
-        done.append(out)
+        jobs.append({'a': a, 'opts': opts, 'cfg': cfg, 'brand': brand, 'pdir': pdir, 'out_dir': out_dir,
+                     'work': work, 'clips_dir': clips_dir, 'meta': mpath})
+    n = min(a.workers, len(jobs)) if a.workers else workers(cfg, len(jobs), a.engine)
+    enc = 'the NVIDIA encoder' if video_encoder(cfg)[1] == 'h264_nvenc' else 'the processor (libx264)'
+    print(f"-> {len(jobs)} clip(s), {n} at a time, encoded on {enc}")
+    done = []
+    if n > 1:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=n) as pool:
+            for out, msgs in pool.map(edit_one, jobs):
+                print('\n'.join(msgs), flush=True)
+                done.append(out)
+    else:
+        for job in jobs:
+            out, msgs = edit_one(job)
+            print('\n'.join(msgs), flush=True)
+            done.append(out)
     print(f'\nDONE: {len(done)} edited clip(s) in {out_dir}')
 
 

@@ -13,5 +13,7 @@
   "jump_cuts": true,
   "caption_look": "classic",
   "music": true,
-  "emoji": true
+  "emoji": true,
+  "encoder": "auto",
+  "render_workers": "auto"
 }

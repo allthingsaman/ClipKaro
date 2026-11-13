@@ -12,6 +12,10 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **Editing is about twice as fast.** The NVIDIA card's video encoder does the encoding (3x faster
+  than the processor at the same picture quality), and two clips are edited at once when the computer
+  has the memory for it. Four clips: 160 s before, 85 s now. Files are about 1.3x bigger. Computers
+  without an NVIDIA card encode as before. `"encoder"` and `"render_workers"` in settings.json.
 - **Every clip checked before you see it.** `run.py qa` checks each finished clip: Hindi letters left in
   Roman captions, captions outside the safe zone, a word cut in half, the loudness, black frames, a
   stale edit (fix first), and a caption over a face, a frozen picture or a flash at the end (look at

@@ -117,6 +117,10 @@ ones were added.
 - ⬆ **Sound effects by mood, from your own folder** (`sounds/shock`, `sounds/funny` ...). Claude
   marks the moments that call for one. Until you add sounds, clips sound exactly as before (the two
   whooshes). *(2026-11-13)*
+- ⬆ **Editing is about twice as fast**: the NVIDIA card encodes the clips (3x faster than the
+  processor, the same picture) and two clips are edited at once when the computer has room. Files are
+  about 1.3x bigger. *(2026-11-13)*
+  - Way back: `"encoder": "x264"` and `"render_workers": 1` in settings.json.
 - ⬆ **Every clip is checked by code before you see it** (`run.py qa`), and ClipKaro has its own tests
   (`run.py test`) that keep v1.1's behaviour from breaking unnoticed. *(2026-11-13)*
 - ⬆ **Fix a caption word everywhere** with one command: `run.py fixword <project> "bow" "boat"`, or

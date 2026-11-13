@@ -980,6 +980,15 @@ screens, "more clips", the honesty note).
 
 ---
 
+**Faster (2026-11-13).** Measured on a 42 s clip: decoding 5.1 s, the Python zooms 2.3 s more, the
+libx264 encode 13.4 s, the NVIDIA encoder 4.3 s. So `edit` encodes with `h264_nvenc` when a test encode
+works (`edit.video_encoder`; `-preset p6 -tune hq -rc vbr -cq 23`, spatial and temporal adaptive
+quantisation, 3 B-frames: SSIM 0.996 like libx264 -crf 18, files about 1.3x bigger), and edits two
+clips at once in worker processes when there are 4+ cores and 4+ GB of free memory (`edit.workers`;
+each render holds about 1-2 GB). Four clips (4 min): 160 s before, 85 s now, the sound identical.
+Zooms stay in Python (ffmpeg would save about 2 s a clip, at the risk of a different look). Settings
+`"encoder"` (auto | nvenc | x264) and `"render_workers"`; `edit --encoder`, `--workers`.
+
 ### 5.13 Posting: the hand-off to PostKaro (`post.py`)
 PostKaro is a separate app (its own repo) that posts clips to YouTube Shorts, Instagram Reels and a
 Facebook Page from the user's laptop. ClipKaro never uploads anything itself. `run.py post
