@@ -13,7 +13,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 - Both are estimates. Items that need a blind test may take one more round.
 
 Re-ordered on 2026-11-13 by the owner: the small fixes, "more clips" and the usage modes first; the
-fresh install on Windows and macOS last; posting to X not planned for now.
+fresh install on Windows and macOS last; posting to X not planned for now. The small fixes (1) and
+the three modes (3) were done the same day.
 
 ---
 
@@ -21,9 +22,8 @@ fresh install on Windows and macOS last; posting to X not planned for now.
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 1 | **Small fixes.** (a) **One command fixes a caption word everywhere** (`words.json`, the sentences and the transcript) and names the clips to cut again; today this is done by hand. (b) **Fewer zooms when the camera cuts fast**: today every camera cut forces a framing change, so an anime clip with a cut every second got 48 zoom changes in 68 seconds. A cut that comes soon after the last change should keep the zoom and only follow the new face. (c) **Repaired clips keep their place**: the repair round scores repaired clips again in a new run, the scores wander by about ±0.4 between runs, and shortened clips sometimes score lower even though your blind test preferred tighter cuts 8 of 8 ("Chop Ne Sher Haathi Maara" went from 4.0 to 3.0 after a trim). A repaired clip should never rank below its own original because of that, and it should keep its original id (today `cut --check` falsely warns "ranges differ: on purpose?"). | Small things that cost good clips, look unprofessional or waste your time. | 4-6 h | none | To do: **start here** |
-| 2 | **"Clips 9-12 too."** Good ideas that weren't cut stay listed with their scores, so you can ask for more clips from the same video later without reading it again. | You post almost any decent clip; the ideas are already found and scored. | about 1 h | none | To do |
-| 3 | **Three modes: quick, standard, deep.** All three keep every upgrade since v1.1 (captions that fit, game voices, break screens, the clip range, posting texts...). They differ only in how the moments are chosen: *quick* = Claude reads the video itself, no helpers and no critic (about v1.1's Claude usage); *standard* = today (readers, the critic, the repair round); *deep* = standard plus deep clips. Chosen by a word in your message ("quick clip this", "deep clip this"), by `"mode"` in settings.json, or by one question at the start for long videos (the deep-clip question grows into it). Each mode is measured with `/usage` on one long and one short video. Cheaper models for the helpers where a blind test shows no drop. | v2 uses an estimated 5-10x v1.1's Claude usage on a long podcast: the one place it is not yet a pure upgrade to v1.1 ([since-v1.1.md](since-v1.1.md)). | 1-1.5 days | 30 min of blind pairs | To do, once the design is agreed |
+| 2 | **"Clips 9-12 too."** Good ideas that weren't cut stay listed with their scores, so you can ask for more clips from the same video later without reading it again. | You post almost any decent clip; the ideas are already found and scored. | about 1 h | none | To do: **start here** |
+| 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode is built; its real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | To do |
 
 ## Next: look more professional
 Each item is blind-tested against the version before it, and it only stays if it wins.
@@ -75,6 +75,8 @@ Each item is blind-tested against the version before it, and it only stays if it
 | **PostKaro 1.0: the new look** (made with Hallmark), approved by the owner. | 2026-11-13 |
 | **Game characters' English caught more often**, never a translation of the streamer's Hinglish; listening again works on only the few seconds it needs. | 2026-11-12 |
 | **Every change since v1.1 checked** ([since-v1.1.md](since-v1.1.md)). | 2026-11-13 |
+| **Small fixes** (item 1): `run.py fixword` fixes a caption word everywhere; a fast camera cut only follows the new face instead of zooming (anime: 48 zoom changes in 68 s, now 28); repaired clips keep their place and their id; editing again works without the original video. | 2026-11-13 |
+| **Three modes** (item 3): standard by default, deep when asked or on yes to the question for long videos, quick only when asked (one read by Claude, no helpers, no critic). | 2026-11-13 (measuring with `/usage` is item 3b) |
 
 ## Not planned for now
 - **Posting to X (Twitter).** Left out by the owner for now.
@@ -83,7 +85,7 @@ Each item is blind-tested against the version before it, and it only stays if it
 
 ---
 
-**Now (items 1-3): about 2 days of building. Next and then (items 4-15): about 3-4 weeks.**
+**Now (items 2 and 3b): about half a day. Next and then (items 4-15): about 3-4 weeks.**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).

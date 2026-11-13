@@ -60,6 +60,8 @@ def main():
     else:
         deep = f'no: {DEEP_ASK_MIN:.0f} minutes or shorter (only when the user asks)'
     print(f'deep clips: {deep}')
+    print('mode:       standard, unless the user asks for quick ("quick", "use fewer tokens"): then parts '
+          '--mode quick, and no deep-clip question')
     top = max(V11_MAX, min(int(cfg.get('max_clips', 20)), round(minutes / MINUTES_PER_CLIP)))
     print(f'clips:      {MIN_CLIPS} to {top} by default (every decent moment; up to {V11_MAX} as in v1.1, or one per '
           f"{MINUTES_PER_CLIP:.0f} min of real video for long ones). A number in the user's message wins: "

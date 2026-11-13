@@ -102,6 +102,7 @@ flowchart TD
 | 4. Caption colour (optional) | `run.py brand <project>` | the video | `brand.json` | AI editor or scripts |
 | 5. Edit | `run.py edit <project>` | `clips/*.json`, `brand.json`, `romanize.json` | `edited/NN-title.mp4` + `.srt` | scripts |
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
+| Helper | `run.py fixword <project> "wrong" "right"` | `words.json` | `words.json` (backup `words-before-fixes.json`), `sentences.json`, `transcript.txt` | AI editor or you |
 | Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
 | 2a. Long videos | `run.py parts <project>`, readers, `run.py topics <project>` | `transcript/` | `parts/`, `topics.json`, `topics.txt`, `candidates.json`, `candidates.txt` | AI readers + scripts |
 | 2d. Deep clips (when the user said yes) | `run.py deep <project>` between helper steps, `run.py critic <project> --from deep`, `run.py honesty <project>` | `topics.json`, `transcript/`, `clips.json` | `deep/` (map, threads, candidates, critic, honesty, report) | AI helpers + scripts |
@@ -470,6 +471,17 @@ The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-v
 It also writes for each clip: a 3-7 word title (used as the file name), 2-6 emphasis words that
 stay highlighted in the captions, and a ready-to-post caption with hashtags.
 
+### 5.4-modes Quick, standard, deep
+The mode only changes how the moments are picked; everything after (posting texts, captions, Roman
+Hinglish, re-listening, break screens, cut, edit) is the same.
+- **standard** (default): reader helpers for long videos (5.4a), the critic (5.4c), the repair round.
+- **deep**: standard + the deep pass (5.4d), when the user asks or says yes to the question for
+  videos over 21 minutes (`parts.DEEP_ASK_MIN`).
+- **quick**: only when the user asks ("quick", "use fewer tokens"). `parts --mode quick` records it
+  (`wish.mode`) and tells the AI editor to read the transcript, or the part files one at a time,
+  itself and pick straight into the final clips.json: no helpers, no critic, no repair round, no deep
+  pass. About v1.1's Claude usage; the long-video parts mean the middle isn't skimmed as in v1.1.
+
 ### 5.4a Long videos: reading in parts, and the topic map (`parts.py`, `topics.py`)
 A 2-hour transcript can't be read well in one go: the AI's file reader stops at 256 KB (Khan Sir's
 transcript is 272 KB), and very long inputs get skimmed, especially in the middle.
@@ -590,6 +602,14 @@ about twice the clips wanted that the AI editor writes for a short video.
   that backup, so fixes never break them.
 - **Output:** `critic.txt` (every idea best first, with reasons and notes) and
   `output/clip-log.csv` (one row per idea, to tune the weights later from what the user keeps).
+
+- **A second look never costs a clip its place** (`critic.keep_place`). The repair round judges the
+  shortlist again in a new run (`--fresh --from clips`; the round before is kept in `critic/old/`).
+  Scores wander by about 0.4 between runs, and a trimmed clip sometimes scored lower although the
+  owner's blind test preferred the tighter cut 8 of 8. So an idea judged before (its shortlist entry
+  names the earlier id in `"from"`, or it has the same ranges) keeps its earlier score when the new
+  one is lower; `critic.txt` says "kept its place". `cut --check` treats a repaired version judged in
+  the repair round as on purpose (no "ranges differ" warning).
 
 ### 5.4d Deep clips: one story from moments far apart (`deep.py`, `honesty.py`)
 Only when the user asks ("deep clip this", "do a deep pass on <video>"), after the regular clips.
@@ -781,8 +801,12 @@ detection; `--layout crop` turns the layout off.
 
 ### 5.8 Zooms and camera moves (`plan.build_camera`)
 - **Beats**: the framing changes at sentence ends and pauses over 0.45 s, at least 2.8 s apart
-  (and at least every ~6 s). Camera cuts and splice points always get a change, because a framing
-  change hides the jump. Long stretches without a sentence end change every ~4.5 s on a word start.
+  (and at least every ~6 s). Splice points always get a change, because a framing change hides the
+  jump, and so do cuts into or out of a whole-frame or split shot. A camera cut gets a change when the
+  last one is at least `CUT_GAP` (2.8 s) back; a sooner cut keeps the zoom and only re-centres on the
+  new shot's face (a "follow" key). Before, every cut changed it: an anime clip with a cut every
+  second had 48 changes in 68 s; now 28. Long stretches without a sentence end change every ~4.5 s
+  on a word start.
 - **Levels**: beats alternate between wide (1.0, 1.04, 1.02) and punched-in (1.16, 1.22, 1.13,
   1.2), as hard cuts.
 - **Opening**: starts at 1.18 and snaps out to wide in 9 frames (motion in the first second).
@@ -828,6 +852,10 @@ detection; `--layout crop` turns the layout off.
    that aren't skin tones, k-means into up to 5 colours, score each by
    *pixel count x saturation^1.5 x brightness*, take the best and make it vivid enough to read.
 3. If the video has almost no strong colour: the classic short-form yellow `#FFD60A`.
+
+Once `brand.json` exists, `edit` reads the colours from it and doesn't need the source video, so the
+clips of a video whose `source/` was deleted can still be edited again (before, `edit` downloaded the
+whole video again just to look at its colours).
 
 ### 5.11 Sound (`sfx.py`, `plan.sfx_cues`, `edit.mix_audio`)
 - Every file in `assets/sfx/` is scanned; its **role comes from its name** (`whoosh`/`swoosh`/
@@ -894,7 +922,7 @@ inside PostKaro, which adds the clips and returns the page link that the AI edit
 | You want to change | Look at |
 |---|---|
 | How moments are picked | `.claude/skills/clip-video/references/picking-moments.md` |
-| Zoom rhythm and levels | `clipper/plan.py`: `WIDE`, `PUNCH`, `DRIFT`, `OPEN_SCALE`, `beat_bounds` |
+| Zoom rhythm and levels | `clipper/plan.py`: `WIDE`, `PUNCH`, `DRIFT`, `OPEN_SCALE`, `CUT_GAP`, `beat_bounds` |
 | Caption grouping | `clipper/plan.py`: `caption_groups` (`max_words`, `max_chars`, `max_dur`) |
 | Caption look | `clipper/edit.py`: `write_ass`; `remotion/src/Clip.tsx` for the Remotion engine |
 | Sound effects and when they play | `assets/sfx/` (drop files in), `clipper/plan.py`: `sfx_cues` |

@@ -177,9 +177,16 @@ def false_start(words, i0, i1, max_k=3, within=3.5, gap_words=5):
     return None
 
 
-def drift_warnings(clip, cands):
+def _same_ranges(mine, theirs):
+    return len(mine) == len(theirs) and all(abs(a - x) <= 1.0 and abs(b - y) <= 1.0
+                                            for (a, b), (x, y) in zip(mine, theirs))
+
+
+def drift_warnings(clip, cands, repairs=None):
     """A clip picked from a candidate list (long videos read in parts) or from the critic's list
-    should keep its exact ranges; say so when they differ, or when the id doesn't exist."""
+    should keep its exact ranges; say so when they differ, or when the id doesn't exist. A repaired
+    version the critic judged in the repair round (its shortlist entry named the same "from") is
+    on purpose: no warning."""
     src = clip.get('from')
     if not src:
         return []
@@ -187,10 +194,9 @@ def drift_warnings(clip, cands):
     if not c:
         return [f'"from": "{src}" is not in candidates.json or the critic\'s list']
     mine, theirs = clip['ranges'], c['ranges']
-    if len(mine) != len(theirs) or any(abs(a - x) > 1.0 or abs(b - y) > 1.0
-                                       for (a, b), (x, y) in zip(mine, theirs)):
-        return [f'ranges differ from candidate {src} {theirs}: on purpose?']
-    return []
+    if _same_ranges(mine, theirs) or any(_same_ranges(mine, r) for r in (repairs or {}).get(src, [])):
+        return []
+    return [f'ranges differ from candidate {src} {theirs}: on purpose?']
 
 
 def range_shots(video, info, clip, words):
@@ -504,8 +510,11 @@ def main():
 
     flagged = 0
     cands = {c['id']: c for c in load_json(pdir / 'candidates.json', []) or []}
+    repairs = {}
     for c in (load_json(pdir / 'critic' / 'plan.json') or {}).get('clips', []):
         cands.setdefault(c['id'], c)             # a short video's shortlist ("s3") judged by the critic
+        if c.get('origin'):                      # a repaired version of an earlier idea
+            repairs.setdefault(c['origin'], []).append(c['ranges'])
     for c in load_json(pdir / 'deep' / 'candidates.json', []) or []:
         cands.setdefault(c['id'], c)             # a deep clip ("d1-c1") from the deep pass
     from .kind import active_breaks, is_irregular, NAMES
@@ -521,7 +530,7 @@ def main():
         msgs = boundary_warnings(clip['ranges'], words)
         if total and not 15 <= total <= 90:
             msgs.append(f'length {total:.0f}s is outside 15-90 s')
-        msgs += drift_warnings(clip, cands)
+        msgs += drift_warnings(clip, cands, repairs)
         for r0, r1 in clip['ranges']:            # unclear speech (relisten marked it): no captions there
             uw = [w for w in words if w.get('unsure') and r0 <= w['s'] < r1]
             if uw:

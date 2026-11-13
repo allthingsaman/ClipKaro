@@ -37,6 +37,10 @@ ones were added.
 
 ## Choosing the moments
 
+- ⬆ **Three modes: standard, deep, quick.** Standard is the default. Deep adds deep clips when you
+  ask or say yes to the question. Quick, only when you ask ("quick clip this", "use fewer tokens"),
+  picks like v1.1: Claude reads the video itself, with no helpers and no critic. All three keep every
+  other upgrade on this page. *(2026-11-13)*
 - ⬆ ⚠ **Long videos are read in parts**, so the middle and the end get the same attention as the
   start. Several AI readers work at once. *(v2.0)*
 - ⬆ ⚠ **A second opinion (the critic).**
@@ -44,6 +48,9 @@ ones were added.
   - It never throws a clip away; it only ranks them and gives notes for fixing them.
   - Since 2026-11-12 it judges only how a clip is made, never its topic.
   - Short videos get it too. *(v2.0)*
+- ⬆ **Repaired clips keep their place.** The repair round judges clips again, and scores wander
+  between runs, so a trimmed clip could drop below its own original. Now a second look never costs
+  a clip its place, and `cut --check` no longer warns about a repair it made on purpose. *(2026-11-13)*
 - ⬆ **Sound hints**: laughs, applause and both people talking at once are pointed out. A calm
   video loses nothing. *(v2.0)*
 - ↔ **Tighter cuts.** In the owner's blind test, the tighter cut won 8 times out of 8 where both
@@ -76,6 +83,17 @@ ones were added.
 
 ## Cutting and editing
 
+- ↔ **Fewer zooms when the camera cuts fast.** v1.1 changed the zoom at every camera cut. An anime
+  clip with a cut every second got 48 zoom changes in 68 seconds; the owner asked for fewer. Now a
+  cut soon after the last change keeps the zoom and only follows the new face: 28 changes on that
+  clip. Joins between pieces and normal speech still change it as before. *(2026-11-13)*
+  - Way back: no setting, because the zoom at every cut was the problem; `edit --no-zoom` still
+    turns zooms off completely.
+- ⬆ **Fix a caption word everywhere** with one command: `run.py fixword <project> "bow" "boat"`, or
+  just tell Claude. Before, it was fixed by hand. *(2026-11-13)*
+- ⬆ **Editing again no longer needs the original video** once the caption colours are saved, so
+  clips of videos whose source was deleted can still be edited. *(2026-11-13)*
+
 - ⬆ **Podcasts with painted faces on the wall** show the real person. **Dark studios**: camera cuts
   are found again. *(v2.0)*
 - ⬆ **Captions always fit the frame.** Before, some ran off the sides. *(v2.0)*
@@ -95,9 +113,9 @@ ones were added.
 - ⬆ Every v1.1 command works as before. The new ones are extra: `info`, `kind`, `parts`, `topics`,
   `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`.
 
-## Cost: the one place v2 is not yet a pure upgrade
+## Cost
 
-- ⚠ **Claude usage.** Reading in parts, the critic and deep clips use more of your Claude plan than
+- ⚠ **Claude usage** (standard and deep). Reading in parts, the critic and deep clips use more of your Claude plan than
   v1.1's single read. Estimates for a long podcast (not measured yet):
   - v1.1: about 0.1-0.2 million tokens;
   - now: about 1 million;
@@ -105,8 +123,9 @@ ones were added.
 
   Choosing the clips also takes a few minutes longer. On Claude's Pro plan that can mean fewer
   videos per day than with v1.1.
-  - **Way back: not there yet.** Roadmap item 5 adds a *quick* mode that works like v1.1 (one read,
-    no critic), next to *standard* and *deep*.
+  - **Way back: quick mode** *(2026-11-13)*. Say "quick clip this" or "use fewer tokens", and
+    Claude picks like v1.1 (one read, no helpers, no critic), with every other upgrade kept. Its real
+    usage is still to be measured with `/usage` (roadmap item 3b).
 
 ---
 

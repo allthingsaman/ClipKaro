@@ -33,6 +33,8 @@ PUNCH = [1.16, 1.22, 1.13, 1.2]
 DRIFT = 0.03
 OPEN_SCALE, OPEN_FRAMES = 1.18, 9
 SNAP_FRAMES = 8
+CUT_GAP = 2.8      # a camera cut changes the zoom only this long after the last change, like any other beat;
+                   # sooner (anime, trailers: a cut every second) the framing just follows the new face
 
 # ---------- easing (cubic-bezier, same curves as CSS / Remotion Easing.bezier) ----------
 
@@ -101,9 +103,18 @@ def mode_at(shots, t):
 
 
 def beat_bounds(words, shots, splices, duration):
-    """Times where the framing changes. Must-cuts: camera cuts and splices."""
-    must = sorted({round(s['t0'], 3) for s in shots if s['t0'] > 0.3} | {s for s in splices if s > 0.3})
-    soft = []
+    """(times where the framing changes, the must-cuts among them, camera cuts the framing only follows).
+    Must-cuts: splices, cuts into or out of a whole-frame / split shot, and camera cuts at least CUT_GAP
+    after the last change. A camera cut that comes sooner keeps the zoom and only re-centres on the new
+    shot's face: an anime clip with a cut every second got 48 zoom changes in 68 seconds."""
+    wide = ('fit', 'split')
+    cuts = {round(s['t0'], 3) for s in shots if s['t0'] > 0.3}
+    always = {sp for sp in splices if sp > 0.3}
+    for prev, sh in zip(shots, shots[1:]):            # the zoom must switch off (or on) there
+        if sh['t0'] > 0.3 and (prev.get('mode') in wide) != (sh.get('mode') in wide):
+            always.add(round(sh['t0'], 3))
+    must = sorted(cuts | always)
+    soft, follow = [], []
     for i, w in enumerate(words[:-1]):
         nxt = words[i + 1]
         if is_sentence_end(w['w']) or nxt['s'] - w['e'] > 0.45:
@@ -114,9 +125,11 @@ def beat_bounds(words, shots, splices, duration):
         if c >= duration - 1.2:
             break
         if c in must:
-            if c - last >= 0.5:
+            if c - last >= (0.5 if c in always else CUT_GAP):
                 bounds.append(c)
                 last = c
+            else:
+                follow.append(c)
             continue
         nxt_must = next((m for m in must if m > c), duration)
         if c - last >= 2.8 and nxt_must - c >= 1.5:
@@ -138,14 +151,14 @@ def beat_bounds(words, shots, splices, duration):
         if b < duration:
             filled.append(b)
         prev = b
-    return sorted(set(filled)), set(must)
+    return sorted(set(filled)), set(b for b in filled if b in set(must)), sorted(set(follow) - set(filled))
 
 
 def build_camera(meta):
     words, shots, dur = meta['words'], meta['shots'], meta['duration']
     fps = meta.get('fps', FPS)
     frames = int(round(dur * fps))
-    bounds, must = beat_bounds(words, shots, meta.get('splices', []), dur)
+    bounds, must, follow = beat_bounds(words, shots, meta.get('splices', []), dur)
     exact = exact_frames(meta)
     starts = [0.0] + bounds
     ends = bounds + [dur]
@@ -185,7 +198,17 @@ def build_camera(meta):
             else:
                 keys.append({'f': f0, 's': s, 'x': fx, 'y': fy, 'ease': 'cut'})
                 transitions.append({'t': t0, 'kind': 'cut'})
-        keys.append({'f': f1, 's': round(s + (0 if full else DRIFT), 4), 'x': fx, 'y': fy, 'ease': 'linear'})
+        s_end = s + (0 if full else DRIFT)
+        lo = t0 + (OPEN_FRAMES / fps + 0.1 if b == 0 else 0.2)
+        for t in [t for t in follow if lo < t < t1 - 0.2]:    # a fast camera cut: same zoom, new face
+            ff = exact.get(round(t, 3), int(round(t * fps)))
+            if ff <= keys[-1]['f']:
+                continue
+            st = round(s + (s_end - s) * (t - t0) / max(1e-6, t1 - t0), 4)
+            keys.append({'f': ff - 1, 's': st, 'x': fx, 'y': fy, 'ease': 'linear'})
+            fx, fy = focus_at(shots, t + 0.05)
+            keys.append({'f': ff, 's': st, 'x': fx, 'y': fy, 'ease': 'cut'})
+        keys.append({'f': f1, 's': round(s_end, 4), 'x': fx, 'y': fy, 'ease': 'linear'})
     cam = []
     for f in range(frames):
         s, x, y = cam_at(keys, f)

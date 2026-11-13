@@ -854,7 +854,8 @@ def main():
     print(f'project:    {pdir.name}')
     print(f"language:   {project.get('language')}")
     print(f'transcript: {tx}')
-    print(f'next: python run.py parts {pdir.name}   (add --at-least N / --at-most N if the user asked for a number of clips)')
+    print(f'next: python run.py parts {pdir.name}   (add --at-least N / --at-most N if the user asked for a number '
+          'of clips, --deep yes|no for their deep-clip answer, --mode quick only if they asked for quick)')
 
 
 if __name__ == '__main__':

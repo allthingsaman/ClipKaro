@@ -41,6 +41,17 @@
     whole video each time.
 - New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
   stream? gameplay? break screens?).
+- **Quick, standard, deep.** *Standard* stays the default. *Deep* adds deep clips: you ask for
+  them, or say yes to the question for long videos. *Quick* runs only when you ask ("quick clip this",
+  "use fewer tokens"). Claude then picks the clips alone, like v1.1, and uses much less of your Claude
+  plan. Every other upgrade stays in all three modes.
+- **Fix a caption word everywhere:** `run.py fixword <project> "bow" "boat"` (or just tell Claude).
+  It changes the word wherever it was heard, keeps the timing, and names the clips to make again.
+- **Fewer zooms when the camera cuts fast.** A camera cut that comes soon after the last zoom change
+  now only follows the new face. One anime clip went from 48 zoom changes in 68 seconds to 28.
+- **Repaired clips keep their place.** The repair round's second look can't push a trimmed clip
+  below its own original any more. `cut --check` no longer warns about those repairs.
+- **Editing again works without the original video** once the caption colours are saved.
 - **Every change since v1.1, checked:** [docs/since-v1.1.md](docs/since-v1.1.md) lists each change
   since v1.1 (the first stable version) as an upgrade, different on purpose (with the way back) or
   costing more. From now on every change must be an upgrade to v1.1.

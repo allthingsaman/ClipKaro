@@ -19,9 +19,22 @@ and ask them to run it and restart the terminal.
 Install Remotion (`python install.py --remotion`) only if the user asks for the Remotion engine.
 `settings.json` holds the user's defaults (language, model, device, Hinglish caption script).
 
+## Modes: standard, deep, quick
+Every mode makes clips the same way after picking (posting texts, captions that fit, Roman Hinglish,
+game voices, break screens, cut, edit). They differ only in how the moments are picked:
+- **Standard** (the default): reader helpers for long videos, the blind critic, the repair round.
+- **Deep**: standard plus deep clips (section 2d). When the user's message asks for deep clips, or
+  they answer yes to the deep-clip question for a video over 21 minutes (step 1).
+- **Quick**: **only when the user asks for it**, in the message or in "My preferences": "quick",
+  "quick mode", "fast", "jaldi", "use fewer tokens", "use less usage", "save my limit", "kam tokens".
+  Never choose it yourself. Then don't ask the deep-clip question; pass `--mode quick` to `parts`;
+  read the transcript yourself (step 2, "Quick mode"), with no helpers, no critic, no repair round
+  and no deep pass. About v1.1's Claude usage.
+- Quick and deep both asked: deep clips need the standard read, so say so in one line and do deep.
+
 ## 1. Get the transcript
-The user only has to say "clip this: <link>". Everything else has a default: how many clips, what
-kind of video it is, and (for long videos) one question about deep clips.
+The user only has to say "clip this: <link>". Everything else has a default: the mode (standard),
+how many clips, what kind of video it is, and (for long videos) one question about deep clips.
 
 **First, a quick look** (a few seconds, nothing is downloaded):
 ```
@@ -29,9 +42,9 @@ python run.py info "<youtube url or path to a video file>"
 ```
 It prints the length, whether YouTube says it was a live stream or gameplay, and a `deep clips:`
 line. Then start `fetch` (below) in the background, and while it runs:
-- **Deep clips.** If the `deep clips:` line says **ASK THE USER NOW**, and the user's message didn't
-  already say (yes: "deep clip", "go deeper", "use deep clipping", "deep pass"; no: "no deep",
-  "only normal clips", "quick"), ask once with AskUserQuestion: "This video is 1:40:09 long. Do you
+- **Deep clips.** If the `deep clips:` line says **ASK THE USER NOW**, the user didn't ask for quick
+  mode, and their message didn't already say (yes: "deep clip", "go deeper", "use deep clipping",
+  "deep pass"; no: "no deep", "only normal clips"), ask once with AskUserQuestion: "This video is 1:40:09 long. Do you
   want deep clips too? They join moments that are far apart into one story (a question and its
   answer 40 minutes later). It takes about 10-15 more minutes." Options: "Yes, deep clips too" /
   "No, regular clips only". If you can't ask (no answer comes), make regular clips only and say at
@@ -81,9 +94,10 @@ video). Then plan how to read the transcript:
 python run.py parts <project>                    # no number asked: ClipKaro decides
 python run.py parts <project> --at-least 10      # or --at-most 5, or --clips 8 (exactly)
 python run.py parts <project> --deep yes         # record the user's deep-clip answer (yes / no)
+python run.py parts <project> --mode quick       # only when the user asked for quick mode
 ```
-`parts` remembers the number and the deep answer in project.json, and prints `-> clips: 3 to 13`
-and `-> deep clips: ...`. **Deliver every decent clip in that range, best first** (deep clips count
+`parts` remembers the number, the deep answer and the mode in project.json, and prints
+`-> clips: 3 to 13`, `-> mode: ...` and `-> deep clips: ...`. **Deliver every decent clip in that range, best first** (deep clips count
 too): at least the lower number, more up to the higher one when the video has them, never padded
 with weak ones. The owner posts almost any decent clip, so don't hold good ones back. With "at
 least N" from the user, never fewer than N.
@@ -114,7 +128,16 @@ Good clip ideas are self-contained (hook → story → payoff, 25–60 s ideal),
 format of `references/picking-moments.md`. Prefer continuous ranges; splice only when it clearly
 makes a better short.
 
-## 2a. The critic: a blind second opinion (every video)
+**Quick mode** (only when the user asked for it): no helpers and no critic. One part: read
+`transcript.txt` in full. Several parts: read the part files yourself, one at a time and in order
+(only each file's YOUR STRETCH is new; the rest is overlap), and note the best moments as you go,
+with their exact times. Then pick straight into the **final** clips.json, following
+`references/picking-moments.md` (hook first, payoff last, tight cuts, its quality checklist), with
+every clip's `caption`, `post` and `clarify` as in step 6 of 2a. Skip 2a and 2d; apply the misheard
+words you noticed yourself (2e); then 2b, 3, 5 and 6 as usual. In the results table give your own
+score (1-10) instead of a clip score.
+
+## 2a. The critic: a blind second opinion (standard and deep modes)
 ```
 python run.py critic <project>
 ```
@@ -162,11 +185,14 @@ sees your scores, titles, the replay curve or anything about the channel.
    tighter cut won 8 of 8; the longer one only wins when its extra seconds are funny or needed.)
    Follow "Never change what someone meant" in `references/picking-moments.md`. When you changed
    any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16, or
-   twice the lower number of the range when that is more),
+   twice the lower number of the range when that is more), **each with `"from": "<its id in
+   critic.txt>"`**, repaired versions included: a repaired clip then keeps its place in the new
+   ranking (a second look never costs a clip its rank; critic.txt says "kept its place") and
+   `cut --check` knows the new ranges are on purpose,
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
-   third clip of a shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
+   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
    readers' candidates have none, so write them here. A clip that says "इस movie" / "he" / "वो" and
@@ -227,10 +253,16 @@ List clips the critic tagged `check-facts` with the claim to check (the user dec
 posting). Don't wait for approval unless they asked to review picks first. Keep going.
 
 ## 2e. Caption fixes (last, after the deep pass if there is one)
-Copy `transcript/words.json` to `transcript/words-before-fixes.json` once, then apply the critic's
-**caption fixes** (misheard words, e.g. "farts" -> "fads") for the picked clips in `words.json`, one
-word entry at a time, keeping the times. The deep pass and the topic map match quotes against the
-words as first heard (`words-before-fixes.json`), so fixes never break them.
+Apply the critic's **caption fixes** (misheard words, e.g. "farts" -> "fads") for the picked clips,
+and any misheard word you notice yourself (a game's own on-screen subtitles are the best check):
+```
+python run.py fixword <project> "farts" "fads"              # every place it was heard
+python run.py fixword <project> "cycle path" "psychopath"   # a phrase, even into fewer words
+python run.py fixword <project> "bow" "boat" --at 2107.5    # only the place nearest that second
+```
+It keeps the times, rebuilds the sentences and transcript.txt, and names the clips to cut and edit
+again. The first fix saves `words-before-fixes.json`: the deep pass and the topic map match quotes
+against the words as first heard, so fixes never break them.
 
 ## 2b. Roman Hinglish captions (Hindi/Hinglish projects only)
 Skip this for other languages, or if settings.json has `"hinglish_captions": "devanagari"`.
@@ -337,7 +369,7 @@ and, when PostKaro (the posting app) is installed, prints **`Post them: <link>`*
 with `?` name clips without posting text: add their `caption` / `post` in clips.json and run it
 again.
 
-Report the results as a short table: clip, length, clip score, file path. Under each clip, give
+Report the results as a short table: clip, length, clip score (your own score in quick mode), file path. Under each clip, give
 two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
 from clips.json. Repeat the line that clip scores are not a prediction of views. If `post` printed

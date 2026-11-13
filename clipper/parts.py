@@ -5,6 +5,7 @@
     python run.py parts <project> --at-least 10   # the user asked for a number of clips (also --at-most N,
                                                   # --clips N for exactly N, --any-count to forget it)
     python run.py parts <project> --deep yes      # the user's answer about deep clips (yes / no)
+    python run.py parts <project> --mode quick    # quick mode, only when the user asked for it
 
 A 2-hour transcript is too big to read well in one go (the AI's file reader stops at 256 KB, and
 long inputs get skimmed). So the transcript is cut into parts of at most ~25 minutes: each part has
@@ -22,6 +23,12 @@ made) or about one per 7 minutes of real video for long videos (break screens do
 is more, at most "max_clips" from settings.json (20). A number the user asked for always wins and is
 remembered in project.json ("wish"), so running parts again keeps it. Each part's reader is asked for
 enough ideas (about 2.5 per clip at the top of the range, spread over the parts).
+
+Modes: standard is the default (reader helpers, the critic, the repair round). Deep adds deep clips
+(the user said so, or answered yes to the question for videos over 21 minutes). Quick, only when the
+user asks for it ("quick", "use fewer tokens"): Claude reads the transcript or the parts itself, one at
+a time, and picks straight into clips.json: no helpers, no critic, about v1.1's Claude usage.
+Everything after picking is the same in every mode.
 
 Live streams and gameplay (see `run.py kind`): lines said during break screens are replaced by one
 marker line, and every part's header carries the stream rules.
@@ -120,6 +127,8 @@ def update_wish(project, a):
         wish['at_most'] = a.at_most or None
     if a.deep:
         wish['deep'] = a.deep == 'yes'
+    if a.mode:
+        wish['mode'] = a.mode
     if wish.get('at_least') and wish.get('at_most') and wish['at_least'] > wish['at_most']:
         die(f"at least {wish['at_least']} and at most {wish['at_most']} can't both hold")
     return {k: v for k, v in wish.items() if v is not None}
@@ -127,6 +136,8 @@ def update_wish(project, a):
 
 def deep_line(project, wish, minutes):
     """What to do about deep clips, for the summary."""
+    if wish.get('mode') == 'quick' and not wish.get('deep'):
+        return 'no (quick mode; deep clips need the standard read)'
     if 'deep' in wish:
         return 'yes (the user said so)' if wish['deep'] else 'no (the user said so)'
     mode = str(settings().get('deep_clips', 'ask')).lower()
@@ -253,6 +264,8 @@ def main():
     ap.add_argument('--clips', type=int, default=None, help='the user wants exactly N clips')
     ap.add_argument('--any-count', action='store_true', help='forget a number asked for earlier')
     ap.add_argument('--deep', choices=['yes', 'no'], default=None, help="the user's answer about deep clips")
+    ap.add_argument('--mode', choices=['standard', 'quick'], default=None,
+                    help='standard (default) or quick (only when the user asks: one read by Claude, no critic)')
     a = ap.parse_args()
 
     pdir = project_dir(a.project)
@@ -331,8 +344,20 @@ def main():
     print(f"   every decent moment, best first: at least {target['lo']}, and more up to {target['hi']} "
           'when the video has them. Never pad with weak ones' if target['lo'] != target['hi'] else
           f"   exactly {target['lo']}, best first")
+    quick = wish.get('mode') == 'quick' and not wish.get('deep')
+    print('-> mode: ' + ('quick (the user asked): read it yourself and pick straight into clips.json; no helpers, '
+                         'no critic, no repair round' if quick else
+                         'standard' + (' + deep clips' if wish.get('deep') else '') + ' (quick only when the user asks)'))
     print(f'-> deep clips: {deep_line(project, wish, (lines[-1]["e"] - lines[0]["s"]) / 60)}')
-    if len(parts) == 1:
+    if quick:
+        if len(parts) == 1:
+            print('\nnext (quick): read transcript.txt in full and write the FINAL clips.json (every clip with its '
+                  'caption and post texts), then romanize / cut --check / cut / edit as usual')
+        else:
+            print(f'\nnext (quick): read the {len(parts)} part files yourself, one at a time and in order '
+                  f'({a.dir}/part-01.txt ...; only YOUR STRETCH of each is new), note the best moments as you go, '
+                  'then write the FINAL clips.json (no part-NN.json, no topics), then romanize / cut --check / cut / edit')
+    elif len(parts) == 1:
         spots = (cues or {}).get('lively') or []
         if spots:
             print('\nlively spots from the sound (laughs, both talking at once; the detector can be wrong). '

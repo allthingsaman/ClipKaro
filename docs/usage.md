@@ -112,7 +112,7 @@ scenes; you don't need to type that part.
 |---|---|
 | "clip 2 starts too early, start at 'the real reason'" | Claude finds the exact moment and redoes only clip 2 |
 | "make clip 1 shorter" / "end clip 3 on the punchline" | the same: only that clip is redone |
-| "fix the spelling of 'Juyal' in clip 3's captions" | the caption is corrected and the clip edited again |
+| "fix the spelling of 'Juyal' in clip 3's captions" / "'bow' should be 'boat'" | the word is corrected everywhere it was heard (`run.py fixword`) and the clips that have it are edited again |
 | "make the captions bigger in all clips" | the edit is done again; the cuts stay |
 | "change the posting caption of clip 4" | Claude rewrites it |
 | "add one more clip about X" | adds one clip, and cuts and edits only that one |
@@ -129,7 +129,18 @@ scenes; you don't need to type that part.
 | (nothing: it's automatic) | if the creator's own teaser at the start, or YouTube's "most replayed" graph, points at a moment nobody picked, that stretch is read again carefully |
 | "show me the topic map" | Claude shows `topics.txt`: every topic with its time, what it's about, and the key lines |
 
-### The second opinion (every video)
+### Quick, standard or deep
+| You write | What happens |
+|---|---|
+| (nothing) | **standard**: the best quality. Long videos are read by several AI readers at once, a second AI editor (the critic) checks every idea, and the clips with notes are repaired |
+| "deep clip this", "use deep clipping", or **yes** to the question for videos over 21 minutes | **deep**: standard, plus clips that join moments far apart (see "Deep clips" below) |
+| "quick clip this", "quick mode", "use fewer tokens", "save my Claude limit", "jaldi clip karo" | **quick**: Claude reads the video itself and picks the clips, without the readers and the critic. It uses much less of your Claude plan (about what v1.1 used) and is faster; the picks get no second opinion. No deep-clip question is asked |
+
+Everything after picking is the same in all three: captions, Hinglish spelling, game voices, break
+screens, cutting, the edit and the posting texts. Write "always use quick mode" under "My
+preferences" in CLAUDE.md to make quick your default.
+
+### The second opinion (standard and deep)
 | You write | What happens |
 |---|---|
 | (nothing: it's automatic) | before anything is cut, a second AI editor, the **critic**, checks every clip idea three times, without knowing who picked it. Every idea gets a **clip score** out of 10, with reasons, and the best ones are used. A clip that needs earlier context, or whose punchline comes after the cut, gets a note, and Claude repairs it |
@@ -281,6 +292,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py fixword <project> "wrong" "right"` | `--at 2107.5` (only the place nearest that second), `--dry` (show what would change) |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |

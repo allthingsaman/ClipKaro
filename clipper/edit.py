@@ -275,7 +275,8 @@ def main():
     from .cut import ensure_video
     project = load_json(pdir / 'project.json')
     cfg = settings()
-    brand = brandlib.resolve(pdir, ensure_video(pdir, project))
+    # the colours are saved in brand.json after the first edit: no need for the video (it may be deleted)
+    brand = load_json(pdir / 'brand.json') or brandlib.resolve(pdir, ensure_video(pdir, project))
     print(f"-> brand colours: accent {brand['accent']} ({brand['source']})")
     if romanize.wants_roman(project, cfg):
         print('-> captions: Roman Hinglish (romanize.json)')

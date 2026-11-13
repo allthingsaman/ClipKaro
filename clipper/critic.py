@@ -156,7 +156,9 @@ def load_pool(pdir, source):
         die(f'nothing to judge in {pdir.name}: write a shortlist to clips.json (short video) or run '
             f'`python run.py topics` (long video) first')
     clips = clips.get('clips', clips) if isinstance(clips, dict) else clips
-    return 'clips', [{'id': f's{i + 1}', 'ranges': c['ranges'], 'title': c.get('title'), 'clip_index': i}
+    # "from": the idea's id in the round before (a repaired clip keeps its original's id)
+    return 'clips', [{'id': f's{i + 1}', 'ranges': c['ranges'], 'title': c.get('title'), 'clip_index': i,
+                      **({'origin': c['from']} if c.get('from') else {})}
                      for i, c in enumerate(clips)]
 
 
@@ -421,7 +423,34 @@ def spearman(x, y):
     return round(num / den, 2) if den else None
 
 
-def merge(pdir, plan, answers):
+def previous_round(cdir):
+    """critic.json of the round before this one (the newest in critic/old/), or None."""
+    olds = sorted((cdir / 'old').glob('*/critic.json')) if (cdir / 'old').exists() else []
+    return load_json(olds[-1]) if olds else None
+
+
+def keep_place(res, prev):
+    """A second look never costs a clip its place. The repair round judges repaired clips again in a
+    new run; scores wander by about 0.4 between runs, and a shortened clip sometimes scored lower
+    although the owner's blind test preferred the tighter cut 8 of 8 ("Chop Ne Sher Haathi Maara":
+    4.0, then 3.0 after a trim). So an idea judged before (named in "from", or the same ranges) keeps
+    its earlier score when this round's is lower."""
+    if not prev:
+        return
+    same = [x for x in prev.get('clips', []) if x['id'] == res.get('origin')] or \
+           [x for x in prev.get('clips', []) if x['ranges'] == res['ranges']]
+    if not same:
+        return
+    before = same[0]
+    res['before'] = {'id': before['id'], 'clip_score': before['clip_score']}
+    if before['clip_score'] > res['clip_score']:
+        res['this_round'] = res['clip_score']
+        res['clip_score'] = before['clip_score']
+        res['band'] = band(res['clip_score'])
+        res['rank_score'] = max(res['rank_score'], before.get('rank_score', before['clip_score']))
+
+
+def merge(pdir, plan, answers, prev=None):
     project = load_json(pdir / 'project.json', {}) or {}
     topics = load_json(pdir / 'topics.json')
     tr = Transcript(pdir)
@@ -491,6 +520,7 @@ def merge(pdir, plan, answers):
         res['reason'] = '; '.join(notes)
         res['hints'] = hints(c, pk, teased, cues)
         res['rank_score'] = round(res['clip_score'] + bonus(res['hints']), 2)
+        keep_place(res, prev)
         out.append(res)
     out.sort(key=lambda x: (-x['rank_score'], x['ranges'][0][0]))
     checks = {
@@ -546,6 +576,9 @@ def write_txt(pdir, doc, path):
         rows.append('    ' + ' · '.join(f"{d} {sc[d]['mean']:.1f} \"{sc[d]['why']}\"" for d in DIMS))
         for note in x.get('notes') or []:
             rows.append(f'    {note}')
+        if x.get('this_round') is not None:
+            rows.append(f"    kept its place: {x['before']['clip_score']}/10 as {x['before']['id']} in the round before, "
+                        f"{x['this_round']}/10 this round (a second look never costs a clip its place)")
         h = hint_text(x['hints'])
         if h:
             rows.append(f'    hints: {h}')
@@ -666,7 +699,7 @@ def main():
         if len(answers) < max(2, plan['runs'] - 1) or missing:
             raise SystemExit(1)
         print(f"   (going on with {len(answers)} good runs of {plan['runs']})")
-    doc = merge(pdir, plan, answers)
+    doc = merge(pdir, plan, answers, previous_round(cdir))
     save_json(cdir / 'critic.json', doc)
     count, warn = write_txt(pdir, doc, txt)
     log(pdir, doc)
@@ -681,7 +714,8 @@ def main():
         print(f'\nnext: the honesty check:  python run.py honesty {pdir.name}')
         return
     print(f'\nnext: read {txt.relative_to(pdir.parent.parent)}, repair the top clips that have a '
-          f'note (once), and write the final clips.json from the top, each with "from": "<id>"')
+          f'note (once; each repaired clip keeps "from": its original id), and write the final clips.json '
+          f'from the top, each with "from": "<id>"')
 
 
 if __name__ == '__main__':
