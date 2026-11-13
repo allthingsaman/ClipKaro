@@ -39,6 +39,10 @@ goes to `parts`; without one, ClipKaro decides by the video's length.
   `python run.py frames <project> --clips N` and fix only what's wrong with `"framing"` or
   `"show_full"` in clips.json (see the skill). Add `"split"` where the listener visibly laughs or
   reacts while the other talks: the sound alone can't catch a silent reaction.
+- **v1.1 is the baseline.** It is the first stable version, and every change after it must be an
+  upgrade: nothing v1.1 could do may be lost or made harder. If a change does something differently
+  on purpose, give a way back (a setting, a phrase, an option). Record each change in
+  `docs/since-v1.1.md` (marked ⬆ upgrade, ↔ different on purpose, or ⚠ costs more) in the same commit.
 - User documentation is in `docs/` (start at `docs/README.md`; for people new to all this:
   `docs/user-guide.md`; how the code works: `docs/architecture.md`). Keep it in sync when behaviour
   or options change, and write it in simple, everyday words.

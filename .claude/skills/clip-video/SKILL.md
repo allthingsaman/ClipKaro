@@ -40,8 +40,8 @@ line. Then start `fetch` (below) in the background, and while it runs:
 - **How many clips.** Read the user's message (and "My preferences" in CLAUDE.md) for a number: "at
   least 10" / "kam se kam 10" / "minimum 10" -> `--at-least 10`; "at most 5" / "max 5" / "only the 3
   best" -> `--at-most 5` / `--at-most 3`; "give me 8 clips" / "8 clips" -> `--clips 8`. No number ->
-  nothing: ClipKaro decides by the video's length (about one per 7 minutes, at least 3, at most
-  `"max_clips"` from settings.json). You pass these to `parts` in step 2.
+  nothing: every decent moment, from 3 up to 8 (as v1.1) or, for long videos, about one per 7
+  minutes, at most `"max_clips"` from settings.json. You pass these to `parts` in step 2.
 
 ```
 python run.py fetch "<youtube url or path to a video file>"
@@ -82,15 +82,16 @@ python run.py parts <project>                    # no number asked: ClipKaro dec
 python run.py parts <project> --at-least 10      # or --at-most 5, or --clips 8 (exactly)
 python run.py parts <project> --deep yes         # record the user's deep-clip answer (yes / no)
 ```
-`parts` remembers the number and the deep answer in project.json, and prints `-> clips: aim for N`
-and `-> deep clips: ...`. **N is the number of clips to deliver** (deep clips count too). With no
-number from the user, deliver fewer than N only when there aren't that many decent moments; never
-pad with weak ones. With "at least N", never fewer.
+`parts` remembers the number and the deep answer in project.json, and prints `-> clips: 3 to 13`
+and `-> deep clips: ...`. **Deliver every decent clip in that range, best first** (deep clips count
+too): at least the lower number, more up to the higher one when the video has them, never padded
+with weak ones. The owner posts almost any decent clip, so don't hold good ones back. With "at
+least N" from the user, never fewer than N.
 
 **One part** (up to about 28 minutes of Hinglish, longer for English): read `transcript.txt` in
 full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
 the detector can be wrong, so judge them only by the words). Write a **shortlist of about twice
-the clips wanted** (`parts` prints the number) to clips.json, in the normal format, then
+the clips you'll make** (`parts` prints the number) to clips.json, in the normal format, then
 let the critic judge them (section 2a).
 
 **Several parts** (long videos): don't read the whole transcript at once. The file reader stops at
@@ -134,7 +135,8 @@ sees your scores, titles, the replay curve or anything about the channel.
    payoff comes after the cut) and `check` (the runs disagreed). Notes are for the repair round;
    the critic never throws a clip away (in the user's blind check, clips it would have dropped were
    ones they'd post). The score ranks clips **within this video**; calm, informative clips are fine.
-4. Pick the final clips from the top: as many as `parts` said to aim for (`-> clips: aim for N`). Of clips that overlap at all, keep the better one; at
+4. Pick the final clips from the top: every decent one within the range `parts` printed
+   (`-> clips: 3 to 13`), at least the lower number. Of clips that overlap at all, keep the better one; at
    most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
    holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
    content: read close calls yourself.
@@ -160,7 +162,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    tighter cut won 8 of 8; the longer one only wins when its extra seconds are funny or needed.)
    Follow "Never change what someone meant" in `references/picking-moments.md`. When you changed
    any clip, write a shortlist to clips.json (your picks, with the repaired versions; at most 16, or
-   twice the clips wanted when that is more),
+   twice the lower number of the range when that is more),
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the

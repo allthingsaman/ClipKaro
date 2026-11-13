@@ -21,8 +21,8 @@
     normal, no "hello chat" or "is the audio OK" in clips.
   - On a 1:40 GTA stream it found all three break screens in 28 seconds.
 - **The number of clips follows the video's length.**
-  - About one clip per 7 minutes of real video, at least 3, at most 20 (`max_clips` in
-    settings.json).
+  - Every good moment: 3 to 8 clips as before, and for long videos up to about one per 7 minutes
+    of real video, at most 20 (`max_clips` in settings.json).
   - "At least 10", "at most 5" or "give me 8" in your message always wins. A 2-hour stream no
     longer stops at 8 clips.
 - **Long videos: one question about deep clips.**
@@ -41,6 +41,9 @@
     whole video each time.
 - New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
   stream? gameplay? break screens?).
+- **Every change since v1.1, checked:** [docs/since-v1.1.md](docs/since-v1.1.md) lists each change
+  since v1.1 (the first stable version) as an upgrade, different on purpose (with the way back) or
+  costing more. From now on every change must be an upgrade to v1.1.
 - **What's next:** [docs/roadmap-v3.md](docs/roadmap-v3.md), in order, with a rough time for each item.
 
 ## v2.0 (November 2026): deep clips, a second opinion, tighter cuts

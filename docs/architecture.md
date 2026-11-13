@@ -454,11 +454,11 @@ The AI editor follows [`references/picking-moments.md`](../.claude/skills/clip-v
   subscribe", tangents, retakes.
 - **Continuous ranges first**; splice 2-3 ranges only when it clearly makes a better short, with
   whole sentences, never building a sentence the speaker didn't say. Clips never overlap.
-- **How many**: `parts` prints the number. A number the user asked for ("at least 10", "at most 5",
-  "give me 8") always wins. Otherwise about one clip per 7 minutes of real video (break screens
-  don't count), at least 3, at most `max_clips` (20): fewer only when there aren't that many decent
-  moments, never padded. Each part reader is asked for about 2.5 ideas per clip wanted, spread over
-  the parts (5-10 per part), so the critic has enough to rank.
+- **How many**: `parts` prints a range (`parts.clip_target`). A number the user asked for ("at least
+  10", "at most 5", "give me 8") always wins. Otherwise every decent clip from 3 up to 8 (v1.1's range,
+  `V11_MAX`) or about one per 7 minutes of real video (break screens don't count), whichever is more,
+  at most `max_clips` (20); never padded. Each part reader is asked for about 2.5 ideas per clip at
+  the top of the range, spread over the parts (5-10 per part), so the critic has enough to rank.
 - **Ranking** (score 1-10): hook strength > clear payoff > emotional energy > quotability > visual
   clarity. Best clip first.
 - **Exact times**: when a hook starts or a payoff ends inside a transcript line, the AI looks up
@@ -903,7 +903,7 @@ inside PostKaro, which adds the clips and returns the page link that the AI edit
 | The facecam layout | `clipper/facecam.py`: `TOP_H`, `geometry` |
 | Two-person framing rules | `clipper/director.py`: `HOLD`, `PRE`, `POST`, `LAUGH_ON`, `WIDE_SOLO`, `FLOOR` |
 | What counts as a break screen | `clipper/kind.py`: `STILL`, `MIN_BREAK_S`, `QUIET`, `RULES` |
-| How many clips by default | `clipper/parts.py`: `MINUTES_PER_CLIP` (7), `MIN_CLIPS`, `IDEAS_PER_CLIP`; `"max_clips"` in settings.json |
+| How many clips by default | `clipper/parts.py`: `MINUTES_PER_CLIP` (7), `MIN_CLIPS` (3), `V11_MAX` (8), `IDEAS_PER_CLIP`; `"max_clips"` in settings.json |
 | When to ask about deep clips | `clipper/parts.py`: `DEEP_ASK_MIN` (21); `"deep_clips"` in settings.json |
 | How long videos are split | `clipper/parts.py`: `--minutes` (21), `--margin` (120 s), `TOKEN_CAP`, `SNAP_WINDOW` |
 | What a part reader writes | `.claude/skills/clip-video/references/reading-parts.md`; the closed label lists in `clipper/topics.py` |

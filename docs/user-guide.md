@@ -180,9 +180,9 @@ about 20 minutes, all at the same time (Claude says, for example, "Reading the v
 once"), so the middle of a long podcast gets the same attention as the start. It takes a few
 minutes more. Afterwards you can ask "show me the topic map" to see every topic with its time.
 
-**How many clips?** If you don't say, ClipKaro decides from the length of the video: about one clip
-for every 7 minutes, at least 3 (a 1-hour video gives about 9). Say "at least 10" or "at most 5" and
-it follows that.
+**How many clips?** If you don't say, ClipKaro makes every good moment into a clip: 3 to 8, like
+before, and more for long videos (up to about one for every 7 minutes: a 2-hour stream can give 17).
+Say "at least 10" or "at most 5" and it follows that.
 
 **Live streams and gameplay** need no special words. ClipKaro sees by itself when a video was a
 live stream or is gameplay with your webcam in a corner. It then leaves out the "Starting soon",

@@ -15,7 +15,7 @@ from pathlib import Path
 from .common import die, fmt_ts, probe, settings
 from .fetch import is_url, page_facts, ytdlp
 from .kind import live_info
-from .parts import DEEP_ASK_MIN, MIN_CLIPS, MINUTES_PER_CLIP
+from .parts import DEEP_ASK_MIN, MIN_CLIPS, MINUTES_PER_CLIP, V11_MAX
 
 
 def main():
@@ -60,9 +60,10 @@ def main():
     else:
         deep = f'no: {DEEP_ASK_MIN:.0f} minutes or shorter (only when the user asks)'
     print(f'deep clips: {deep}')
-    guess = max(MIN_CLIPS, min(int(cfg.get('max_clips', 20)), round(minutes / MINUTES_PER_CLIP)))
-    print(f'clips:      about {guess} by default (one per {MINUTES_PER_CLIP:.0f} min of real video; break screens '
-          f"don't count). A number in the user's message wins: parts --at-least N / --at-most N / --clips N")
+    top = max(V11_MAX, min(int(cfg.get('max_clips', 20)), round(minutes / MINUTES_PER_CLIP)))
+    print(f'clips:      {MIN_CLIPS} to {top} by default (every decent moment; up to {V11_MAX} as in v1.1, or one per '
+          f"{MINUTES_PER_CLIP:.0f} min of real video for long ones). A number in the user's message wins: "
+          'parts --at-least N / --at-most N / --clips N')
     print(f'next:       python run.py fetch "{a.source}"   (in the background)')
 
 

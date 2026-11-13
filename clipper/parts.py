@@ -17,10 +17,11 @@ and the task at the end) and parts/plan.json. Each part is read by one helper, w
 parts/part-NN.json (see .claude/skills/clip-video/references/reading-parts.md); then
 `python run.py topics <project>` checks and joins them.
 
-How many clips: unless the user asked for a number, about one per 7 minutes of real video (break
-screens don't count), at least 3, at most "max_clips" from settings.json (20). A number the user asked
-for always wins and is remembered in project.json ("wish"), so running parts again keeps it. Each
-part's reader is asked for enough ideas (about 2.5 per clip wanted, spread over the parts).
+How many clips: unless the user asked for a number, every decent moment, from 3 up to 8 (what v1.1
+made) or about one per 7 minutes of real video for long videos (break screens don't count), whichever
+is more, at most "max_clips" from settings.json (20). A number the user asked for always wins and is
+remembered in project.json ("wish"), so running parts again keeps it. Each part's reader is asked for
+enough ideas (about 2.5 per clip at the top of the range, spread over the parts).
 
 Live streams and gameplay (see `run.py kind`): lines said during break screens are replaced by one
 marker line, and every part's header carries the stream rules.
@@ -43,8 +44,9 @@ BYTE_CAP = 240_000         # the Read tool refuses whole files over 256 KB
 SNAP_WINDOW = 60.0         # a cut moves to the longest pause within this many seconds
 BLOCK = 300.0              # "the best moment in every 5 minutes"
 BRIEF = '.claude/skills/clip-video/references/reading-parts.md'
-MINUTES_PER_CLIP = 7.0     # the default count: about one clip per 7 minutes of real video
+MINUTES_PER_CLIP = 7.0     # long videos: up to about one clip per 7 minutes of real video
 MIN_CLIPS = 3
+V11_MAX = 8                # v1.1 made 3-8 clips; the default never offers fewer than that
 IDEAS_PER_CLIP = 2.5       # clip ideas the readers bring per clip wanted (the critic ranks them all)
 DEEP_ASK_MIN = 21.0        # longer than one part's stretch: worth asking about deep clips
 
@@ -88,16 +90,20 @@ def line_text(ln):
 
 
 def clip_target(project, first, last, wish, max_clips):
-    """{'auto', 'aim', 'at_least', 'at_most', 'usable_min'}: how many clips to make."""
+    """How many clips to make: {'lo', 'hi', 'at_least', 'at_most', 'usable_min'}. Every decent moment
+    between lo and hi, best first. By default lo = 3 and hi = 8 (v1.1's range) or, for long videos,
+    about one per 7 minutes of real video, whichever is more (at most max_clips). The user's own
+    numbers always win: "at least 10" raises lo (and hi, if needed), "at most 5" lowers hi."""
     usable_min = kind.usable_seconds(project, first, last) / 60
-    auto = max(MIN_CLIPS, min(int(max_clips), round(usable_min / MINUTES_PER_CLIP)))
-    lo, hi = wish.get('at_least'), wish.get('at_most')
-    aim = auto
-    if lo:
-        aim = max(aim, lo)
-    if hi:
-        aim = min(aim, hi)
-    return {'auto': auto, 'aim': aim, 'at_least': lo, 'at_most': hi, 'usable_min': round(usable_min, 1)}
+    hi = max(min(V11_MAX, int(max_clips)), min(int(max_clips), round(usable_min / MINUTES_PER_CLIP)))
+    lo = MIN_CLIPS
+    want_lo, want_hi = wish.get('at_least'), wish.get('at_most')
+    if want_lo:
+        lo, hi = want_lo, max(hi, want_lo)
+    if want_hi:
+        hi, lo = want_hi, min(lo, want_hi)
+    return {'lo': lo, 'hi': hi, 'aim': hi, 'at_least': want_lo, 'at_most': want_hi,
+            'usable_min': round(usable_min, 1)}
 
 
 def update_wish(project, a):
@@ -273,7 +279,7 @@ def main():
     span_min = (lines[-1]['e'] - lines[0]['s']) / 60
     n = 1 if whole_tokens <= TOKEN_CAP and not a.shift else max(1, math.ceil(span_min / a.minutes))
     while True:
-        per_part = max(5, min(10, math.ceil(IDEAS_PER_CLIP * target['aim'] / n)))
+        per_part = max(5, min(10, math.ceil(IDEAS_PER_CLIP * target['hi'] / n)))
         parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir, cues, per_part)
         if all(p['tokens'] <= TOKEN_CAP and p['bytes'] <= BYTE_CAP for p in parts) or n >= 80:
             break
@@ -317,12 +323,14 @@ def main():
     asked = ' and '.join(x for x in asked if x)
     if asked and target['at_least'] == target['at_most']:
         asked = f"exactly {target['at_least']}"
+    span = str(target['lo']) if target['lo'] == target['hi'] else f"{target['lo']} to {target['hi']}"
     how = (f"the user asked for {asked}" if asked else
-           f"about one per {MINUTES_PER_CLIP:.0f} min of real video, at least {MIN_CLIPS}, at most "
-           f"{settings().get('max_clips', 20)} (settings.json max_clips)")
-    print(f"-> clips: aim for {target['aim']} ({how}). Deep clips count too.")
-    if not asked:
-        print('   fewer only when there aren\'t that many decent moments; never pad with weak ones')
+           f"by default: up to {V11_MAX} as in v1.1, or about one per {MINUTES_PER_CLIP:.0f} min of real video "
+           f"for long videos, at most {settings().get('max_clips', 20)} (settings.json max_clips)")
+    print(f"-> clips: {span} ({how}). Deep clips count too.")
+    print(f"   every decent moment, best first: at least {target['lo']}, and more up to {target['hi']} "
+          'when the video has them. Never pad with weak ones' if target['lo'] != target['hi'] else
+          f"   exactly {target['lo']}, best first")
     print(f'-> deep clips: {deep_line(project, wish, (lines[-1]["e"] - lines[0]["s"]) / 60)}')
     if len(parts) == 1:
         spots = (cues or {}).get('lively') or []
@@ -333,8 +341,8 @@ def main():
                 print(f"   {fmt_ts(sp['start']).split('.')[0]:>8}  {sp['why']}")
         elif cues is None:
             print(f'\n(no sound cues yet: python run.py sound {pdir.name})')
-        print(f"\nnext: one part. Read transcript.txt in full and write a SHORTLIST of about {2 * target['aim']} "
-              f'clip ideas (twice the clips wanted) to clips.json, then  python run.py critic {pdir.name}')
+        print(f"\nnext: one part. Read transcript.txt in full and write a SHORTLIST of up to {max(16, 2 * target['lo'])} "
+              f'clip ideas (about twice the clips you will make) to clips.json, then  python run.py critic {pdir.name}')
     else:
         print(f'\nnext: one reader per part, all at once (brief: {BRIEF}); each writes '
               f'{a.dir}/part-NN.json. Then:  python run.py topics {pdir.name}')

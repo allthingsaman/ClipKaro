@@ -26,8 +26,8 @@ video downloads, so nothing waits for you.
    you have one),
 2. looks at the picture: is it a **live stream**? **gameplay** with your webcam in a corner? It
    leaves out "Starting soon", "Be right back" and stream-ending screens by itself,
-3. reads everything and picks the best moments: about **one clip per 7 minutes** of video (at least
-   3), unless you ask for a number, and shows you a table of them,
+3. reads everything and picks every good moment: **3 to 8 clips**, and more for long videos (up to
+   about one per 7 minutes), unless you ask for a number, and shows you a table of them,
 4. for Hindi/Hinglish, writes the captions in English letters ("aaj hum business ki baat karenge"),
 5. cuts each moment into a standing (9:16) video and keeps the speaker's face in the middle,
 6. adds the edit: zooms, word-by-word captions, a couple of soft whooshes, phone-friendly volume,
@@ -56,7 +56,7 @@ scenes; you don't need to type that part.
 ### How many clips, and how long
 | You write | What happens |
 |---|---|
-| (nothing) | ClipKaro decides: about one clip per 7 minutes of video, at least 3, at most 20 (`max_clips` in settings.json). Break screens don't count. Fewer only when there aren't that many good moments |
+| (nothing) | ClipKaro decides: every good moment, from 3 up to 8 (as in v1.1), and for long videos up to about one per 7 minutes (at most 20, `max_clips` in settings.json). Break screens don't count |
 | "at least 10 clips" / "kam se kam 10" | 10 or more, never fewer (if the video is thin, Claude says which ones are weaker) |
 | "at most 5 clips" / "only the 3 best" | no more than that |
 | "give me 8 clips" | exactly 8 |
@@ -253,7 +253,7 @@ Claude to change them.
 | `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
-| `max_clips` | `20` | the most clips ClipKaro makes when you don't ask for a number (a number you ask for always wins) |
+| `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 

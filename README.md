@@ -43,8 +43,9 @@ you:  clip this video: https://youtu.be/...
 - 📺 **Live streams need no explaining.** It sees by itself that a video was a live stream, leaves out
   the "Starting soon", "Be right back" and stream-ending screens, and expects the quiet stretches where
   you just play.
-- 🔢 **The right number of clips.** About one per 7 minutes of video unless you say "at least 10" or
-  "at most 5". For long videos it asks once whether you want deep clips too.
+- 🔢 **The right number of clips.** Every good moment: 3 to 8, and more for long videos (up to about
+  one per 7 minutes), unless you say "at least 10" or "at most 5". For long videos it asks once
+  whether you want deep clips too.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
   that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters

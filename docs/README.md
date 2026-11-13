@@ -12,6 +12,7 @@ New to Claude Code or coding? Read the [user guide](user-guide.md) first.
 | [hinglish.md](hinglish.md) | How Hindi/Hinglish videos are transcribed and turned into Roman Hinglish captions | Hindi/Hinglish creators, the AI editor |
 | [troubleshooting.md](troubleshooting.md) | Fixes for common errors, and a FAQ | everyone |
 | [architecture.md](architecture.md) | How it works inside: components, data files, and the "clipping brain" | developers, curious users |
+| [since-v1.1.md](since-v1.1.md) | **Every change since v1.1** (the first stable version), each checked: an upgrade, different on purpose (with the way back), or costing more | everyone |
 | [roadmap-v3.md](roadmap-v3.md) | **What's next after v2.0**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
 | [roadmap-v2.md](roadmap-v2.md) | How ClipKaro compares with Opus Clip and others today, and the plan to make its clips industry grade (v2) | contributors, curious users |
 | [adding-a-language.md](adding-a-language.md) | How to add proper support for a new language (fonts, detection, Roman captions) | developers |

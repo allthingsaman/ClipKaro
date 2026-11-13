@@ -4,6 +4,9 @@ ClipKaro v2.0 is out (November 2026). This page lists what is still to do, in th
 do it, with a rough time for each item. We close the items one by one. When one is done, its
 status changes to **Done** with the date.
 
+**Every item must be an upgrade to v1.1**, the first stable version: nothing v1.1 could do may be
+lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against that.
+
 The goal is **production ready**: someone else can install ClipKaro and PostKaro, use them on a
 normal Claude plan, and post good clips without help. That is reached at the end of step 2.
 
@@ -21,7 +24,7 @@ Goal: the clips that are waiting get posted, and every new clip is checked by co
 |---|---|---|---|---|---|
 | 1 | **The critic judges craft, never the topic.** It looks at how a clip starts, whether it makes sense alone, how it ends and what could be cut. Politics, religion, rude jokes and controversial views are judged like any other clip. | You review every clip yourself, so no subject should hold a clip back. | 15 min | none | **Done** (2026-11-12) |
 | 2 | **First real posts with PostKaro.** First an unlisted YouTube Short, then one Instagram Reel and one Facebook Reel, then the waiting clips. Anything that breaks gets fixed. | PostKaro has only been tested with fake platforms so far. | 0-3 h (only if something breaks) | 30-45 min | To do: **start here** |
-| 3 | **More clips from long videos.** The fixed "3-8 clips" becomes a number that grows with the length of the video: about one per 7 minutes of real video, at least 3. A `max_clips` setting sets the limit. "At least N" / "at most N" always wins. Built together with: live streams and gameplay found by themselves (break screens left out), and one question about deep clips for videos over 21 minutes. Still open: good ideas that weren't cut stay listed, so you can ask for "clips 9-12 too". | Today a 2-hour podcast with 25 good moments still gives at most 8 clips. You post almost any decent clip, and more clips mean more chances. | 2-3 h | one test video, 20 min | **Done** (2026-11-12), except the "clips 9-12" list |
+| 3 | **More clips from long videos.** The fixed "3-8 clips" grows with the length of the video: still 3-8 for short videos, up to about one per 7 minutes of real video for long ones. A `max_clips` setting sets the limit. "At least N" / "at most N" always wins. Built together with: live streams and gameplay found by themselves (break screens left out), and one question about deep clips for videos over 21 minutes. Still open: good ideas that weren't cut stay listed, so you can ask for "clips 9-12 too". | Today a 2-hour podcast with 25 good moments still gives at most 8 clips. You post almost any decent clip, and more clips mean more chances. | 2-3 h | one test video, 20 min | **Done** (2026-11-12), except the "clips 9-12" list |
 | 4 | **Automatic quality check after editing** (`run.py qa`). It checks every finished clip for Hindi letters left in Roman captions, captions too wide or under the app buttons, a cut inside a word, unsure words, black frames, sound too loud or too quiet, the length, and a flash of another shot at the very end. Claude fixes what fails before showing you. Roman spellings are checked again after every re-cut. | In the November cleanup, code found 3 clips with Hindi letters left and 51 clips with captions too close to the edge. Nobody should have to find those by eye. | about 1 day | 15 min with the first report | To do |
 
 ## Step 2. Production ready (about 4-6 days)
@@ -63,6 +66,12 @@ before it, and it only stays if it wins.
   and a fresh download is needed. About 1 hour each.
 - **Per-platform texts for the 56 older clips.** These clips have one caption each; this adds a
   YouTube title and separate Instagram and Facebook texts. About 30 minutes.
+- **Hear the older gameplay videos again** (GTA episode 2, Black Myth Wukong, the gamer video) with
+  the improved check for game voices (2026-11-12), and re-render the clips it changes. About 5
+  minutes per video, plus the re-render.
+- **The first full "clip this video" run with the new defaults** (the deep-clip question, live
+  stream detection, the clip range). The pieces were tested one by one; your next stream is the
+  full test.
 
 ## Not planned for now
 - **More Indian languages** (Tamil, Bengali, Marathi, Telugu…). ClipKaro supports Hindi, Hinglish

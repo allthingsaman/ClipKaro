@@ -89,14 +89,14 @@ facecam`). Then these rules apply too:
   requests, "I'm back", reading donations, setting up the scene.
 
 ## How many
-`parts` prints the number to make (`-> clips: aim for N`):
+`parts` prints the range to make (`-> clips: 3 to 13`):
 - **The user asked for a number** ("at least 10", "at most 5", "give me 8"): follow it exactly.
   "At least 10" means 10 or more, never fewer: if the video is thin, take the 10 best anyway and
   say which ones are weaker.
-- **No number**: about one clip per 7 minutes of real video (break screens don't count), at least 3,
-  at most `"max_clips"` from settings.json (20). Make fewer only when there aren't that many decent
-  moments; never pad with weak ones. The owner posts almost any decent clip, so don't hold good
-  ones back either. If nothing is clip-worthy, say so.
+- **No number**: every decent moment, best first, from 3 up to 8 (what v1.1 made) or, for long
+  videos, about one per 7 minutes of real video (break screens don't count), at most `"max_clips"`
+  from settings.json (20). Never pad with weak ones; the owner posts almost any decent clip, so don't
+  hold good ones back either. If nothing is clip-worthy, say so.
 - Deep clips count towards the number.
 
 ## Ranking (score 1–10)
