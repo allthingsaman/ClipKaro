@@ -1,5 +1,19 @@
 # What's new
 
+## Not released yet
+
+- **No made-up words in the captions during laughter, noise or loops.** Whisper invents words where
+  nobody speaks clearly. Those now get no captions:
+  - shaky words during a laugh, and "ha ha" / "हा हा" written out;
+  - "झाल", a word Whisper writes for game sounds and music;
+  - made-up loops like "कर दो कर दो कर दो";
+  - the long tail of a phrase repeated 8 or more times.
+
+  Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
+  affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
+  `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **No "…" in captions.** Trailing-off marks ("like...", "हाग…") are no longer shown.
+
 ## v2.1 (November 2026): just say "clip this"
 
 v2.1 needs fewer words from you and gives more back. Say "clip this video". ClipKaro then works out

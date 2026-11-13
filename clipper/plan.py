@@ -218,11 +218,12 @@ def build_camera(meta):
 
 # ---------- captions ----------
 
-STRIP = re.compile(r'[.,;:।॥]+$')
+STRIP = re.compile(r'[.,;:।॥…]+$')
+LEAD = re.compile(r'^(?:…|\.{2,})+')        # "...so", "…हाँ": a trailing-off mark, never shown
 
 
 def display(word, upper):
-    w = STRIP.sub('', word.strip())
+    w = STRIP.sub('', LEAD.sub('', word.strip()))
     w = w.replace('"', '')
     return w.upper() if upper else w
 

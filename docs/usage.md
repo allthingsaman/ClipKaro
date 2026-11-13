@@ -310,6 +310,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
+| `run.py tidy <project>` | no captions for words made up during laughter, noise ("झाल") or loops, for videos transcribed before (`fetch` does it by itself); `--dry` |
 | `run.py fixword <project> "wrong" "right"` | `--at 2107.5` (only the place nearest that second), `--dry` (show what would change) |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |

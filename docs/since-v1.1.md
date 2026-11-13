@@ -31,6 +31,11 @@ ones were added.
   - Since 2026-11-12 it catches more of these.
   - It also checks that the English isn't a *translation* of your own Hinglish.
   - Way back: none needed, because v1.1's captions there were wrong words.
+- ⬆ **No made-up words during laughter, noise or loops.** v1.1 captioned them ("कर दो कर दो कर
+  दो", "झाल"). Now they get no captions; clear words said while laughing, and real repetition, stay.
+  No "…" in captions either. *(2026-11-13)*
+  - Way back: none needed, because those captions were wrong words. The words themselves stay in
+    the transcript, and `words-before-tidy.json` keeps the old marks.
 - ⬆ **The video downloads while the audio is transcribed** (YouTube links), instead of at the cut
   step, so cutting starts right away. *(2026-11-12)*
   - Way back: `fetch --no-video` downloads it at the cut step, as in v1.1. The disk space is then

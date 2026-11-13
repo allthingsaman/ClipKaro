@@ -427,6 +427,12 @@ other device would help.
   83-minute GTA stream has 93 now, of which 26 became English and 8 were caught as translations of
   the streamer's own Hinglish. `run.py relisten
   <project>` does the same for videos transcribed before (from `words-before-relisten.json`).
+- **Tidy** (`tidy.tidy_words`, after the sound pass): words Whisper made up get `unsure` (no captions,
+  times kept): shaky words (under 0.6) during a laugh found by the sound pass, laugh sounds written
+  out ("ha ha", "हा हा"), the noise word "झाल", and loops (a phrase of 1-4 words 3+ times in a row)
+  that are known made-up ones ("कर दो", "झाला है") or have a mean confidence under 0.6; of a phrase
+  repeated 8+ times, everything after the first 3. Measured on 13 videos: English 0 words, podcasts up
+  to 0.2 %, gameplay 1-1.4 %. Captions also drop "…" and a leading "..." (`plan.display`).
 - **Sentence lines** (`sentences`): words are grouped into lines at `.` `?` `!` `।` `॥`, at pauses
   over 0.8 s, at a comma once a line has 30 words, and at most every 60 words. So a line end is a
   real sentence end in most cases, which matters when the AI chooses where to cut.

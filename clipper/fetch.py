@@ -841,6 +841,17 @@ def main():
     except Exception as e:
         print(f'   (sound cues skipped: {type(e).__name__}: {e})')
 
+    # no captions for words made up during laughter, noise ("झाल") or in loops ("कर दो कर दो ...")
+    try:
+        from . import sound, tidy
+        words_now = load_json(pdir / 'transcript' / 'words.json') or []
+        tidied, why = tidy.tidy_words(words_now, sound.load(pdir))
+        if why:
+            write_transcript(pdir, tidied, load_json(pdir / 'project.json', {}) or project)
+            print(f'-> tidy: {tidy.report(why)}')
+    except Exception as e:
+        print(f'   (tidy skipped: {type(e).__name__}: {e})')
+
     # what kind of video: a live stream? gameplay with a facecam? break screens to leave out?
     if not a.no_video:
         finish_video_download(pdir, video_job)
