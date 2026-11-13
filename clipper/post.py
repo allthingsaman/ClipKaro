@@ -134,6 +134,10 @@ def main():
     print(f"post.json: {len(kit['clips'])} clip(s) ready to post -> {pdir / 'post.json'}")
     for n in notes:
         print('  ?', n)
+    from .more import summary_line
+    more = summary_line(pdir)
+    if more:
+        print(more)
     app = postkaro_app()
     if not app:
         print('PostKaro (the posting app) is not installed, so post the files in edited/ by hand. '

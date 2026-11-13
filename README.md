@@ -165,7 +165,7 @@ If a user asked you to install this repo, follow these steps (details per system
 ## What you can ask for
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
 
-- "quick clip this" (uses much less of your Claude plan) · "deep clip this"
+- "quick clip this" (uses much less of your Claude plan) · "deep clip this" · later: "3 more clips from that video"
 - "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money"
 - "show me the moments before you cut them" · "don't edit them, just cut"
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"

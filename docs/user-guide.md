@@ -194,6 +194,10 @@ clip idea before anything is cut. If you want to save your Claude plan, say "qui
 "use fewer tokens": Claude then picks the clips alone, like the first versions did. It's faster and
 much lighter, but the picks get no second opinion.
 
+**Want more clips later?** ClipKaro judges every possible clip in a video, often 15 to 30, and
+makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
+Sir video" and get them in a few minutes, without the video being read again.
+
 **A wrong word in the captions?** Say "in clip 4, 'bow' should be 'boat'". It is fixed everywhere
 the word was heard, and the clips that have it are made again.
 

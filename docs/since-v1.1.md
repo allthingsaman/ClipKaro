@@ -48,6 +48,9 @@ ones were added.
   - It never throws a clip away; it only ranks them and gives notes for fixing them.
   - Since 2026-11-12 it judges only how a clip is made, never its topic.
   - Short videos get it too. *(v2.0)*
+- ⬆ **More clips later, without reading the video again.** The good ideas that weren't cut stay
+  saved; "3 more clips from that video" turns the next ones into clips in a few minutes. v1.1 had to
+  read the whole video again for that. *(2026-11-13)*
 - ⬆ **Repaired clips keep their place.** The repair round judges clips again, and scores wander
   between runs, so a trimmed clip could drop below its own original. Now a second look never costs
   a clip its place, and `cut --check` no longer warns about a repair it made on purpose. *(2026-11-13)*

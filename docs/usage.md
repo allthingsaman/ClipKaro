@@ -117,6 +117,23 @@ scenes; you don't need to type that part.
 | "change the posting caption of clip 4" | Claude rewrites it |
 | "add one more clip about X" | adds one clip, and cuts and edits only that one |
 
+### More clips later (without reading the video again)
+While choosing, the critic scores **every** clip idea of a video (often 15-30), and only the best
+become clips. The others stay saved with their scores and exact times. At the end Claude tells you,
+for example, "6 more good ideas are saved". Any time later, even days after:
+
+| You write | What happens |
+|---|---|
+| "more clips from the Khan Sir video" | the next 3 ideas become clips (Claude says how many are left) |
+| "3 more clips from <video>" | the next 3, best first |
+| "clips 9-12 too" | enough of them for 12 clips in all |
+| "show me the ideas you didn't cut" | the list, best first, with scores (`more.txt`) |
+| "add idea 2 and 5" | exactly those from the list |
+
+Only the new clips are written, cut and edited; it takes a few minutes and little of your Claude
+plan, because nothing is read again. The new clips are added to post.json for PostKaro. When no
+ideas are left, "find more clips in this video" reads it again.
+
 ### Downloading
 | You write | What happens |
 |---|---|
@@ -292,6 +309,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
 | `run.py fixword <project> "wrong" "right"` | `--at 2107.5` (only the place nearest that second), `--dry` (show what would change) |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |

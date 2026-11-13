@@ -41,6 +41,11 @@
     whole video each time.
 - New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
   stream? gameplay? break screens?).
+- **More clips later.** The critic scores every clip idea in a video, often 15 to 30, but only the
+  best are made. The rest are now kept. Days later, "3 more clips from the Khan Sir video" (or
+  "clips 9-12 too") turns the next ones into clips in a few minutes, without reading the video
+  again. The Khan Sir podcast had 18 such ideas, the best one scoring 7.1/10. `run.py more`; `post`
+  tells you how many are waiting.
 - **Quick, standard, deep.** *Standard* stays the default. *Deep* adds deep clips: you ask for
   them, or say yes to the question for long videos. *Quick* runs only when you ask ("quick clip this",
   "use fewer tokens"). Claude then picks the clips alone, like v1.1, and uses much less of your Claude

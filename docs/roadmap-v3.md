@@ -22,8 +22,7 @@ the three modes (3) were done the same day.
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 2 | **"Clips 9-12 too."** Good ideas that weren't cut stay listed with their scores, so you can ask for more clips from the same video later without reading it again. | You post almost any decent clip; the ideas are already found and scored. | about 1 h | none | To do: **start here** |
-| 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode is built; its real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | To do |
+| 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode is built; its real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | To do: **start here** (needs you to run `/usage`) |
 
 ## Next: look more professional
 Each item is blind-tested against the version before it, and it only stays if it wins.
@@ -76,6 +75,7 @@ Each item is blind-tested against the version before it, and it only stays if it
 | **Game characters' English caught more often**, never a translation of the streamer's Hinglish; listening again works on only the few seconds it needs. | 2026-11-12 |
 | **Every change since v1.1 checked** ([since-v1.1.md](since-v1.1.md)). | 2026-11-13 |
 | **Small fixes** (item 1): `run.py fixword` fixes a caption word everywhere; a fast camera cut only follows the new face instead of zooming (anime: 48 zoom changes in 68 s, now 28); repaired clips keep their place and their id; editing again works without the original video. | 2026-11-13 |
+| **More clips later** (item 2, "clips 9-12 too"): the good ideas that weren't cut stay saved (`more.txt`), and "3 more clips from that video" makes them without reading again (`run.py more`). | 2026-11-13 |
 | **Three modes** (item 3): standard by default, deep when asked or on yes to the question for long videos, quick only when asked (one read by Claude, no helpers, no critic). | 2026-11-13 (measuring with `/usage` is item 3b) |
 
 ## Not planned for now
@@ -85,7 +85,7 @@ Each item is blind-tested against the version before it, and it only stays if it
 
 ---
 
-**Now (items 2 and 3b): about half a day. Next and then (items 4-15): about 3-4 weeks.**
+**Now (item 3b): a few hours, with your `/usage` runs. Next and then (items 4-15): about 3-4 weeks.**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).

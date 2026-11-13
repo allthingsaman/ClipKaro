@@ -133,7 +133,9 @@ makes a better short.
 (only each file's YOUR STRETCH is new; the rest is overlap), and note the best moments as you go,
 with their exact times. Then pick straight into the **final** clips.json, following
 `references/picking-moments.md` (hook first, payoff last, tight cuts, its quality checklist), with
-every clip's `caption`, `post` and `clarify` as in step 6 of 2a. Skip 2a and 2d; apply the misheard
+every clip's `caption`, `post` and `clarify` as in step 6 of 2a. Also list up to 8 runner-up ideas
+you'd cut next under `"spare"` in clips.json (`[{"title", "ranges", "score"}]`, no posting text), so
+"more clips" later works without reading again (section 7). Skip 2a and 2d; apply the misheard
 words you noticed yourself (2e); then 2b, 3, 5 and 6 as usual. In the results table give your own
 score (1-10) instead of a clip score.
 
@@ -369,12 +371,36 @@ and, when PostKaro (the posting app) is installed, prints **`Post them: <link>`*
 with `?` name clips without posting text: add their `caption` / `post` in clips.json and run it
 again.
 
-Report the results as a short table: clip, length, clip score (your own score in quick mode), file path. Under each clip, give
+Report the results as a short table: clip, length, clip score (your own score in quick mode), file path.
+If `post` printed "N more good ideas not cut yet", add one line: "N more good ideas are saved: say
+'more clips' to get them" (section 7). Under each clip, give
 two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
 from clips.json. Repeat the line that clip scores are not a prediction of views. If `post` printed
 a link, end with it: "Post them: <link>" (it opens PostKaro with every clip filled in; it only works
 on this computer). Otherwise mention that the files are ready to upload to Shorts, Reels and TikTok.
+
+## 7. More clips later (without reading the video again)
+The critic scores every clip idea of a video, often 15-30, and only the best are cut. The others are
+kept: `post` ends with a line like "6 more good ideas not cut yet". Tell the user that in your final
+message ("6 more good ideas are saved: say 'more clips' to get them").
+
+When the user later asks for more clips from a video already clipped ("3 more clips from the Khan
+Sir video", "clips 9-12 too", "more clips", "add idea 2 and 5"), find its project in `output/` and
+**don't read the transcript again**:
+```
+python run.py more <project>              # the ideas not cut yet, best first (also in more.txt)
+python run.py more <project> --add 3      # "3 more clips"
+python run.py more <project> --upto 12    # "clips 9-12 too": enough for 12 clips in all
+python run.py more <project> --pick 2,5   # "add idea 2 and 5" (numbers from the list)
+```
+"More clips" with no number: add the next 3 and say how many are left. The new clips are added to
+clips.json after the last one, and their words are printed. For each: write `caption`, `post` and
+`clarify` as in step 6 of 2a; if it has a `fix?` or `trim?` note, repair it as in the repair round
+(`run.py find`), without a new critic run. Then only for the new clips: `romanize` (Hindi/Hinglish),
+`cut --check --clips 12,13,14`, `cut --clips ...`, `edit --clips ...`, and `post` (it adds them to
+post.json; clips already posted stay as they are). Report them like the others. When `more` says
+nothing is left, say so: a fresh read ("find more clips in this video") is the only way to more.
 
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.

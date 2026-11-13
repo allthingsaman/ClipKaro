@@ -102,6 +102,7 @@ flowchart TD
 | 4. Caption colour (optional) | `run.py brand <project>` | the video | `brand.json` | AI editor or scripts |
 | 5. Edit | `run.py edit <project>` | `clips/*.json`, `brand.json`, `romanize.json` | `edited/NN-title.mp4` + `.srt` | scripts |
 | Helper | `run.py find <project> "phrase"` | `words.json` | nothing (prints times) | |
+| More clips later | `run.py more <project>` (`--add N`, `--upto N`, `--pick 2,5`) | every `critic.json` round, `candidates.json`, `clips.json` (`spare`) | `more.txt`; with `--add`: new clips in `clips.json` | scripts + AI editor (posting text) |
 | Helper | `run.py fixword <project> "wrong" "right"` | `words.json` | `words.json` (backup `words-before-fixes.json`), `sentences.json`, `transcript.txt` | AI editor or you |
 | Helper | `run.py frames <project>` | `clips.json`, the video | `frames/NN-title.jpg` (what the crop keeps) | the AI editor looks |
 | 2a. Long videos | `run.py parts <project>`, readers, `run.py topics <project>` | `transcript/` | `parts/`, `topics.json`, `topics.txt`, `candidates.json`, `candidates.txt` | AI readers + scripts |
@@ -139,6 +140,8 @@ clipper/                     the toolbox (Python)
     facecam.py    webcam-overlay detection and the stacked gameplay layout
     kind.py       what kind of video (live stream, gameplay) and its break screens
     info.py       a quick look at a link or file before anything is downloaded
+    more.py       the good clip ideas not cut yet, and adding them as more clips later
+    fixword.py    fixes a misheard caption word everywhere
     brand.py      caption accent colour (override or picked from the video)
     plan.py       the edit plan: camera zooms, caption groups, sound cues
     edit.py       renders the plan (python or Remotion engine) and mixes the audio
@@ -204,6 +207,7 @@ output/<project>/
         transcript.txt           the readable transcript the AI editor reads
         cues.json                sound cues: laughter, applause, both talking at once, lively spots
     breaks.jpg                   one picture of each break screen found (live streams)
+    more.txt                     the good clip ideas not cut yet, best first (run.py more; post writes it too)
     clips.json                   the AI editor's picks (for a short video, first its shortlist)
     critic/                      the critic's packets (run-N.txt), answers (run-N.json), plan.json, critic.json
     critic.txt                   every clip idea ranked by clip score, with reasons and fix / check notes
@@ -610,6 +614,17 @@ about twice the clips wanted that the AI editor writes for a short video.
   names the earlier id in `"from"`, or it has the same ranges) keeps its earlier score when the new
   one is lower; `critic.txt` says "kept its place". `cut --check` treats a repaired version judged in
   the repair round as on purpose (no "ranges differ" warning).
+
+### 5.4e More clips later (`more.py`)
+The critic scores every idea (all candidates of a long video, the shortlist of a short one), and
+only the best become clips. `more` gathers them all: every critic round (the newest round's score
+wins, and a repaired version replaces its original, matched by `origin` or by its ranges), then the
+readers' candidates the critic never judged, then quick mode's `spare` list in clips.json. It drops
+those overlapping a clip that exists (more than 1 s) and, of two that overlap, keeps the better one.
+The result is `more.txt`, best first. `--add N` / `--upto N` / `--pick 2,5` append them to clips.json
+(ids after the last clip, `"from"` = the idea's id, `"added_later": true`, the critic's score) and
+print their words, so the AI editor writes only their posting text; then only those clips are cut
+and edited. `post` ends with "N more good ideas not cut yet" (critic score 4.0 or more).
 
 ### 5.4d Deep clips: one story from moments far apart (`deep.py`, `honesty.py`)
 Only when the user asks ("deep clip this", "do a deep pass on <video>"), after the regular clips.

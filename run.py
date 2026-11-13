@@ -14,6 +14,7 @@
     python run.py honesty <project>                      deep clips: three judges check nothing changes what was meant
     python run.py find <project> "exact phrase"          word-accurate time of a phrase
     python run.py fixword <project> "wrong" "right"     fix a misheard caption word everywhere (--at T: one place)
+    python run.py more <project> [--add N]               the good ideas not cut yet; add them as more clips later
     python run.py frames <project>                       preview what the vertical crop keeps (spot show_full moments)
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
     python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
@@ -40,6 +41,7 @@ COMMANDS = {
     'edit': 'clipper.edit',
     'find': 'clipper.find',
     'fixword': 'clipper.fixword',
+    'more': 'clipper.more',
     'parts': 'clipper.parts',
     'topics': 'clipper.topics',
     'sound': 'clipper.sound',
