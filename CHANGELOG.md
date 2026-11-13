@@ -19,14 +19,18 @@
 - **Every clip checked before you see it.** `run.py qa` checks each finished clip: Hindi letters left in
   Roman captions, captions outside the safe zone, a word cut in half, the loudness, black frames, a
   stale edit (fix first), and a caption over a face, a frozen picture or a flash at the end (look at
-  it). Claude fixes what fails before showing you. On the test videos: 0 to fix.
+  it). Claude fixes what fails before showing you. Tried on all 106 clips of the 13 test videos
+  (2026-11-13): it found 3 clips with sound peaks too high and a caption on a head in a split screen
+  (both fixed); now 0 to fix. A face is checked every half second, a hand or a mic is not a
+  face, and a text card on black that is in the video itself is only for a look.
 - **Tests that protect v1.1.** `run.py test` runs ClipKaro's own checks in under a second: v1.1's
   captions, zooms and cuts with the upgrades off, and every upgrade since.
 - **Caption looks.** Besides the classic look: `box` (on a dark box), `karaoke` (each word fills with
   colour as it's said), `minimal` (smaller, normal case), `bold` (big Anton letters) and `comic`
   (tilted comic letters). Say "box captions", or set `"caption_look"` in settings.json.
 - **Emojis on strong words.** Claude adds up to 3 per clip (💰 on "paisa", 😱 on a shock). They pop in
-  above or beside the caption when the word is said, and are left out rather than put on a face.
+  above or beside the caption when the word is said (in gameplay beside it first, because the game's own
+  subtitles sit just above), and are left out rather than put on a face.
   `"emoji": false` turns them off.
 - **Background music, your own.** Put tracks you may use in the `music` folder, one folder per mood
   (chill, upbeat, hype, suspense, emotional, funny, inspiring), or say "add this music as chill:
@@ -49,6 +53,14 @@
   and the apps' top and bottom bars, and move to a free line in a close-up where they would cover a
   chin. `"safe_zones": false` puts them back on one fixed line.
 - **No "…" in captions.** Trailing-off marks ("like...", "हाग…") are no longer shown.
+- **No more sound peaks over the limit.** Three clips of the test videos peaked at -0.6 to +0.3 dB, where
+  the apps' own processing can crackle: the loudness step overshoots on sharp sounds, and the AAC encoder
+  adds 2-3 dB of peak to harsh phone-mic sound. Now a limiter holds the mix at -2 dB, the encoded sound
+  is measured, and if it's still over -1.2 dB the limiter goes lower and it's encoded again. The
+  loudness stays the same.
+- **Podcasts keep their speaker framing when cut again after a clean-up.** A project that kept only
+  its video (the audio files deleted to save space) lost the speaker crop and split screen when cut
+  again. `cut` now makes the voice track again from the video, in a few seconds.
 
 ## v2.1 (November 2026): just say "clip this"
 

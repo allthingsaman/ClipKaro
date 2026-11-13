@@ -919,8 +919,10 @@ whole video again just to look at its colours).
   only the opening one, `--sfx none` none. `hit` and `click` sounds are catalogued for custom edits
   but not placed automatically.
 - **Mix**: the voice gets a 70 Hz high-pass and gentle compression (2.5:1 from -20 dB); the effects
-  are mixed under it; the result is loudness-normalised to **-14 LUFS** (true peak -1.5 dBTP), the
-  level the big platforms play at.
+  are mixed under it; the result is loudness-normalised to **-14 LUFS** (peaks limited to -2 dB), the
+  level the big platforms play at. The mix is encoded to AAC once and its true peak measured: the encoder
+  can add 2-3 dB of peak to harsh, clipped sound, so above -1.2 dBTP the limiter goes lower and it is
+  encoded again (`encode_audio`, at most 3 tries). The video renderer copies that sound in.
 
 ### 5.11a Sound effects by mood (`sfx.py`)
 The built-in whooshes stay in `assets/sfx/` (roles by file name: whoosh, hit, click; packs split at
@@ -958,7 +960,8 @@ and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>`
 FAIL: Devanagari in Roman captions, a caption wider than the safe zone or outside it (only when the
 plan had safe zones on), a cut 0.12 s or more inside a word (Whisper's word times are +-0.1 s), loudness
 3 dB or more off -14 LUFS or peaks above -1 dBFS, a black stretch of 0.3 s, an edit older than its cut.
-CHECK: a caption over a face (faces as the edit shows them), a picture frozen 2 s or more, a flash of
+CHECK: a caption over a face (the mouth or higher, from the faces seen every half second while it
+shows, as the edit zooms them; a hand on the chin is not a face), a picture frozen 2 s or more, a flash of
 another shot in the last 3 frames, loudness 1.5 dB off, a length outside 15-90 s, a quarter or more of
 the words without captions, no posting text. One ffmpeg pass per clip (`ebur128`, `blackdetect`,
 `freezedetect`): 11 clips in about 20 s. The AI editor fixes every FAIL before reporting.

@@ -54,6 +54,54 @@ def face_boxes(clip_mp4, shots):
     return out
 
 
+SURE_FACE = 0.8          # the detector's score a face needs in the quality check
+
+
+def real_faces(boxes):
+    """Leave out a "face" that starts inside a bigger one and lies under it: a hand on the chin, a mic.
+    Two people stacked in a split screen never overlap like that, so both stay."""
+    kept = []
+    for b in sorted(boxes, key=lambda b: b[1] - b[3]):          # the tallest first
+        if not any(o[1] < b[1] < o[3] and min(b[2], o[2]) - max(b[0], o[0]) > 0.5 * (b[2] - b[0]) for o in kept):
+            kept.append(b)
+    return kept
+
+
+def face_track(clip_mp4, step=0.5):
+    """[(t, [(x0, y0, x1, y1)])]: the faces every `step` seconds of the cut clip, in output pixels.
+    For checking a text at its own time (qa): a long shot's few samples in `face_boxes` may show the
+    speaker leaning in at another moment. One ffmpeg pass at half size, read frame by frame."""
+    import subprocess
+    import numpy as np
+    from .common import probe
+    from .reframe import _detector
+    w, h = W // 2, H // 2
+    size = w * h * 3
+    fps = probe(clip_mp4).get('fps') or 30
+    every = max(1, round(fps * step))      # every Nth frame by its number: its time is exact (the fps filter's
+    p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', str(clip_mp4), '-vf',     # picks can be 0.25 s late)
+                          f"select='not(mod(n\\,{every}))',scale={w}:{h}", '-fps_mode', 'passthrough',
+                          '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-'], stdout=subprocess.PIPE)
+    out, k = [], 0
+    while True:
+        buf = p.stdout.read(size)
+        if len(buf) < size:
+            break
+        img = np.frombuffer(buf, np.uint8).reshape(h, w, 3).copy()
+        _, det = _detector(w, h).detect(img)
+        boxes = []
+        for f in det if det is not None else []:
+            x, y, bw, bh = f[0] * W / w, f[1] * H / h, f[2] * W / w, f[3] * H / h
+            # real faces score 0.89-0.95; a hand, a mic or fire taken for one about 0.6
+            if f[14] >= SURE_FACE and bh >= 0.04 * H:      # not a face in the background or on a poster
+                boxes.append((x, y, x + bw, y + bh))
+        out.append((k * every / fps, real_faces(boxes)))
+        k += 1
+    p.stdout.close()
+    p.wait()
+    return out
+
+
 def margins(boxes, top=-BROW, bottom=CHIN):
     """Face boxes with room around them, as shares of each box's height: top < 0 grows it upward (the
     forehead), top > 0 lets text cover the top of the box (the hair line, never the eyes)."""

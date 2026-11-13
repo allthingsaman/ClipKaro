@@ -29,14 +29,16 @@ from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, load_json, 
 from .sfx import path_of
 
 FONTS = ASSETS / 'fonts'
+AAC_RATE = '192k'
+LIMIT_DB, MAX_PEAK_DB = -2.0, -1.2    # the limiter's ceiling; the highest true peak allowed after AAC
 JUMP_SIZE, JUMP_Y = 50, 250       # the optional "27 MIN LATER" label: size (CSS px) and centre line
 
 
 # ---------------- shared: audio mix ----------------
 
-def mix_audio(clip_mp4, cues, out_wav, duration, music=None):
+def mix_audio(clip_mp4, cues, out_wav, duration, music=None, limit_db=LIMIT_DB):
     """Voice + SFX cues (+ a music bed, ducked under the voice) -> loudness-normalised stereo wav
-    (-14 LUFS, -1.5 dBTP)."""
+    (-14 LUFS, peaks limited to `limit_db`)."""
     inputs = ['-i', str(clip_mp4)]
     chains = ['[0:a]aresample=48000,aformat=channel_layouts=stereo,'
               'highpass=f=70,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2'
@@ -61,8 +63,38 @@ def mix_audio(clip_mp4, cues, out_wav, duration, music=None):
     if music:
         inputs += ['-stream_loop', '-1', '-i', str(music)]
     chains.append(''.join(labels) + f'amix=inputs={len(labels)}:normalize=0:duration=first,'
-                  f'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,atrim=0:{duration:.3f}[out]')
+                  f'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,'
+                  # one-pass loudnorm can overshoot its peak target on sharp sounds (game hits, a slammed
+                  # table): a limiter at -2 dB keeps every clip under the apps' -1 dB, loudness unchanged
+                  f'alimiter=limit={10 ** (limit_db / 20):.4f}:attack=5:release=50:level=false:latency=true,'
+                  f'atrim=0:{duration:.3f}[out]')
     ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', '[out]', '-c:a', 'pcm_s16le', out_wav)
+
+
+def true_peak(path):
+    """The true peak (dBFS) of a file's sound, as the apps measure it, or None."""
+    import re
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', str(path), '-af',
+                        'ebur128=peak=true:framelog=quiet', '-f', 'null', '-'], capture_output=True, text=True)
+    m = re.findall(r'Peak:\s+(-?[\d.]+|-inf) dBFS', r.stderr)
+    return float(m[-1]) if m and m[-1] != '-inf' else None
+
+
+def encode_audio(clip_mp4, cues, out_m4a, duration, music=None):
+    """The mix as AAC, its true peak under MAX_PEAK_DB. The AAC encoder can add 2-3 dB of peak to harsh,
+    clipped sound (a phone mic: a PS5 clip went from -2 dB in the mix to +0.3 dB after encoding), so the
+    encoded peak is measured and, when it's too high, the limiter goes that much lower and the mix is
+    encoded again (at most 3 tries). The loudness stays at -14 LUFS."""
+    wav, limit = out_m4a.with_suffix('.wav'), LIMIT_DB
+    for _ in range(3):
+        mix_audio(clip_mp4, cues, wav, duration, music, limit)
+        ffmpeg('-i', wav, '-c:a', 'aac', '-b:a', AAC_RATE, out_m4a)
+        peak = true_peak(out_m4a)
+        if peak is None or peak <= MAX_PEAK_DB:
+            break
+        limit -= peak - MAX_PEAK_DB + 0.3
+    wav.unlink(missing_ok=True)
+    return out_m4a
 
 
 def write_srt(plan, path):
@@ -301,7 +333,7 @@ def draw_emojis(frame, emojis, t):
     return frame if out is None else out
 
 
-def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
+def render_python(clip_mp4, plan, audio, out_mp4, workdir):
     need('ffmpeg')
     ass = workdir / f'{out_mp4.stem}.ass'
     write_ass(plan, ass)
@@ -311,9 +343,9 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
                             '-r', str(plan['fps']), '-s', f'{W}x{H}', '-'], stdout=subprocess.PIPE)
     tmp = out_mp4.with_suffix('.part.mp4')
     enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-s', f'{W}x{H}',
-                            '-r', str(plan['fps']), '-i', '-', '-i', str(audio_wav), '-vf', vf,
+                            '-r', str(plan['fps']), '-i', '-', '-i', str(audio), '-vf', vf,
                             '-map', '0:v', '-map', '1:a', *(plan.get('encoder') or video_encoder(settings())[0]),
-                            '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest',
+                            '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-shortest',
                             '-movflags', '+faststart', str(tmp.resolve())],
                            stdin=subprocess.PIPE, cwd=workdir)
     cam = plan['cam']
@@ -356,7 +388,7 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
 REMOTION = ROOT / 'remotion'
 
 
-def render_remotion(clip_mp4, plan, audio_wav, out_mp4, workdir):
+def render_remotion(clip_mp4, plan, audio, out_mp4, workdir):
     npx = shutil.which('npx')
     if not npx:
         die('Node.js is needed for --engine remotion. Install Node, then: python install.py --remotion')
@@ -382,8 +414,8 @@ def render_remotion(clip_mp4, plan, audio_wav, out_mp4, workdir):
     (pub / tag).unlink(missing_ok=True)
     if r.returncode != 0 or not silent.exists():
         die('remotion render failed (see output above)')
-    ffmpeg('-i', silent, '-i', audio_wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac',
-           '-b:a', '192k', '-shortest', '-movflags', '+faststart', out_mp4)
+    ffmpeg('-i', silent, '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'copy', '-shortest',
+           '-movflags', '+faststart', out_mp4)
     silent.unlink(missing_ok=True)
 
 
@@ -435,18 +467,18 @@ def edit_one(job):
         say(f"   captions include Devanagari -> font {plan['caption_style']['font']}")
     save_json(work / f"{meta['name']}.plan.json", {k: v for k, v in plan.items() if k != 'cam'})
     plan['encoder'] = video_encoder(cfg)[0]
-    wav = work / f"{meta['name']}.mix.wav"
+    audio = work / f"{meta['name']}.mix.m4a"
     track = None
     music_on = cfg.get('music', True) if a.music is None else a.music
     if music_on and picked.get('music') and opts['sfx'] != 'none':
         track = musiclib.pick(picked['music'], meta['name'])
         if not track:
             say(f"   ! music \"{picked['music']}\": no tracks in music/{picked['music']}/ (`python run.py music`)")
-    mix_audio(clip_mp4, plan['sfx'], wav, plan['duration'], track)
-    (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, wav, out, work)
+    encode_audio(clip_mp4, plan['sfx'], audio, plan['duration'], track)
+    (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, audio, out, work)
     if plan['captions']:
         write_srt(plan, out.with_suffix('.srt'))
-    wav.unlink(missing_ok=True)
+    audio.unlink(missing_ok=True)
     sfx = ', '.join(f"{c['role']}@{c['at'] + 0:.1f}s" for c in plan['sfx']) or 'none'
     moved = len({g['y'] for g in plan['captions'] if g.get('y') not in (None, H // 2)})
     extra = (f"  hook: \"{' / '.join(plan['hook']['lines'])}\" at y={plan['hook']['y']}" if plan.get('hook') else '') + \

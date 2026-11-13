@@ -93,6 +93,39 @@ class Captions(unittest.TestCase):
             for line in lines:
                 self.assertLessEqual(plan.caption_width(line, dict(st, size=size)), layout.SAFE_W)
 
+    def test_emoji_spot(self):
+        st = {'font': plan.LATIN_FONT[0], 'font_file': plan.LATIN_FONT[1], 'size': 96, 'outline': 8, 'spacing': 1}
+        words = sentence('the police are here now run', 0.0)
+        caps = [{'start': 0.0, 'end': 0.7, 'words': [{'text': 'RUN'}]},
+                {'start': 0.76, 'end': 2.2, 'words': [{'text': 'POLICE'}]}]
+        for mode, where in (('crop', 'above'), ('facecam', 'beside')):
+            shots = [{'t0': 0.0, 't1': 3.0, 'mode': mode}]
+            got, missing = plan.emoji_marks([['police', '🚨']], words, caps, shots, {}, 1160, 3.0, st)
+            self.assertEqual(len(got), 1, missing)
+            e = got[0]
+            self.assertEqual('above' if e['y'] < 1160 - 100 else 'beside', where)
+            if where == 'beside':     # clear of the wider line that follows while it shows
+                wide = plan.caption_width('POLICE', st)
+                self.assertGreaterEqual(abs(e['x'] - 540) - plan.EMOJI_SIZE / 2, wide / 2)
+
+    def test_caption_part_at_a_split_keeps_the_seam(self):
+        # Khan Sir clip 10: the split starts on frame 374 (14.96 s at 25 fps) but its t0 says 14.98; the part
+        # of a caption from that frame on belongs on the seam, not on the lower person's head
+        shots = [{'t0': 0.0, 't1': 14.98, 'f0': 0, 'mode': 'crop'},
+                 {'t0': 14.98, 't1': 20.0, 'f0': 374, 'mode': 'split'}]
+        faces = {0: [(300, 300, 780, 900)], 1: [(300, 300, 780, 700), (300, 1200, 780, 1500)]}
+        caps = [{'start': 14.55, 'end': 14.96, 'words': []},
+                {'start': 14.96, 'end': 15.37, 'cont': True, 'y': 960, 'words': []}]
+        plan.safe_caption_y(caps, shots, faces, 1270, False, None, 25)
+        self.assertEqual(caps[1]['y'], 960)
+        self.assertNotEqual(caps[0].get('y', 1270), 960)
+
+    def test_hand_is_not_a_face(self):
+        face, hand = (240, 139, 919, 1082), (154, 799, 727, 1510)       # a fist under the chin (PS5 clip 1)
+        self.assertEqual(layout.real_faces([hand, face]), [face])
+        top, bottom = (200, 100, 800, 700), (200, 1000, 800, 1600)      # two people in a split screen
+        self.assertEqual(sorted(layout.real_faces([top, bottom])), [top, bottom])
+
     def test_text_avoids_faces(self):
         face = [(300, 400, 780, 1000)]
         y = layout.place(400, 135, face, layout.TITLE_LINES)
@@ -154,6 +187,40 @@ class JumpCuts(unittest.TestCase):
     def test_never_across_a_laugh(self):
         pieces = cut.jump_pieces(0.0, self.words[-1]['e'], self.words, lambda a, b: not (a < 3.5 and b > 2.5))
         self.assertEqual(len(pieces), 2)
+
+    def test_voice_track_made_again_from_the_video(self):
+        # a project tidied after posting keeps only video.mp4: the director must still hear who talks
+        import shutil
+        import subprocess
+        if not shutil.which('ffmpeg'):
+            self.skipTest('no ffmpeg')
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'source').mkdir()
+            video = pdir / 'source' / 'video.mp4'
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=black:s=64x36:d=1', '-f', 'lavfi',
+                            '-i', 'sine=f=440:d=1:sample_rate=44100', '-shortest', '-ac', '2', str(video)], check=True)
+            wav = cut.audio16k(pdir, video)
+            self.assertTrue(wav.exists())
+            import soundfile as sf
+            info = sf.info(str(wav))
+            self.assertEqual((info.samplerate, info.channels), (16000, 1))
+
+    def test_loud_clipped_sound_stays_under_the_peak_limit(self):
+        # harsh, clipped sound (a phone mic): the AAC encoder adds peaks; the edit measures and limits again
+        import shutil
+        import subprocess
+        if not shutil.which('ffmpeg'):
+            self.skipTest('no ffmpeg')
+        from clipper import edit
+        with tempfile.TemporaryDirectory() as d:
+            src, out = Path(d) / 'clip.wav', Path(d) / 'mix.m4a'
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i',
+                            'aevalsrc=clip(4*sin(2*PI*180*t)*(0.6+0.4*sin(2*PI*3*t))\\,-1\\,1):s=48000:d=4',
+                            str(src)], check=True)
+            edit.encode_audio(src, [], out, 4.0)
+            self.assertLessEqual(edit.true_peak(out), edit.MAX_PEAK_DB + 0.05)
+            self.assertFalse(out.with_suffix('.wav').exists())
 
     def test_gameplay_keeps_long_quiet(self):
         words = sentence('so this is the first point', 0.0) + sentence('and here is the second one', 5.0)

@@ -305,6 +305,18 @@ def _wide_pieces(planned):
     return out
 
 
+def audio16k(pdir, video):
+    """The 16 kHz voice track the director listens to. A project tidied up after posting may have kept
+    only the video: then it is made again from the video (a few seconds), so its clips keep the
+    speaker framing instead of falling back to the classic one."""
+    wav = pdir / 'source' / 'audio16k.wav'
+    if not wav.exists() and video and Path(video).exists():
+        print('   (no 16 kHz audio kept: making it again from the video)', flush=True)
+        wav.parent.mkdir(parents=True, exist_ok=True)
+        ffmpeg('-i', str(video), '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', str(wav))
+    return wav
+
+
 def two_person(pdir, video, plans, words):
     """The director's framing for every clip with a two-person shot: {clip id: [(a, b, how)]}.
     Voices, laughter and mouth movement are measured once per clip (cached in .work/), the video's
@@ -318,7 +330,7 @@ def two_person(pdir, video, plans, words):
         return {}
     print('-> two-person shots found: working out who speaks when (voices, laughter) ...', flush=True)
     try:
-        audio = speakers.load_audio(pdir / 'source' / 'audio16k.wav')
+        audio = speakers.load_audio(audio16k(pdir, video))
     except Exception as e:
         print(f'   ! no 16 kHz audio to analyse ({e}); classic framing for those shots')
         return {}

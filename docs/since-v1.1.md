@@ -127,6 +127,13 @@ ones were added.
   just tell Claude. Before, it was fixed by hand. *(2026-11-13)*
 - ⬆ **Editing again no longer needs the original video** once the caption colours are saved, so
   clips of videos whose source was deleted can still be edited. *(2026-11-13)*
+- ⬆ **No sound peaks over the limit.** v1.1's loudness step could overshoot on a sharp sound, and the
+  AAC encoder adds peaks to harsh phone-mic sound: three test clips peaked at -0.6 to +0.3 dB. Now a
+  limiter holds the mix at -2 dB, and the encoded sound is measured and limited again when it's still
+  over -1.2 dB. The loudness and everything below the peaks sound exactly as before. *(2026-11-13)*
+- ⬆ **Cutting again after a clean-up keeps the podcast framing.** When only the video was kept, `cut`
+  makes the voice track again from it, so the speaker crop and split screen work as before instead
+  of falling back to the plain framing. *(2026-11-13)*
 
 - ⬆ **Podcasts with painted faces on the wall** show the real person. **Dark studios**: camera cuts
   are found again. *(v2.0)*

@@ -10,11 +10,12 @@ export before handing it over:
     * a caption wider than the safe zone, or outside it (under the apps' buttons or top bar);
     * a cut inside a word (the clip starts or ends in the middle of one);
     * the sound far too loud or quiet (3 dB or more off -14 LUFS), or peaks above -1 dBTP;
-    * a black stretch (0.3 s or more);
+    * a black stretch (0.3 s or more) the edit made;
     * the edited clip is older than its cut (cut again, then not edited: stale);
   CHECK (look at it):
-    * a caption over a face; a frozen picture for 2 s or more; a flash of another shot in the last
-      frames; the loudness 1.5 dB off; a length outside 15-90 s; a quarter or more of the words without
+    * a caption over a face (the mouth or higher, checked every half second); a frozen picture for 2 s
+      or more; a flash of another shot in the last frames; the loudness 1.5 dB off; a length outside
+      15-90 s; black in the video itself (a text card on black); a quarter or more of the words without
       captions (unclear speech); no posting text in clips.json.
 A cut counts as inside a word when it is 0.12 s or more into it (Whisper's word times are +-0.1 s).
 Writes output/<project>/qa.txt. Exit status 1 when anything FAILs.
@@ -31,6 +32,7 @@ from . import layout, plan as planlib
 
 LUFS_TARGET, LUFS_CHECK, LUFS_FAIL, MAX_TP = -14.0, 1.5, 3.0, -1.0
 INSIDE = 0.12             # a cut this far inside a word (both ends) is a cut word; Whisper's times are +-0.1 s
+CHIN_SLACK = 0.25         # the bottom quarter of a face box (chin, lower lip): a caption there sits under the mouth, fine
 
 
 def media_stats(path):
@@ -50,6 +52,13 @@ def media_stats(path):
             'black': black, 'frozen': frozen, 'duration': seconds}
 
 
+def black_runs(path):
+    """[(start, end)] of black stretches (0.3 s or more) in a video."""
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-nostats', '-i', str(path), '-an', '-vf',
+                        'blackdetect=d=0.3:pix_th=0.10', '-f', 'null', '-'], capture_output=True, text=True)
+    return [(float(a), float(b)) for a, b in re.findall(r'black_start:([\d.]+) black_end:([\d.]+)', r.stderr)]
+
+
 def end_flash(path, duration):
     """True when one of the last 3 frames is a different shot from the frames just before it."""
     r = subprocess.run(['ffmpeg', '-v', 'error', '-sseof', '-0.6', '-i', str(path), '-vf',
@@ -65,18 +74,24 @@ def end_flash(path, duration):
 
 
 def caption_faces(clip_mp4, meta, plan):
-    """Caption groups that cover a face (face boxes as the edit shows them, no margins)."""
-    faces = layout.face_boxes(clip_mp4, meta.get('shots', []))
+    """Caption groups that cover a face: the faces seen while the caption is on screen (every 0.5 s), as
+    the edit's zoom shows them, without margins."""
+    track = layout.face_track(clip_mp4)
     keys = plan.get('camera_keys') or []
     fps = plan.get('fps', 30)
     cam = [planlib.cam_at(keys, f) for f in range(int(plan['duration'] * fps) + 1)] if keys else None
     st = plan['caption_style']
     hits = []
     for g in plan['captions']:
-        i = next((k for k, sh in enumerate(meta.get('shots', [])) if sh['t0'] <= g['start'] < sh['t1']), None)
-        if i is None:
+        # the faces seen while it shows (not across a switch to another layout), else the nearest look
+        seen = [(t, bs) for t, bs in track if g['start'] - 0.05 <= t <= g['end'] + 0.05] or \
+            sorted(track, key=lambda x: abs(x[0] - (g['start'] + g['end']) / 2))[:1]
+        near = [b for t, bs in seen for b in bs]
+        if not near:
             continue
-        boxes = layout.zoomed(faces.get(i, []), cam, fps, g['start'], g['end'])
+        # the detector's box reaches below the chin: a caption under the chin, on the neck, is fine;
+        # only one that reaches the mouth or higher counts
+        boxes = layout.zoomed(layout.margins(near, top=0.0, bottom=-CHIN_SLACK), cam, fps, g['start'], g['end'])
         half = planlib.caption_width(' '.join(w['text'] for w in g['words']), st) * g.get('scale', 1) / 2
         if layout.covers((g.get('y', st['y']), layout.CAP_H * 0.8), boxes, half_w=half):
             hits.append(g['start'])
@@ -116,9 +131,15 @@ def check_clip(pdir, project, cfg, words, picked, meta, plan, edited, clip_mp4):
         check.append(f"loudness {ms['lufs']:.1f} LUFS, a little off {LUFS_TARGET:.0f} (much game sound or music?)")
     if ms['peak'] is not None and ms['peak'] > MAX_TP:
         fail.append(f"peaks at {ms['peak']:.1f} dBFS (the limit is {MAX_TP:.0f}): edit again")
-    if ms['black']:
-        a, b = ms['black'][0]
-        fail.append(f"black picture {a:.1f}-{b:.1f} s")
+    if ms['black']:                     # black the edit made fails; black in the video itself (a text card on
+        raw = black_runs(clip_mp4)      # black, a dark scene) is only for a look
+        ours = [(a, b) for a, b in ms['black'] if not any(min(b, rb) - max(a, ra) > 0.5 * (b - a) for ra, rb in raw)]
+        if ours:
+            fail.append(f"black picture {ours[0][0]:.1f}-{ours[0][1]:.1f} s")
+        else:
+            a, b = ms['black'][0]
+            check.append(f"the video itself is black at {a:.1f}-{b:.1f} s (a text card or a dark scene): fine if "
+                         f"it belongs there")
     if ms['duration'] and not 15 <= ms['duration'] <= 90:
         check.append(f"{ms['duration']:.0f} s long (the usual limits are 15-90 s): on purpose?")
     if edited.stat().st_mtime < clip_mp4.stat().st_mtime - 1:

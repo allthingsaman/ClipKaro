@@ -594,7 +594,8 @@ EMOJI_HOLD = 1.3          # seconds on screen after its word starts
 
 def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=None, cam=None, fps=FPS, hook=None):
     """clips.json "emoji": [[word as said or as captioned, "💰"], ...] -> [{'char', 't0', 't1', 'x', 'y', 'size'}]:
-    the picture from the first time its word is said, above the caption line, or beside it, or below it:
+    the picture from the first time its word is said, above the caption line, or beside it, or below it
+    (in gameplay with a cam, beside it first: the game's own subtitles sit above the seam):
     the first of those spots that covers no face and stays inside the apps' safe zone. When every spot
     covers a face the emoji is left out. One at a time; at most 3. Marks whose word isn't said in the
     clip are skipped (listed in 'missing')."""
@@ -611,20 +612,24 @@ def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=Non
             continue
         g = next((g for g in caps if g['start'] - 0.05 <= w['s'] < g['end']), None)
         cy = (g or {}).get('y', default_y)
-        line_w = caption_width(' '.join(x['text'] for x in g['words']), style) * g.get('scale', 1) \
-            if g and style else 400
         t0, t1 = w['s'], min(duration, w['s'] + EMOJI_HOLD)
         sh = next((sh for sh in shots if sh['t0'] <= t0 < sh['t1']), None)
         if sh and sh['t1'] - t0 >= 0.7:          # it leaves with its shot (a cut may bring a face there)
             t1 = min(t1, sh['t1'])
+        shown = [x for x in caps if x['start'] < t1 and t0 < x['end'] and x.get('y', default_y) == cy] or \
+            ([g] if g else [])                   # beside the caption: clear of every line shown meanwhile
+        line_w = max(caption_width(' '.join(x['text'] for x in c['words']), style) * c.get('scale', 1)
+                     for c in shown) if shown and style else 400
         boxes = [b for k, x in enumerate(shots) if x['t0'] < t1 and t0 < x['t1']
                  for b in layout.zoomed(layout.margins((faces or {}).get(k, [])), cam, fps,
                                         max(t0, x['t0']), min(t1, x['t1']))]
         if hook and t0 < hook['end']:            # nor under the hook title while it shows
             boxes.append((0, hook['y'] - hook['h'] / 2, W, hook['y'] + hook['h'] / 2))
-        spots = [(W / 2, cy - layout.CAP_H / 2 - half - 10),                 # above the caption
-                 (W / 2 + line_w / 2 + half + 10, cy), (W / 2 - line_w / 2 - half - 10, cy),   # beside it
-                 (W / 2, cy + layout.CAP_H / 2 + half + 10)]                 # below it
+        above = [(W / 2, cy - layout.CAP_H / 2 - half - 10)]
+        beside = [(W / 2 + line_w / 2 + half + 10, cy), (W / 2 - line_w / 2 - half - 10, cy)]
+        below = [(W / 2, cy + layout.CAP_H / 2 + half + 10)]
+        # gameplay with a cam: the game shows its own subtitles right above the seam, so beside comes first
+        spots = beside + above + below if (sh or {}).get('mode') == 'facecam' else above + beside + below
         for x, y in spots:
             x0, x1, y0, y1 = x - half, x + half, y - half, y + half
             inside = W / 2 - layout.SAFE_W / 2 <= x0 and x1 <= W / 2 + layout.SAFE_W / 2 and \
@@ -648,8 +653,12 @@ def safe_caption_y(caps, shots, faces, default_y, fixed, cam=None, fps=FPS):
     if fixed or not faces:
         return
     per_shot = {}
+    # the shot by frame, as the split-screen lines are set: a shot's t0 can be a frame later than its
+    # first frame, and a caption part starting on that frame belongs to the new layout (its seam line)
+    firsts = [sh.get('f0', int(round(sh['t0'] * fps))) for sh in shots]
     for g in caps:
-        i = next((k for k, sh in enumerate(shots) if sh['t0'] <= g['start'] < sh['t1']), len(shots) - 1)
+        fs = int(math.ceil(g['start'] * fps - 1e-6))
+        i = max((k for k, f0 in enumerate(firsts) if f0 <= fs), default=0)
         mode = shots[i].get('mode') if shots else None
         base = g.get('y', default_y)
         if i not in per_shot:
