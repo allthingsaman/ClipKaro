@@ -12,6 +12,12 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **Every clip checked before you see it.** `run.py qa` checks each finished clip: Hindi letters left in
+  Roman captions, captions outside the safe zone, a word cut in half, the loudness, black frames, a
+  stale edit (fix first), and a caption over a face, a frozen picture or a flash at the end (look at
+  it). Claude fixes what fails before showing you. On the test videos: 0 to fix.
+- **Tests that protect v1.1.** `run.py test` runs ClipKaro's own checks in under a second: v1.1's
+  captions, zooms and cuts with the upgrades off, and every upgrade since.
 - **Caption looks.** Besides the classic look: `box` (on a dark box), `karaoke` (each word fills with
   colour as it's said), `minimal` (smaller, normal case), `bold` (big Anton letters) and `comic`
   (tilted comic letters). Say "box captions", or set `"caption_look"` in settings.json.

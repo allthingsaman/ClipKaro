@@ -953,6 +953,22 @@ and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>`
 - **Faces for titles**: a box may be covered at its top 12 % by the hook title (the hair line, never the
   eyes; `layout.TITLE_TOP`); captions and emojis keep 15 % above and 12 % below every face.
 
+### 5.11c The quality check and the tests (`qa.py`, `tests/`)
+`run.py qa` checks every finished clip, from its file and its saved edit plan, and writes `qa.txt`.
+FAIL: Devanagari in Roman captions, a caption wider than the safe zone or outside it (only when the
+plan had safe zones on), a cut 0.12 s or more inside a word (Whisper's word times are +-0.1 s), loudness
+3 dB or more off -14 LUFS or peaks above -1 dBFS, a black stretch of 0.3 s, an edit older than its cut.
+CHECK: a caption over a face (faces as the edit shows them), a picture frozen 2 s or more, a flash of
+another shot in the last 3 frames, loudness 1.5 dB off, a length outside 15-90 s, a quarter or more of
+the words without captions, no posting text. One ffmpeg pass per clip (`ebur128`, `blackdetect`,
+`freezedetect`): 11 clips in about 20 s. The AI editor fixes every FAIL before reporting.
+
+`run.py test` runs `tests/` with Python's own `unittest` (no extra package, under a second): v1.1's
+behaviour with the upgrades off (classic captions on one 1270 line up to 940 px, 3 words, upper case;
+the opening zoom and beat spacing; cuts on whole words), and each upgrade (no ellipses, the safe width,
+hook lines, text off faces, tidy, the re-listen picker, fixword, jump cuts, break markers, still
+screens, "more clips", the honesty note).
+
 ### 5.12 Rendering and encoding (`edit.render_python`, `edit.render_remotion`)
 - **python engine** (default): ffmpeg decodes the cut clip, OpenCV applies the camera (scale around
   the focus point) frame by frame, and ffmpeg burns in the captions with libass and encodes.

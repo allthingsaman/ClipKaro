@@ -378,6 +378,8 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
+| `run.py qa <project>` | checks every finished clip and writes `qa.txt`: FAIL (fix first) for Hindi letters in Roman captions, captions outside the safe zone, a cut inside a word, loudness far off -14 LUFS, black frames, a stale edit; CHECK for captions over a face, a frozen picture, a flash at the end, a short clip, many words without captions. `--clips 2,5` |
+| `run.py test` | ClipKaro's own tests (a second; no video needed): run after changing the code |
 | `run.py music` | lists your music moods; `add "<file or folder>" <mood>` adds tracks, `remove <file name>` takes one out |
 | `run.py sfx` | lists your sound moods; `add "<file or folder>" <mood>` adds sounds, `remove <file name>` takes one out |
 | `run.py tidy <project>` | no captions for words made up during laughter, noise ("झाल") or loops, for videos transcribed before (`fetch` does it by itself); `--dry` |

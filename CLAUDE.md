@@ -45,6 +45,7 @@ goes to `parts`; without one, ClipKaro decides by the video's length.
   upgrade: nothing v1.1 could do may be lost or made harder. If a change does something differently
   on purpose, give a way back (a setting, a phrase, an option). Record each change in
   `docs/since-v1.1.md` (marked ⬆ upgrade, ↔ different on purpose, or ⚠ costs more) in the same commit.
+  After changing the code, run `python run.py test` (fast) and add a test for what you changed.
 - User documentation is in `docs/` (start at `docs/README.md`; for people new to all this:
   `docs/user-guide.md`; how the code works: `docs/architecture.md`). Keep it in sync when behaviour
   or options change, and write it in simple, everyday words.

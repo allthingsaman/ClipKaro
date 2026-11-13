@@ -198,6 +198,10 @@ much lighter, but the picks get no second opinion.
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
 Sir video" and get them in a few minutes, without the video being read again.
 
+**Checked before you see them.** After editing, code checks every clip: no Hindi letters left in
+English-letter captions, captions inside the screen and off the apps' buttons, no word cut in half,
+the right loudness, no black frames. Claude fixes what fails before showing you the clips.
+
 **Caption looks, emojis, music.** Say "box captions", "karaoke captions", "minimal captions", "bold
 captions" or "comic captions" for another look. Emojis pop in on a few strong words (💰 on "paisa"),
 never on a face; say "no emojis" if you don't want them. For background music, put tracks you may use

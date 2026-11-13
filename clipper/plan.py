@@ -716,7 +716,7 @@ def build(meta, brand, opts):
                         jumps=[j['t'] for j in long_jumps(meta)], moods=opts.get('moods', ()),
                         salt=meta.get('name', '')),
         'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
-        'hook': hook,
+        'hook': hook, 'safe': safe,
         'emoji': emoji, 'emoji_missing': emoji_missing,
         'transitions': transitions,
     }

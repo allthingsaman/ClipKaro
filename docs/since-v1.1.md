@@ -117,6 +117,8 @@ ones were added.
 - ⬆ **Sound effects by mood, from your own folder** (`sounds/shock`, `sounds/funny` ...). Claude
   marks the moments that call for one. Until you add sounds, clips sound exactly as before (the two
   whooshes). *(2026-11-13)*
+- ⬆ **Every clip is checked by code before you see it** (`run.py qa`), and ClipKaro has its own tests
+  (`run.py test`) that keep v1.1's behaviour from breaking unnoticed. *(2026-11-13)*
 - ⬆ **Fix a caption word everywhere** with one command: `run.py fixword <project> "bow" "boat"`, or
   just tell Claude. Before, it was fixed by hand. *(2026-11-13)*
 - ⬆ **Editing again no longer needs the original video** once the caption colours are saved, so

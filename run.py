@@ -22,6 +22,8 @@
     python run.py tidy <project>                         no captions for words made up during laughter, noise or loops
     python run.py sfx [add <file> <mood>]                your sound effects by mood (shock, funny, fear ...)
     python run.py music [add <file> <mood>]              your background music by mood (chill, hype ...)
+    python run.py qa <project>                           check every finished clip (captions, cuts, loudness, black frames ...)
+    python run.py test                                   ClipKaro's own tests (fast; protect v1.1's behaviour)
     python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
@@ -48,6 +50,8 @@ COMMANDS = {
     'tidy': 'clipper.tidy',
     'sfx': 'clipper.sfx',
     'music': 'clipper.music',
+    'qa': 'clipper.qa',
+    'test': 'clipper.selftest',
     'parts': 'clipper.parts',
     'topics': 'clipper.topics',
     'sound': 'clipper.sound',

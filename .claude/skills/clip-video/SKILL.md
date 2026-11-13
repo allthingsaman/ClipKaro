@@ -372,6 +372,18 @@ Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentenc
 or `"jump_label": true` in settings.json).
 Read `references/editing.md` if the user wants a different look.
 
+## 5a. Quality check (every time, before showing anything)
+```
+python run.py qa <project>
+```
+It checks every finished clip by code and writes `qa.txt`. **Fix every FAIL before you report**, then
+run it again: Hindi letters left in Roman captions -> fill `romanize.json` and edit again; a cut inside
+a word -> fix the range (`run.py find`), cut and edit again; loudness far off, a black stretch or a stale
+edit -> edit (or cut) that clip again. CHECK lines are for your judgment: a caption over a face, a
+frozen picture, a flash at the end (end the range a little earlier), a short clip, a gameplay clip
+whose game voices have no captions (fine when the game shows its own subtitles). Mention any CHECK
+you leave in one line of your report.
+
 ## 6. Deliver
 Run `python run.py post <project>`. It writes `post.json` (the clips with each platform's text)
 and, when PostKaro (the posting app) is installed, prints **`Post them: <link>`**. Lines starting
