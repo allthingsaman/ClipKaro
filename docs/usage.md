@@ -112,6 +112,32 @@ scenes; you don't need to type that part.
 | "show both of them when Raj laughs at 2:10" / "show Khan Sir there, not Raj" | Claude changes the framing of that moment only |
 | "show the whole picture when he holds up the box" | that moment shows the full landscape frame over a blurred background |
 
+### Sound effects by mood (your own sounds)
+ClipKaro plays two soft whooshes on its own. For more (a boom on a shocking line, a "boing" on a
+punchline), add your own sounds, sorted by mood, in the **`sounds` folder** inside the ClipKaro folder:
+
+| Folder | For | Example sounds |
+|---|---|---|
+| `sounds/attention/` | a new point, "listen to this" | a riser, a ding, a notification |
+| `sounds/shock/` | a shocking line or reveal | a deep boom, a bass drop, "dun dun" |
+| `sounds/fear/` | something scary or tense | a suspense sting, a horror hit |
+| `sounds/funny/` | a punchline, an awkward moment | a boing, a record scratch, "bruh" |
+| `sounds/sad/` | a sad or emotional moment | a soft piano or violin sting |
+| `sounds/hype/` | a big win | an air horn, a crowd cheer |
+| `sounds/reveal/` | an answer, a result | a ta-da, a sparkle |
+| `sounds/fail/` | a mistake | a wrong buzzer, a sad trombone |
+| `sounds/money/` | money talk | a cash register, coins |
+
+- **Any file name works** inside a mood folder (`.mp3`, `.wav`, `.m4a`, `.ogg`, `.flac`); a short
+  sound (under 2.5 s) works best. A new folder (`sounds/romantic/`) becomes a new mood.
+- **Without opening folders:** `python run.py sfx add "C:\Downloads\boom.mp3" shock`, or tell Claude
+  "add this sound as shock: C:\Downloads\boom.mp3". A folder of sounds works too.
+  `python run.py sfx` shows every mood and how many sounds it has.
+- Claude then marks 0-2 moments per clip that call for one, only for moods that have sounds. Say
+  "no sound effects" for none, or "a boom when he says the number" for a specific one.
+- Use only sounds you may use in videos: Pixabay, Mixkit and the YouTube Audio Library give
+  permission; a sound from someone else's video usually doesn't.
+
 ### Changes after you've seen the clips
 | You write | What happens |
 |---|---|
@@ -321,6 +347,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
+| `run.py sfx` | lists your sound moods; `add "<file or folder>" <mood>` adds sounds, `remove <file name>` takes one out |
 | `run.py tidy <project>` | no captions for words made up during laughter, noise ("झाल") or loops, for videos transcribed before (`fetch` does it by itself); `--dry` |
 | `run.py fixword <project> "wrong" "right"` | `--at 2107.5` (only the place nearest that second), `--dry` (show what would change) |
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |

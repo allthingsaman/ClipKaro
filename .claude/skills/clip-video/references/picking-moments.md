@@ -178,6 +178,14 @@ Write `output/<project>/clips.json`:
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
+- `sfx` (optional): 0-2 **mood sounds** for the clip's strongest moments, `[[source seconds, "mood"]]`:
+  a shocking line or reveal (`shock`), a punchline or awkward moment (`funny`), something tense
+  (`fear`), a new point worth hearing (`attention`), a sad moment (`sad`), a win (`hype`), an answer
+  (`reveal`), a mistake (`fail`), money talk (`money`), or a mood the owner added. Only moods that
+  have sounds: run `python run.py sfx` once to see them; with none, leave `sfx` out. The time is the
+  start of the word the sound lands on (`run.py find`); its loudest point plays right there, under the
+  voice. Never two within 1.5 s, never on the hook's first second, and less is more: most clips need
+  none or one.
 - `hook_text`: the **hook title** shown big on screen for the first 2-3 seconds, so the clip stops the
   scroll with the sound off. 3-6 words (about 30 letters at most), in the captions' language and
   script (Roman Hinglish for Hindi/Hinglish videos): the question or tension of the clip, never its

@@ -12,6 +12,11 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **Sound effects by mood, your own.** Put sounds in the `sounds` folder, one folder per mood
+  (attention, shock, fear, funny, sad, hype, reveal, fail, money, or your own), or say "add this sound
+  as shock: <file>" (`run.py sfx add`). Claude marks the moments that call for one, a boom on a shocking
+  line, a boing on a punchline, and the sound's loudest point lands right there, under the voice.
+  Without your sounds, nothing changes.
 - **Jump cuts.** Pauses of half a second or more inside a clip are shortened to a natural 0.2 s,
   and "um" / "uh" are cut out, so clips feel tight (about 6 % shorter on average, up to 13 seconds in
   a slow interview clip). Laughs are never cut; in gameplay only pauses up to 2 s. Every word stays.

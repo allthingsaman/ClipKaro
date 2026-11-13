@@ -922,6 +922,17 @@ whole video again just to look at its colours).
   are mixed under it; the result is loudness-normalised to **-14 LUFS** (true peak -1.5 dBTP), the
   level the big platforms play at.
 
+### 5.11a Sound effects by mood (`sfx.py`)
+The built-in whooshes stay in `assets/sfx/` (roles by file name: whoosh, hit, click; packs split at
+the silences). The user's own sounds are in `sounds/<mood>/` (gitignored): a folder name is the mood
+(any file name), or a mood word in a file's name straight in `sounds/`; a new folder is a new mood.
+`sfx.scan` keeps one catalog (`sounds/.catalog.json`, rebuilt when a file changes) with each sound's
+loudest point. The AI editor marks moments in clips.json (`"sfx": [[source seconds, mood]]`, only for
+moods with sounds); `edit.mood_marks` maps them through the cut's pieces (jump cuts included) and
+`plan.sfx_cues` puts each sound's loudest point on its moment, at a mood's gain (`sfx.GAIN`, -11 to
+-16 dB), at most 2.5 s long, 1.5 s apart, and the emphasis whoosh steps aside near one. `--sfx light`
+and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>` copies a sound in.
+
 ### 5.12 Rendering and encoding (`edit.render_python`, `edit.render_remotion`)
 - **python engine** (default): ffmpeg decodes the cut clip, OpenCV applies the camera (scale around
   the focus point) frame by frame, and ffmpeg burns in the captions with libass and encodes.

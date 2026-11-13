@@ -198,6 +198,11 @@ much lighter, but the picks get no second opinion.
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
 Sir video" and get them in a few minutes, without the video being read again.
 
+**Your own sound effects.** Put sounds in the `sounds` folder inside the ClipKaro folder, one folder
+per mood: `shock`, `funny`, `fear`, `attention`, `sad`, `hype`, `reveal`, `fail`, `money` (any file
+name). Or tell Claude "add this sound as shock: (path to the file)". Claude then adds one where a
+clip calls for it, like a boom on a shocking line.
+
 **Tight clips.** Pauses inside a clip are shortened and "um" / "uh" are cut out (jump cuts), so
 it feels quick. Laughs are never cut, and in gameplay a long quiet stretch stays (it may be the
 action). Say "keep the pauses" if you want a clip without them.

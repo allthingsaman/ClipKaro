@@ -24,7 +24,7 @@ from . import layout as layoutlib
 from . import plan as planlib
 from . import romanize
 from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, load_json, need, project_dir, save_json, settings
-from .sfx import SFX_DIR
+from .sfx import path_of
 
 FONTS = ASSETS / 'fonts'
 JUMP_SIZE, JUMP_Y = 50, 250       # the optional "27 MIN LATER" label: size (CSS px) and centre line
@@ -39,7 +39,7 @@ def mix_audio(clip_mp4, cues, out_wav, duration):
               'highpass=f=70,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2[v]']
     labels = ['[v]']
     for k, c in enumerate(cues, 1):
-        inputs += ['-i', str(SFX_DIR / c['file'])]
+        inputs += ['-i', str(path_of(c))]
         delay = int(c['at'] * 1000)
         vol = c['gain_db'] + c.get('norm_db', 0)
         chains.append(f"[{k}:a]atrim=start={c['offset']:.3f}:duration={c['length']:.3f},asetpts=PTS-STARTPTS,"
@@ -91,6 +91,25 @@ def css_to_ass_size(px, font_file):
         return round(px * (asc + desc) / upm)
     except Exception:
         return round(px * 1.2)
+
+
+def mood_marks(marks, meta):
+    """clips.json "sfx": [[source seconds, mood], ...] -> [(clip seconds, mood)], through the cut's
+    pieces (jump cuts included). A mark outside the clip is skipped with a note."""
+    out = []
+    for m in marks or []:
+        if not (isinstance(m, (list, tuple)) and len(m) == 2):
+            continue
+        t, mood = float(m[0]), str(m[1]).lower()
+        at = 0.0
+        for a, b in meta.get('parts', []):
+            if a - 0.05 <= t <= b + 0.05:
+                out.append((round(at + min(max(t, a), b) - a, 3), mood))
+                break
+            at += b - a
+        else:
+            print(f'   ! sfx "{mood}" at {t} s is not inside this clip (source seconds, as in the transcript)')
+    return out
 
 
 def hook_style(plan):
@@ -329,6 +348,7 @@ def main():
                          caption_y_fixed=a.caption_y is not None)
         safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
         hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
+        clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
         clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
                          hook_text=picked.get('hook_text') or picked.get('title'))
         if safe or clip_opts['hook']:

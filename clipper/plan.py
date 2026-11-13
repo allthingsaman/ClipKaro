@@ -443,37 +443,46 @@ def cut_at_seams(caps, shots, fps=FPS):
 
 # ---------- sound effects ----------
 
-def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=()):
+def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=(), moods=(), salt=''):
     """Sound cues: a whoosh on the opening zoom, and one on the emphasis zoom or, in a joined clip
-    that jumps in time, a softer one at each jump (with the flash: a jump is heard, not hidden)."""
+    that jumps in time, a softer one at each jump (with the flash: a jump is heard, not hidden). Plus
+    the mood sounds the AI editor marked (clips.json "sfx"), each with its loudest point on the moment;
+    the emphasis whoosh steps aside when a mood sound is near."""
     if mode == 'none':
         return []
     cues, used = [], set()
 
-    def add(role, peak_at, gain_db, prefer_len=None):
-        it = sfxlib.pick(role, prefer_len, used)
+    def add(role, peak_at, gain_db, prefer_len=None, max_len=None):
+        it = sfxlib.pick(role, prefer_len, used, salt=f'{salt}:{peak_at:.1f}')
         if not it:
-            return
+            return False
         used.add((it['file'], it['variant']))
-        offset, length = it['start'], it['length']
+        offset, length = it['start'], min(it['length'], max_len) if max_len else it['length']
         at = peak_at - it['peak']
         if at < 0:
             offset, length, at = offset - at, length + at, 0.0
         length = min(length, duration - at)
         if length <= 0.05:
             return
-        cues.append({'file': it['file'], 'role': role, 'offset': round(offset, 3), 'length': round(length, 3),
-                     'at': round(at, 3), 'gain_db': gain_db, 'norm_db': it.get('norm_db', 0)})
+        cues.append({'file': it['file'], 'path': it.get('path'), 'role': role, 'offset': round(offset, 3),
+                     'length': round(length, 3), 'at': round(at, 3), 'gain_db': gain_db,
+                     'norm_db': it.get('norm_db', 0)})
+        return True
 
     add('whoosh', OPEN_FRAMES / fps * 0.5, -15, prefer_len=0.9)          # opening zoom
     if mode == 'light':
         return cues
+    placed = []
+    for t, mood in sorted(moods):       # the editor's mood marks, at least 1.5 s apart
+        if 0.3 <= t < duration - 0.2 and all(abs(t - p) >= 1.5 for p in placed):
+            if add(mood, t, sfxlib.GAIN.get(mood, -14), max_len=sfxlib.MAX_LEN):
+                placed.append(t)
     for t in jumps:                                                      # a jump across time
         if t > 0.5:
             add('whoosh', t, -19, prefer_len=0.7)
     snap = next((t for t in transitions if t['kind'] == 'snap'), None)
-    if snap and not jumps:              # whoosh on the emphasis zoom (a clip with a jump has that one)
-        add('whoosh', snap['t'] + SNAP_FRAMES / fps * 0.4, -17, prefer_len=0.9)
+    if snap and not jumps and all(abs(snap['t'] - p) >= 1.5 for p in placed):
+        add('whoosh', snap['t'] + SNAP_FRAMES / fps * 0.4, -17, prefer_len=0.9)   # emphasis zoom
     return cues
 
 
@@ -614,7 +623,8 @@ def build(meta, brand, opts):
         'caption_style': style,
         'brand': brand,
         'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps,
-                        jumps=[j['t'] for j in long_jumps(meta)]),
+                        jumps=[j['t'] for j in long_jumps(meta)], moods=opts.get('moods', ()),
+                        salt=meta.get('name', '')),
         'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
         'hook': hook,
         'transitions': transitions,
