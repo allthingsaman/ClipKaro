@@ -25,6 +25,8 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
+    'hook_title': True,            # a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text)
+    'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

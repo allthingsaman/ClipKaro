@@ -88,7 +88,10 @@ scenes; you don't need to type that part.
 | "only one whoosh" / "fewer sound effects" | just one whoosh, at the start |
 | "no zooms" | no zoom effects |
 | "no captions" | no captions |
-| "captions lower" / "captions higher" | moves the captions down or up |
+| (nothing) | **a hook title**: 3-6 big words on a coloured box for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the upper part of the picture, never on a face. **Captions stay clear** of faces and of the apps' own buttons (TikTok's right column and bottom text, the top bars of Shorts and Reels) |
+| "no hook title" / "change clip 3's title to ..." | no title on screen (`--no-hook-title`), or a different one |
+| "captions exactly where they were" | captions on one fixed line again, the full width (`--no-safe-zones`) |
+| "captions lower" / "captions higher" | moves the captions down or up (on that exact line: they don't move off faces then) |
 | "bigger captions" / "smaller captions" | changes the caption size |
 | "captions not in capital letters" | normal upper and lower case |
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
@@ -269,7 +272,9 @@ Claude to change them.
   "facecam": null,
   "jump_label": false,
   "deep_clips": "ask",
-  "max_clips": 20
+  "max_clips": 20,
+  "hook_title": true,
+  "safe_zones": true
 }
 ```
 
@@ -282,6 +287,8 @@ Claude to change them.
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
+| `hook_title` | `true` | `false`: no 3-6 word title on screen for the first seconds |
+| `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (they may cover a chin in a close-up or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 

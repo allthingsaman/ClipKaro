@@ -130,6 +130,7 @@ Write `output/<project>/clips.json`:
     {
       "id": 1,
       "title": "Why Hard Work Isn't Enough",
+      "hook_text": "Hard work isn't enough?",
       "hook": "Exact first line of the clip",
       "ranges": [[123.4, 171.9]],
       "score": 9,
@@ -177,6 +178,11 @@ Write `output/<project>/clips.json`:
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
+- `hook_text`: the **hook title** shown big on screen for the first 2-3 seconds, so the clip stops the
+  scroll with the sound off. 3-6 words (about 30 letters at most), in the captions' language and
+  script (Roman Hinglish for Hindi/Hinglish videos): the question or tension of the clip, never its
+  answer ("Pakistan ka PM banoge?", "Final boss yahin la diya", "Why he kept a brick"). Quotation
+  marks only for words actually said. Without it, the clip's `title` is used.
 - `emphasis`: 2–6 single words that carry the meaning (numbers, money, strong verbs, the key
   noun). They stay highlighted in the brand colour in the captions. Use the exact word as spoken.
 - `ranges`: one `[start, end]` pair, or 2–3 pairs for a splice (they play in the listed order).

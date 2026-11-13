@@ -18,6 +18,7 @@ import struct
 from pathlib import Path
 
 from .common import FPS, H, JUMP_FLASH, W, has_devanagari, is_sentence_end, norm_token
+from . import layout
 from . import sfx as sfxlib
 
 # caption fonts (assets/fonts): Montserrat has no Hindi letters, so captions that contain Devanagari
@@ -496,6 +497,75 @@ def jump_labels(jumps, duration, upper=True):
     return out
 
 
+# ---------- hook title ----------
+
+HOOK_SIZE = 76            # CSS px: big, but two lines still fit the safe width
+HOOK_END = 2.6            # seconds on screen (fades out)
+
+
+def _split(words, n, style):
+    """words in n lines of balanced width (the widest line as narrow as possible)."""
+    if n == 1 or len(words) < n:
+        return [' '.join(words)]
+    best = None
+    for k in range(1, len(words) - n + 2):
+        rest = _split(words[k:], n - 1, style)
+        lines = [' '.join(words[:k])] + rest
+        wid = max(caption_width(x, style) for x in lines)
+        if best is None or wid < best[0]:
+            best = (wid, lines)
+    return best[1]
+
+
+def hook_lines(text, style):
+    """(lines, font size): the fewest lines (1-3) that fit the safe width at 90 % of the size or more;
+    when none does, 3 lines (or fewer for few words) shrunk just enough to fit, never below 60 %."""
+    words = text.split()
+    limit = layout.SAFE_W - 10                  # caption_width already counts the box padding (outline)
+    for n in (1, 2, 3):                       # fewer lines first, at most 10 % smaller to stay that way
+        lines = _split(words, n, style)
+        wid = max(caption_width(x, style) for x in lines)
+        if wid <= limit / 0.9:
+            return lines, min(style['size'], int(style['size'] * limit / wid))
+    lines = _split(words, min(3, len(words)), style)
+    wid = max(caption_width(x, style) for x in lines)
+    return lines, max(int(style['size'] * 0.6), int(style['size'] * limit / wid))
+
+
+def hook_title(text, duration, shots, faces, caps, upper, style):
+    """{'lines', 'start', 'end', 'y', 'size', 'font', 'font_file'} for the first seconds, placed in the upper
+    part of the frame clear of faces and of the captions shown meanwhile; None without a text."""
+    text = ' '.join((text or '').split())
+    if not text or duration < 4:
+        return None
+    end = min(HOOK_END, duration - 1.0)
+    font, font_file = (HINDI_FONT if has_devanagari(text) else (style['font'], style['font_file']))
+    upper = upper and not has_devanagari(text)
+    st = {'font': font, 'font_file': font_file, 'size': HOOK_SIZE, 'spacing': 1, 'outline': 18}
+    lines, size = hook_lines(text.upper() if upper else text, st)
+    h = len(lines) * size * 1.25 + 40
+    boxes = [b for i, sh in enumerate(shots) if sh['t0'] < end for b in (faces or {}).get(i, [])]
+    avoid = [(g.get('y', style['y']), layout.CAP_H) for g in caps if g['start'] < end]
+    y = layout.place(layout.TITLE_LINES[0], h, boxes, layout.TITLE_LINES, avoid=avoid)
+    return {'lines': lines, 'start': 0.0, 'end': round(end, 2), 'y': int(y), 'size': size,
+            'font': font, 'font_file': font_file}
+
+
+def safe_caption_y(caps, shots, faces, default_y, fixed):
+    """Each caption group's line: the usual one, or (once per shot) the nearest that covers no face."""
+    if fixed or not faces:
+        return
+    per_shot = {}
+    for g in caps:
+        i = next((k for k, sh in enumerate(shots) if sh['t0'] <= g['start'] < sh['t1']), len(shots) - 1)
+        mode = shots[i].get('mode') if shots else None
+        base = g.get('y', default_y)
+        if i not in per_shot:
+            per_shot[i] = int(layout.place(base, layout.CAP_H, faces.get(i, []), layout.caption_lines(base, mode)))
+        if per_shot[i] != base:
+            g['y'] = per_shot[i]
+
+
 # ---------- the plan ----------
 
 def build(meta, brand, opts):
@@ -510,7 +580,9 @@ def build(meta, brand, opts):
              'outline': 8, 'uppercase': upper,
              # letter spacing splits Devanagari into loose letters (libass shapes glyph by glyph then)
              'spacing': 0 if hindi else 1}
-    caps = caption_groups(meta, upper=upper, style=style) if opts.get('captions', True) else []
+    safe = opts.get('safe', True)
+    caps = caption_groups(meta, upper=upper, style=style, max_w=layout.SAFE_W if safe else MAX_CAPTION_W) \
+        if opts.get('captions', True) else []
     caps = cut_at_seams(caps, meta.get('shots', []), fps)
     shot_frames = [(s.get('f0', int(round(s['t0'] * fps))), s.get('mode')) for s in meta.get('shots', [])]
 
@@ -526,6 +598,11 @@ def build(meta, brand, opts):
             g['y'] = H // 2
         if fs > 0 and not g.get('cont') and split_at(fs - 1) != split_at(fs):
             g['nolead'] = True          # its one-frame early start would fall in the other layout
+    faces = opts.get('faces')
+    if safe:                            # move off a face (tight close-ups), once per shot
+        safe_caption_y(caps, meta.get('shots', []), faces, style['y'], opts.get('caption_y_fixed'))
+    hook = hook_title(opts.get('hook_text'), meta['duration'], meta.get('shots', []), faces, caps,
+                      upper, style) if opts.get('hook', True) else None
     return {
         'fps': fps, 'width': W, 'height': H,
         'duration': meta['duration'], 'frames': len(cam),
@@ -537,5 +614,6 @@ def build(meta, brand, opts):
         'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps,
                         jumps=[j['t'] for j in long_jumps(meta)]),
         'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
+        'hook': hook,
         'transitions': transitions,
     }

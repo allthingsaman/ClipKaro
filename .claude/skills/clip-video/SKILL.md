@@ -194,7 +194,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
-   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, and its posting text:
+   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, its `"hook_text"` (the 3-6 word title on screen for the first seconds), and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
    readers' candidates have none, so write them here. A clip that says "इस movie" / "he" / "वो" and

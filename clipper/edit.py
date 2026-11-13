@@ -20,6 +20,7 @@ import cv2
 import numpy as np
 
 from . import brand as brandlib
+from . import layout as layoutlib
 from . import plan as planlib
 from . import romanize
 from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, load_json, need, project_dir, save_json, settings
@@ -92,6 +93,21 @@ def css_to_ass_size(px, font_file):
         return round(px * 1.2)
 
 
+def hook_style(plan):
+    """The ASS style of the hook title: the caption font on a box in the accent colour, text in black
+    or white, whichever reads better on it."""
+    hk = plan.get('hook')
+    if not hk:
+        return ''
+    accent = plan['brand']['accent'].lstrip('#')
+    r, g, b = (int(accent[i:i + 2], 16) for i in (0, 2, 4))
+    light = 0.2126 * r + 0.7152 * g + 0.0722 * b > 150
+    text = '&H00000000' if light else '&H00FFFFFF'
+    box = ass_color('#' + accent)
+    return (f"Style: Hook,{hk['font']},{css_to_ass_size(hk['size'], hk['font_file'])},{text},{text},{box},{box},"
+            f"0,0,0,0,100,100,1,0,3,18,0,5,60,60,0,1")
+
+
 def write_ass(plan, path):
     st, br = dict(plan['caption_style']), plan['brand']
     st['size'] = css_to_ass_size(st['size'], st['font_file'])
@@ -107,6 +123,7 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Cap,{st['font']},{st['size']},{white},{white},{outline},&H64000000,0,0,0,0,100,100,{st.get('spacing', 1)},0,1,{st['outline']},3,5,60,60,0,1
 Style: Jump,{st['font']},{css_to_ass_size(JUMP_SIZE, st['font_file'])},&H00FFFFFF,&H00FFFFFF,&H5A000000,&H5A000000,0,0,0,0,100,100,1,0,3,14,0,5,60,60,0,1
+{hook_style(plan)}
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -152,6 +169,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''   # shrunk to fit the frame
         text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
+    hk = plan.get('hook')
+    if hk:                                   # the hook title: a box in the upper part, pops in, fades out
+        text = '\\N'.join(line.replace('{', '(').replace('}', ')') for line in hk['lines'])
+        events.append(f"Dialogue: 2,{t(hk['start'])},{t(hk['end'])},Hook,,0,0,0,,"
+                      f"{{\\pos({W // 2},{hk['y']})\\fad(90,260)\\fscx86\\fscy86\\t(0,170,0.5,\\fscx100\\fscy100)}}{text}")
     for lb in plan.get('labels', []):        # "27 MIN LATER" at a jump across time (optional)
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
                       f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
@@ -222,9 +244,9 @@ def render_remotion(clip_mp4, plan, audio_wav, out_mp4, workdir):
     shutil.copy2(clip_mp4, pub / tag)
     font_pub = pub / 'fonts'
     font_pub.mkdir(exist_ok=True)
-    ff = plan['caption_style']['font_file']
-    if not (font_pub / ff).exists():
-        shutil.copy2(FONTS / ff, font_pub / ff)
+    for ff in {plan['caption_style']['font_file'], (plan.get('hook') or {}).get('font_file')} - {None}:
+        if not (font_pub / ff).exists():
+            shutil.copy2(FONTS / ff, font_pub / ff)
     props = dict(plan, src=tag)
     props_file = workdir / f'{out_mp4.stem}.props.json'
     save_json(props_file, props)
@@ -256,6 +278,10 @@ def main():
                     help='caption centre line in px (0-1920); default 1270, or the seam in the facecam layout')
     ap.add_argument('--size', type=int, default=96, help='caption font size in px')
     ap.add_argument('--out', default=None, help='output folder (default <project>/edited)')
+    ap.add_argument('--hook-title', action=argparse.BooleanOptionalAction, default=None,
+                    help='the hook title for the first seconds (default: settings.json "hook_title", on)')
+    ap.add_argument('--safe-zones', action=argparse.BooleanOptionalAction, default=None,
+                    help='captions clear of faces and the apps\' buttons (default: settings.json "safe_zones", on)')
     ap.add_argument('--jump-label', action=argparse.BooleanOptionalAction, default=None,
                     help='a small "27 MIN LATER" label where a joined clip jumps in time '
                          '(default: "jump_label" in settings.json, else off)')
@@ -299,7 +325,14 @@ def main():
         _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
         for m in missing:
             print(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
-        clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270)
+        clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270,
+                         caption_y_fixed=a.caption_y is not None)
+        safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
+        hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
+        clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
+                         hook_text=picked.get('hook_text') or picked.get('title'))
+        if safe or clip_opts['hook']:
+            clip_opts['faces'] = layoutlib.face_boxes(clip_mp4, meta.get('shots', []))
         if meta.get('layout') == 'facecam':
             clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around
         plan = planlib.build(meta, brand, clip_opts)
@@ -313,8 +346,11 @@ def main():
             write_srt(plan, out.with_suffix('.srt'))
         wav.unlink(missing_ok=True)
         sfx = ', '.join(f"{c['role']}@{c['at'] + 0:.1f}s" for c in plan['sfx']) or 'none'
+        moved = len({g['y'] for g in plan['captions'] if g.get('y') not in (None, H // 2)})
+        extra = (f"  hook: \"{' / '.join(plan['hook']['lines'])}\" at y={plan['hook']['y']}" if plan.get('hook') else '') + \
+                (f"  captions moved off a face in {moved} place(s)" if moved and safe else '')
         print(f"   ok {out.name}  zooms:{len(plan['transitions'])}  captions:{len(plan['captions'])}  "
-              f"sfx: {sfx}  ({time.time() - t0:.0f}s)")
+              f"sfx: {sfx}  ({time.time() - t0:.0f}s){extra}")
         done.append(out)
     print(f'\nDONE: {len(done)} edited clip(s) in {out_dir}')
 

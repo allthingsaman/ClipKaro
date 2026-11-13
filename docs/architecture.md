@@ -839,6 +839,24 @@ detection; `--layout crop` turns the layout off.
 - `fit` and `split` shots never zoom (they're there to show everything).
 - A zoom change that goes with a camera cut lands on the exact frame where the cut shows (`f0`).
 
+### 5.8a Safe zones, faces and the hook title (`layout.py`, `plan.hook_title`)
+- **Safe zones**: no app publishes them for normal posts (only for ads), and guides disagree, so the
+  strictest common numbers are used: TikTok's ad template keeps the bottom 484 px and the right 140 px
+  of 1080x1920 free, Shorts and Reels cover about the top 210 px. Text stays between y 230 and 1436,
+  centred, at most 800 px wide (`layout.SAFE_W`; it was 940 px, so some long caption groups now
+  break into two).
+- **Faces**: `edit` samples 4 frames of every shot of the cut clip and finds the faces (YuNet, the
+  framing's detector); each box grows by the strongest zoom (1.22, around the shot's focus) and 30 %
+  for the chin. A shot whose usual caption line covers a face moves its captions once, to the nearest
+  line that doesn't (`layout.caption_lines`: lower first, then higher; split screen and facecam stay
+  near their seam). `--caption-y` fixes the line exactly.
+- **Hook title**: clips.json `hook_text` (3-6 words, written by the AI editor; else the clip's
+  `title`), from 0 to 2.6 s, on a box in the accent colour (text black or white, whichever reads
+  better), popping in and fading out. It takes the first of the lines y 400, 320, 500, 620, 760 that
+  covers no face and no caption shown meanwhile, and the fewest lines (1-3) that fit the safe width,
+  at most 10 % smaller (`plan.hook_lines`). Both engines draw it (Remotion: `HookTitle`).
+- Off: `"safe_zones": false` / `--no-safe-zones`, `"hook_title": false` / `--no-hook-title`.
+
 ### 5.9 Captions (`plan.caption_groups`, `edit.write_ass`)
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
 - Groups of **1-3 words** and at most 1.6 s; a new group starts after a pause over 0.35 s, at a

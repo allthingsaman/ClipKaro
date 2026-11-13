@@ -7,5 +7,7 @@
   "facecam": null,
   "jump_label": false,
   "deep_clips": "ask",
-  "max_clips": 20
+  "max_clips": 20,
+  "hook_title": true,
+  "safe_zones": true
 }

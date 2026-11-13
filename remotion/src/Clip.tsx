@@ -18,6 +18,8 @@ export type ClipProps = {
   brand: {accent: string; text: string; outline: string};
   camera_keys?: {f: number; ease: string}[];
   labels?: {start: number; end: number; text: string}[]; // optional "27 MIN LATER" at a jump across time
+  // the hook title of the first seconds (plan.hook_title): lines on a box in the accent colour
+  hook?: {lines: string[]; start: number; end: number; y: number; size: number; font: string; font_file: string} | null;
 };
 
 const loaded = new Set<string>();
@@ -139,6 +141,30 @@ const JumpLabels: React.FC<{labels?: ClipProps['labels']; fps: number; font: str
   );
 };
 
+// ------------------------------------------------------------ hook title (first seconds)
+const HookTitle: React.FC<{hook?: ClipProps['hook']; fps: number; accent: string}> = ({hook, fps, accent}) => {
+  const t = useCurrentFrame() / fps;
+  useFont(hook?.font ?? 'Montserrat ExtraBold', hook?.font_file ?? 'Montserrat-ExtraBold.ttf');
+  if (!hook || t < hook.start || t >= hook.end) return null;
+  const opacity = Math.max(0, Math.min(1, (t - hook.start) / 0.09, (hook.end - t) / 0.26));
+  const pop = 0.86 + 0.14 * Math.min(1, (t - hook.start) / 0.17);
+  const hex = accent.replace('#', '');
+  const lum = 0.2126 * parseInt(hex.slice(0, 2), 16) + 0.7152 * parseInt(hex.slice(2, 4), 16) + 0.0722 * parseInt(hex.slice(4, 6), 16);
+  return (
+    <AbsoluteFill>
+      <div style={{position: 'absolute', top: hook.y, left: 0, right: 0, display: 'flex', flexDirection: 'column',
+                   alignItems: 'center', transform: `translateY(-50%) scale(${pop})`, opacity}}>
+        {hook.lines.map((line, i) => (
+          <div key={i} style={{fontFamily: `'${hook.font}'`, fontSize: hook.size, lineHeight: 1.18, color: lum > 150 ? 'black' : 'white',
+                               background: accent, padding: '2px 18px', letterSpacing: 1}}>
+            {line}
+          </div>
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const Clip: React.FC<ClipProps> = (p) => {
   useFont(p.caption_style?.font ?? 'Montserrat ExtraBold', p.caption_style?.font_file ?? 'Montserrat-ExtraBold.ttf');
   if (!p.src) return <AbsoluteFill style={{backgroundColor: 'black'}} />;
@@ -147,6 +173,7 @@ export const Clip: React.FC<ClipProps> = (p) => {
       <Camera src={p.src} cam={p.cam} keys={p.camera_keys} />
       <Captions captions={p.captions} caption_style={p.caption_style} brand={p.brand} fps={p.fps} />
       <JumpLabels labels={p.labels} fps={p.fps} font={p.caption_style?.font ?? 'Montserrat ExtraBold'} />
+      <HookTitle hook={p.hook} fps={p.fps} accent={p.brand?.accent ?? '#FFD60A'} />
     </AbsoluteFill>
   );
 };

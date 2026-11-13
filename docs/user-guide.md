@@ -198,6 +198,11 @@ much lighter, but the picks get no second opinion.
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
 Sir video" and get them in a few minutes, without the video being read again.
 
+**A title on screen, captions out of the way.** Every clip opens with a big 3-6 word title for
+the first 2-3 seconds, so it stops the scroll even with the sound off. It sits in the upper part of
+the picture, never on a face. The captions keep clear of faces and of the apps' buttons (TikTok's
+like and share column, the text at the bottom). Say "no hook title" if you don't want it.
+
 **A wrong word in the captions?** Say "in clip 4, 'bow' should be 'boat'". It is fixed everywhere
 the word was heard, and the clips that have it are made again.
 

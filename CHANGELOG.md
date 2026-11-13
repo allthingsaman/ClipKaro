@@ -12,6 +12,13 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **A hook title on screen.** Every clip opens with a big 3-6 word title on a box in the video's
+  accent colour for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), so it stops the scroll with the
+  sound off. It goes in the upper part of the picture, never on a face. Claude writes it with the
+  posting text; older clips use their title. `"hook_title": false` turns it off.
+- **Captions clear of faces and app buttons.** Captions keep out of TikTok's like and share column
+  and the apps' top and bottom bars, and move to a free line in a close-up where they would cover a
+  chin. `"safe_zones": false` puts them back on one fixed line.
 - **No "…" in captions.** Trailing-off marks ("like...", "हाग…") are no longer shown.
 
 ## v2.1 (November 2026): just say "clip this"

@@ -98,6 +98,13 @@ ones were added.
   clip. Joins between pieces and normal speech still change it as before. *(2026-11-13)*
   - Way back: no setting, because the zoom at every cut was the problem; `edit --no-zoom` still
     turns zooms off completely.
+- ↔ **Captions clear of faces and the apps' buttons; a hook title.** v1.1 put captions on one line,
+  up to 940 px wide, whatever was under them. Now they keep out of TikTok's button column and the
+  apps' top and bottom bars (at most 800 px wide), and a shot whose caption line would cover a face
+  moves them to the nearest free line. A 3-6 word title shows on a coloured box for the first 2-3
+  seconds, never on a face. *(2026-11-13)*
+  - Way back: `"safe_zones": false` and `"hook_title": false` in settings.json (or `--no-safe-zones`,
+    `--no-hook-title`).
 - ⬆ **Fix a caption word everywhere** with one command: `run.py fixword <project> "bow" "boat"`, or
   just tell Claude. Before, it was fixed by hand. *(2026-11-13)*
 - ⬆ **Editing again no longer needs the original video** once the caption colours are saved, so
