@@ -94,6 +94,9 @@ scenes; you don't need to type that part.
 | "no hook title" / "change clip 3's title to ..." | no title on screen (`--no-hook-title`), or a different one |
 | "captions exactly where they were" | captions on one fixed line again, the full width (`--no-safe-zones`) |
 | "captions lower" / "captions higher" | moves the captions down or up (on that exact line: they don't move off faces then) |
+| "box captions" / "karaoke captions" / "minimal captions" / "bold captions" / "comic captions" | another **caption look**: on a dark box; each word filling with colour as it's said; smaller in normal case; big Anton letters; tilted comic letters (`--look box`, or `"caption_look"` in settings.json to keep it). Normally the classic look |
+| (nothing) | **emojis** on up to 3 strong words ("paisa" 💰, "shocking" 😱): they pop in above or beside the caption when the word is said, never on a face. Claude picks them; "no emojis" turns them off |
+| "add background music" / "no music" | music from **your own** music folder (see below), or none |
 | "bigger captions" / "smaller captions" | changes the caption size |
 | "captions not in capital letters" | normal upper and lower case |
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
@@ -137,6 +140,28 @@ punchline), add your own sounds, sorted by mood, in the **`sounds` folder** insi
   "no sound effects" for none, or "a boom when he says the number" for a specific one.
 - Use only sounds you may use in videos: Pixabay, Mixkit and the YouTube Audio Library give
   permission; a sound from someone else's video usually doesn't.
+
+### Background music (your own tracks)
+ClipKaro ships no music: songs are copyrighted, and YouTube, Instagram and Facebook mute or block
+clips with music you may not use. Put tracks you may use in the **`music` folder** inside the
+ClipKaro folder, one folder per mood:
+
+| Folder | For |
+|---|---|
+| `music/chill/` | calm talk, explanations, a relaxed story (lo-fi, soft beats) |
+| `music/upbeat/` | light, positive, quick |
+| `music/hype/` | gaming wins, sport, big energy |
+| `music/suspense/` | mystery, tension, true crime |
+| `music/emotional/` | sad or touching stories (piano, strings) |
+| `music/funny/` | comedy, awkward moments |
+| `music/inspiring/` | motivation, success stories |
+
+- Any file name; a new folder is a new mood. Or `python run.py music add "C:\Downloads\lofi.mp3" chill`,
+  or tell Claude "add this music as chill: <file>". `python run.py music` shows what you have.
+- Claude picks a mood for each clip that suits one; the music plays from its start, about 10 dB under
+  the voice, quieter still while someone talks, and fades in and out.
+- Free sources: the YouTube Audio Library (check each track's licence before posting outside
+  YouTube) and Pixabay Music.
 
 ### Changes after you've seen the clips
 | You write | What happens |
@@ -303,7 +328,10 @@ Claude to change them.
   "max_clips": 20,
   "hook_title": true,
   "safe_zones": true,
-  "jump_cuts": true
+  "jump_cuts": true,
+  "caption_look": "classic",
+  "emoji": true,
+  "music": true
 }
 ```
 
@@ -317,6 +345,9 @@ Claude to change them.
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
 | `hook_title` | `true` | `false`: no 3-6 word title on screen for the first seconds |
+| `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
+| `emoji` | `true` | `false`: no emojis on the words |
+| `music` | `true` | `false`: no background music, even when you have tracks |
 | `jump_cuts` | `true` | `false`: no pauses or filler sounds cut out of the clips |
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (they may cover a chin in a close-up or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
@@ -347,6 +378,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
+| `run.py music` | lists your music moods; `add "<file or folder>" <mood>` adds tracks, `remove <file name>` takes one out |
 | `run.py sfx` | lists your sound moods; `add "<file or folder>" <mood>` adds sounds, `remove <file name>` takes one out |
 | `run.py tidy <project>` | no captions for words made up during laughter, noise ("झाल") or loops, for videos transcribed before (`fetch` does it by itself); `--dry` |
 | `run.py fixword <project> "wrong" "right"` | `--at 2107.5` (only the place nearest that second), `--dry` (show what would change) |

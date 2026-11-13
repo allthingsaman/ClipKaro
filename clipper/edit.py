@@ -20,6 +20,8 @@ import cv2
 import numpy as np
 
 from . import brand as brandlib
+from . import emoji as emojilib
+from . import music as musiclib
 from . import layout as layoutlib
 from . import plan as planlib
 from . import romanize
@@ -32,12 +34,22 @@ JUMP_SIZE, JUMP_Y = 50, 250       # the optional "27 MIN LATER" label: size (CSS
 
 # ---------------- shared: audio mix ----------------
 
-def mix_audio(clip_mp4, cues, out_wav, duration):
-    """Voice + SFX cues -> loudness-normalised stereo wav (-14 LUFS, -1.5 dBTP)."""
+def mix_audio(clip_mp4, cues, out_wav, duration, music=None):
+    """Voice + SFX cues (+ a music bed, ducked under the voice) -> loudness-normalised stereo wav
+    (-14 LUFS, -1.5 dBTP)."""
     inputs = ['-i', str(clip_mp4)]
     chains = ['[0:a]aresample=48000,aformat=channel_layouts=stereo,'
-              'highpass=f=70,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2[v]']
+              'highpass=f=70,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2'
+              + (',asplit=2[v][vkey]' if music else '[v]')]
     labels = ['[v]']
+    if music:                                # the bed: from the track's start, looped if short
+        k = len(cues) + 1
+        fade_out = max(0.0, duration - 1.2)
+        chains.append(f"[{k}:a]atrim=0:{duration:.3f},asetpts=PTS-STARTPTS,aresample=48000,"
+                      f"aformat=channel_layouts=stereo,loudnorm=I={musiclib.BED_LUFS}:TP=-6:LRA=11,"
+                      f"aresample=48000[mraw];[mraw][vkey]sidechaincompress=threshold=0.03:ratio=4:attack=40:"
+                      f"release=400[mduck];[mduck]afade=t=in:d=0.8,afade=t=out:st={fade_out:.3f}:d=1.2[mus]")
+        labels.append('[mus]')
     for k, c in enumerate(cues, 1):
         inputs += ['-i', str(path_of(c))]
         delay = int(c['at'] * 1000)
@@ -46,6 +58,8 @@ def mix_audio(clip_mp4, cues, out_wav, duration):
                       f"aresample=48000,aformat=channel_layouts=stereo,volume={vol:.2f}dB,"
                       f"afade=t=out:st={max(0, c['length'] - 0.06):.3f}:d=0.06,adelay={delay}|{delay}[s{k}]")
         labels.append(f'[s{k}]')
+    if music:
+        inputs += ['-stream_loop', '-1', '-i', str(music)]
     chains.append(''.join(labels) + f'amix=inputs={len(labels)}:normalize=0:duration=first,'
                   f'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,atrim=0:{duration:.3f}[out]')
     ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', '[out]', '-c:a', 'pcm_s16le', out_wav)
@@ -112,6 +126,17 @@ def mood_marks(marks, meta):
     return out
 
 
+def cap_style(st, white, accent, outline):
+    """The ASS caption style of the look: an outline (and a soft shadow), or a dark box (box look).
+    Karaoke fills from white (SecondaryColour) to the accent (PrimaryColour) as each word is said."""
+    primary, secondary = (accent, white) if st.get('karaoke') else (white, white)
+    if st.get('box'):
+        return (f"Style: Cap,{st['font']},{st['size']},{primary},{secondary},&H50000000,&H50000000,0,0,0,0,100,100,"
+                f"{st.get('spacing', 1)},0,3,{st['outline']},0,5,60,60,0,1")
+    return (f"Style: Cap,{st['font']},{st['size']},{primary},{secondary},{outline},&H64000000,0,0,0,0,100,100,"
+            f"{st.get('spacing', 1)},0,1,{st['outline']},{st.get('shadow', 3)},5,60,60,0,1")
+
+
 def hook_style(plan):
     """The ASS style of the hook title: the caption font on a box in the accent colour, text in black
     or white, whichever reads better on it."""
@@ -140,7 +165,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Cap,{st['font']},{st['size']},{white},{white},{outline},&H64000000,0,0,0,0,100,100,{st.get('spacing', 1)},0,1,{st['outline']},3,5,60,60,0,1
+{cap_style(st, white, accent, outline)}
 Style: Jump,{st['font']},{css_to_ass_size(JUMP_SIZE, st['font_file'])},&H00FFFFFF,&H00FFFFFF,&H5A000000,&H5A000000,0,0,0,0,100,100,1,0,3,14,0,5,60,60,0,1
 {hook_style(plan)}
 
@@ -165,6 +190,25 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         # end where the next group begins, so two groups never share a frame (was a 1-frame overlap)
         g_end = min(g['end'], starts[k + 1]) if k + 1 < len(caps) else g['end']
         parts = []
+        if st.get('karaoke'):               # the whole line at once, filling with the accent as it is said
+            lead = max(0, int(round((g['words'][0]['s'] - g0) * 100)))
+            parts.append(f'{{\\k{lead}}}' if lead else '')
+            for i, w in enumerate(g['words']):
+                nxt = g['words'][i + 1]['s'] if i + 1 < len(g['words']) else w['e']
+                parts.append(f"{{\\kf{max(1, int(round((nxt - w['s']) * 100)))}}}" +
+                             w['text'].replace('{', '(').replace('}', ')'))
+            fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''
+            events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,"
+                          f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ''.join(
+                              x if k < 2 else ' ' + x for k, x in enumerate(parts)))
+            continue
+        if not st.get('pop', True):         # minimal: the group fades in, key words in the accent colour
+            words = [(f'{{\\1c{accent}}}' if w.get('emph') else '') + w['text'].replace('{', '(').replace('}', ')') +
+                     (f'{{\\1c{white}}}' if w.get('emph') else '') for w in g['words']]
+            fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''
+            events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,"
+                          f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}\\fad(80,0)}}" + ' '.join(words))
+            continue
         for i, w in enumerate(g['words']):
             a = max(0, int((w['s'] - 1 / fps - g0) * 1000))
             nxt = g['words'][i + 1]['s'] if i + 1 < len(g['words']) else None
@@ -186,7 +230,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                        f'\\t({b},{b + 1},\\1c{col})}}')
             parts.append(tag + w['text'].replace('{', '(').replace('}', ')'))
         fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''   # shrunk to fit the frame
-        text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ' '.join(parts)
+        tilt = f"\\frz{st['tilt']}" if st.get('tilt') else ''
+        text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}{tilt}}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
     hk = plan.get('hook')
     if hk:                                   # the hook title: a box in the upper part, pops in, fades out
@@ -197,6 +242,40 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
                       f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
+
+
+def load_emojis(marks):
+    """The emoji pictures (BGRA, full size) for the frame loop."""
+    out = []
+    for e in marks:
+        img = cv2.imread(e['png'], cv2.IMREAD_UNCHANGED)
+        if img is not None and img.shape[2] == 4:
+            out.append(dict(e, img=cv2.resize(img, (e['size'], e['size']), interpolation=cv2.INTER_AREA)))
+    return out
+
+
+def draw_emojis(frame, emojis, t):
+    """Pops each emoji in (0.6 -> 1.0 in 0.15 s) when its word is said, fades it out at the end."""
+    out = None
+    for e in emojis:
+        if not e['t0'] <= t < e['t1']:
+            continue
+        k = min(1.0, (t - e['t0']) / 0.15)
+        scale = 0.6 + 0.4 * (1 - (1 - k) ** 3)
+        fade = min(1.0, (e['t1'] - t) / 0.18)
+        n = max(8, int(e['size'] * scale))
+        img = cv2.resize(e['img'], (n, n), interpolation=cv2.INTER_AREA)
+        x0, y0 = int(e['x'] - n / 2), int(e['y'] - n / 2)
+        x1, y1 = min(W, x0 + n), min(H, y0 + n)
+        if x0 < 0 or y0 < 0 or x1 <= x0 or y1 <= y0:
+            continue
+        if out is None:
+            out = frame.copy()
+        sub = img[:y1 - y0, :x1 - x0]
+        alpha = (sub[:, :, 3:4].astype(np.float32) / 255.0) * fade
+        roi = out[y0:y1, x0:x1].astype(np.float32)
+        out[y0:y1, x0:x1] = (roi * (1 - alpha) + sub[:, :, :3].astype(np.float32) * alpha).astype(np.uint8)
+    return frame if out is None else out
 
 
 def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
@@ -216,6 +295,7 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
                            stdin=subprocess.PIPE, cwd=workdir)
     cam = plan['cam']
     size = W * H * 3
+    emojis = load_emojis(plan.get('emoji', []))
     prev = None
     f = 0
     # frames where the camera cuts (and their neighbours): never blend two different shots
@@ -237,6 +317,8 @@ def render_python(clip_mp4, plan, audio_wav, out_mp4, workdir):
             if 0.012 < vel < 0.08:
                 out = cv2.addWeighted(out, 0.7, prev, 0.3, 0)
         prev = out
+        if emojis:
+            out = draw_emojis(out, emojis, f / plan['fps'])
         enc.stdin.write(out.tobytes())
         f += 1
     enc.stdin.close()
@@ -295,8 +377,14 @@ def main():
     ap.add_argument('--no-upper', action='store_true', help='sentence case captions instead of UPPERCASE')
     ap.add_argument('--caption-y', type=int, default=None,
                     help='caption centre line in px (0-1920); default 1270, or the seam in the facecam layout')
-    ap.add_argument('--size', type=int, default=96, help='caption font size in px')
+    ap.add_argument('--size', type=int, default=None, help='caption font size in px (default: the look\'s own)')
+    ap.add_argument('--look', default=None, choices=sorted(planlib.LOOKS),
+                    help='caption look (default: settings.json "caption_look", classic)')
     ap.add_argument('--out', default=None, help='output folder (default <project>/edited)')
+    ap.add_argument('--emoji', action=argparse.BooleanOptionalAction, default=None,
+                    help='emojis on the words clips.json names (default: settings.json "emoji", on)')
+    ap.add_argument('--music', action=argparse.BooleanOptionalAction, default=None,
+                    help='background music where clips.json names a mood (default: settings.json "music", on)')
     ap.add_argument('--hook-title', action=argparse.BooleanOptionalAction, default=None,
                     help='the hook title for the first seconds (default: settings.json "hook_title", on)')
     ap.add_argument('--safe-zones', action=argparse.BooleanOptionalAction, default=None,
@@ -327,6 +415,7 @@ def main():
         print('-> captions: Roman Hinglish (romanize.json)')
     opts = {'zoom': not a.no_zoom, 'captions': not a.no_captions, 'sfx': a.sfx,
             'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size,
+            'look': a.look or cfg.get('caption_look', 'classic'),
             'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
     done = []
     for mpath in metas:
@@ -349,6 +438,8 @@ def main():
         safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
         hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
         clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
+        emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
+        clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
         clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
                          hook_text=picked.get('hook_text') or picked.get('title'))
         if safe or clip_opts['hook']:
@@ -356,11 +447,26 @@ def main():
         if meta.get('layout') == 'facecam':
             clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around
         plan = planlib.build(meta, brand, clip_opts)
+        for m in plan.get('emoji_missing', []):
+            print(f'   ! emoji left out: "{m}" (a word not said in this clip, or no free spot)')
+        for e in plan.get('emoji', []):
+            e['png'] = str(emojilib.png(e['char']) or '')
+            if not e['png']:
+                print(f"   ! emoji {e['char']}: its picture couldn't be downloaded (offline?), left out")
+        plan['emoji'] = [e for e in plan.get('emoji', []) if e['png']]
+        if a.engine == 'remotion' and (plan['emoji'] or plan['caption_style'].get('look') != 'classic'):
+            print('   (the Remotion engine draws the classic caption look and no emojis: use the python engine for those)')
         if any(has_devanagari(w['text']) for g in plan['captions'] for w in g['words']):
             print(f"   captions include Devanagari -> font {plan['caption_style']['font']}")
         save_json(work / f"{meta['name']}.plan.json", {k: v for k, v in plan.items() if k != 'cam'})
         wav = work / f"{meta['name']}.mix.wav"
-        mix_audio(clip_mp4, plan['sfx'], wav, plan['duration'])
+        track = None
+        music_on = cfg.get('music', True) if a.music is None else a.music
+        if music_on and picked.get('music') and opts['sfx'] != 'none':
+            track = musiclib.pick(picked['music'], meta['name'])
+            if not track:
+                print(f"   ! music \"{picked['music']}\": no tracks in music/{picked['music']}/ (`python run.py music`)")
+        mix_audio(clip_mp4, plan['sfx'], wav, plan['duration'], track)
         (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, wav, out, work)
         if plan['captions']:
             write_srt(plan, out.with_suffix('.srt'))
@@ -369,6 +475,8 @@ def main():
         moved = len({g['y'] for g in plan['captions'] if g.get('y') not in (None, H // 2)})
         extra = (f"  hook: \"{' / '.join(plan['hook']['lines'])}\" at y={plan['hook']['y']}" if plan.get('hook') else '') + \
                 (f"  captions moved off a face in {moved} place(s)" if moved and safe else '')
+        if track:
+            extra += f'  music: {track.parent.name}/{track.name}'
         print(f"   ok {out.name}  zooms:{len(plan['transitions'])}  captions:{len(plan['captions'])}  "
               f"sfx: {sfx}  ({time.time() - t0:.0f}s){extra}")
         done.append(out)

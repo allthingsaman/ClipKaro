@@ -28,6 +28,9 @@ DEFAULT_SETTINGS = {
     'hook_title': True,            # a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text)
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
     'jump_cuts': True,             # cut long pauses (0.55 s+) and filler sounds out of each clip
+    'caption_look': 'classic',     # classic | box | karaoke | minimal | bold | comic
+    'emoji': True,                 # emojis on the strong words Claude marks (clips.json emoji)
+    'music': True,                 # background music where a clip names a mood (only with your own tracks)
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

@@ -109,6 +109,11 @@ ones were added.
   seconds, never on a face. *(2026-11-13)*
   - Way back: `"safe_zones": false` and `"hook_title": false` in settings.json (or `--no-safe-zones`,
     `--no-hook-title`).
+- ⬆ **Caption looks, emojis and background music.** Five more caption looks besides v1.1's (which
+  stays the default); emojis on up to 3 strong words, never on a face; background music from your own
+  `music` folder, quietly under the voice. *(2026-11-13)*
+  - Way back: the classic look is the default; `"emoji": false`; no tracks (or `"music": false`) means
+    no music.
 - ⬆ **Sound effects by mood, from your own folder** (`sounds/shock`, `sounds/funny` ...). Claude
   marks the moments that call for one. Until you add sounds, clips sound exactly as before (the two
   whooshes). *(2026-11-13)*

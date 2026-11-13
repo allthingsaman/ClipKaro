@@ -27,6 +27,19 @@ FONTS = Path(__file__).resolve().parent.parent / 'assets' / 'fonts'
 # a caption line never gets wider than this (the frame is 1080 wide; 70 px stay free on each side)
 MAX_CAPTION_W = W - 140
 LATIN_FONT = ('Montserrat ExtraBold', 'Montserrat-ExtraBold.ttf')
+# caption looks (settings.json "caption_look", edit --look): font, size (CSS px), outline, case and motion.
+# pop: each word pops in when spoken; karaoke: the line shows at once and fills with the accent colour
+# as it is spoken; box: on a dark box; tilt: a slight angle. Devanagari captions always use Poppins.
+LOOKS = {
+    'classic': {'font': LATIN_FONT, 'size': 96, 'outline': 8, 'upper': True, 'pop': True},
+    'box': {'font': LATIN_FONT, 'size': 84, 'outline': 16, 'upper': True, 'pop': True, 'box': True},
+    'karaoke': {'font': LATIN_FONT, 'size': 92, 'outline': 8, 'upper': True, 'karaoke': True},
+    'minimal': {'font': ('Poppins ExtraBold', 'Poppins-ExtraBold.ttf'), 'size': 70, 'outline': 4, 'upper': False,
+                'shadow': 3},
+    'bold': {'font': ('Anton', 'Anton-Regular.ttf'), 'size': 124, 'outline': 9, 'upper': True, 'pop': True},
+    'comic': {'font': ('Bangers', 'Bangers-Regular.ttf'), 'size': 116, 'outline': 9, 'upper': True, 'pop': True,
+              'tilt': -2},
+}
 HINDI_FONT = ('Poppins ExtraBold', 'Poppins-ExtraBold.ttf')
 
 WIDE = [1.0, 1.04, 1.02]
@@ -543,7 +556,7 @@ def hook_lines(text, style):
     return lines, max(int(style['size'] * 0.6), int(style['size'] * limit / wid))
 
 
-def hook_title(text, duration, shots, faces, caps, upper, style):
+def hook_title(text, duration, shots, faces, caps, upper, style, cam=None, fps=FPS):
     """{'lines', 'start', 'end', 'y', 'size', 'font', 'font_file'} for the first seconds, placed in the upper
     part of the frame clear of faces and of the captions shown meanwhile; None without a text."""
     text = ' '.join((text or '').split())
@@ -552,17 +565,85 @@ def hook_title(text, duration, shots, faces, caps, upper, style):
     end = min(HOOK_END, duration - 1.0)
     font, font_file = (HINDI_FONT if has_devanagari(text) else (style['font'], style['font_file']))
     upper = upper and not has_devanagari(text)
-    st = {'font': font, 'font_file': font_file, 'size': HOOK_SIZE, 'spacing': 1, 'outline': 18}
-    lines, size = hook_lines(text.upper() if upper else text, st)
-    h = len(lines) * size * 1.25 + 40
-    boxes = [b for i, sh in enumerate(shots) if sh['t0'] < end for b in (faces or {}).get(i, [])]
+    text = text.upper() if upper else text
+    boxes = [b for i, sh in enumerate(shots) if sh['t0'] < end
+             for b in layout.zoomed(layout.margins((faces or {}).get(i, []), layout.TITLE_TOP),
+                                    cam, fps, max(0, sh['t0']), min(end, sh['t1']))]
     avoid = [(g.get('y', style['y']), layout.CAP_H) for g in caps if g['start'] < end]
-    y = layout.place(layout.TITLE_LINES[0], h, boxes, layout.TITLE_LINES, avoid=avoid)
-    return {'lines': lines, 'start': 0.0, 'end': round(end, 2), 'y': int(y), 'size': size,
-            'font': font, 'font_file': font_file}
+
+    def fit(factor, lines_y):
+        st = {'font': font, 'font_file': font_file, 'size': int(HOOK_SIZE * factor), 'spacing': 1, 'outline': 18}
+        lines, size = hook_lines(text, st)
+        h = len(lines) * size * 1.25 + 40
+        y = layout.place(lines_y[0], h, boxes, lines_y, avoid=avoid)
+        free = layout.covers((y, h), boxes, avoid) == 0
+        return free, {'lines': lines, 'start': 0.0, 'end': round(end, 2), 'y': int(y), 'size': size, 'h': int(h),
+                      'font': font, 'font_file': font_file}
+    # the top of the frame, smaller if it must; then lower, over the chest; else the spot covering least
+    for factor, lines_y in ((1.0, layout.TITLE_LINES[:4]), (0.85, layout.TITLE_LINES[:4]),
+                            (0.72, layout.TITLE_LINES[:4]), (1.0, layout.TITLE_LINES[4:])):
+        free, hk = fit(factor, lines_y)
+        if free:
+            return hk
+    return fit(1.0, layout.TITLE_LINES)[1]
 
 
-def safe_caption_y(caps, shots, faces, default_y, fixed):
+EMOJI_SIZE = 150          # px
+EMOJI_HOLD = 1.3          # seconds on screen after its word starts
+
+
+def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=None, cam=None, fps=FPS, hook=None):
+    """clips.json "emoji": [[word as said or as captioned, "💰"], ...] -> [{'char', 't0', 't1', 'x', 'y', 'size'}]:
+    the picture from the first time its word is said, above the caption line, or beside it, or below it:
+    the first of those spots that covers no face and stays inside the apps' safe zone. When every spot
+    covers a face the emoji is left out. One at a time; at most 3. Marks whose word isn't said in the
+    clip are skipped (listed in 'missing')."""
+    out, missing = [], []
+    half = EMOJI_SIZE / 2
+    for m in marks or []:
+        if not (isinstance(m, (list, tuple)) and len(m) == 2 and str(m[1]).strip()):
+            continue
+        want = {norm_token(t) for t in str(m[0]).split()[:1]} - {''}
+        w = next((w for w in words if not w.get('unsure') and
+                  want & {norm_token(w['w']), norm_token(w.get('orig', ''))}), None)
+        if not w:
+            missing.append(str(m[0]))
+            continue
+        g = next((g for g in caps if g['start'] - 0.05 <= w['s'] < g['end']), None)
+        cy = (g or {}).get('y', default_y)
+        line_w = caption_width(' '.join(x['text'] for x in g['words']), style) * g.get('scale', 1) \
+            if g and style else 400
+        t0, t1 = w['s'], min(duration, w['s'] + EMOJI_HOLD)
+        sh = next((sh for sh in shots if sh['t0'] <= t0 < sh['t1']), None)
+        if sh and sh['t1'] - t0 >= 0.7:          # it leaves with its shot (a cut may bring a face there)
+            t1 = min(t1, sh['t1'])
+        boxes = [b for k, x in enumerate(shots) if x['t0'] < t1 and t0 < x['t1']
+                 for b in layout.zoomed(layout.margins((faces or {}).get(k, [])), cam, fps,
+                                        max(t0, x['t0']), min(t1, x['t1']))]
+        if hook and t0 < hook['end']:            # nor under the hook title while it shows
+            boxes.append((0, hook['y'] - hook['h'] / 2, W, hook['y'] + hook['h'] / 2))
+        spots = [(W / 2, cy - layout.CAP_H / 2 - half - 10),                 # above the caption
+                 (W / 2 + line_w / 2 + half + 10, cy), (W / 2 - line_w / 2 - half - 10, cy),   # beside it
+                 (W / 2, cy + layout.CAP_H / 2 + half + 10)]                 # below it
+        for x, y in spots:
+            x0, x1, y0, y1 = x - half, x + half, y - half, y + half
+            inside = W / 2 - layout.SAFE_W / 2 <= x0 and x1 <= W / 2 + layout.SAFE_W / 2 and \
+                layout.SAFE_TOP <= y0 and y1 <= layout.SAFE_BOTTOM
+            on_face = any(min(x1, b[2]) > max(x0, b[0]) and min(y1, b[3]) > max(y0, b[1]) for b in boxes)
+            if inside and not on_face:
+                out.append({'char': str(m[1]).strip(), 't0': round(t0, 3), 't1': round(t1, 3), 'x': int(x),
+                            'y': int(y), 'size': EMOJI_SIZE})
+                break
+        else:
+            missing.append(f'{m[0]} (no free spot: every place near the caption covers a face)')
+    kept = []                                    # one at a time: a later one waits its turn or is left out
+    for e in sorted(out, key=lambda e: e['t0']):
+        if not kept or e['t0'] >= kept[-1]['t1']:
+            kept.append(e)
+    return kept[:3], missing
+
+
+def safe_caption_y(caps, shots, faces, default_y, fixed, cam=None, fps=FPS):
     """Each caption group's line: the usual one, or (once per shot) the nearest that covers no face."""
     if fixed or not faces:
         return
@@ -572,7 +653,9 @@ def safe_caption_y(caps, shots, faces, default_y, fixed):
         mode = shots[i].get('mode') if shots else None
         base = g.get('y', default_y)
         if i not in per_shot:
-            per_shot[i] = int(layout.place(base, layout.CAP_H, faces.get(i, []), layout.caption_lines(base, mode)))
+            sh = shots[i] if shots else {'t0': 0, 't1': g['end']}
+            boxes = layout.zoomed(layout.margins(faces.get(i, [])), cam, fps, sh['t0'], sh['t1'])
+            per_shot[i] = int(layout.place(base, layout.CAP_H, boxes, layout.caption_lines(base, mode)))
         if per_shot[i] != base:
             g['y'] = per_shot[i]
 
@@ -584,11 +667,16 @@ def build(meta, brand, opts):
     keys, cam, transitions, beats = build_camera(meta) if opts.get('zoom', True) else \
         ([], [[1.0, W / 2, H / 2]] * int(round(meta['duration'] * fps)), [], [(0, meta['duration'])])
     hindi = any(has_devanagari(w['w']) for w in meta['words'])
+    look_name = opts.get('look') if opts.get('look') in LOOKS else 'classic'
+    look = LOOKS[look_name]
     # Devanagari has no capitals, so mixed captions stay in normal case (only Latin words would shout)
-    upper = opts.get('uppercase', True) and not hindi
-    font, font_file = (opts['font'], opts['font_file']) if opts.get('font') else (HINDI_FONT if hindi else LATIN_FONT)
-    style = {'font': font, 'font_file': font_file, 'size': opts.get('size', 96), 'y': opts.get('caption_y', 1270),
-             'outline': 8, 'uppercase': upper,
+    upper = opts.get('uppercase', True) and look['upper'] and not hindi
+    font, font_file = (opts['font'], opts['font_file']) if opts.get('font') else (HINDI_FONT if hindi else look['font'])
+    size = opts.get('size') or look['size']
+    style = {'font': font, 'font_file': font_file, 'size': size, 'y': opts.get('caption_y', 1270),
+             'outline': look['outline'], 'uppercase': upper, 'look': look_name,
+             'pop': bool(look.get('pop')), 'karaoke': bool(look.get('karaoke')), 'box': bool(look.get('box')),
+             'shadow': look.get('shadow', 3), 'tilt': look.get('tilt', 0),
              # letter spacing splits Devanagari into loose letters (libass shapes glyph by glyph then)
              'spacing': 0 if hindi else 1}
     safe = opts.get('safe', True)
@@ -611,9 +699,11 @@ def build(meta, brand, opts):
             g['nolead'] = True          # its one-frame early start would fall in the other layout
     faces = opts.get('faces')
     if safe:                            # move off a face (tight close-ups), once per shot
-        safe_caption_y(caps, meta.get('shots', []), faces, style['y'], opts.get('caption_y_fixed'))
+        safe_caption_y(caps, meta.get('shots', []), faces, style['y'], opts.get('caption_y_fixed'), cam, fps)
     hook = hook_title(opts.get('hook_text'), meta['duration'], meta.get('shots', []), faces, caps,
-                      upper, style) if opts.get('hook', True) else None
+                      upper, style, cam, fps) if opts.get('hook', True) else None
+    emoji, emoji_missing = emoji_marks(opts.get('emoji'), meta['words'], caps, meta.get('shots', []), faces,
+                                       style['y'], meta['duration'], style, cam, fps, hook) if caps else ([], [])
     return {
         'fps': fps, 'width': W, 'height': H,
         'duration': meta['duration'], 'frames': len(cam),
@@ -627,5 +717,6 @@ def build(meta, brand, opts):
                         salt=meta.get('name', '')),
         'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
         'hook': hook,
+        'emoji': emoji, 'emoji_missing': emoji_missing,
         'transitions': transitions,
     }

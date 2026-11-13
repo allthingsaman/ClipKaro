@@ -186,6 +186,15 @@ Write `output/<project>/clips.json`:
   start of the word the sound lands on (`run.py find`); its loudest point plays right there, under the
   voice. Never two within 1.5 s, never on the hook's first second, and less is more: most clips need
   none or one.
+- `emoji` (optional): 0-3 emojis on strong words, `[["paisa", "💰"], ["shocking", "😱"]]`: the word as it
+  shows in the captions or as said, and one emoji that fits it (money, a shock, a laugh, a win, a
+  warning). It pops in above (or beside) the caption when the word is said, never on a face; one
+  that has no free spot is left out. Fewer is better: none on a sad or sensitive moment, never as
+  mockery, never two words in a row.
+- `music` (optional): one background-music mood for the clip (`"chill"`, `"upbeat"`, `"hype"`,
+  `"suspense"`, `"emotional"`, `"funny"`, `"inspiring"`, or the owner's own), only when `python run.py
+  music` lists tracks in it and the user didn't say "no music". Choose it by the clip's feeling;
+  leave it out where music would get in the way (a serious claim, a dense explanation).
 - `hook_text`: the **hook title** shown big on screen for the first 2-3 seconds, so the clip stops the
   scroll with the sound off. 3-6 words (about 30 letters at most), in the captions' language and
   script (Roman Hinglish for Hindi/Hinglish videos): the question or tension of the clip, never its

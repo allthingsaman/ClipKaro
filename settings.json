@@ -10,5 +10,8 @@
   "max_clips": 20,
   "hook_title": true,
   "safe_zones": true,
-  "jump_cuts": true
+  "jump_cuts": true,
+  "caption_look": "classic",
+  "music": true,
+  "emoji": true
 }

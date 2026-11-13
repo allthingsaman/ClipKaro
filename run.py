@@ -21,6 +21,7 @@
     python run.py relisten <project>                     listen again to unclear speech (game voices): fix or drop its captions
     python run.py tidy <project>                         no captions for words made up during laughter, noise or loops
     python run.py sfx [add <file> <mood>]                your sound effects by mood (shock, funny, fear ...)
+    python run.py music [add <file> <mood>]              your background music by mood (chill, hype ...)
     python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
@@ -46,6 +47,7 @@ COMMANDS = {
     'more': 'clipper.more',
     'tidy': 'clipper.tidy',
     'sfx': 'clipper.sfx',
+    'music': 'clipper.music',
     'parts': 'clipper.parts',
     'topics': 'clipper.topics',
     'sound': 'clipper.sound',

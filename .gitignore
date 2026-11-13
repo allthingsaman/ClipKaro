@@ -81,3 +81,5 @@ desktop.ini
 
 # your own sound effects (python run.py sfx): yours, not part of the project
 sounds/
+# your own background music (python run.py music)
+music/

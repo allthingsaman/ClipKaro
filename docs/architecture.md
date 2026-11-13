@@ -933,6 +933,26 @@ moods with sounds); `edit.mood_marks` maps them through the cut's pieces (jump c
 -16 dB), at most 2.5 s long, 1.5 s apart, and the emphasis whoosh steps aside near one. `--sfx light`
 and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>` copies a sound in.
 
+### 5.11b Caption looks, emojis and music (`plan.LOOKS`, `emoji.py`, `music.py`)
+- **Looks** (`"caption_look"`, `edit --look`): classic (the v1.1 look), box (BorderStyle 3 on a 31 %-black
+  box), karaoke (`\kf`: the line shows at once and each word fills from white to the accent as it is
+  said), minimal (Poppins 70, sentence case, the group fades in, key words in the accent), bold
+  (Anton 124), comic (Bangers 116, tilted 2 degrees). Anton and Bangers are Google Fonts (OFL,
+  `assets/fonts/`); Devanagari captions always use Poppins. The Remotion engine draws only classic.
+- **Emojis** (clips.json `emoji`: `[[word, "💰"]]`): Google's Noto emoji (3D, 512 px), downloaded on
+  first use into `output/.cache/emoji/` (libass can't draw colour emoji). `plan.emoji_marks` finds the
+  word's first time, then the first spot above / right of / left of / below its caption line that is
+  inside the safe zone and clear of every face of the shots it overlaps (grown by the zoom the camera
+  really uses then) and of the hook title; none free: left out. It leaves with its shot (if it got
+  0.7 s), one at a time, at most 3. The python engine blends it into the frame with a pop (0.6 -> 1.0
+  in 0.15 s) and a fade.
+- **Music** (clips.json `music`: a mood; tracks in `music/<mood>/`, gitignored): `edit.mix_audio` loops
+  the track from its start, brings it to -21 LUFS, ducks it under the voice (sidechaincompress keyed
+  by the voice: threshold 0.03, ratio 4), fades it in (0.8 s) and out (1.2 s), then the whole mix goes
+  to -14 LUFS. Measured: the music sits about 10 dB under speech and 9 dB under the voice in pauses.
+- **Faces for titles**: a box may be covered at its top 12 % by the hook title (the hair line, never the
+  eyes; `layout.TITLE_TOP`); captions and emojis keep 15 % above and 12 % below every face.
+
 ### 5.12 Rendering and encoding (`edit.render_python`, `edit.render_remotion`)
 - **python engine** (default): ffmpeg decodes the cut clip, OpenCV applies the camera (scale around
   the focus point) frame by frame, and ffmpeg burns in the captions with libass and encodes.

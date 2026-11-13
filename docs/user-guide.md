@@ -198,6 +198,13 @@ much lighter, but the picks get no second opinion.
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan
 Sir video" and get them in a few minutes, without the video being read again.
 
+**Caption looks, emojis, music.** Say "box captions", "karaoke captions", "minimal captions", "bold
+captions" or "comic captions" for another look. Emojis pop in on a few strong words (💰 on "paisa"),
+never on a face; say "no emojis" if you don't want them. For background music, put tracks you may use
+in the `music` folder, one folder per mood (`chill`, `upbeat`, `hype`, `suspense`, `emotional`,
+`funny`, `inspiring`); ClipKaro plays them quietly under the voice. It ships no music itself:
+copyrighted songs get clips muted or blocked.
+
 **Your own sound effects.** Put sounds in the `sounds` folder inside the ClipKaro folder, one folder
 per mood: `shock`, `funny`, `fear`, `attention`, `sad`, `hype`, `reveal`, `fail`, `money` (any file
 name). Or tell Claude "add this sound as shock: (path to the file)". Claude then adds one where a

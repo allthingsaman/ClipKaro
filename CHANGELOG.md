@@ -12,6 +12,16 @@
   Real repetition ("let's go, let's go, let's go") keeps its captions. English videos are not
   affected; gameplay videos lose captions on about 1% of words, the ones that were wrong.
   `fetch` does it by itself; `run.py tidy <project>` applies it to older videos.
+- **Caption looks.** Besides the classic look: `box` (on a dark box), `karaoke` (each word fills with
+  colour as it's said), `minimal` (smaller, normal case), `bold` (big Anton letters) and `comic`
+  (tilted comic letters). Say "box captions", or set `"caption_look"` in settings.json.
+- **Emojis on strong words.** Claude adds up to 3 per clip (💰 on "paisa", 😱 on a shock). They pop in
+  above or beside the caption when the word is said, and are left out rather than put on a face.
+  `"emoji": false` turns them off.
+- **Background music, your own.** Put tracks you may use in the `music` folder, one folder per mood
+  (chill, upbeat, hype, suspense, emotional, funny, inspiring), or say "add this music as chill:
+  <file>". Claude picks a mood per clip; the music plays about 10 dB under the voice and dips
+  further while someone talks. ClipKaro ships no music (copyrighted songs get clips muted).
 - **Sound effects by mood, your own.** Put sounds in the `sounds` folder, one folder per mood
   (attention, shock, fear, funny, sad, hype, reveal, fail, money, or your own), or say "add this sound
   as shock: <file>" (`run.py sfx add`). Claude marks the moments that call for one, a boom on a shocking

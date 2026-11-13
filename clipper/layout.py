@@ -21,14 +21,15 @@ SAFE_RIGHT = 940                        # TikTok's button column starts here
 SAFE_W = 2 * (SAFE_RIGHT - W // 2)      # centred text no wider than this (800 px)
 CAP_H = 130                             # one caption line (96 px text, outline included)
 MAX_ZOOM = 1.22                         # the strongest punch-in of the edit (plan.PUNCH)
-CHIN = 0.30                             # room below a face box for the chin and mouth (share of its height)
+CHIN = 0.12                             # room below a face box (it already holds the chin): the jawline
 BROW = 0.15                             # and above it for the forehead
 SAMPLES = 4                             # frames checked per shot
 
 
 def face_boxes(clip_mp4, shots):
-    """{shot index: [(x0, y0, x1, y1)]} in output pixels, faces seen in the cut clip (union over a
-    few frames of the shot), grown for the zoom and the chin."""
+    """{shot index: [(x0, y0, x1, y1)]} in output pixels of the cut clip (before the edit's zoom), faces
+    seen in a few frames of the shot, with room for the forehead and the jawline. `zoomed` grows them
+    by the zoom the edit really uses while a text is on screen."""
     from .reframe import _faces
     cap = cv2.VideoCapture(str(clip_mp4))
     out = {}
@@ -47,13 +48,40 @@ def face_boxes(clip_mp4, shots):
                 x, y, bw, bh = 2 * x * W / w, 2 * y * H / h, 2 * bw * W / w, 2 * bh * H / h
                 if bh < 0.04 * H:               # a face in the background, a poster: not what we keep clear
                     continue
-                y1 = y + bh * (1 + CHIN)
-                y = y - bh * BROW
-                # the zoom scales around the focus point: the box grows with it
-                z = MAX_ZOOM
-                boxes.append((fx + (x - fx) * z, fy + (y - fy) * z, fx + (x + bw - fx) * z, fy + (y1 - fy) * z))
+                boxes.append((x, y, x + bw, y + bh))
         out[i] = boxes
     cap.release()
+    return out
+
+
+def margins(boxes, top=-BROW, bottom=CHIN):
+    """Face boxes with room around them, as shares of each box's height: top < 0 grows it upward (the
+    forehead), top > 0 lets text cover the top of the box (the hair line, never the eyes)."""
+    return [(x0, y0 + (y1 - y0) * top, x1, y1 + (y1 - y0) * bottom) for x0, y0, x1, y1 in boxes]
+
+
+TITLE_TOP = 0.12          # the hook title may cover the top 12 % of a face box (hair line, top of the forehead)
+
+
+def zoomed(boxes, cam, fps, t0, t1):
+    """The boxes as the edit shows them between t0 and t1: the camera scales each frame by s around
+    (x, y) (plan.build_camera), so a box covers the union of its scaled copies. Without a camera
+    (no zoom), the boxes as they are; past its end, the strongest zoom."""
+    if not boxes:
+        return []
+    if not cam:
+        return list(boxes)
+    f0, f1 = max(0, int(t0 * fps)), max(0, int(t1 * fps))
+    frames = [cam[min(f, len(cam) - 1)] for f in range(f0, f1 + 1, 3)] or [cam[min(f0, len(cam) - 1)]]
+    out = []
+    for b in boxes:
+        xs0, ys0, xs1, ys1 = [], [], [], []
+        for s, cx, cy in frames:
+            xs0.append(cx + (b[0] - cx) * s)
+            ys0.append(cy + (b[1] - cy) * s)
+            xs1.append(cx + (b[2] - cx) * s)
+            ys1.append(cy + (b[3] - cy) * s)
+        out.append((min(xs0), min(ys0), max(xs1), max(ys1)))
     return out
 
 
@@ -62,6 +90,14 @@ def _overlap(band, boxes, half_w):
     y, h = band
     a0, a1, x0, x1 = y - h / 2, y + h / 2, W / 2 - half_w, W / 2 + half_w
     return sum(max(0.0, min(a1, b[3]) - max(a0, b[1])) * max(0.0, min(x1, b[2]) - max(x0, b[0])) for b in boxes)
+
+
+def covers(band, boxes, avoid=(), half_w=SAFE_W / 2):
+    """How much a text band (centre y, height) covers faces and the `avoid` bands (0: nothing)."""
+    y, h = band
+    hits = _overlap(band, boxes, half_w)
+    hits += sum(max(0.0, min(y + h / 2, ay + ah / 2) - max(y - h / 2, ay - ah / 2)) * 2 * half_w for ay, ah in avoid)
+    return round(hits)
 
 
 def place(default_y, h, boxes, candidates, half_w=SAFE_W / 2, avoid=()):
@@ -85,4 +121,6 @@ def caption_lines(default_y, mode):
     return [default_y, default_y + 60, default_y - 90, default_y - 180, default_y - 270, default_y - 360]
 
 
-TITLE_LINES = [400, 320, 500, 620, 760]     # hook title centre lines, top part of the frame first
+# hook title centre lines: the top part of the frame first; lower (over the chest, above the captions)
+# only when every upper line would cover a face
+TITLE_LINES = [400, 320, 500, 620, 760, 900, 1000]

@@ -359,6 +359,13 @@ For each clip this adds:
   joined clip that jumps in time, a softer one on the jump instead, with the flash). The voice is lightly compressed, and the
   whole mix is normalised to -14 LUFS.
 
+**Caption looks**: `--look classic` (default, or settings.json `"caption_look"`), `box` (on a dark box),
+`karaoke` (each word fills with colour as it's said), `minimal` (smaller, normal case), `bold`
+(Anton, big), `comic` (Bangers, tilted). Use the one the user asks for ("box captions", "karaoke
+style"), or what "My preferences" say; otherwise classic. Hindi-letter captions always use Poppins.
+**Emojis and music** come from clips.json (`emoji`, `music`; `references/picking-moments.md`); a mood
+without tracks plays no music. "Add this sound as shock: <file>" -> `python run.py sfx add "<file>"
+shock`; "add this music as chill: <file>" -> `python run.py music add "<file>" chill`.
 Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentence case),
 `--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
