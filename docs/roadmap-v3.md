@@ -1,6 +1,6 @@
-# ClipKaro after v2.0: what's next, in order
+# ClipKaro after v2.1: what's next, in order
 
-ClipKaro v2.0 is out (November 2026). This page lists what is still to do, in the order we plan to
+ClipKaro v2.1 is out (November 2026; v2.0 came two days before it). This page lists what is still to do, in the order we plan to
 do it, with a rough time for each item. We close the items one by one. When one is done, it moves to
 **Done** with the date.
 
@@ -52,6 +52,22 @@ Each item is blind-tested against the version before it, and it only stays if it
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
 | 16 | **A fresh install on Windows and macOS**, checked from zero. | So far ClipKaro has only run on this Fedora laptop. | about 1 day | a Windows or Mac computer (yours or a friend's), 1 h | To do (not a priority now) |
+
+## To match Opus Clip (not scheduled yet)
+The [comparison with Opus Clip](roadmap-v2.md) (updated for v2.1) shows where it is still ahead. Items
+5, 6, 7 and 10 above close most of the polish gap (silence trimming, a hook title, safe zones, caption
+looks and music), 12 adds picture cues, 14 is a score that learns from real views, and 15 is our
+answer to its editor. Not on the list yet:
+
+| What | Opus Clip has | Rough size |
+|---|---|---|
+| **The side-by-side test**: the same English and gaming videos through Opus Clip and ClipKaro, rated blind | the reason to trust any of this | 1 day, plus a few people to rate |
+| **B-roll**: short stock clips or pictures over the speaker where the words name something | AI B-roll (stock and generated) | 2-3 days |
+| **Brand templates**: your logo, an intro and an outro on every clip | brand templates | 1 day |
+| **Following people who move**, and objects | ReframeAnything | 1-2 weeks |
+| **Three or more people**: panels, picture-in-picture for remote guests | layouts in Klap and Vizard | 1 week |
+| **TikTok and LinkedIn in PostKaro** | a scheduler for six platforms | 1-2 days each, depending on their APIs |
+| **Export to Premiere Pro** (XML), for creators who finish by hand | XML export | 1 day |
 
 ## Small extras (any time)
 - **Re-cut the MCU and gamer videos with v2.** Their finished clips are v1.1 picks with v2 captions,

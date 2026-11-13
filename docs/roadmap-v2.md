@@ -4,82 +4,96 @@ This page compares ClipKaro's **output** with the best-known AI clippers (mainly
 out a plan to close the gaps. It only looks at the clipping pipeline: *give it a video → get clips
 that can go viral*. Payments, accounts and app design are out of scope.
 
-It's a plan, not a promise. Items marked **Status (v1.1)** are already built; the rest is still to
-do. Contributions are welcome (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+It's a plan, not a promise. Items marked **Status** are already built; the rest is still to do.
+Contributions are welcome (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
-> **New in v1.1 (November 2026):** ClipKaro now knows *who is speaking* (speaker diarization) and
-> frames podcasts like an editor: the person talking is shown, and both people are shown in a split
-> screen around laughs and cross-talk. On 9 hand-checked podcast clips it chose the ideal framing
-> 83% of the time and showed the wrong person only 1% of the time. This closes the biggest visible
-> gap with Opus Clip for two-person podcasts. See items 8-10 and [CHANGELOG.md](../CHANGELOG.md).
+> **Updated for v2.1 (November 2026).** Since this page was first written, ClipKaro gained:
+> - **v1.1:** speaker-aware framing for podcasts;
+> - **v2.0:** long videos read in parts, a blind second opinion on every clip, deep clips with an
+>   honesty check, and tighter cuts;
+> - **v2.1:** live stream and gameplay handling, quick / standard / deep modes, more clips later,
+>   better game-voice captions, and posting with PostKaro.
+>
+> Sections 1, 3 and 4 compare v2.1 with Opus Clip as it is today (its own site, checked on
+> 2026-11-13). What's next, in order: [roadmap-v3.md](roadmap-v3.md).
 
 ---
 
 ## 1. The short answer
 
-**ClipKaro is close to Opus Clip on the basics, and since v1.1 also on two-person podcasts; ahead
-on Hindi/Hinglish; behind on "polish" (caption styles, B-roll, music) and on videos where people
-move around or there are three or more.**
+**For Hindi/Hinglish creators, gaming streams and anyone who wants control, ClipKaro v2.1 is ahead of
+Opus Clip. On picking moments from talking videos and podcasts it is at least as careful (not yet
+proven in a side-by-side test). It is behind on polish (caption templates, B-roll, a hook title,
+music, silence trimming, brand templates), on following people who move, and on a visual editor.**
 
-| | Verdict |
+| | Verdict (v2.1) |
 |---|---|
-| Picking good moments | **About as good, maybe better** on talking-head and podcast videos: Claude reads the *whole* transcript like an editor, and every cut is checked against sentence ends. Not proven yet: we need a blind test (section 6). |
-| Hindi / Hinglish | **Clearly ahead.** Opus Clip's own help page says it doesn't support Hindi. ClipKaro writes Hinglish captions in English letters, which few tools do. |
-| Framing (keeping the right person in frame) | **Closer since v1.1.** In podcasts with two people on screen, ClipKaro now shows the person who is *talking* and switches to a split screen for laughs and cross-talk. Still behind on smooth tracking of people who move around, and on three or more people. |
-| The edit (captions, zooms, sounds) | **Behind on variety.** Our zooms and word-by-word captions are good, but competitors also offer caption templates, emojis, B-roll, background music and silence removal. |
-| Reliability | **Behind.** Whisper sometimes writes nonsense during laughter or cross-talk, and today a person (or Claude) has to spot it. Competitors hide more of this. |
-| Speed | **Fine with an NVIDIA card, slow without** (a long video can take about 2 hours on a CPU). Competitors run in the cloud, so they're always fast. |
-| Cost, privacy, control | **Ahead.** Free, no watermark, no credits, nothing uploaded, every step can be changed. |
+| Picking good moments | **About as good or better on talking videos and podcasts.** Claude reads everything (long videos in parts, so the middle isn't skimmed), a blind critic scores every idea three times with reasons, and clips with notes are repaired. Deep clips join a story spread across the video, checked so that nothing changes what was meant. Not yet proven against Opus Clip in a blind test (section 6). |
+| Hindi / Hinglish | **Clearly ahead.** Opus Clip's help page still says it doesn't support Hindi. ClipKaro writes Hinglish captions in English letters. |
+| Live streams and gaming | **Ahead.** It recognises streams and gameplay, leaves out "Starting soon" and "Be right back" screens, stacks the webcam under the game, and captions game characters' English correctly (or not at all when unclear). Reviews say Opus Clip is weaker on gaming. |
+| Framing | **Close for one or two people sitting still** (since v1.1). **Behind** on following people who move, objects, and three or more people. |
+| The edit (captions, zooms, sounds) | **Behind on variety.** One clean caption style (word by word, accent colour, always inside the frame), zooms on the beat, 1-2 whooshes. Opus Clip has caption templates, AI B-roll, brand templates (logo, intro, outro) and a hook overlay. |
+| Editing by hand | **Different.** Opus Clip has a text and timeline editor. In ClipKaro you say it in words ("start clip 2 at...", "'bow' should be 'boat'"); a review studio is planned. |
+| Posting | **Close.** PostKaro schedules to YouTube, Instagram and Facebook from your own computer. Opus Clip also posts to TikTok, LinkedIn and X. |
+| Reliability of captions | **Better than v1.1, still behind.** Unclear speech now gets no captions instead of wrong ones; nonsense during laughter still needs a fix by hand (`fixword`). |
+| Speed | **Fine with an NVIDIA card, slow without.** Opus Clip runs in the cloud. |
+| Cost, privacy, control | **Ahead.** No watermark, no credits, nothing uploaded, every decision in a readable file. It needs a Claude plan (Pro or higher) for Claude Code; quick mode uses much less of it. |
 
-**So: not yet "industry grade" for every creator, but the gap is mostly engineering that we know how
-to do.** The five most important upgrades are in section 5.
+**So: industry grade for Hindi/Hinglish creators and streamers today; for everyone else, the gaps are
+the polish items in section 3, and we know how to build them.**
 
 ---
 
 ## 2. How we compared
 
-- **What we looked at:** the published features of Opus Clip, Vizard, Klap, Submagic and similar
-  tools, user reviews (G2, Trustpilot, review blogs), and our own test runs (a 7-minute Hinglish
-  review and a 2-hour Hinglish podcast).
-- **What we didn't do yet:** run the same videos through Opus Clip and ClipKaro side by side.
-  That's the first task of v2 (section 6). Until then, the comparison is based on features and
-  reviews, not a measured test.
+- **What we looked at:** the published features of Opus Clip (its own site, checked again on
+  2026-11-13), Vizard, Klap, Submagic and similar tools, user reviews (G2, Trustpilot, review blogs),
+  and our own test runs on the owner's videos.
+- **What we haven't done yet:** run the same videos through Opus Clip and ClipKaro side by side.
+  ClipKaro's versions were blind-tested against each other (v2 against v1.1: 21 pairs), not against
+  Opus Clip. Until then, this comparison is based on features and reviews, not a measured test.
 - Sources are listed at the end.
 
 ---
 
 ## 3. Side by side: what each tool produces
 
-| Area | Opus Clip (and the best of the others) | ClipKaro today | Gap |
+| Area | Opus Clip (and the best of the others) | ClipKaro v2.1 | Gap |
 |---|---|---|---|
-| **Finding moments** | "ClipAnything" uses picture, sound and emotion cues. You can describe the moment you want. Gives each clip a "virality score". Reviewers say selection is uneven ("10 clips but only 3 good") and starts/ends can be awkward. | Claude reads the full transcript with clear editor rules (hook → story → payoff, 15-90 s, no warm-ups). You can ask in plain words ("only the parts about money"). Text only: it can't hear laughter or see a big reaction. | Add sound and picture signals; add a scoring step. |
-| **Clip start and end** | Reviewers mention cut-off context and awkward starts/ends. | Every cut is snapped to whole words, with automatic warnings for cuts in the middle of a sentence. | We're ahead; keep it. |
-| **Long videos (1-3 h)** | Handled automatically. | Works, but for our 2-hour test the moment-picking was split into four parts **by hand** to read everything carefully. | Build that splitting into ClipKaro. |
-| **Transcription** | Claims about 97% caption accuracy. Hindi not supported (per its help page). | Whisper large-v3-turbo with re-transcription of skipped speech. Very good on clear speech; makes nonsense words during laughter and cross-talk, and splits some words ("P .O .K."). | Clean-up filters and confidence flags. |
-| **Who is speaking** | Active speaker detection (Opus Clip, Vizard); Klap labels speakers in captions. | **Since v1.1:** speaker diarization (who speaks when) and laughter detection, matched to each person's seat across the whole video. Used for framing; not yet shown in captions or the transcript. | Show speakers in the transcript Claude reads; speaker labels in captions. |
-| **Framing** | Follows the speaker and moving people/objects ("ReframeAnything"). | One still crop per camera shot, on the face. **Since v1.1:** in two-person shots, a crop on the person *talking*, switching between words. Slides and things being shown get the whole frame over a blurred background (`show_full`). Gameplay with a webcam gets a stacked layout. | Smooth tracking of people who move; following objects. |
-| **Two or more people** | Split-screen for interviews, 3-4 panels for panels, picture-in-picture for remote guests (Klap, Vizard). | **Since v1.1:** two-person split screen for laughs, cross-talk, quick back-and-forth and wide shots (main talker on top, captions on the seam). | 3-4 panels; picture-in-picture for remote guests. |
-| **Captions** | Many animated templates, emojis, GIFs (Submagic), 50+ languages. | One clean style: word-by-word pop-in, highlighted key words, colour from the video; Roman Hinglish or Devanagari. | Templates, emojis, face-aware placement. |
-| **Edit polish** | Auto zooms synced to words, B-roll, background music, sound effects on transitions, one-click silence removal (Submagic); AI B-roll (Opus Clip). | Zoom punch-ins on the beat, 1-2 soft whooshes, loudness set for phones. | Silence/filler trimming, hook title, music, B-roll. |
-| **Gaming / sports** | Reviewers say Opus Clip is weaker here. | Facecam layout; picks moments from the creator's commentary. Weak on silent action moments (text-only). | Sound/picture signals help here too. |
-| **Languages** | Opus Clip: about 20-30 languages, no Hindi (per help page), no right-to-left. | English and Hindi/Hinglish fully; most others at a basic level. | We lead for Indian creators; extend to more Indian languages. |
-| **Cost and privacy** | Paid credits per minute; reviews complain about billing. Videos are uploaded. | Free, local, unlimited. | Our advantage. |
+| **Finding moments** | "ClipAnything" uses picture, sound and emotion cues; you can describe the moment you want. Reviewers say selection is uneven ("10 clips but only 3 good"). | Claude reads the whole transcript with written editor rules (hook, story, payoff). A blind critic scores every idea three times, and the clips with notes are repaired. You can ask in plain words ("only the parts about money"). Laughs and cross-talk are given as hints. | Picture cues (big movement, reactions); a raised voice. |
+| **A score per clip** | A "virality score" (0-99) per clip. | A clip score out of 10 with reasons that quote the clip, and notes on what to fix. It ranks clips within one video and is not a prediction of views. | Learn from real views (planned). |
+| **Stories across a video** | Highlights can be rearranged into one short. | **Deep clips:** 2-3 moments far apart joined in the order said, kept only when they beat the best single stretch and pass three honesty judges. | Ahead. |
+| **Clip start and end** | Reviewers mention cut-off context and awkward starts and ends. | Snapped to whole words; checks for mid-sentence cuts, false starts and pieces that start on "he"; tighter cuts, preferred 8 of 8 in the owner's blind test. | Ahead; keep it. |
+| **How many clips** | Many per video; you choose. | Every good moment: 3-8, more for long videos, or the number you ask for. The rest stay saved: "3 more clips" later, without reading the video again. | Even. |
+| **Long videos (1-3 h)** | Handled automatically. | Read in parts of about 21 minutes by several AI readers at once; transcribed in pieces, so a 3-hour video doesn't crash a laptop. | Even. |
+| **Live streams and gaming** | Reviewers say it is weaker on gaming. | Live streams and gameplay are recognised by themselves; break screens are left out; webcam layout; game characters' English is captioned right or not at all. | Ahead. |
+| **Transcription** | Claims 97%+ caption accuracy; about 25 languages, no Hindi. | Whisper large-v3-turbo, locally. Unclear speech is heard again, and stays uncaptioned if still unclear. Nonsense words during laughter still slip through. | Clean-up filters (planned). |
+| **Framing** | Follows speakers and moving objects ("ReframeAnything"). | One crop per camera shot on the face. In two-person podcasts, the person talking, with a split screen around laughs and cross-talk (since v1.1). Slides and things shown get the whole frame. | People who move; objects; 3+ people. |
+| **Captions** | Animated templates, emojis (Submagic), brand fonts. | One clean style: word by word, key words in an accent colour taken from the video, always inside the frame, Roman Hinglish, a [noun] for "this movie". | Templates, emojis, safe zones. |
+| **Edit polish** | AI B-roll (stock and generated), hook overlay, brand templates (logo, intro, outro); silence removal and music in Submagic. | Zooms on the beat (fewer on fast camera cuts), 1-2 soft whooshes, loudness set for phones, smooth joins. | Silence trimming, hook title, music, B-roll, brand templates, sound effects by mood. |
+| **Editing by hand** | Text and timeline editor; XML export to Premiere Pro. | Plain-words changes per clip; `fixword` fixes a caption word everywhere; every decision is in readable files. | Review studio (planned); XML export. |
+| **Posting** | Scheduler for YouTube, TikTok, Instagram, Facebook, LinkedIn and X. | PostKaro: YouTube, Instagram and Facebook, scheduled, from your own computer, with each platform's own text. | TikTok, LinkedIn (X not planned). |
+| **Languages** | About 25, no Hindi. | Hindi, Hinglish and English, on purpose. | We lead for Indian creators. |
+| **Cost and privacy** | Free plan with limits and a watermark; paid credits; videos are uploaded. | Free, local, unlimited, no watermark; needs a Claude plan for Claude Code. | Our advantage. |
 
 ---
 
 ## 4. What ClipKaro already does better (keep these)
 
-1. **An editor that reads everything.** Claude reads the full transcript, explains *why* each clip
-   works, and follows written editorial rules that anyone can improve.
-2. **Clean cuts.** Word-snapped starts and ends, and warnings for mid-sentence cuts.
-3. **Hindi and Hinglish**, with captions in English letters. This is our strongest difference
-   for the Indian creator market.
-4. **Free, private and unlimited**: no credits, no watermark, no uploads.
-5. **Fully adjustable.** Every decision is in a readable file (`clips.json`, `romanize.json`), and
-   every step can be redone for one clip. Since v1.1 any moment's framing can be changed too
-   (`framing`, `show_full`).
-6. **Careful two-person framing (v1.1).** It never guesses a face: when unsure it shows both people.
-   The AI editor checks picture sheets and adds what sound can't catch (a silent laugh).
+1. **An editor that reads everything.** Claude reads the whole transcript (long videos in parts),
+   explains *why* each clip works, and follows written editorial rules anyone can improve.
+2. **A blind second opinion** that ranks and coaches instead of throwing clips away, and judges the
+   craft, never the topic.
+3. **Deep clips that stay honest:** joined stories checked by three separate judges.
+4. **Clean, tight cuts:** word-snapped starts and ends, warnings for mid-sentence cuts, and the
+   tighter cut that the owner preferred in a blind test.
+5. **Hindi and Hinglish**, with captions in English letters: our strongest difference for Indian
+   creators.
+6. **Live streams and gaming:** break screens left out, webcam layout, game voices handled.
+7. **Free, private and unlimited:** no credits, no watermark, no uploads; posting runs locally too.
+8. **Fully adjustable:** every decision is in a readable file (`clips.json`, `romanize.json`), every
+   step can be redone for one clip, and good ideas that weren't cut stay saved for later.
+9. **Careful two-person framing (v1.1):** it never guesses a face; when unsure it shows both.
 
 ---
 
@@ -92,6 +106,7 @@ and **how we'll measure** it.
 ### v1.x: quick wins (small changes, big effect)
 
 #### 1. Trim silences and filler words ("jump cuts") (S)
+- **Status (v2.1): planned**, [roadmap-v3.md](roadmap-v3.md) item 5.
 - **Why:** Short-form viewers leave during pauses. Tight clips feel faster and keep people watching.
   Submagic and others do this in one click.
 - **How:** We already have the exact time of every word. Inside each clip, cut pauses longer than
@@ -102,6 +117,7 @@ and **how we'll measure** it.
   prefer the trimmed version.
 
 #### 2. Hook title on screen (S)
+- **Status (v2.1): planned**, roadmap-v3 item 6.
 - **Why:** Most viral shorts show a big 3-6 word hook in the first 2-3 seconds ("Pakistan ka PM
   banoge?"). It stops the scroll even with the sound off.
 - **How:** Claude already writes a title for each clip. Add a `hook_text` field to `clips.json` and
@@ -195,6 +211,7 @@ and **how we'll measure** it.
 - **Measure:** share of clips rated "I'd post this" in the blind test.
 
 #### 5. Cleaner transcripts (M)
+- **Status (v2.1): partly done.** Unclear stretches (game voices, music) are heard again and get no captions when still unclear; clear English replaces Hindi-letter nonsense, never as a translation of the speaker's Hinglish. `run.py fixword` fixes a word everywhere. Still to do: nonsense during laughter, loops, one "word" hiding several (roadmap-v3 item 9).
 - **Why:** Wrong words in captions look unprofessional. In our tests: nonsense words during laughter
   ("झाल"), the Hinglish primer sentence leaking into silent parts, and split words ("P .O .K.",
   "एर बस" for Airbus).
@@ -217,6 +234,7 @@ and **how we'll measure** it.
 - **Measure:** caption word error rate on a hand-corrected 10-minute sample of each test video.
 
 #### 6. Automatic quality check after editing (S)
+- **Status (v2.1): planned**, roadmap-v3 item 8.
 - **Why:** Today Claude or the user has to look at frames to catch problems. An editor always
   reviews before publishing.
 - **How:** `run.py qa <project>` writes a report and one contact-sheet image per clip: cut points
@@ -277,6 +295,7 @@ and **how we'll measure** it.
   picture for remote guests; 3-4 panels for panels.
 
 #### 11. Use sound and picture, not just words (M)
+- **Status (v2.1): sound done as hints.** Since v2.0 laughs, applause and cross-talk are shown to the readers and the critic ("[laughter ~2 s]"). Picture cues and a raised voice: roadmap-v3 item 12.
 - **Status (v1.1): laughter is heard** (YAMNet) and used for framing. Not yet shown to Claude as
   hints for picking moments.
 - **Why:** Some of the best moments are laughter, a reaction, a raised voice, or an action in a game,
@@ -290,6 +309,7 @@ and **how we'll measure** it.
 - **Measure:** blind test, especially on funny moments and gaming videos.
 
 #### 12. More editing styles (M)
+- **Status (v2.1): planned**, roadmap-v3 items 4 (sound effects by mood) and 10 (caption looks, emojis, music).
 - **Why:** Different niches look different (podcasts, education, gaming, motivation).
 - **How:**
   - **Caption templates:** 5-8 presets (word pop, karaoke box, highlighted word on a coloured box,
@@ -305,6 +325,7 @@ and **how we'll measure** it.
     free licence, with credit) are shown briefly when nobody is on screen.
 
 #### 13. Faster rendering (M)
+- **Status (v2.1): planned**, roadmap-v3 item 11.
 - **Why:** Editing currently takes about as long as the clips themselves, on the processor.
 - **How:** apply the zooms with ffmpeg (crop and scale per segment) instead of drawing every frame
   in Python; use NVIDIA's hardware encoder (NVENC) when available; render several clips in
@@ -397,17 +418,20 @@ and **how we'll measure** it.
 ### v3: learning and reach
 
 #### 14. Learn from what actually goes viral
+- **Status (v2.1): waiting for posted clips** (posting with PostKaro started in November 2026), roadmap-v3 item 14.
 - **How:** optionally read each posted clip's views and watch time (YouTube Analytics API, with the
   user's permission), compare with the scores ClipKaro gave, and adjust the scoring sheet. Over time
   ClipKaro learns what works for each creator. Nothing leaves the user's computer.
 
 #### 15. A local "review studio"
+- **Status (v2.1): planned**, roadmap-v3 item 15.
 - **Why:** The last mile of quality is human: drag a start point, fix a caption word, try another
   colour, all without typing commands.
 - **How:** a small web page served on the user's own computer (`run.py studio`) that shows the clips,
   their scores and captions, and re-renders one clip at a time.
 
 #### 16. More Indian languages
+- **Status (v2.1): not planned for now.** ClipKaro supports Hindi, Hinglish and English only, on purpose.
 - Tamil/Tanglish, Bengali/Banglish, Marathi, Telugu and others, following
   [adding-a-language.md](adding-a-language.md). This widens our lead in India.
 
@@ -434,6 +458,11 @@ Keep the test set and run it after every big change, so improvements are real an
 labelled moment by moment (who speaks, who laughs, ideal framing). Result: ideal framing 83%,
 acceptable 91%, wrong person 1%. The side-by-side test against Opus Clip is still to do.
 
+**Progress (v2.0):** the owner's blind comparison of v2 with v1.1 on five fresh videos (21 pairs):
+v2 found more postable moments (v2 3, v1.1 1, "post both" 6), every deep clip was postable and none
+misleading; the tighter cut won 8 of 8 where both versions cut the same moment. **Still to do (v2.1):
+the side-by-side test against Opus Clip** on English and gaming videos.
+
 ---
 
 ## 7. Should ClipKaro become an app?
@@ -458,8 +487,8 @@ Marketplaces like Agensi can help people discover ClipKaro in the meantime, with
 
 ## 8. What to build next
 
-> After v2.0 the order changed: see [roadmap-v3.md](roadmap-v3.md) for what's next. The table below
-> is kept as the v2 plan.
+> Since v2.0 the plan lives in [roadmap-v3.md](roadmap-v3.md) (in order, with times; updated for
+> v2.1). The table below is kept as the original v2 plan.
 
 **Now (November 2026): deep clips (item 17), in phases.** Phase 1 (long videos and the topic map,
 item 3), phase 2 (the critic, item 4) and phase 3 (the deep pass with its honesty check) are built;
@@ -482,6 +511,11 @@ the test set and blind test, then silence trimming and the hook title.
 ---
 
 ## Sources
+
+- Opus Clip today (checked 2026-11-13): [opus.pro home](https://www.opus.pro/home) (features,
+  languages, plans), [OpusClip help: Hindi support](https://help.opus.pro/docs/article/does-opusclip-support-hindi)
+  ("OpusClip does not support Hindi at this time"), [Castmagic review](https://www.castmagic.io/software-reviews/opus-clip),
+  [SendShort review 2026](https://sendshort.ai/guides/opus-review/)
 
 - OpusClip features and reviews: [opus.pro](https://opus.pro/home-site),
   [Castmagic review](https://www.castmagic.io/software-reviews/opus-clip),

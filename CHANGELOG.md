@@ -1,66 +1,93 @@
 # What's new
 
-## Not released yet
+## v2.1 (November 2026): just say "clip this"
 
+v2.1 needs fewer words from you and gives more back. Say "clip this video". ClipKaro then works out
+the rest by itself: what kind of video it is (a live stream? gameplay?), how many clips to make, and
+for long videos whether you want deep clips (it asks you once). If you want to save your Claude
+plan, add the word "quick". Clips that weren't cut are kept, so you can ask for more later. Game
+voices get the right captions more often.
+
+Every change is checked against v1.1, the first stable version: nothing v1.1 could do was lost, and
+each change is listed in [docs/since-v1.1.md](docs/since-v1.1.md). The pieces were tested on the
+owner's own videos: two GTA live streams, the Khan Sir podcast, an anime video and the rest of the
+test bench. Not measured yet: how much of the Claude plan quick mode really saves (roadmap item 3b).
+
+### Just say "clip this"
+- **Three modes: standard, deep and quick.**
+  - *Standard* is the default.
+  - *Deep* adds deep clips: ask for them, or say yes to the one question for long videos.
+  - *Quick* runs only when you ask ("quick clip this", "use fewer tokens"). Claude then picks the
+    clips alone, like v1.1, and uses much less of your Claude plan.
+  - Every other upgrade works in all three modes.
+- **One question for long videos.** For a video longer than 21 minutes, Claude asks once at the start
+  whether you want deep clips too, while the video downloads. `"deep_clips": "always"` or `"never"`
+  in settings.json stops the question.
+- **The number of clips follows the video's length.**
+  - Every good moment becomes a clip: 3 to 8, as before.
+  - Long videos get more: up to about one per 7 minutes of real video, at most 20 (`max_clips`).
+    A 2-hour stream no longer stops at 8.
+  - "At least 10", "at most 5" or "give me 8" in your message always wins.
+- **Live streams and gameplay are recognised by themselves.**
+  - It knows a live stream when YouTube says so, or when a "Be right back" screen sits in the
+    middle. It knows gameplay from the Gaming category, or a webcam in a corner.
+  - "Starting soon", "Be right back" and stream-ending screens are left out: a still picture for 30
+    seconds or more with nobody on the webcam. Pause menus where you talk on cam stay in.
+  - Streams get their own rules: clips are built around what you say, quiet stretches are normal,
+    and "hello chat" or "is the audio OK" stay out of clips.
+  - On a 1:40 GTA stream it found all three break screens in 28 seconds.
+- **The video downloads while the audio is transcribed**, so cutting starts right away. `fetch
+  --no-video` keeps the old way.
+- New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live stream?
+  gameplay? break screens?).
+
+### More clips, ranked fairly
+- **More clips later.** The critic scores every clip idea in a video (often 15 to 30), and only the
+  best are made. The rest are now kept. Days later, say "3 more clips from the Khan Sir video" (or
+  "clips 9-12 too"), and the next ones become clips in a few minutes, without reading the video
+  again. The Khan Sir podcast had 18 such ideas, the best scoring 7.1/10. `run.py more`; `post`
+  tells you how many are waiting.
 - **The critic judges craft, never the topic.** It looks at how a clip starts, whether it makes sense
   alone, how it ends and what could be cut. A clip about politics, religion or anything controversial
   gets the same scores as any other. What to post is always your choice.
-- **Fuller YouTube titles.** Each one uses up to 100 characters: the hook, then the game, show or
-  person it's about, then 2-3 matching hashtags ending in #Shorts. For example: "Final Boss Yahin La Diya, Mar
-  Gaya | Black Myth Wukong Hindi Gameplay #BlackMythWukong #Shorts". Instagram and Facebook texts stay as they were.
-- **Deep clips' YouTube titles** end with "(2 moments joined)" instead of starting with the time
-  stamps. The description and the captions still start with "From 2 moments of the full video: ...".
-- **PostKaro gets the honesty note.** When one of the three honesty judges objected to a deep clip,
-  post.json now passes that judge's reason on to PostKaro.
-- **"Clip this video" is enough, even for live streams.**
-  - ClipKaro sees by itself when a video was a live stream (YouTube says so, or a "Be right back"
-    screen sits in the middle) or is gameplay (Gaming category, or a webcam in a corner).
-  - "Starting soon", "Be right back" and stream-ending screens are left out: a still picture for
-    30 seconds or more with nobody on the webcam. Pause menus where you talk on cam stay in.
-  - Streams also get their own rules: clips built around what you say, quiet stretches are
-    normal, no "hello chat" or "is the audio OK" in clips.
-  - On a 1:40 GTA stream it found all three break screens in 28 seconds.
-- **The number of clips follows the video's length.**
-  - Every good moment: 3 to 8 clips as before, and for long videos up to about one per 7 minutes
-    of real video, at most 20 (`max_clips` in settings.json).
-  - "At least 10", "at most 5" or "give me 8" in your message always wins. A 2-hour stream no
-    longer stops at 8 clips.
-- **Long videos: one question about deep clips.**
-  - For a video longer than 21 minutes, Claude asks once at the start whether you want deep clips
-    too, while the video downloads.
-  - `"deep_clips": "always"` or `"never"` in settings.json stops the question.
-- **The video downloads during transcription** instead of at `cut`, so cutting starts right away.
+- **Repaired clips keep their place.** The repair round's second look can no longer push a trimmed
+  clip below its own original (scores wander between runs). `cut --check` no longer warns about
+  those repairs.
+
+### Captions
 - **Game characters' English is caught more often.**
-  - The old check missed a whole English game line written as Hindi-letter nonsense when your
-    own clear words came right after it. It now finds the unclear core first, so clear words next
-    to it can't hide it. It still catches everything the old check caught.
-  - Before turning a line into English, ClipKaro checks that it isn't your Hinglish being
+  - The old check missed a whole English game line, written as Hindi-letter nonsense, when your own
+    clear words came right after it. It now finds the unclear core first, and it still catches
+    everything the old check caught.
+  - Before turning a line into English, ClipKaro makes sure it isn't your Hinglish being
     *translated* ("usko ghar jaana hai" must not become "I have to go to his house").
-  - If a line can't be heard well in either language, it gets no captions.
-  - Listening again is also much faster: it now gives Whisper only those few seconds, not the
-    whole video each time.
-- New commands: `run.py info` (a quick look before downloading) and `run.py kind` (live
-  stream? gameplay? break screens?).
-- **More clips later.** The critic scores every clip idea in a video, often 15 to 30, but only the
-  best are made. The rest are now kept. Days later, "3 more clips from the Khan Sir video" (or
-  "clips 9-12 too") turns the next ones into clips in a few minutes, without reading the video
-  again. The Khan Sir podcast had 18 such ideas, the best one scoring 7.1/10. `run.py more`; `post`
-  tells you how many are waiting.
-- **Quick, standard, deep.** *Standard* stays the default. *Deep* adds deep clips: you ask for
-  them, or say yes to the question for long videos. *Quick* runs only when you ask ("quick clip this",
-  "use fewer tokens"). Claude then picks the clips alone, like v1.1, and uses much less of your Claude
-  plan. Every other upgrade stays in all three modes.
-- **Fix a caption word everywhere:** `run.py fixword <project> "bow" "boat"` (or just tell Claude).
+  - A line that can't be heard well in either language gets no captions.
+  - Listening again is faster: Whisper gets only those few seconds, not the whole video each time.
+- **Fix a caption word everywhere**: `run.py fixword <project> "bow" "boat"`, or just tell Claude.
   It changes the word wherever it was heard, keeps the timing, and names the clips to make again.
+
+### Editing
 - **Fewer zooms when the camera cuts fast.** A camera cut that comes soon after the last zoom change
   now only follows the new face. One anime clip went from 48 zoom changes in 68 seconds to 28.
-- **Repaired clips keep their place.** The repair round's second look can't push a trimmed clip
-  below its own original any more. `cut --check` no longer warns about those repairs.
-- **Editing again works without the original video** once the caption colours are saved.
-- **Every change since v1.1, checked:** [docs/since-v1.1.md](docs/since-v1.1.md) lists each change
-  since v1.1 (the first stable version) as an upgrade, different on purpose (with the way back) or
-  costing more. From now on every change must be an upgrade to v1.1.
-- **What's next:** [docs/roadmap-v3.md](docs/roadmap-v3.md), in order, with a rough time for each item.
+- **Editing again works without the original video** once the caption colours are saved, so clips
+  of videos whose source was deleted can still be edited.
+
+### Posting
+- **Fuller YouTube titles.** Each one uses up to 100 characters: the hook, then the game, show or
+  person it's about, then 2-3 matching hashtags ending in #Shorts. For example: "Final Boss Yahin La
+  Diya, Mar Gaya | Black Myth Wukong Hindi Gameplay #BlackMythWukong #Shorts". Instagram and Facebook
+  texts stay as they were.
+- **Deep clips' YouTube titles** end with "(2 moments joined)". The description and the captions
+  still start with "From 2 moments of the full video: ...".
+- **PostKaro gets the honesty note.** When one of the three honesty judges objected to a deep clip,
+  post.json passes that judge's reason on to PostKaro.
+
+### v1.1 stays the baseline
+- [docs/since-v1.1.md](docs/since-v1.1.md) lists every change since v1.1 as an upgrade, as different
+  on purpose (with the way back), or as costing more. From now on every change must be an upgrade to
+  v1.1.
+- The Opus Clip comparison is updated for v2.1: [docs/roadmap-v2.md](docs/roadmap-v2.md). What's
+  next, in order: [docs/roadmap-v3.md](docs/roadmap-v3.md).
 
 ## v2.0 (November 2026): deep clips, a second opinion, tighter cuts
 

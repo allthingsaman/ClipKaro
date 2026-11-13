@@ -40,12 +40,16 @@ you:  clip this video: https://youtu.be/...
 - 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
   the captions in between. Game characters' lines are captioned right, or left without captions when
   they're unclear *(new in v2)*.
-- 📺 **Live streams need no explaining.** It sees by itself that a video was a live stream, leaves out
-  the "Starting soon", "Be right back" and stream-ending screens, and expects the quiet stretches where
-  you just play.
-- 🔢 **The right number of clips.** Every good moment: 3 to 8, and more for long videos (up to about
-  one per 7 minutes), unless you say "at least 10" or "at most 5". For long videos it asks once
-  whether you want deep clips too.
+- 📺 **Live streams need no explaining** *(new in v2.1)*. It sees by itself that a video was a live
+  stream, leaves out the "Starting soon", "Be right back" and stream-ending screens, and expects the
+  quiet stretches where you just play.
+- 🔢 **The right number of clips** *(new in v2.1)*. Every good moment: 3 to 8, and more for long
+  videos (up to about one per 7 minutes), unless you say "at least 10" or "at most 5". For long videos
+  it asks once whether you want deep clips too.
+- 💾 **More clips later** *(new in v2.1)*. The good moments that weren't cut stay saved: "3 more clips
+  from that video" makes them in a few minutes, without reading the video again.
+- ⚡ **Quick mode** *(new in v2.1)*. Say "quick clip this" to use much less of your Claude plan: Claude
+  picks the clips alone, with every other feature kept.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
   that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters

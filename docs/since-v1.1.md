@@ -6,7 +6,8 @@ change does something differently from v1.1, it must be because the owner wanted
 a matter of taste, there must be a way to get v1.1's behaviour back.
 
 This page lists every change since v1.1 and checks it against that rule. **Each new change gets
-its line here, in the same commit.**
+its line here, in the same commit.** Released so far: **v2.0** (2026-11-11, the lines marked v2.0)
+and **v2.1** (2026-11-13, the lines dated 2026-11-12 and 2026-11-13).
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
