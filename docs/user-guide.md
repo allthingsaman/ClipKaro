@@ -218,6 +218,13 @@ during laughter or noise get no caption (the sound stays). The captions keep cle
 apps' buttons (TikTok's like and share column, the text at the bottom). The loudest moments stay
 under the apps' limit, so they don't crackle after upload.
 
+**It listens to how things are said, not only what.** While it writes down the words, ClipKaro also
+notes a laugh, a raised voice or a shout, an explosion or gunfire in a game, and big action on the
+screen, and in gameplay which lines are the game's characters rather than you. Claude sees these notes
+next to the words, so a great reaction isn't missed, and your own commentary is what the clips are
+built on. Recording with OBS? Put your microphone on its own audio track: ClipKaro then writes down
+your words from the microphone alone.
+
 **A title on screen, only when you name it.** Say "hook title" ("clip this video: (link) hook
 title"), or later "add a hook title to clip 3": a big 3-6 word title for the first 2-3 seconds, in the
 upper part of the picture, never on a face.

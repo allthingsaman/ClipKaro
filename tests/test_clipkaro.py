@@ -70,6 +70,17 @@ class V11Baseline(unittest.TestCase):
         p = plan.build(self.meta, brand, dict(V11, hook=True, hook_text='Nobody tells you this'))
         self.assertIsNotNone(p['hook'])
 
+    def test_plain_transcript_way_back(self):
+        # "hints": false gives Claude v1.1's transcript lines, without any notes
+        from clipper import common, hints
+        saved = common.settings
+        common.settings = lambda: dict(common.DEFAULT_SETTINGS, hints=False)
+        try:
+            self.assertEqual(hints.notes(Path(tempfile.gettempdir()) / 'no-such-project'), {})
+        finally:
+            common.settings = saved
+        self.assertEqual(hints.line_text({'s': 3.5, 'e': 6.25, 'text': 'hello there'}, {}), '[3.50-6.25] hello there')
+
     def test_zoom_rhythm(self):
         keys, cam, transitions, beats = plan.build_camera(self.meta)
         self.assertEqual(transitions[0]['kind'], 'open')
@@ -186,6 +197,125 @@ class Transcripts(unittest.TestCase):
         self.assertEqual(new[-1]['w'], 'Michael?')         # the punctuation stays
 
 
+class StretchedWords(unittest.TestCase):
+    """One word stretched over several that were skipped is heard again (roadmap item 9)."""
+    def setUp(self):
+        from clipper import fetch
+        self.fetch = fetch
+        # "ki ye America ki chaal hai" was skipped: "बात" lasts 2.6 s
+        self.words = [W('ये', 0.0, 0.2), W('तो', 0.25, 0.4), W('सबको', 0.45, 0.8), W('पता', 0.85, 1.1),
+                      W('बात', 1.15, 3.75), W('है', 3.8, 4.0), W('कि', 4.05, 4.2), W('अब', 4.25, 4.5)]
+        self.saved = (fetch.stretched_words, fetch._decode)
+        fetch.stretched_words = lambda audio, words: [i for i, w in enumerate(words) if w['e'] - w['s'] > 2]
+
+    def tearDown(self):
+        self.fetch.stretched_words, self.fetch._decode = self.saved
+
+    def heard(self, text):
+        ws = text.split()
+        step = (3.75 - 0.0) / len(ws)
+        self.fetch._decode = lambda *a, **k: ([W(w, round(i * step, 2), round((i + 1) * step - 0.05, 2))
+                                              for i, w in enumerate(ws)], 0.8)
+
+    def test_skipped_words_come_back(self):
+        self.heard('तो सबको पता है कि ये America की चाल है बात')
+        new, changes = self.fetch.repair_stretched(None, None, [dict(w) for w in self.words], 'hi', 5)
+        self.assertEqual(len(changes), 1)
+        self.assertIn('America', [w['w'] for w in new])
+        self.assertLess(max(w['e'] - w['s'] for w in new), 2.0)
+
+    def test_a_guess_never_replaces_real_words(self):
+        self.heard('कुछ और ही बातें यहां सुनाई दे रहीं')             # none of the well-heard words again
+        new, changes = self.fetch.repair_stretched(None, None, [dict(w) for w in self.words], 'hi', 5)
+        self.assertEqual(changes, [])
+        self.assertEqual([w['w'] for w in new], [w['w'] for w in self.words])
+
+    def test_fillers_alone_are_not_a_repair(self):
+        self.heard('तो सबको um um पता पता बात')
+        _, changes = self.fetch.repair_stretched(None, None, [dict(w) for w in self.words], 'hi', 5)
+        self.assertEqual(changes, [])
+
+
+class Hints(unittest.TestCase):
+    """Sound and picture hints next to the words (roadmap items 12 and 13)."""
+    def test_main_voice_and_other_voices(self):
+        import numpy as np
+        from clipper import voices
+        rng = np.random.default_rng(0)
+        streamer, game = rng.normal(size=192), rng.normal(size=192)
+        prints, lines = [], []
+        for i in range(60):
+            base = streamer if i % 3 else game                  # 40 streamer lines, 20 game lines
+            p = base + 0.3 * rng.normal(size=192)
+            prints.append(p / np.linalg.norm(p))
+            lines.append({'s': i * 3.0, 'e': i * 3.0 + 2.5, 'i0': 0, 'i1': 0, 'text': 'x'})
+        found, labels = voices.find_voices(prints)
+        self.assertGreaterEqual(len(found), 2)
+        main = max(set(labels), key=labels.count)
+        self.assertEqual({i for i in range(60) if labels[i] == main}, {i for i in range(60) if i % 3})
+        saved = voices.prints_for
+        voices.prints_for = lambda a, w, l: prints
+        try:
+            v = voices.analyse(None, [], lines)
+        finally:
+            voices.prints_for = saved
+        self.assertEqual(voices.other_lines(v), {i for i in range(60) if i % 3 == 0})
+
+    def test_raised_voice_needs_higher_and_louder(self):
+        from clipper import hints
+        lines = [{'s': i * 4.0, 'e': i * 4.0 + 3.0} for i in range(20)]
+        levels = [(0.0, -20.0)] * 20
+        levels[5] = (5.0, -12.0)            # +5 semitones, +8 dB: raised
+        levels[9] = (9.0, -9.0)             # +9, +11: shouting
+        levels[12] = (6.0, -20.0)           # only higher (a question): nothing
+        levels[15] = (25.0, -10.0)          # +25 semitones: a pitch-tracker slip, nothing
+        got = hints.raised_lines(levels, lines, None, lambda a, b: False)
+        self.assertEqual([(r[0], r[2]) for r in got], [(20.0, 'voice raised'), (36.0, 'shouting')])
+
+    def test_big_action_is_rare_and_long_enough(self):
+        import numpy as np
+        from clipper import motion
+        track = np.ones(4 * 600, np.float32)
+        track[400:420] = 10.0               # 5 s of big motion
+        track[1000:1003] = 10.0             # under a second: not a moment
+        got = motion.action_spans(track)
+        self.assertEqual(len(got), 1)
+        self.assertAlmostEqual(got[0][0], 100.0, delta=1.0)
+
+    def test_notes_in_a_line_and_never_in_a_quote(self):
+        from clipper import hints
+        ln = {'s': 12.4, 'e': 15.1, 'text': 'You call it whatever you want'}
+        nt = {12.4: ('(other voice)', ['[voice raised]', '[explosion]'])}
+        text = hints.line_text(ln, nt)
+        self.assertEqual(text, '[12.40-15.10] (other voice) You call it whatever you want [voice raised] [explosion]')
+        self.assertEqual(hints.strip_hints(text.split('] ', 1)[1]).split(), 'You call it whatever you want'.split())
+        self.assertEqual(hints.line_text({'s': 1.0, 'e': 2.0, 'text': 'plain'}), '[1.00-2.00] plain')
+
+    def test_microphone_track_chosen_only_when_clearly_alone(self):
+        from clipper import fetch
+        saved = (fetch.audio_tracks, fetch._track_sample, fetch.track_quiet_gap)
+        try:
+            fetch.audio_tracks = lambda p: [(0, ''), (1, '')]
+            fetch._track_sample = lambda p, k, d: k
+            fetch.track_quiet_gap = lambda k: {0: (0.7, 7.6), 1: (0.7, 26.5)}[k]
+            self.assertEqual(fetch.mic_track('x', 100), 1)
+            fetch.track_quiet_gap = lambda k: {0: (0.7, 7.6), 1: (0.7, 9.0)}[k]     # not clearly quieter
+            self.assertIsNone(fetch.mic_track('x', 100))
+            fetch.audio_tracks = lambda p: [(0, '')]
+            self.assertIsNone(fetch.mic_track('x', 100))
+        finally:
+            fetch.audio_tracks, fetch._track_sample, fetch.track_quiet_gap = saved
+
+
+class SpeechTest(unittest.TestCase):
+    def test_every_right_spelling_counts(self):
+        from clipper import asrbench
+        ref = asrbench.lattice_keys([['इम्प्रूव', 'improve'], ['होता', 'hota'], ['है', 'hai']])
+        self.assertEqual(asrbench.lattice_wer(ref, asrbench.keys('improve hota hai')), 0.0)
+        self.assertEqual(asrbench.lattice_wer(ref, asrbench.keys('इम्प्रूव होता है')), 0.0)
+        self.assertAlmostEqual(asrbench.lattice_wer(ref, asrbench.keys('improve hai')), 1 / 3)
+
+
 class JumpCuts(unittest.TestCase):
     def setUp(self):
         self.words = sentence('so this is the first point', 0.0) + sentence('and here is the second one', 4.0) \
@@ -242,6 +372,52 @@ class JumpCuts(unittest.TestCase):
         self.assertGreater(quiet, cut.GAME_PAUSE)
         self.assertEqual(len(cut.jump_pieces(0.0, words[-1]['e'], words, lambda a, b: True, cut.GAME_PAUSE)), 1)
         self.assertEqual(len(cut.jump_pieces(0.0, words[-1]['e'], words, lambda a, b: True)), 2)
+
+
+class EdgeFlash(unittest.TestCase):
+    """A camera cut in a piece's last frames must not show a flash of the next shot (roadmap item 17)."""
+    def setUp(self):
+        self.words = sentence('so this is the first point', 10.0)
+        self.clip = {'ranges': [[10.0, self.words[-1]['e']]]}
+        self.end = cut.snap_range(10.0, self.words[-1]['e'], self.words)[1]
+
+    def trims(self, cut_at):
+        return cut.edge_trims(self.clip, self.words, 25.0,
+                              lambda t0, dur: [(t0 + i * 0.04, 0.9 if abs(t0 + i * 0.04 - cut_at) < 0.02 else 0.01)
+                                               for i in range(int(dur / 0.04) + 1)])
+
+    def test_cut_after_the_last_word_ends_the_piece_before_it(self):
+        last_e = self.words[-1]['e']
+        tr = list(self.trims(last_e + 0.12).values())
+        self.assertEqual(len(tr), 1)
+        self.assertLess(tr[0]['e'], last_e + 0.12)
+        self.assertGreater(tr[0]['e'], last_e)                 # no word lost
+        self.assertEqual(tr[0]['hold_out'], 0.0)
+
+    def test_cut_during_the_last_word_holds_the_old_shot(self):
+        last = self.words[-1]
+        tr = list(self.trims(last['e'] - 0.1).values())[0]
+        self.assertAlmostEqual(tr['e'], round(self.end, 3))   # the sound plays to the end of the word
+        self.assertGreater(tr['hold_out'], 0.1)
+        self.assertLessEqual(tr["hold_out"], cut.EDGE_HOLD + 0.5 / 25.0 + 1e-6)   # up to half a frame more
+        f = cut.edge_hold_filter('0:v', tr, 3.0, '0h')
+        self.assertIn('tpad=', f)
+        self.assertIn('stop_mode=clone', f)
+
+    def test_framing_switch_never_leaves_a_sliver_at_an_edge(self):
+        # Khan Sir 14: the split screen switched to a speaker crop 0.3 s before the end
+        shots = [{'a': 0.0, 'b': 5.0, 'mode': 'crop'}, {'a': 5.0, 'b': 9.7, 'mode': 'split'},
+                 {'a': 9.7, 'b': 10.0, 'mode': 'crop'}]
+        out = cut.merge_edge_slivers(shots)
+        self.assertEqual([(x['a'], x['b'], x['mode']) for x in out], [(0.0, 5.0, 'crop'), (5.0, 10.0, 'split')])
+        out = cut.merge_edge_slivers([{'a': 0.0, 'b': 0.2, 'mode': 'split'}, {'a': 0.2, 'b': 4.0, 'mode': 'crop'}])
+        self.assertEqual([(x['a'], x['b'], x['mode']) for x in out], [(0.0, 4.0, 'crop')])
+        self.assertEqual(cut.merge_edge_slivers(shots[:2]), shots[:2])     # nothing short: unchanged
+
+    def test_no_cut_no_change(self):
+        self.assertEqual(self.trims(-100), {})
+        clip = cut.with_edge_trims(self.clip, None, self.words, 25.0) if False else self.clip
+        self.assertEqual(cut.snap_piece(clip, *self.clip['ranges'][0], self.words)[1], self.end)
 
 
 class Streams(unittest.TestCase):

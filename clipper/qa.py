@@ -59,18 +59,23 @@ def black_runs(path):
     return [(float(a), float(b)) for a, b in re.findall(r'black_start:([\d.]+) black_end:([\d.]+)', r.stderr)]
 
 
+FLASH_S = 0.35     # a new shot that starts this close to the end is only a flash
+
+
 def end_flash(path, duration):
-    """True when one of the last 3 frames is a different shot from the frames just before it."""
-    r = subprocess.run(['ffmpeg', '-v', 'error', '-sseof', '-0.6', '-i', str(path), '-vf',
+    """True when a different shot starts in the clip's last FLASH_S seconds (a flash of the next shot).
+    It looked at the last 3 frames only until Nov 2026; a 6-frame flash slipped through."""
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-sseof', '-1.2', '-i', str(path), '-vf',
                         'scale=64:114,format=gray', '-f', 'rawvideo', '-'], capture_output=True)
     fr = np.frombuffer(r.stdout, np.uint8)
     n = len(fr) // (64 * 114)
-    if n < 6:
+    if n < 12:
         return False
     fr = fr[:n * 64 * 114].reshape(n, 114, 64).astype(np.float32)
     d = np.abs(np.diff(fr, axis=0)).mean(axis=(1, 2))
-    before = d[:-3]
-    return bool(d[-3:].max() > max(25.0, 4 * (np.median(before) if len(before) else 0)))
+    k = max(3, round(FLASH_S * n / 1.2))      # the frame changes inside the last FLASH_S seconds
+    before = d[:-k]
+    return bool(d[-k:].max() > max(25.0, 4 * (np.median(before) if len(before) else 0)))
 
 
 def caption_faces(clip_mp4, meta, plan):

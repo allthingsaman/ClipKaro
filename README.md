@@ -10,9 +10,14 @@
 
 **Turn a long video into short videos, ready to post.** Give it a YouTube link or a video file.
 ClipKaro finds the best moments and makes standing (9:16) videos for **YouTube Shorts, Instagram
-Reels and TikTok**, with the speaker's face in the middle, captions that appear word by word, zoom
-effects and sound effects. It's free, it runs on your own computer, and it works just as well for
-**Hindi and Hinglish** videos as for English ones.
+Reels and TikTok**: framed on whoever is talking, with captions that appear word by word. It's free,
+it runs on your own computer, and it works just as well for **Hindi and Hinglish** as for English.
+
+<p align="center">
+  <img src="docs/media/deep-clip.gif" alt="Left: a 1-hour-8-minute podcast with a timeline; the playhead jumps from minute 35 to minute 63. Right: the vertical short ClipKaro made from those two moments, with yellow word-by-word captions." width="800">
+</p>
+<p align="center"><sub><b>Real ClipKaro output, not a mock-up.</b> Left: the real video, and where each moment sits in it.
+Right: the short ClipKaro made. Footage: Sam Altman on <i>Figuring Out</i> with Raj Shamani (YouTube), shown as a demo.</sub></p>
 
 *"Clip karo" is Hinglish for "clip it".*
 
@@ -25,45 +30,81 @@ you:  clip this video: https://youtu.be/...
 > **New to all this?** Start with the **[user guide](docs/user-guide.md)**: simple steps, no coding
 > needed.
 
-## What it does
-- 🧠 **Picks the best moments for you.** It reads everything that is said and chooses parts that
-  grab attention in the first seconds and make sense on their own (usually 25-60 seconds each).
-- 📱 **Keeps the face in frame.** It turns wide videos into standing ones and keeps the speaker's
-  face in the middle. Slides and other shots are shown whole over a blurred background.
-- 🎙️ **Podcasts with two people.** It listens to who is talking and shows that person. When
-  someone laughs or both talk at once, it shows both of them in a split screen. *(new in v1.1)*
-- 🧵 **Deep clips** *(new in v2)*. Ask for them on a long podcast: the question at minute 8 and its
-  answer at minute 52 become one short, with a white flash where it jumps. Three AI judges check that
-  the join never changes what was meant.
-- 🧐 **A second opinion on every clip** *(new in v2)*. A blind AI critic scores each idea three times,
-  ranks them, and points out what to fix: a slow start, an unfinished ending, seconds nobody needs.
-- 🎮 **Gameplay with a webcam?** It notices the webcam by itself: the game on top, your face below,
-  the captions in between. Game characters' lines are captioned right, or left without captions when
-  they're unclear *(new in v2)*.
-- 📺 **Live streams need no explaining** *(new in v2.1)*. It sees by itself that a video was a live
-  stream, leaves out the "Starting soon", "Be right back" and stream-ending screens, and expects the
-  quiet stretches where you just play.
-- 🔢 **The right number of clips** *(new in v2.1)*. Every good moment: 3 to 8, and more for long
-  videos (up to about one per 7 minutes), unless you say "at least 10" or "at most 5". For long videos
-  it asks once whether you want deep clips too.
-- 💾 **More clips later** *(new in v2.1)*. The good moments that weren't cut stay saved: "3 more clips
-  from that video" makes them in a few minutes, without reading the video again.
-- ⚡ **Quick mode** *(new in v2.1)*. Say "quick clip this" to use much less of your Claude plan: Claude
-  picks the clips alone, with every other feature kept.
-- ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
-  that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
-- ✂️ **Tighter and cleaner** *(new in v2.2)*. Pauses and "um"s are cut out, captions stay off faces
-  and clear of the apps' buttons, made-up words get no caption, and a few strong words get an emoji
-  (say "no emojis" to skip them). Every clip is checked by code before you see it, and editing is
-  about twice as fast on an NVIDIA card.
-- 🎨 **Six caption looks** *(new in v2.2)*. Classic by default; say "box captions", "karaoke captions", "minimal
-  captions", "bold captions" or "comic captions" for another. The fonts come with ClipKaro.
-- 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
-  ("aaj hum business ki baat karenge") or in Hindi letters.
-- ⚡ **Fast with an NVIDIA graphics card.** A 7-minute Hinglish video is written down in about a
-  minute. Without one it still works, but it's slow (not recommended).
-- 🔒 **Free and private.** No extra accounts or keys for ClipKaro, no subscriptions, nothing
-  uploaded. Works with YouTube links and your own video files.
+## The best of ClipKaro
+
+### 🧵 Deep clips: one story from moments far apart
+Ask for them on a long podcast ("deep clip this"). The question at minute 8 and its answer at minute
+52, or a point and the moment that proves it, become **one short**, in the order they were said, with
+a white flash where it jumps (the GIF above). Three AI judges check that no join changes what anyone
+meant, and a deep clip is only kept when it scores at least as well as the best single stretch around it.
+
+### 🧐 A blind second opinion on every clip
+Claude picks about twice as many ideas as you need. Then an AI critic, who never sees the titles or the
+first scores, judges every idea three times, ranks them, and says what to fix: a slow start, an
+unfinished ending, seconds nobody needs. Clips with a note get repaired before you see them. A real
+report, from the podcast above:
+```
+ 1. 7.4/10 Strong   45:47-46:19 + 46:29-46:58 + 47:10-47:21 (72 s)  "What Sam Altman Misses Most"
+    hook 4.0 "'what version of you has died' is a striking opener" · payoff 4.0 "a strong, human landing"
+ 2. 7.2/10 Strong   56:48-57:49 (61 s)  "Almost All Startup Advice Is Terrible"
+    hook 4.0 "answered 'almost all the advice is terrible'" · payoff 4.0 "ironic landing"
+```
+
+### 🎙️ Two people: the one talking, and both when it matters
+It listens to who is talking and shows that person. When someone laughs, both talk at once or the
+talk goes quickly back and forth, it shows **both**, stacked, with the captions on the seam.
+
+<p align="center">
+  <img src="docs/media/two-people.gif" alt="Left: a wide shot of the host and Khan Sir side by side. Right: the vertical clip shows Khan Sir while he talks, then both of them stacked when the host laughs, then Khan Sir again." width="800">
+</p>
+<p align="center"><sub>Real output. Footage: Khan Sir on <i>Figuring Out</i> with Raj Shamani (YouTube), shown as a demo.</sub></p>
+
+### 💬 Captions that stay off faces and out of the apps' buttons
+Captions keep out of the like and share buttons and the apps' top and bottom texts, and move to a
+free line when they would cover a face or a chin. Made-up words (Whisper inventing text during a laugh
+or game music) get no caption at all.
+
+<p align="center">
+  <img src="docs/media/captions-clear.png" alt="Three frames of finished clips with the apps' button areas marked in red: a close-up with the caption below the chin, a split screen with the caption on the seam, and gameplay with the caption between the game and the webcam." width="800">
+</p>
+
+### 🎮 Gameplay and live streams, without explaining
+It notices a webcam overlay by itself: **the game on top, you below**, the captions in between. It
+sees that a video was a live stream, leaves out "Starting soon", "Be right back" and the ending
+screen, and builds clips around **your** commentary and reactions, not the game characters' lines.
+
+<p align="center">
+  <img src="docs/media/gameplay.gif" alt="Left: a Black Myth Wukong stream with a round webcam in the corner. Right: the vertical clip with the game on top, the webcam enlarged below and Hinglish captions between them." width="800">
+</p>
+<p align="center"><sub>Real output from the owner's own Black Myth: Wukong stream.</sub></p>
+
+### 🇮🇳 Hindi and Hinglish, for real
+Found by itself. Captions in English letters ("aaj hum business ki baat karenge") or in Hindi
+letters, spelled the way people write Hinglish online. Whisper's skipped words are heard again, so a
+line isn't lost to one stretched "word" *(new in v2.3)*.
+
+### 👂 It hears what the words can't show *(new in v2.3)*
+Some of the best moments live in **how** something is said or shown. Claude reads short notes next to
+the words: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
+and in gameplay `(other voice)` on lines spoken by a game character, not the streamer. They show where
+to look; the words decide. A recording with your microphone on its own track (OBS can do that) is
+written down from your voice alone.
+
+### ✂️ A clean, tight edit, every time
+Zoom-ins on the beat, captions that pop in word by word in a colour that fits the video, a couple of
+soft whooshes, emojis on a few strong words (say "no emojis" to skip them), pauses and "um"s cut out,
+and the volume set right for phones without crackling peaks. Every clip is checked by code before you
+see it. Six caption looks: classic by default, or say "box", "karaoke", "minimal", "bold" or "comic
+captions". "Hook title" adds a big title for the first seconds.
+
+### And more
+- 🔢 **The right number of clips.** Every good moment: 3 to 8, more for long videos, or "at least 10" /
+  "at most 5". 💾 The good moments that weren't cut stay saved: "3 more clips from that video" later.
+- ⚡ **Quick mode.** "quick clip this" uses much less of your Claude plan.
+- 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
+  your Facebook Page, each with its own text, from your own laptop.
+- 🔒 **Free and private.** No extra accounts, keys or subscriptions for ClipKaro, nothing uploaded.
+  Fast with an NVIDIA graphics card (a 7-minute Hinglish video is written down in about a minute).
 
 ## How it works
 1. **Listen**: it downloads the sound and writes down every word with its exact time.
@@ -267,16 +308,17 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 | [Troubleshooting](docs/troubleshooting.md) | common problems and questions |
 | [Architecture](docs/architecture.md) | how it works inside, and how it picks moments (for developers) |
 | [Adding a language](docs/adding-a-language.md) | step by step, for developers |
-| [Roadmap (v2)](docs/roadmap-v2.md) | how ClipKaro compares with Opus Clip today, and what we'll build next |
+| [Roadmap](docs/roadmap-v3.md) | what's next, in order |
+| [Compared with Opus Clip](docs/roadmap-v2.md) | how ClipKaro compares with Opus Clip today |
 | [Changelog](CHANGELOG.md) | what's new in each version |
 
 ## Folder layout
 ```
 .claude/skills/clip-video/   the instructions Claude follows to make clips
-clipper/                     the program's steps: fetch, parts, topics, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, sfx, find, gpu
+clipper/                     the program's steps: fetch, sound, voices, hints, motion, parts, topics, critic, deep, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, qa, sfx, find, gpu
 remotion/                    an optional second way to draw the edit
 assets/                      fonts, the face-finding model, sound effects
-docs/                        documentation
+docs/                        documentation (docs/media: the README's demo pictures and the script that makes them)
 CLAUDE.md                    rules for Claude + your own preferences
 settings.json                your defaults
 run.py / install.py          starts each step / the setup
@@ -287,6 +329,10 @@ output/                      your projects (never uploaded)
 Only clip and post videos you own or have permission to use. Respect other creators and each
 platform's rules. Watch your clips once before posting: automatic captions are good, not perfect.
 
+The demo pictures above use a few seconds of public podcasts (Sam Altman and Khan Sir on *Figuring
+Out* with Raj Shamani) only to show what the tool does, with credit; nothing is offered for download.
+If you own one of them and want it replaced, open an issue and it will be swapped within a day.
+
 ## Contributing
 Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -296,10 +342,14 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
 - Fonts: [Montserrat](https://github.com/JulietaUla/Montserrat) and
   [Poppins](https://github.com/itfoundry/Poppins) (Hindi + English letters), SIL Open Font License 1.1.
 - Face finding: [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT).
+- Pitch of the voice (the "voice raised" hint): [SwiftF0](https://github.com/lars76/swift-f0) (MIT).
 - Who is talking, and laughter (podcasts): [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache 2.0)
   running [pyannote segmentation 3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT),
   [3D-Speaker ERes2Net](https://github.com/modelscope/3D-Speaker) (Apache 2.0) and Google's
-  [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache 2.0).
+  [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache 2.0);
+  the same voice model tells a streamer from the game's characters.
+- Demo footage in the README: *Figuring Out* with Raj Shamani (YouTube), credited under each picture;
+  the gameplay is the owner's own stream.
 - Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
   OpenAI's [Whisper](https://github.com/openai/whisper) models, [OpenCV](https://opencv.org),
   [FFmpeg](https://ffmpeg.org) and, optionally, [Remotion](https://www.remotion.dev) (free for individuals and

@@ -21,9 +21,12 @@ what could be cut), never the subject: the owner watches every clip and decides 
 ## What you see
 - The clip's exact words, which are exactly what the viewer hears. Times like [0:12] count from the
   start of the clip.
-- Markers such as [laughter ~2 s], [applause] or [both talk at once] come from a sound detector.
+- Markers such as [laughter ~2 s], [applause], [both talk at once], [voice raised], [shouting],
+  [explosion] or [big action on screen] come from sound and picture detectors, and "(other voice)"
+  before a line marks, in gameplay, a voice that is not the streamer's (usually a game character).
   They can be wrong. A laugh in the room is no proof that viewers will laugh, and no marker does not
-  mean the moment is dull.
+  mean the moment is dull. In gameplay, a clip carried by "(other voice)" lines is the game talking,
+  not the creator: judge the creator's own words and reactions.
 - `[--- cut ... ---]` means the clip joins a later moment of the video.
 - CHECKED BY CODE: facts measured on the word times, e.g. the clip ends mid-sentence (the speaker
   goes on after it) or may start with a false start. They are reliable: a sentence that goes on

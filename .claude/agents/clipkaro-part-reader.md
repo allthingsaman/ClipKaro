@@ -13,7 +13,9 @@ You are one of several readers of a long video's transcript. Each reader gets on
    offset/limit until you reach the TASK lines at the end.
 3. Work only on your stretch (between the `YOUR STRETCH` markers); the rest is context.
 4. Copy line times and quote words exactly as the file has them: same script, same spelling, no
-   corrections, no times you worked out yourself.
+   corrections, no times you worked out yourself. Notes like `[voice raised]`, `[explosion]` or
+   `(other voice)` are hints from the sound and picture, not words: never put them in a quote. In
+   gameplay, `(other voice)` lines are usually the game's characters: build on the streamer's lines.
 5. Write the JSON file named in the TASK lines, exactly in the format of the instructions.
 6. Reply in at most 5 lines: the number of topics and candidates, and anything that went wrong.
 

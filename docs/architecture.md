@@ -149,7 +149,10 @@ clipper/                     the toolbox (Python)
     find.py       word-accurate phrase search in the transcript
     parts.py      splits a long transcript into parts for careful reading
     topics.py     joins the part readers' answers: the topic map, the clip candidates, focus reads
-    sound.py      sound cues for the whole video: laughter, applause, both talking at once, lively spots
+    sound.py      sound cues for the whole video: laughter, applause, both talking at once, game sound bursts, lively spots
+    voices.py     who speaks each line: the main voice (the streamer, the guest) and up to two more
+    hints.py      the notes next to the words Claude reads: a raised voice, shouting, game sounds, big action, other voices
+    motion.py     gameplay: where the game picture moves most (big action on screen)
     critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
     deep.py       deep clips: the map for the thread finder, thread files, checks, the report
     honesty.py    deep clips: honesty packets for three judges, and merging their verdicts
@@ -205,7 +208,10 @@ output/<project>/
         words.json               every word with its start/end time
         sentences.json           words grouped into sentence lines
         transcript.txt           the readable transcript the AI editor reads
-        cues.json                sound cues: laughter, applause, both talking at once, lively spots
+        cues.json                sound cues: laughter, applause, both talking at once, game sound bursts, lively spots
+        voices.json              the voice of each sentence line, and the main voice (run.py voices)
+        hints.json               the lines in a raised voice or shouted (run.py hints)
+        motion.json              gameplay: the moments of big action on screen
     breaks.jpg                   one picture of each break screen found (live streams)
     more.txt                     the good clip ideas not cut yet, best first (run.py more; post writes it too)
     clips.json                   the AI editor's picks (for a short video, first its shortlist)
@@ -560,6 +566,52 @@ hours). Evidence: in recorded meetings, laughter was the strongest single cue fo
 then the words, then who talks when, then loudness and pitch (Makhervaks et al., ICASSP 2020). So
 the words stay the main judge, and no cue ever lowers a clip.
 
+### 5.4b-2 Hints next to the words (v2.3: `voices.py`, `hints.py`, `motion.py`)
+Since v2.3 the lines Claude reads (`transcript.txt`, the part files, the critic's clip texts) carry
+short notes at the end of a line, and `(other voice)` at its start:
+`[12.40-15.10] (other voice) You call it whatever you want [explosion]`. They are measurements, never
+verdicts, with one rule written into every file that has them: they show where to look, the words
+decide, and no note never counts against a moment. They are kept rare (the clearest few per 10
+minutes, `hints.rare`). `"hints": false` gives the plain v1.1 lines. Research (Nov 2026) behind each:
+- **Voices** (`voices.py`): one ERes2Net voice print per sentence line (sherpa-onnx), then the voice with
+  the most lines is found first (the line with the most lines like it is its core) and up to two more
+  among the lines unlike it. Clustering all prints at once split a stream into 144 "voices": prints of
+  short lines over game sound vary too much. On two gameplay streams the lines marked "(other voice)"
+  (in gameplay only: unlike the main voice, 1.5 s or longer) were 72-76 % English words, the game's
+  characters, against 15-20 % in the streamer's own lines. About a minute per hour.
+- **A raised voice** (`hints.py`): the line's pitch (SwiftF0, MIT, ~40 s per hour) and loudness against
+  the same voice's lines within 2.5 minutes. "voice raised" needs +4 semitones **and** +6 dB, "shouting"
+  +8 and +10 (a shout is about +9-16 semitones and +18 dB: Raitio et al. 2013). Only for a known voice,
+  mostly clear words, and in gameplay only the streamer; more than +14 semitones is a pitch-tracker slip.
+  Podcast sound is compressed (Khan Sir's loudest 1 % of lines are only 1.6 dB over his normal) and
+  lines that are only higher are mostly questions, so podcasts rarely get this note: a hint must be sure.
+  AudioSet's own "Shout" and "Yell" labels are right only about half the time, so they aren't used.
+- **Game sound bursts** (`sound.py`): YAMNet's Explosion / Boom / Artillery, Gunshot / Machine gun /
+  Fusillade, and Smash / Shatter / Skidding classes (AudioSet rates these labels 100 % right), at 0.4 or
+  more, bursts within 3 s merged, one kind per moment.
+- **Big action on screen** (`motion.py`, gameplay and live streams): the video at 4 frames a second,
+  256x144 grey, webcam blacked out; DIS optical flow; the camera's own pan (median motion) taken out;
+  the median of 8x8 cells, so a minimap or HUD that always moves doesn't count; above the video's 98th
+  percentile for 2 s or more, at most 3 per 10 minutes. Sound was the strongest single signal of a game
+  highlight and motion the next in a study of game broadcasts (Autohighlight, 2022). About 4 minutes of
+  CPU per hour of 1080p60 (decoding the video is nearly all of it; the graphics card was not faster here).
+- **The microphone on its own track** (`fetch.mic_track`): a local file with 2+ audio tracks is checked
+  (six 20 s samples each): the track that is much quieter between words than the first one (6 dB or
+  more, or named "mic") is the microphone, and the words are written down from it alone. Separating a
+  voice from a mix afterwards (vocal stems, denoising) made speech recognition worse in 2025-26
+  studies, so a mixed recording is left as it is.
+
+### 5.4b-3 Skipped words heard again (v2.3: `fetch.repair_stretched`)
+Whisper sometimes skips a few words and stretches the word next to them over their time: lost text,
+not a timing fault, so forced alignment can't help. `fill_gaps` already catches holes of 1 s or more;
+`repair_stretched` catches the shorter ones: a word longer than max(1.2 s, 0.15 s per letter + 0.5 s)
+with speech (Silero VAD) in at least half of the time after its first 0.5 s is heard again with two
+words either side, the 25 words before as context (so case and punctuation stay). The new words replace
+the old ones only when they add real words (fillers and stammered repeats don't count), have no
+stretched word left, and lose at most one of the old, well-heard words. On the Khan Sir podcast: 149
+suspects, 42 repaired (2.5 minutes on the GPU); on an English podcast 3 of 16 (Whisper there mostly
+skips fillers, which captions leave out anyway).
+
 ### 5.4c The critic: a blind second opinion (`critic.py`, `.claude/agents/clipkaro-critic.md`)
 The most common complaint about AI clippers is "10 clips, only 3 good". So before anything is cut,
 a second AI editor judges every clip idea: all candidates of a long video, or the shortlist of
@@ -731,6 +783,16 @@ jump-cut edges get those small handles instead of the usual 0.12 / 0.30 s (`snap
 the framing only follows. Measured on 106 clips: 267 cuts, 6.4 % of the time (up to 13 s in a slow
 interview clip). On in every clip (the owner's choice, 2026-11-14); `"jump_cuts": false` /
 `cut --no-jump-cuts` is only the way back to v1.1.
+
+**No flash at a piece's edge** (v2.3, `cut.edge_trims`): the shot detector ignores a camera cut within
+0.8 s of a piece's edge (a shot that short can't be framed), so a cut in the last frames showed a few
+frames of the next shot (12 of 106 test clips). Each piece's edges are scanned (ffmpeg scene score
+0.30+): a cut in the quiet handle after the last word ends the piece half a frame before it (and one
+before the first word starts the piece on it); a cut while the last word is still being said (within
+0.5 s of the end) keeps the sound to the word's end and holds the old shot's last frame
+(`trim` + `tpad=stop_mode=clone`, from half a frame before the cut, since frame times aren't exact).
+A framing switch (split <-> speaker) never leaves a first or last shot under 0.6 s
+(`merge_edge_slivers`). `qa` checks the last 0.35 s for a new shot (it looked at 3 frames before).
 
 ### 5.6 Reframing 16:9 to 9:16 (`reframe.py`)
 1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut,

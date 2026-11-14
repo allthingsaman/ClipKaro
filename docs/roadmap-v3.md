@@ -38,16 +38,16 @@ first, and the fresh install on Windows and macOS last. Posting to X is not plan
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 9 | **Cleaner transcripts: the rest.** Sometimes one long "word" hides several real words (a Khan Sir clip lost "ki ye America ki chaal hai"): find it and transcribe that bit again. Plus the speech-model test, scored against texts you corrected. | Missing or wrong words in captions look unprofessional. | 1 day | correct 5 short texts, 30-60 min | **Partly done** (2026-11-13): laughter, the noise word, loops and "…" (`run.py tidy`). This part is to do |
-| 17 | **No flash of the next shot at a clip's end.** `run.py qa` finds it: 5 of the 106 test clips (Dr Vikas 1, Market 3 and 7, Khan Sir 13 and 16). `cut` should end such a clip a few frames earlier by itself. | A one-frame flash looks like a mistake. | 2-3 h | none | To do |
-| 18 | **One tiny sample video run from start to end** inside `run.py test`. This is the part of item 8 still to do. | It catches a break anywhere in the chain before you see it. | 2-3 h | none | To do |
+| 9 | **Cleaner transcripts: the rest.** Sometimes one long "word" hides several real words (a Khan Sir clip lost "ki ye America ki chaal hai"): find it and transcribe that bit again. Plus the speech-model test, scored against texts you corrected. | Missing or wrong words in captions look unprofessional. | 1 day | correct 5 short texts, 30-60 min | **Done on v2.3-dev** (2026-11-14): stretched words heard again (`fetch`, `relisten --stretched`); the speech-model test on two public test sets with checked texts (`asr-bench public`). Still yours: correcting the 4 draft texts of your own videos |
+| 17 | **No flash of the next shot at a clip's end.** `run.py qa` finds it: 5 of the 106 test clips (Dr Vikas 1, Market 3 and 7, Khan Sir 13 and 16). `cut` should end such a clip a few frames earlier by itself. | A one-frame flash looks like a mistake. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): the wider qa check found 12; all 12 re-made |
+| 18 | **One tiny sample video run from start to end** inside `run.py test`. This is the part of item 8 still to do. | It catches a break anywhere in the chain before you see it. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): `run.py test --full` |
 
 ## Then: smarter
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 12 | **Sound and picture cues for Claude.** Laughter, applause, a raised voice, and big movement in games are given to Claude as hints when it picks moments. | Some of the best moments live in a laugh or a reaction, not in the words. | 1.5-2 days | blind test | To do |
-| 13 | **Gameplay: your voice apart from the game.** Separate the player's voice from the game's sound before transcribing. We research the best voice-separation model first. | Game characters' lines still mix into the transcript. | 1-2 days | one gameplay video | To do |
+| 12 | **Sound and picture cues for Claude.** Laughter, applause, a raised voice, and big movement in games are given to Claude as hints when it picks moments. | Some of the best moments live in a laugh or a reaction, not in the words. | 1.5-2 days | blind test | **Built on v2.3-dev** (2026-11-14): `[voice raised]`, `[shouting]`, game sound bursts, `[big action on screen]` next to the words (`run.py hints`). Still to do: the blind test |
+| 13 | **Gameplay: your voice apart from the game.** Separate the player's voice from the game's sound before transcribing. We research the best voice-separation model first. | Game characters' lines still mix into the transcript. | 1-2 days | one gameplay video | **Built on v2.3-dev** (2026-11-14): research found that separating a voice from the mix makes speech recognition worse, so the voices are told apart instead: `(other voice)` on game characters' lines; a recording with the microphone on its own track is written down from the microphone alone. Still yours: a stream recorded that way, to try it |
 | 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. | 2-3 days | needs about 50 posted clips with 2+ weeks of views | Waiting for posted clips (posting started 2026-11-12) |
 | 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days | try it | To do |
 
@@ -74,11 +74,11 @@ real views, and 15 is our answer to its editor. Not on the list yet:
 | **Export to Premiere Pro** (XML), for creators who finish by hand | XML export | 1 day |
 
 ## Small extras (any time)
-- **Re-cut the MCU and gamer videos with v2.** Their finished clips are v1.1 picks with v2 captions.
-  About 1 hour each.
-- **Per-platform texts for the older clips.** 64 of the 106 test clips have one caption each
-  (counted 2026-11-14). This adds a YouTube title and separate Instagram and Facebook texts. About
-  30 minutes.
+- **Re-cut the MCU and gamer videos with v2.** Checked 2026-11-14: their clips already are v2 picks
+  (MCU 3 of 4, the gamer video 7 of 8 match the critic's ranking). Left: "2 more clips from the MCU
+  video" (the critic's next ideas), only if you want them.
+- ~~**Per-platform texts for the older clips.**~~ Done 2026-11-14: all 64 have Instagram and
+  Facebook texts.
 - **Hear the older gameplay videos again** (GTA episode 2, Black Myth Wukong, the gamer video) with
   the improved check for game voices (2026-11-12), and re-render the clips it changes. About 5
   minutes per video, plus the re-render.

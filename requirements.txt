@@ -3,5 +3,6 @@ faster-whisper>=1.1.0
 soundfile>=0.12
 numpy>=1.26
 opencv-python>=4.10
+swift-f0>=0.3,<0.4      # the voice's pitch, for the "voice raised" hint (MIT, tiny ONNX model)
 # optional, installed by install.py: two-person framing for podcasts (who talks, laughter)
 # sherpa-onnx>=1.10

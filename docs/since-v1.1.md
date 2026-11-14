@@ -9,7 +9,8 @@ This page lists every change since v1.1 and checks it against that rule. **Each 
 its line here, in the same commit.** Released so far:
 - **v2.0** (2026-11-11): the lines marked v2.0;
 - **v2.1** (2026-11-13): the lines dated 2026-11-12 and 2026-11-13 without a v2.2 mark;
-- **v2.2** (2026-11-14): the lines marked v2.2.
+- **v2.2** (2026-11-14): the lines marked v2.2;
+- **v2.3** (not released yet, branch v2.3-dev): the lines marked v2.3.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -42,6 +43,15 @@ changed. Only new ones were added.
   step, so cutting starts right away. *(2026-11-12)*
   - Way back: `fetch --no-video` downloads it at the cut step, as in v1.1. The disk space is then
     used later.
+- ⬆ **Skipped words heard again.** Whisper sometimes skips a few words and stretches the word next to
+  them over their time, so those words were missing from v1.1's captions. Each stretched word with
+  speech inside it is heard again with two words of context; the new words are kept only when they add
+  real words and keep the old ones (on the test podcast: 42 lines repaired). *(v2.3, 2026-11-14)*
+  - Way back: none needed, the old words stay unless the new ones add to them. For older videos it is
+    `run.py relisten <project> --stretched`, which keeps `words-before-stretched.json`.
+- ⬆ **Your microphone on its own track.** A recording with the microphone on a separate audio track
+  (OBS can do that) is written down from the microphone alone, without the game's sound and
+  characters. The clips keep the full sound. A file with one track works exactly as before. *(v2.3)*
 
 ## Choosing the moments
 
@@ -64,6 +74,13 @@ changed. Only new ones were added.
   a clip its place, and `cut --check` no longer warns about a repair it made on purpose. *(2026-11-13)*
 - ⬆ **Sound hints**: laughs, applause and both people talking at once are pointed out. A calm
   video loses nothing. *(v2.0)*
+- ⬆ ⚠ **More hints next to the words** Claude reads: `[voice raised]`, `[shouting]` (higher and
+  louder than that speaker's own normal), game sound bursts (`[explosion]`, `[gunfire]`, `[crash]`),
+  `[big action on screen]` and, in gameplay, `(other voice)` on lines a game character says. They show
+  where to look; the words decide, and no hint never lowers a clip. Kept rare (the clearest few per
+  10 minutes). Costs about 2-3 minutes of processor time per hour of video at `fetch`, plus about 4 for
+  gameplay (the picture's motion). *(v2.3, 2026-11-14)*
+  - Way back: `"hints": false` in settings.json gives Claude v1.1's plain transcript lines.
 - ↔ **Tighter cuts.** In the owner's blind test, the tighter cut won 8 times out of 8 where both
   versions cut the same moment. So clips start on the hook and end on the payoff, with dead weight
   cut out. *(v2.0)*
@@ -145,6 +162,11 @@ changed. Only new ones were added.
 - ⬆ **Captions always fit the frame.** Before, some ran off the sides. *(v2.0)*
 - ⬆ **Clips joined from pieces** sound smooth. Where the video jumps more than 20 seconds, a short
   white flash and a soft whoosh show it. Clips of one piece sound exactly as in v1.1. *(v2.0)*
+- ⬆ **No flash of the next shot at a clip's end.** A camera cut in a clip's last frames showed a few
+  frames of another shot (12 of the 106 test clips). Now the clip ends just before such a cut, or, when
+  the last word is still being said, the picture holds the last frame for a moment while the word ends;
+  a split screen never switches for less than 0.6 s at an edge. No word is cut. *(v2.3, 2026-11-14)*
+  - Way back: none needed (a flash was a fault); clips without such a cut are cut exactly as before.
 
 ## Posting
 
@@ -157,7 +179,9 @@ changed. Only new ones were added.
 - ⬆ All six v1.1 settings work as before. There are three new ones: `jump_label`, `deep_clips` and
   `max_clips`. An old settings.json works unchanged.
 - ⬆ Every v1.1 command works as before. The new ones are extra: `info`, `kind`, `parts`, `topics`,
-  `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`.
+  `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`, `voices`, `hints`.
+- ⬆ `run.py test --full` also runs a tiny made-up video from start to end (cut, edit, qa), and
+  `asr-bench public` scores speech models on public Hindi and Hinglish test sets. *(v2.3)*
 
 ## Cost
 

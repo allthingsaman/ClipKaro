@@ -55,6 +55,8 @@ COMMANDS = {
     'parts': 'clipper.parts',
     'topics': 'clipper.topics',
     'sound': 'clipper.sound',
+    'voices': 'clipper.voices',
+    'hints': 'clipper.hints',
     'critic': 'clipper.critic',
     'deep': 'clipper.deep',
     'honesty': 'clipper.honesty',

@@ -12,6 +12,8 @@ clips/NN-title.mp4 plus clips/NN-title.json (timing, words, focus point) used by
 """
 import argparse
 import math
+import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -190,10 +192,100 @@ def with_jump_cuts(clip, words, cues, gameplay):
 
 
 def snap_piece(clip, s, e, words):
-    """snap_range, with small handles at the edges a jump cut made."""
+    """snap_range, with small handles at the edges a jump cut made, and an edge moved off a camera cut
+    that would flash (edge_trims)."""
     edges = clip.get('jump_edges') or ()
-    return snap_range(s, e, words, JUMP_PAD_IN if round(s, 3) in edges else PAD_IN,
-                      JUMP_PAD_OUT if round(e, 3) in edges else PAD_OUT)
+    r = snap_range(s, e, words, JUMP_PAD_IN if round(s, 3) in edges else PAD_IN,
+                   JUMP_PAD_OUT if round(e, 3) in edges else PAD_OUT)
+    trim = (clip.get('edge_trims') or {}).get(f'{s:.3f}-{e:.3f}')
+    return (trim['s'], trim['e'], r[2], r[3]) if r and trim else r
+
+
+# ---------- no flash of another shot at a piece's edge ----------
+# A camera cut in a piece's last frames shows a few frames of the next shot: a flicker of another face
+# as the clip ends (5 of the 106 test clips, found by qa). The shot detector ignores cuts that close to
+# an edge (a shot that short can't be framed), so, like an editor:
+# - a cut in the quiet handle after the last word: the piece ends just before it;
+# - a cut while the last word is still being said (within EDGE_HOLD of the end): the sound plays on
+#   to the end of the word and the picture holds the old shot's last frame (5-12 frames, barely seen);
+# the same at a piece's start (a cut in its first frames: start after it, or hold the new shot's
+# first frame). No word is ever cut.
+EDGE_SCORE = 0.30          # the scene score of a clear camera cut (the shot detector's threshold)
+EDGE_WORD_GAP = 0.03       # a moved edge stays at least this far from the word
+EDGE_HOLD = 0.50           # at most this much of a still frame at an edge
+EDGE_MIN_SHOT = 0.6        # a framing switch (split <-> speaker) never leaves a piece's first / last shot shorter
+
+
+def scene_scores(video, t0, dur):
+    """[(source seconds, scene score)] for every frame from t0 for dur seconds (the first frame scores 0)."""
+    r = subprocess.run(['ffmpeg', '-hide_banner', '-ss', f'{t0:.3f}', '-t', f'{dur:.3f}', '-i', str(video),
+                        '-vf', "scale=160:-2,select='gte(scene,0)',metadata=print", '-an', '-f', 'null', '-'],
+                       capture_output=True, text=True, encoding='utf-8', errors='replace')
+    ts = [float(m) for m in re.findall(r'pts_time:([0-9.]+)', r.stderr)]
+    ss = [float(m) for m in re.findall(r'scene_score=([0-9.]+)', r.stderr)]
+    return [(t0 + t, s) for t, s in zip(ts, ss)]
+
+
+def edge_trims(clip, words, fps, scores):
+    """{"s-e": {s, e, hold_in, hold_out}} for the pieces of a clip with a camera cut in their first or
+    last frames: the new start and end, and the seconds of still frame at each edge.
+    `scores(t0, dur)` gives the frames' scene scores (scene_scores on the video)."""
+    out = {}
+    frame = 1.0 / max(fps, 1.0)
+    for s, e in clip['ranges']:
+        snapped = snap_piece(clip, s, e, words)
+        if not snapped:
+            continue
+        start, end, i0, i1 = snapped
+        new_s, new_e, hold_in, hold_out = start, end, 0.0, 0.0
+        last_e, first_s = words[i1]['e'], words[i0]['s']
+        t0 = min(last_e, end - EDGE_HOLD)
+        # from two frames earlier: the first frame of a scan always scores 0, so a cut on t0 needs one before it
+        cuts = [t for t, sc in scores(t0 - 2 * frame, end - t0 + 3 * frame)
+                if sc >= EDGE_SCORE and max(t0 - 0.5 * frame, start + 1.0) < t < end - 0.5 * frame]
+        if cuts:
+            after = [t for t in cuts if t > last_e + EDGE_WORD_GAP]
+            if after:                              # in the quiet handle: end just before it
+                new_e = after[0] - 0.5 * frame
+            else:                                  # while the last word is said: hold the old shot
+                # from half a frame before the cut: frame times are not exact, and the new shot's
+                # first frame must not be the one that is held
+                hold_out = end - cuts[0] + 0.5 * frame
+        t1 = max(first_s, start + EDGE_HOLD)
+        cuts = [t for t, sc in scores(start, t1 - start)
+                if sc >= EDGE_SCORE and start + 0.5 * frame < t < min(t1, new_e - 1.0)]
+        if cuts:
+            before = [t for t in cuts if t < first_s - EDGE_WORD_GAP]
+            if before:                             # in the quiet handle: start right on the new shot
+                new_s = before[-1]
+            elif cuts[-1] - start <= EDGE_HOLD:      # while the first word is said: hold the new shot
+                hold_in = max(0.0, cuts[-1] - start - 0.5 * frame)
+        if (new_s, new_e) != (start, end) or hold_in or hold_out:
+            out[f'{s:.3f}-{e:.3f}'] = {'s': round(new_s, 3), 'e': round(new_e, 3),
+                                       'hold_in': round(hold_in, 3), 'hold_out': round(hold_out, 3)}
+    return out
+
+
+def merge_edge_slivers(shots, min_s=EDGE_MIN_SHOT):
+    """A piece's first or last shot shorter than min_s comes from a framing switch (the shot detector
+    never makes one that short): it flashes like a cut, so the next / previous framing covers it."""
+    if len(shots) > 1 and shots[-1]['b'] - shots[-1]['a'] < min_s:
+        shots = shots[:-2] + [dict(shots[-2], b=shots[-1]['b'])]
+    if len(shots) > 1 and shots[0]['b'] - shots[0]['a'] < min_s:
+        shots = [dict(shots[1], a=shots[0]['a'])] + shots[2:]
+    return shots
+
+
+def edge_hold_filter(src, trim, dur, out):
+    """A filter that replaces a piece's first / last frames by a still of the frame next to them."""
+    hi, ho = trim.get('hold_in', 0.0), trim.get('hold_out', 0.0)
+    return (f'[{src}]trim=start={hi:.3f}:end={dur - ho:.3f},setpts=PTS-STARTPTS,'
+            f'tpad=start_mode=clone:start_duration={hi:.3f}:stop_mode=clone:stop_duration={ho:.3f}[{out}]')
+
+
+def with_edge_trims(clip, video, words, fps):
+    trims = edge_trims(clip, words, fps, lambda t0, dur: scene_scores(video, t0, dur))
+    return dict(clip, edge_trims=trims) if trims else clip
 
 
 # a later piece of a joined clip that opens on one of these may point at (or answer) words that were cut
@@ -459,24 +551,30 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
         dur = end - start
         inputs += ['-ss', f'{start:.3f}', '-t', f'{dur:.3f}', '-i', str(video)]
         n = len(parts)
+        src = f'{n}:v'
+        trim = (clip.get('edge_trims') or {}).get(f'{s:.3f}-{e:.3f}')
+        if trim and (trim.get('hold_in') or trim.get('hold_out')):     # a still frame instead of a flash
+            chains.append(edge_hold_filter(src, trim, dur, f'{n}h'))
+            src = f'{n}h'
         if fc:
             ml = f'mask{n}' if fc['mask'] else None
             masks += [ml] if ml else []
-            chains.append(fclib.filter_chain(f'{n}:v', f'v{n}', fc['cam'], fc['g'], src_w, src_h, fps, ml))
+            chains.append(fclib.filter_chain(src, f'v{n}', fc['cam'], fc['g'], src_w, src_h, fps, ml))
             shots = [{'a': 0, 'b': dur, 'mode': 'facecam', 'focus': [W / 2, fclib.TOP_H / 2]}]
         elif horizontal:
-            chains.append(f'[{n}:v]fps={fps},setsar=1,format=yuv420p[v{n}]')
+            chains.append(f'[{src}]fps={fps},setsar=1,format=yuv420p[v{n}]')
             shots = [{'a': 0, 'b': dur, 'mode': 'horizontal', 'focus': [src_w / 2, src_h * 0.4]}]
         else:
             shots = planned_by_start.get(round(start, 3)) or plan_shots(
                 analyse_range(video, start, dur, src_w, src_h), src_w, src_h)
             shots = apply_framing(shots, auto or [], start, dur, src_w, src_h)           # the director
             shots = apply_framing(shots, framing_spans(clip), start, dur, src_w, src_h)   # hand-picked wins
+            shots = merge_edge_slivers(shots)
             if len(shots) == 1:
-                chains.append(shot_filter(f'{n}:v', shots[0], src_w, src_h, f'v{n}', fps))
+                chains.append(shot_filter(src, shots[0], src_w, src_h, f'v{n}', fps))
             else:
                 sub = ''.join(f'[{n}s{j}]' for j in range(len(shots)))
-                chains.append(f'[{n}:v]split={len(shots)}{sub}')
+                chains.append(f'[{src}]split={len(shots)}{sub}')
                 for j, sh in enumerate(shots):
                     chains.append(shot_filter(f'{n}s{j}', sh, src_w, src_h, f'v{n}_{j}', fps))
                 chains.append(''.join(f'[v{n}_{j}]' for j in range(len(shots))) +
@@ -671,7 +769,10 @@ def main():
         from .kind import is_irregular
         cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
     for i, clip in enumerate(picks['clips'], 1):
-        prepared[int(clip.get('id', i))] = with_jump_cuts(clip, words, cues, game) if jc_on else clip
+        cid = int(clip.get('id', i))
+        prepared[cid] = with_jump_cuts(clip, words, cues, game) if jc_on else clip
+        if not want or cid in want:     # no flash of another shot at a piece's edge
+            prepared[cid] = with_edge_trims(prepared[cid], video, words, info.get('fps', 30))
 
     plans = {}
     if not a.horizontal and not fc:

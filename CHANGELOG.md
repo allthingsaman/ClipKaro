@@ -1,5 +1,37 @@
 # What's new
 
+## Not released yet (v2.3, on the branch v2.3-dev)
+
+- **It hears what the words can't show.** Claude now reads short notes next to the words:
+  - `[voice raised]` and `[shouting]`: the line is higher and louder than that speaker's own normal
+    (a podcast rarely gets one, which is right: a hint has to be sure);
+  - `[explosion]`, `[gunfire]`, `[crash]`: game sound bursts;
+  - `[big action on screen ~4 s]` in gameplay: where the game picture moves most;
+  - `(other voice)` in gameplay: a line a game character says, not the streamer. On two test streams,
+    those lines were 75 % English words (the game's characters), the streamer's 15-20 %.
+
+  They show where to look; the words decide, and no note never counts against a moment. `"hints":
+  false` in settings.json gives the plain transcript. `run.py hints <project>` adds them to older videos.
+- **Your microphone on its own track.** OBS can record the microphone and the game on separate audio
+  tracks. ClipKaro now notices that and writes down your words from the microphone alone; the clips keep
+  the full sound. (Research for this release found that separating a voice from a mix afterwards makes
+  speech recognition worse, so a mixed recording is left as it is and the voices are told apart instead.)
+- **Skipped words heard again.** Whisper sometimes skips a few words and stretches one word over their
+  time ("बिटे पावर में" where Khan Sir said "पावर तीन-तीन के पास है, ब्रिटेन के पास है, फ्रांस के पास
+  है, अमेरिका के पास है, पावर में"). Those stretches are heard again; the new words are kept only when
+  they add real words and keep the old ones. `run.py relisten <project> --stretched` for older videos.
+- **No flash of the next shot at a clip's end.** 12 of the 106 test clips showed a few frames of
+  another camera as they ended. The clip now ends just before that cut, or holds its last frame while the
+  last word ends; a split screen never switches for a split second at an edge. All 12 were re-made.
+- **A speech-model test with checked texts.** `run.py asr-bench public` downloads two public test sets
+  (Hinglish conversation and everyday Hindi, with every right spelling listed) to compare speech models
+  fairly. Models can be one folder of a repo (`owner/repo:int8`).
+- **Tests from start to end.** `run.py test --full` runs a tiny made-up video through cut, edit and qa.
+- **Instagram and Facebook texts for the 64 older test clips**, so every clip has its own text per
+  platform.
+- **A README that shows it**: the real video next to the clip ClipKaro made, for deep clips, two
+  people, gameplay and caption placement (`docs/media/`).
+
 ## v2.2 (November 2026): a cleaner, tighter edit
 
 v2.2 makes every clip look and sound more finished, without you asking for anything:

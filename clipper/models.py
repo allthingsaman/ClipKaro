@@ -41,6 +41,13 @@ def model_path(name, progress=False, attempts=4):
     if os.path.isdir(name):
         return name
     import huggingface_hub
+    if ':' in name:                        # "owner/repo:int8": only that folder of the repo (a smaller build)
+        rid, sub = name.split(':', 1)
+        pats = [f'{sub}/{p}' for p in ALLOW]
+        try:
+            return os.path.join(huggingface_hub.snapshot_download(rid, allow_patterns=pats, local_files_only=True), sub)
+        except Exception:
+            return os.path.join(huggingface_hub.snapshot_download(rid, allow_patterns=pats), sub)
     rid = repo_id(name)
     try:                                   # already downloaded? no network needed
         return huggingface_hub.snapshot_download(rid, allow_patterns=ALLOW, local_files_only=True)

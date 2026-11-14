@@ -242,6 +242,11 @@ a corner of the picture). Then:
 - **Quiet stretches are expected.** You play without talking for a while; that's normal. A clip
   doesn't keep a long silence unless the gameplay itself is the point (a chase, a crash).
 - **Stream housekeeping is left out**: hello chat, "is the audio OK", viewer counts, "I'm back".
+- **Game characters are told apart from you.** Lines in another voice than yours are marked
+  "(other voice)" in what Claude reads, so clips are built around your words, not the cutscenes.
+- **Your microphone on its own track?** If you record with OBS and keep the microphone on its own audio
+  track, give ClipKaro that file: it writes down your words from the microphone alone (no game sound,
+  no game characters) and keeps the full sound in the clips.
 
 If ClipKaro ever takes real video for a break screen, say "break 2 is real video" and it comes back.
 
@@ -337,6 +342,7 @@ Claude to change them.
   "caption_look": "classic",
   "emoji": true,
   "music": false,
+  "hints": true,
   "encoder": "auto",
   "render_workers": "auto"
 }
@@ -355,6 +361,7 @@ Claude to change them.
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
+| `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
@@ -388,7 +395,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
 | `run.py qa <project>` | checks every finished clip and writes `qa.txt`: FAIL (fix first) for Hindi letters in Roman captions, captions outside the safe zone, a cut inside a word, loudness far off -14 LUFS, black frames, a stale edit; CHECK for captions over a face, a frozen picture, a flash at the end, a short clip, many words without captions. `--clips 2,5` |
-| `run.py test` | ClipKaro's own tests (a second; no video needed): run after changing the code |
+| `run.py test` | ClipKaro's own tests (a second; no video needed): run after changing the code. `--full` also runs a tiny made-up video through cut, edit and qa (about 30 seconds) |
 | `run.py music` | lists your music moods; `add "<file or folder>" <mood>` adds tracks, `remove <file name>` takes one out |
 | `run.py sfx` | lists your sound moods; `add "<file or folder>" <mood>` adds sounds, `remove <file name>` takes one out |
 | `run.py tidy <project>` | no captions for words made up during laughter, noise ("झाल") or loops, for videos transcribed before (`fetch` does it by itself); `--dry` |
@@ -396,12 +403,14 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py find <project> "exact phrase"` | `--near 470` (only matches within 60 seconds of that time) |
 | `run.py parts <project>` | `--minutes 21` (each part's own stretch), `--margin 120` (context seconds on each side); tests: `--no-chapters`, `--shift 0.5`, `--dir` |
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
-| `run.py sound <project>` | measures laughs, applause, both talking at once, and lively spots (`fetch` does this by itself) |
+| `run.py sound <project>` | measures laughs, applause, both talking at once, game sound bursts and lively spots (`fetch` does this by itself) |
+| `run.py voices <project>` | who speaks each line: the main voice and up to two more (`hints` runs it) |
+| `run.py hints <project>` | the notes next to the words: a raised voice, shouting, game sounds, big action on screen, other voices in gameplay; for videos fetched before v2.3 (`fetch` does it by itself) |
 | `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates\|deep` (what to judge), `--runs 3` |
 | `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |
 | `run.py honesty <project>` | first run: one packet per deep clip for the three honesty judges; second run: merges their verdicts; `--fresh` (start over) |
-| `run.py asr-bench make` / `run [model]` / `report` | a small speech-to-text test on your own videos (Hindi, Hinglish, English): `make` cuts four ~3-minute snippets and draft texts into `output/_asrbench/`; correct the texts by ear once; `run` scores a model (the share of words wrong, compared by sound so Devanagari and Roman Hinglish count the same); `report` lists every model tried, best first. Switch models only when one clearly wins |
-| `run.py relisten <project>` | listens again to unclear speech (game voices, film clips) in videos transcribed before Nov 2026: clear English replaces nonsense, the rest gets no captions; then re-cut the clips it names |
+| `run.py asr-bench make` / `run [model]` / `report` | a small speech-to-text test on your own videos (Hindi, Hinglish, English): `make` cuts four ~3-minute snippets and draft texts into `output/_asrbench/`; correct the texts by ear once; `run` scores a model (the share of words wrong, compared by sound so Devanagari and Roman Hinglish count the same); `report` lists every model tried, best first, per test set. `public` also downloads two public test sets with checked texts (Hinglish conversation, everyday Hindi). A model can be one folder of a repo: `owner/repo:int8`. Switch models only when one clearly wins |
+| `run.py relisten <project>` | listens again to unclear speech (game voices, film clips) in videos transcribed before Nov 2026: clear English replaces nonsense, the rest gets no captions; then re-cut the clips it names. `--stretched`: hears again the words Whisper skipped (one "word" stretched over several), for videos transcribed before v2.3 |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
 | `run.py post <project>` | `--open` (open the PostKaro link in the browser). Writes `post.json`; prints the PostKaro link when PostKaro is installed |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |

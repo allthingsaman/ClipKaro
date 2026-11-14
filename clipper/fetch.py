@@ -20,6 +20,7 @@ import hashlib
 import os
 import re
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -218,10 +219,82 @@ def local_source(path):
     return pdir, project
 
 
-def to_wav16k(src, dst):
+def to_wav16k(src, dst, stream=None):
+    """16 kHz mono wav of the file's sound (of audio track `stream` when given: the microphone track)."""
     if not dst.exists():
-        ffmpeg('-i', src, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', dst)
+        pick = ['-map', f'0:a:{stream}'] if stream is not None else []
+        ffmpeg('-i', src, *pick, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le', dst)
     return dst
+
+
+# ---------------- a recording with the microphone on its own track ----------------
+# OBS can record the microphone and the game on separate audio tracks (track 1 usually the mix). Then
+# the streamer's own voice can be written down without the game's sound and characters at all: the
+# cleanest separation there is (research, Nov 2026: separating the voice from a mix afterwards makes
+# speech recognition worse). The clips keep the full mix; only the transcription uses the mic track.
+MIC_SAMPLES = 6            # stretches of MIC_SAMPLE_S seconds, spread over the file, are compared
+MIC_SAMPLE_S = 20.0
+MIC_MARGIN_DB = 6.0        # the mic track must be this much quieter between words than the first track
+
+
+def audio_tracks(path):
+    """[(index among audio streams, title or '')] of a file."""
+    import json as _json
+    r = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'a', '-show_entries',
+                        'stream=index:stream_tags=title,handler_name', '-of', 'json', str(path)],
+                       capture_output=True, text=True)
+    try:
+        streams = _json.loads(r.stdout or '{}').get('streams') or []
+    except ValueError:
+        return []
+    return [(k, ((st.get('tags') or {}).get('title') or (st.get('tags') or {}).get('handler_name') or ''))
+            for k, st in enumerate(streams)]
+
+
+def _track_sample(path, k, duration):
+    """16 kHz mono samples of audio track k, MIC_SAMPLES stretches spread over the file, joined."""
+    import numpy as np
+    out = []
+    for j in range(MIC_SAMPLES):
+        t = duration * (j + 0.5) / MIC_SAMPLES
+        r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{max(0.0, t - MIC_SAMPLE_S / 2):.2f}', '-t',
+                            f'{MIC_SAMPLE_S:.2f}', '-i', str(path), '-map', f'0:a:{k}', '-ac', '1', '-ar', '16000',
+                            '-f', 'f32le', '-'], capture_output=True)
+        out.append(np.frombuffer(r.stdout, np.float32))
+    return np.concatenate(out) if out else np.zeros(0, np.float32)
+
+
+def track_quiet_gap(x):
+    """(share of speech, dB between speech and the rest) of a sample: a microphone track is silent
+    between words (a big gap); a mix carries the game's sound there."""
+    import numpy as np
+    from faster_whisper.vad import VadOptions, get_speech_timestamps
+    if len(x) < SR:
+        return 0.0, 0.0
+    mask = np.zeros(len(x), bool)
+    for r in get_speech_timestamps(x, VadOptions(min_silence_duration_ms=300, speech_pad_ms=50)):
+        mask[r['start']:r['end']] = True
+    if mask.mean() < 0.05 or mask.mean() > 0.98:
+        return float(mask.mean()), 0.0
+    db = lambda y: 10 * np.log10(np.mean(y ** 2) + 1e-10)
+    return float(mask.mean()), float(db(x[mask]) - db(x[~mask]))
+
+
+def mic_track(path, duration):
+    """The audio track with the microphone alone, when a file has one besides the mix, else None."""
+    tracks = audio_tracks(path)
+    if len(tracks) < 2:
+        return None
+    named = [k for k, title in tracks if re.search(r'\bmic|microphone|voice|commentary', title, re.I)]
+    stats = {k: track_quiet_gap(_track_sample(path, k, duration)) for k, _ in tracks}
+    talk = [k for k, (share, _) in stats.items() if share >= 0.15]
+    if not talk:
+        return None
+    best = named[0] if named and named[0] in talk else max(talk, key=lambda k: stats[k][1])
+    first = stats[tracks[0][0]][1]
+    if best == tracks[0][0] or (not named and stats[best][1] < first + MIC_MARGIN_DB):
+        return None
+    return best
 
 
 # ---------------- language ----------------
@@ -487,7 +560,7 @@ def _looping(words):
     return len(text) >= 40 and len(text) / len(zlib.compress(text)) > 2.4
 
 
-def _decode(model, audio, windows, lang, beam_size, keep, prompt=None):
+def _decode(model, audio, windows, lang, beam_size, keep, prompt=None, context=None):
     """Words heard in `lang` in each (lo, hi) window, kept only inside keep=(lo, hi). One fixed
     decode (temperature 0): the random retries Whisper makes otherwise gave a different answer each
     run. -> (words, mean confidence)."""
@@ -498,7 +571,7 @@ def _decode(model, audio, windows, lang, beam_size, keep, prompt=None):
             # of it again for every window (18 minutes for 105 stretches of an 83-minute video)
             segs, _ = model.transcribe(audio[int(lo * SR):int(hi * SR)], language=lang, beam_size=beam_size,
                                        word_timestamps=True, condition_on_previous_text=False,
-                                       temperature=0.0, hotwords=prompt)
+                                       temperature=0.0, hotwords=prompt, initial_prompt=context)
             got += [{**_word(w), 's': round(lo + w.start, 3), 'e': round(lo + w.end, 3)}
                     for s in segs for w in (s.words or [])
                     if w.word.strip() and keep[0] <= lo + (w.start + w.end) / 2 <= keep[1]]
@@ -633,6 +706,116 @@ def split_points(audio, piece_s=PIECE_S, search_s=90):
     return list(zip(bounds, bounds[1:]))
 
 
+# ---------- stretched words: one word over several that were skipped ----------
+# Whisper sometimes skips a few words and stretches the word next to them over their time: one "word"
+# of 1.5-3 s where a sentence was said (a Khan Sir clip lost "ki ye America ki chaal hai"). Forced
+# alignment can't bring them back (it only re-times words that exist), so that stretch is heard again
+# with a little context, and the new words replace the old ones only when they add words, have no
+# stretched word left, and keep most of the old words (so a guess never replaces real words). fill_gaps
+# already catches holes of 1 s or more; this catches the shorter ones it leaves.
+STRETCH_PER_CHAR = 0.15    # a word is suspect when it lasts longer than max(MAX_WORD_S, 0.15 s a letter + 0.5 s)
+STRETCH_BASE = 0.5
+STRETCH_SPEECH = 0.5       # ... and speech fills at least half of the time after its first STRETCH_HEAD seconds
+STRETCH_HEAD = 0.5
+STRETCH_CONTEXT = 25       # words before the stretch given as context (keeps the case and punctuation)
+
+
+def stretch_limit(w):
+    return max(MAX_WORD_S, STRETCH_PER_CHAR * len(w['w']) + STRETCH_BASE)
+
+
+def speech_share(audio, a, b, sr=SR):
+    """Share of [a, b] that Silero VAD (inside faster-whisper) hears as speech."""
+    from faster_whisper.vad import VadOptions, get_speech_timestamps
+    lo = max(0, int((a - 0.3) * sr))
+    piece = audio[lo:int((b + 0.3) * sr)]
+    if b - a <= 0 or len(piece) < sr // 4:
+        return 0.0
+    try:
+        regs = get_speech_timestamps(piece, VadOptions(min_silence_duration_ms=150, speech_pad_ms=30))
+    except Exception:
+        return 0.0
+    heard = sum(max(0.0, min(b, (lo + r['end']) / sr) - max(a, (lo + r['start']) / sr)) for r in regs)
+    return heard / (b - a)
+
+
+def stretched_words(audio, words):
+    """Indexes of words that hide skipped speech: too long for their letters, with speech inside."""
+    out = []
+    for i, w in enumerate(words):
+        if w.get('unsure') or w['e'] - w['s'] <= stretch_limit(w):
+            continue
+        if speech_share(audio, w['s'] + STRETCH_HEAD, w['e']) >= STRETCH_SPEECH:
+            out.append(i)
+    return out
+
+
+def _content(ws):
+    """The words that carry something: no fillers ("um", "uh") and no word said twice in a row ("I I")."""
+    from .cut import FILLERS
+    out = []
+    for w in ws:
+        t = norm_token(w['w'])
+        if t and t not in FILLERS and (not out or out[-1] != t):
+            out.append(t)
+    return out
+
+
+def _lost(old, new):
+    """How many of the old words (by sound) are not found again, in order, in the new ones."""
+    import difflib
+    a, b = [norm_token(w['w']) for w in old], [norm_token(w['w']) for w in new]
+    m = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    return len(a) - sum(blk.size for blk in m.get_matching_blocks())
+
+
+def repair_stretched(model, audio, words, lang, beam_size, prompt=None, around=2):
+    """Hear each stretched word again with `around` words on each side. -> (words, [(old, new) texts])."""
+    sus = stretched_words(audio, words)
+    if not sus:
+        return words, []
+    # windows of words: the suspect and `around` words either side; suspects close together share one
+    spans = []
+    for i in sus:
+        i0, i1 = max(0, i - around), min(len(words) - 1, i + around)
+        if spans and i0 <= spans[-1][1] + 1:
+            spans[-1][1] = i1
+        else:
+            spans.append([i0, i1])
+    print(f'   listening again to {len(spans)} stretched word(s) (one word over several that were skipped)',
+          flush=True)
+    out, changes, last = [], [], 0
+    for i0, i1 in spans:
+        old = words[i0:i1 + 1]
+        a, b = old[0]['s'], old[-1]['e']
+        keep = (max(a - 0.05, words[i0 - 1]['e']) if i0 > 0 else max(0.0, a - 0.05),
+                min(b + 0.05, words[i1 + 1]['s']) if i1 + 1 < len(words) else b + 0.05)
+        context = ' '.join(w['w'] for w in words[max(0, i0 - STRETCH_CONTEXT):i0]) or None
+        got, p = _decode(model, audio, [(max(0.0, a - 0.5), b + 0.5)], lang, beam_size, keep, prompt, context)
+        worst_old = max(w['e'] - w['s'] for w in old)
+        sure_old = [w for w in old if w['e'] - w['s'] <= stretch_limit(w)]     # the words that weren't stretched
+        ok = (got and p >= 0.5
+              # real words were added (fillers and stammered repeats don't count: captions leave them out)
+              and len(_content(got)) > len(_content(old))
+              and all(w['e'] - w['s'] <= max(stretch_limit(w), 0.6 * worst_old) for w in got)
+              # and at most one of the old, well-heard words is gone (a guess never replaces real words)
+              and _lost(sure_old, got) <= (1 if len(sure_old) >= 3 else 0))
+        out += words[last:i0]
+        if ok:
+            out += got
+            changes.append((' '.join(w['w'] for w in old), ' '.join(w['w'] for w in got)))
+        else:
+            out += old
+        last = i1 + 1
+    out += words[last:]
+    for cur, nxt in zip(out, out[1:]):               # a word never runs into the next one
+        if cur['e'] > nxt['s']:
+            cur['e'] = round(max(cur['s'] + 0.05, nxt['s']), 3)
+    if changes:
+        print(f'   recovered words in {len(changes)} of them', flush=True)
+    return out, changes
+
+
 def _transcribe_once(audio, model_name, lang, device, compute, beam):
     from faster_whisper import BatchedInferencePipeline, WhisperModel
     if device == 'cuda':
@@ -686,7 +869,9 @@ def _transcribe_once(audio, model_name, lang, device, compute, beam):
             got = [{**w, 's': round(w['s'] + off, 3), 'e': round(min(w['e'] + off, b / SR), 3)} for w in got
                    if w['s'] + off < b / SR]
         words = join_pieces(words, got)
-    words, info = relisten(model, audio, clean_words(words), language, beam_size)
+    words, _ = repair_stretched(model, audio, clean_words(words), language, beam_size,
+                                HINGLISH_PROMPT if lang == HINGLISH else None)
+    words, info = relisten(model, audio, words, language, beam_size)
     relisten_report(info)
     return words
 
@@ -779,12 +964,19 @@ def render_transcript(pdir, project, lines):
     lang = project.get('language') or '-'
     if is_hindi(lang):
         lang += '  (Hindi in Devanagari, English words in Roman; captions: python run.py romanize <project>)'
+    from . import hints
+    try:
+        nt = hints.notes(pdir, project)
+    except Exception:
+        nt = {}
     head = [f"# {project.get('title')}", f"# channel: {project.get('channel') or '-'}",
-            f"# duration: {fmt_ts(project.get('duration') or (words[-1]['e'] if words else 0))}",
+            f"# duration: {fmt_ts(project.get('duration') or max([x.get('e', 0) for x in lines] or [0]))}",
             f'# language: {lang}',
-            '# format: [start_seconds-end_seconds] text   (seconds are what clips.json uses)', '']
-    body = [s['marker'] if 'marker' in s else f"[{s['s']:.2f}-{s['e']:.2f}] {s['text']}"
-            for s in hide_breaks(lines, active_breaks(project))]
+            '# format: [start_seconds-end_seconds] text   (seconds are what clips.json uses)']
+    if nt:
+        head.append('# ' + hints.READER_NOTE)
+    body = [hints.line_text(s, nt) for s in hide_breaks(lines, active_breaks(project))]
+    head.append('')
     (tdir / 'transcript.txt').write_text('\n'.join(head + body) + '\n', encoding='utf-8')
     return tdir / 'transcript.txt'
 
@@ -814,12 +1006,22 @@ def main():
     else:
         pdir, project = local_source(a.source)
         audio_src = Path(project['video'])
+        # the microphone on its own audio track (OBS can record that): the words come from it alone
+        if 'mic_track' not in project:
+            try:
+                project['mic_track'] = mic_track(audio_src, project['duration'])
+            except Exception:
+                project['mic_track'] = None
+            save_json(pdir / 'project.json', project)
+        if project.get('mic_track') is not None:
+            print(f"-> the microphone has its own audio track (track {project['mic_track'] + 1}): "
+                  'the words are written down from it, without the game sound; clips keep the full mix')
 
     tx = pdir / 'transcript' / 'transcript.txt'
     if tx.exists() and not a.retranscribe:
         print('-> transcript already exists (use --retranscribe to redo)')
     else:
-        wav = to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav')
+        wav = to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav', project.get('mic_track'))
         t0 = time.time()
         words, lang, model_name, device = transcribe(wav, a.model, a.lang, a.device, a.beam)
         if not words:
@@ -836,7 +1038,7 @@ def main():
     # for 3 hours). Never fatal: without it, clips are picked from the words alone, as in v1.1.
     try:
         from . import sound
-        to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav')
+        to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav', project.get('mic_track'))
         sound.ensure(pdir)
     except Exception as e:
         print(f'   (sound cues skipped: {type(e).__name__}: {e})')
@@ -860,6 +1062,16 @@ def main():
         project = kind.run(pdir, load_json(pdir / 'project.json', {}) or project)
     except Exception as e:
         print(f'   (video kind check skipped: {type(e).__name__}: {e})')
+
+    # hints next to the words: a raised voice, a shout, game sound bursts, big action on screen and, in
+    # gameplay, lines in another voice than the streamer's. Never fatal: without them, clips are picked
+    # from the words (and laughs) alone.
+    try:
+        from . import hints
+        hints.ensure(pdir)
+        render_transcript(pdir, project, load_json(pdir / 'transcript' / 'sentences.json') or [])
+    except Exception as e:
+        print(f'   (hints skipped: {type(e).__name__}: {e})')
 
     print('\nDONE')
     print(f'project:    {pdir.name}')

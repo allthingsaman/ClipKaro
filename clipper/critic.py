@@ -79,7 +79,8 @@ class Transcript:
     def __init__(self, pdir):
         self.words = load_json(pdir / 'transcript' / 'words.json') or []
         self.lines = load_json(pdir / 'transcript' / 'sentences.json') or []
-        self.starts = [ln['s'] for ln in self.lines]
+        self.starts = [ln.get('s', 0.0) for ln in self.lines]
+        self.notes = {}
         if not self.words:
             die(f'no transcript in {pdir}: run `python run.py fetch` first')
 
@@ -87,7 +88,8 @@ class Transcript:
         return [w for w in self.words if w['s'] >= a - 0.005 and w['e'] <= b + 0.01]
 
     def lines_in(self, a, b):
-        """The words of [a, b] grouped by transcript line: [(start, text)]."""
+        """The words of [a, b] grouped by transcript line: [(start, text)], with the line's hints (another
+        voice before it; a raised voice, game sounds, big action after it: run.py hints) when `notes` is set."""
         out = []
         for w in self.words_in(a, b):
             li = bisect.bisect_right(self.starts, w['s'] + 1e-6) - 1
@@ -95,7 +97,13 @@ class Transcript:
                 out[-1][2].append(w['w'].strip())
             else:
                 out.append([li, w['s'], [w['w'].strip()]])
-        return [(t0, ' '.join(t)) for _, t0, t in out]
+        res = []
+        for li, t0, t in out:
+            pre, post = self.notes.get(round(self.lines[li]['s'], 2), ('', [])) if li >= 0 and self.notes else ('', [])
+            # laughter and applause come from the sound markers already; the rest of the hints come from here
+            post = [x for x in post if not x.startswith(('[laughter', '[applause'))]
+            res.append((t0, (pre + ' ' if pre else '') + ' '.join(t) + (' ' + ' '.join(post) if post else '')))
+        return res
 
     def after(self, b):
         """Words heard right after b: AFTER_S seconds, to the end of that sentence (at most AFTER_MAX)."""
@@ -191,6 +199,11 @@ def prepare(pdir, source, runs):
         die('the critic needs at least 2 clip ideas to judge')
     tr = Transcript(pdir)
     cues = sound.ensure(pdir, quiet=True)
+    try:
+        from . import hints
+        tr.notes = hints.notes(pdir, project)
+    except Exception:
+        tr.notes = {}
     sig = signature(pool)
     cdir = where(pdir, source)[0]
     cdir.mkdir(parents=True, exist_ok=True)
@@ -224,9 +237,11 @@ def prepare(pdir, source, runs):
                 if note:
                     head.append(f'# Language: {note}')
                 if cues:
-                    head.append('# Markers like [laughter ~2 s] or [both talk at once] come from a sound detector and '
-                                'can be wrong. A laugh in the room is not proof that viewers will laugh, and no marker '
-                                'does not mean the moment is dull.')
+                    head.append('# Markers like [laughter ~2 s], [both talk at once], [voice raised], [explosion] or '
+                                '[big action on screen], and "(other voice)" before a line (in gameplay: a game '
+                                'character, not the streamer), come from sound and picture detectors and can be wrong. '
+                                'A laugh in the room is not proof that viewers will laugh, and no marker does not mean '
+                                'the moment is dull.')
             else:
                 head = [f'# ClipKaro critic: run {r} of {runs}, file {k + 1} of {len(chunks)} (continued).']
             (cdir / name).write_text('\n'.join(head) + '\n\n' + '\n\n'.join(chunk) + '\n', encoding='utf-8')

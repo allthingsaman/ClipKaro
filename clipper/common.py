@@ -34,6 +34,8 @@ DEFAULT_SETTINGS = {
     'emoji': True,                 # emojis on the strong words Claude marks (clips.json emoji)
     'music': False,                # background music where a clip names a mood (your own tracks): on hold
                                    # since 2026-11-14 (it doesn't suit podcasts); true turns it back on
+    'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...
+                                   # (run.py hints); false: the plain transcript, as in v1.1
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

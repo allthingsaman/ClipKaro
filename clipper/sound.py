@@ -44,6 +44,12 @@ MUSIC_SPAN = 0.50        # music stretches: frames at least this musical ...
 MUSIC_SPAN_S = 5.0       # ... for at least this long
 OVERLAP_MIN_S = 1.0      # "both talk at once" marker: at least this long
 APPLAUSE_CLASSES = [58, 61, 62]          # YAMNet: Clapping, Cheering, Applause
+# game sound bursts (hints for gameplay; AudioSet rates these labels 100 % right): the kind they show as
+BURST_CLASSES = {'explosion': [420, 430, 424],          # Explosion, Boom, Artillery fire
+                 'gunfire': [421, 422, 423],            # Gunshot/gunfire, Machine gun, Fusillade
+                 'crash': [463, 437, 306]}              # Smash/crash, Shatter, Skidding
+BURST_MIN = 0.40         # a frame this sure of a burst class ...
+BURST_GAP = 3.0          # ... bursts closer than this are one (a firefight is one hint, not twenty)
 MUSIC_CLASS = 132                        # YAMNet: Music
 SEG_WIN = 10.0                           # pyannote segmentation 3.0 reads 10 s windows
 SEG_FRAME = 270 / SR                     # one output frame per 270 samples (16.9 ms)
@@ -139,6 +145,7 @@ def scan(pdir, quiet=False):
 
     hop, win = speakers.YAMNET_HOP, speakers.YAMNET_WIN
     y_times, laugh, clap, music = [], [], [], []
+    burst = {k: [] for k in BURST_CLASSES}
     seg_wins = []                                # (start time, pyannote class per frame) per 10 s window
     loud = [[] for _ in range(n_steps)]          # RMS dB of 0.5 s frames, per step
     for t0, x in blocks(wav):
@@ -149,6 +156,8 @@ def scan(pdir, quiet=False):
                 laugh.append(float(row[speakers.LAUGH_CLASSES].max()))
                 clap.append(float(row[APPLAUSE_CLASSES].max()))
                 music.append(float(row[MUSIC_CLASS]))
+                for k, cls in BURST_CLASSES.items():
+                    burst[k].append(float(row[cls].max()))
         if seg is not None:
             n = int(SEG_WIN * SR)
             chunks = [x[i:i + n] for i in range(0, len(x), n)]
@@ -183,6 +192,24 @@ def scan(pdir, quiet=False):
                 cues['laughter'].append([a, round(max(a + 0.48, b - 0.48), 2), round(peak, 2)])
         on = [s >= APPLAUSE_MIN and not mu for s, mu in zip(clap, musical)]
         cues['applause'] = spans(y_times, on, win, APPLAUSE_MIN_S, gap=0.5)
+        # game sound bursts: [start, end, kind, peak], the strongest few per 10 minutes
+        bursts = []
+        for k, vals in burst.items():
+            for a, b in spans(y_times, [x >= BURST_MIN for x in vals], win, 0.4, gap=BURST_GAP):
+                peak = max(x for t, x in zip(y_times, vals) if a <= t < b)
+                bursts.append([a, round(max(a + 0.48, b - 0.48), 2), k, round(peak, 2)])
+        bursts.sort()
+        one = []                       # an explosion and gunfire at the same moment: one hint, the surer kind
+        for bu in bursts:
+            if one and bu[0] <= one[-1][1]:
+                if bu[3] > one[-1][3]:
+                    one[-1] = [one[-1][0], max(one[-1][1], bu[1]), bu[2], bu[3]]
+                else:
+                    one[-1][1] = max(one[-1][1], bu[1])
+            else:
+                one.append(bu)
+        from .hints import rare
+        cues['bursts'] = rare(one, lambda r: r[3])
 
     # two people talking at once, and turn switches (pyannote powerset classes 4-6 = two speakers)
     overlap_s, turns = [0.0] * n_steps, [0] * n_steps
@@ -254,7 +281,8 @@ def scan(pdir, quiet=False):
         got = [k for k in ('yamnet', 'segmentation') if cues['models'][k]]
         print(f"-> sound cues in {cues['seconds']:.0f}s ({', '.join(got) or 'no sound models'}): "
               f"{len(cues['laughter'])} laughs, {len(cues['applause'])} applause, "
-              f"{len(cues['overlap'])} times both talk at once, {len(cues['lively'])} lively spots")
+              f"{len(cues['overlap'])} times both talk at once, {len(cues.get('bursts', []))} game sound bursts, "
+              f"{len(cues['lively'])} lively spots")
     return cues
 
 

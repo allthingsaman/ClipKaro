@@ -90,10 +90,11 @@ def clean_about(desc, limit=600):
     return (text[:limit].rsplit(' ', 1)[0] + ' ...') if len(text) > limit else text
 
 
-def line_text(ln):
-    if 'marker' in ln:                          # a break screen's lines, left out (run.py kind)
-        return ln['marker']
-    return f"[{ln['s']:.2f}-{ln['e']:.2f}] {ln['text']}"
+def line_text(ln, nt=None):
+    """A line as in transcript.txt: a break screen's marker (run.py kind), or the line with its hints
+    (laughter, a raised voice, another voice ...: run.py hints)."""
+    from .hints import line_text as with_hints
+    return with_hints(ln, nt)
 
 
 def clip_target(project, first, last, wish, max_clips):
@@ -182,6 +183,11 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
     """The part files' text for n stretches: [(header-free info, text)]."""
     idx = plan_stretches(lines, n, shift)
     total = len(idx) - 1
+    from . import hints
+    try:
+        nt = hints.notes(pdir, project)
+    except Exception:
+        nt = {}
     about = clean_about(project.get('description'))
     head_video = (f"# video: {project.get('title') or pdir.name} | {project.get('channel') or '-'} | "
                   f"{fmt_ts(project.get('duration') or lines[-1]['e'])} | {project.get('language') or '-'}")
@@ -226,15 +232,17 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
         if any('marker' in ln for ln in before + own + after):
             head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) are marked with ===== lines: '
                         'their words are left out. Never take a topic, best moment or clip from them.')
+        if nt:
+            head.append('# ' + hints.READER_NOTE)
         if spots:
             head.append('# LIVELY SPOTS from the sound (laughs, both talking at once; the detector can be wrong): '
                         'look at the words there, and judge them only by the words: ' + sound.spots_line(spots))
         head += ['# format: [start_seconds-end_seconds] text', '']
-        body = [line_text(ln) for ln in before]
+        body = [line_text(ln, nt) for ln in before]
         body += [f'# ===== YOUR STRETCH STARTS ({a:.2f}) =====']
-        body += [line_text(ln) for ln in own]
+        body += [line_text(ln, nt) for ln in own]
         body += [f'# ===== YOUR STRETCH ENDS ({b:.2f}) =====']
-        body += [line_text(ln) for ln in after]
+        body += [line_text(ln, nt) for ln in after]
         foot = ['', f'# TASK (full brief: {BRIEF})',
                 '# 1. Topics that START in your stretch: copy the opening line\'s start time, quote its first words exactly.',
                 '# 2. The best moment in each 5-minute block of your stretch, or "best": null with a "why".',

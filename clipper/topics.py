@@ -68,7 +68,8 @@ class Transcript:
     def find(self, quote, near, span=None, before=NEAR, after=NEAR):
         """(first word index, last word index, share of the quote's words matched in order), or None.
         Looks within `before`/`after` seconds of `near` (and inside span = (a, b) if given)."""
-        q = [t for t in (norm_token(x) for x in str(quote or '').split()) if t]
+        from .hints import strip_hints
+        q = [t for t in (norm_token(x) for x in strip_hints(quote).split()) if t]
         if not q or not isinstance(near, (int, float)):
             return None
         a, b = near - before, near + after

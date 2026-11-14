@@ -5,7 +5,12 @@
     (correct output/_asrbench/refs/*.txt by ear once: they are the "right answers")
     python run.py asr-bench run [model]      transcribe every snippet with a model (default: the current one)
                                              and score it against the references
-    python run.py asr-bench report           all models tried so far, best first
+    python run.py asr-bench public           also download two public test sets with checked texts (about
+                                             1 hour of audio, ~150 MB): CoSHE-500 (Hinglish conversation)
+                                             and MonsoonASR (everyday spoken Hindi, every right spelling listed)
+    python run.py asr-bench report           all models tried so far, best first, per test set
+
+A model can also be one folder of a repo: "owner/repo:int8".
 
 Hindi, Hinglish and English only. A model is a faster-whisper (CTranslate2) model name, e.g.
 large-v3-turbo (ClipKaro's default), large-v3, medium, or a Hugging Face repo id of a CTranslate2
@@ -112,6 +117,90 @@ def keys(text):
     return [k for k in (sound_key(t) for t in text.split()) if k]
 
 
+def lattice_wer(ref, hyp):
+    """Word error rate against a reference that lists every right spelling of each word (a set of keys
+    per spoken word): a word is right when its key is any of them."""
+    r, h = ref, hyp
+    prev = list(range(len(h) + 1))
+    for i in range(1, len(r) + 1):
+        cur = [i] + [0] * len(h)
+        for j in range(1, len(h) + 1):
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (h[j - 1] not in r[i - 1]))
+        prev = cur
+    return prev[-1] / max(1, len(r))
+
+
+def lattice_keys(lattice):
+    """[[spelling, ...], ...] -> [set of keys, ...] (a word with no usable spelling is left out)."""
+    out = []
+    for alts in lattice:
+        ks = {k for k in (sound_key(t) for alt in alts for t in alt.split()[:1]) if k}
+        if ks:
+            out.append(ks)
+    return out
+
+
+# ---------- public test sets (checked texts, downloaded once; never committed) ----------
+
+PUBLIC = {  # name: (Hugging Face dataset, split, clips to take, what it is, licence)
+    'coshe': ('Trelis/CoSHE-500', 'eval', 60, 'Hinglish conversation, ~30 s clips', 'CC BY-NC 4.0: for testing only'),
+    'monsoon': ('VoiceArena/MonsoonASR-Open-ASR-leaderboard-hi-IN', 'test', 300,
+                'everyday spoken Hindi, every right spelling listed', 'CC BY 4.0'),
+}
+ROWS_API = 'https://datasets-server.huggingface.co/rows'
+
+
+def public(a):
+    """Download a slice of each public test set: 16 kHz wav + the checked text (or spelling lattice)."""
+    import subprocess
+    import urllib.parse
+    import urllib.request
+    sets = [m for m in (load_json(BENCH / 'set.json') or []) if m.get('set', 'own') == 'own']
+    for name, (ds, split, want, what, lic) in PUBLIC.items():
+        d = BENCH / 'public' / name
+        d.mkdir(parents=True, exist_ok=True)
+        got, off = [], 0
+        print(f'-> {name}: {what} ({lic})', flush=True)
+        while len(got) < want:
+            q = urllib.parse.urlencode({'dataset': ds, 'config': 'default', 'split': split, 'offset': off,
+                                        'length': 100})
+            rows = None
+            for attempt in range(6):            # the dataset server sometimes answers 502 for a while
+                try:
+                    with urllib.request.urlopen(f'{ROWS_API}?{q}', timeout=60) as r:
+                        rows = json.loads(r.read().decode('utf-8')).get('rows') or []
+                    break
+                except Exception as e:
+                    print(f'   ! {type(e).__name__}: {e}; trying again in {10 * (attempt + 1)} s', flush=True)
+                    time.sleep(10 * (attempt + 1))
+            if rows is None:
+                print(f'   ! gave up on {name} after {len(got)} clips', flush=True)
+                break
+            if not rows:
+                break
+            for row in rows:
+                x, i = row['row'], row['row_idx']
+                if name == 'monsoon' and (x.get('audio_length_s') or 0) < 2.0:
+                    continue                      # one or two words: too short to say much
+                wav, ref = d / f'{i:04d}.wav', d / f'{i:04d}.json'
+                if not wav.exists():
+                    src = x['audio'][0]['src']
+                    r = subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', str(SR), str(wav)],
+                                       timeout=180)
+                    if r.returncode or not wav.exists():
+                        continue                  # this clip couldn't be fetched: skip it
+                save_json(ref, {'text': x.get('transcription')} if name == 'coshe' else {'lattice': x['lattice']})
+                got.append({'name': f'{name}-{i:04d}', 'set': name, 'language': 'hinglish',
+                            'wav': str(wav.relative_to(BENCH)), 'ref': str(ref.relative_to(BENCH))})
+                if len(got) >= want:
+                    break
+            off += 100
+        sets += got
+        print(f'   {len(got)} clips', flush=True)
+    save_json(BENCH / 'set.json', sets)
+    print('next: python run.py asr-bench run <model>')
+
+
 # ---------- make the test set ----------
 
 DEFAULT = [  # (project folder ending, start s, end s, language) : what your videos sound like
@@ -145,8 +234,8 @@ def make(a):
             ref.write_text('# Correct this by ear: write exactly what is said (Roman Hinglish is fine, any spelling).\n'
                            '# Leave out game music and noise; a game character speaking counts. Lines starting with # are ignored.\n'
                            + re.sub(r'(.{1,90})(\s|$)', r'\1\n', text), encoding='utf-8')
-        made.append({'name': name, 'project': pdir.name, 'start': s, 'end': e, 'language': lang})
-    save_json(BENCH / 'set.json', made)
+        made.append({'name': name, 'set': 'own', 'project': pdir.name, 'start': s, 'end': e, 'language': lang})
+    save_json(BENCH / 'set.json', made + [m for m in (load_json(BENCH / 'set.json') or []) if m.get('set', 'own') != 'own'])
     print(f'{len(made)} snippet(s), {sum(m["end"] - m["start"] for m in made) / 60:.0f} min, in {BENCH}')
     print(f'next: correct the draft texts in {BENCH / "refs"} by ear (they come from the current transcript),'
           ' then: python run.py asr-bench run')
@@ -163,22 +252,59 @@ def run_model(a):
         raise SystemExit('no test set yet: python run.py asr-bench make')
     model = a.model or 'large-v3-turbo'
     device = gpu.pick_device('auto')
-    compute = 'float16' if device == 'cuda' else 'int8'
+    compute = a.compute or ('float16' if device == 'cuda' else 'int8')
     res = load_json(BENCH / 'results.json', {}) or {}
     t0 = time.time()
-    for m in sets:
+    (BENCH / 'out').mkdir(exist_ok=True)
+    tag = model.replace('/', '_').replace(':', '_')
+    own = [m for m in sets if m.get('set', 'own') == 'own']
+    pub = [m for m in sets if m.get('set', 'own') != 'own']
+    for m in own:                               # your own videos: the whole transcription, as fetch does it
         audio, _ = sf.read(str(BENCH / 'snippets' / f"{m['name']}.wav"), dtype='float32')
-        words = _transcribe_once(audio, model, m['language'], device, compute, None)
+        try:
+            words = _transcribe_once(audio, model, m['language'], device, compute, None)
+        except RuntimeError as e:               # too big for the graphics card: 8-bit weights, as fetch does
+            if 'out of memory' not in str(e).lower() or device != 'cuda':
+                raise
+            compute = 'int8_float16'
+            print(f'   (out of graphics memory: {model} runs with 8-bit weights)', flush=True)
+            words = _transcribe_once(audio, model, m['language'], device, compute, None)
         hyp = ' '.join(w['w'] for w in words if not w.get('unsure'))
-        (BENCH / 'out').mkdir(exist_ok=True)
-        (BENCH / 'out' / f"{m['name']}.{model.replace('/', '_')}.txt").write_text(hyp, encoding='utf-8')
-    total, rows = score(model, sets)
-    res[model] = {'wer': round(total, 3), 'device': device, 'seconds': round(time.time() - t0),
+        (BENCH / 'out' / f"{m['name']}.{tag}.txt").write_text(hyp, encoding='utf-8')
+    if pub:                                     # short public clips: the same decode, the model loaded once
+        from faster_whisper import WhisperModel
+        from .fetch import HINGLISH, HINGLISH_PROMPT, is_hindi
+        from .models import model_path
+        if device == 'cuda':
+            gpu.enable_nvidia_libs()
+        import gc
+        gc.collect()
+        try:
+            wm = WhisperModel(model_path(model), device=device, compute_type=compute)
+        except Exception:                       # a large model on a small graphics card: 8-bit weights
+            wm = WhisperModel(model_path(model), device=device, compute_type='int8_float16' if device == 'cuda' else 'int8')
+        print(f'-> {len(pub)} public clips ...', flush=True)
+        for k, m in enumerate(pub):
+            out = BENCH / 'out' / f"{m['name']}.{tag}.txt"
+            if out.exists() and not a.again:
+                continue
+            audio, _ = sf.read(str(BENCH / m['wav']), dtype='float32')
+            lang = m['language']
+            segs, _ = wm.transcribe(audio, language='hi' if is_hindi(lang) else lang, beam_size=5, vad_filter=True,
+                                    condition_on_previous_text=False, temperature=0.0,
+                                    hotwords=HINGLISH_PROMPT if lang == HINGLISH else None)
+            out.write_text(' '.join(s.text.strip() for s in segs), encoding='utf-8')
+            if k % 50 == 49:
+                print(f'   {k + 1}/{len(pub)}', flush=True)
+    by_set = {}
+    for name in sorted({m.get('set', 'own') for m in sets}):
+        total, rows = score(model, [m for m in sets if m.get('set', 'own') == name])
+        by_set[name] = {'wer': round(total, 3), 'words': sum(r['ref_words'] for r in rows), 'clips': len(rows)}
+        print(f"   {name:<8} {total:6.1%} of {by_set[name]['words']} words wrong ({len(rows)} clips)")
+    res[model] = {'sets': by_set, 'device': device, 'seconds': round(time.time() - t0),
                   'when': time.strftime('%Y-%m-%d')}
     save_json(BENCH / 'results.json', res)
-    for r in rows:
-        print(f"   {r['name']:<42} {r['wer']:6.1%} of {r['ref_words']} words wrong")
-    print(f'{model}: {total:.1%} of words wrong overall ({res[model]["seconds"]} s on {device})')
+    print(f'{model}: {res[model]["seconds"]} s on {device}')
 
 
 def score(model, sets):
@@ -186,13 +312,21 @@ def score(model, sets):
     as they are now."""
     rows = []
     for m in sets:
-        out = BENCH / 'out' / f"{m['name']}.{model.replace('/', '_')}.txt"
+        out = BENCH / 'out' / f"{m['name']}.{model.replace('/', '_').replace(':', '_')}.txt"
+        if not out.exists():
+            out = BENCH / 'out' / f"{m['name']}.{model.replace('/', '_')}.txt"      # runs before "repo:folder"
         if not out.exists():
             continue
-        ref = '\n'.join(l for l in (BENCH / 'refs' / f"{m['name']}.txt").read_text(encoding='utf-8').splitlines()
-                        if not l.startswith('#'))
-        rows.append({'name': m['name'], 'wer': round(wer(keys(ref), keys(out.read_text(encoding='utf-8'))), 3),
-                     'ref_words': len(keys(ref))})
+        hyp = keys(out.read_text(encoding='utf-8'))
+        if m.get('set', 'own') == 'own':
+            ref = keys('\n'.join(l for l in (BENCH / 'refs' / f"{m['name']}.txt").read_text(encoding='utf-8')
+                                 .splitlines() if not l.startswith('#')))
+            err = wer(ref, hyp)
+        else:
+            r = load_json(BENCH / m['ref'])
+            ref = keys(r['text']) if 'text' in r else lattice_keys(r['lattice'])
+            err = wer(ref, hyp) if 'text' in r else lattice_wer(ref, hyp)
+        rows.append({'name': m['name'], 'wer': round(err, 3), 'ref_words': len(ref)})
     total = sum(r['wer'] * r['ref_words'] for r in rows) / max(1, sum(r['ref_words'] for r in rows))
     return total, rows
 
@@ -204,11 +338,17 @@ def report(a):
     sets = load_json(BENCH / 'set.json') or []
     if not res:
         raise SystemExit('nothing run yet: python run.py asr-bench run')
-    for name, total, rows in sorted(((n, *score(n, sets)) for n in res), key=lambda x: x[1]):
-        r = res[name]
-        print(f"{name:<40} {total:6.1%} words wrong   ({r['seconds']} s on {r['device']}, {r['when']})")
-        for row in rows:
-            print(f"     {row['name']:<40} {row['wer']:6.1%} of {row['ref_words']} words")
+    names = sorted({m.get('set', 'own') for m in sets})
+    print(f"{'model':<44}" + ''.join(f'{n:>10}' for n in names) + '   (share of words wrong; lower is better)')
+    for model in sorted(res, key=lambda n: score(n, [m for m in sets if m.get('set', 'own') != 'own'])[0]):
+        cells = []
+        for n in names:
+            total, rows = score(model, [m for m in sets if m.get('set', 'own') == n])
+            cells.append(f'{total:9.1%}' if rows else f"{'-':>9}")
+        r = res[model]
+        print(f'{model:<44}' + ' '.join(cells) + f"   ({r['seconds']} s on {r['device']}, {r['when']})")
+    if 'own' in names:
+        print("own = your videos; their texts are drafts until corrected by ear (output/_asrbench/refs)")
 
 
 def main():
@@ -217,9 +357,13 @@ def main():
     sub.add_parser('make')
     r = sub.add_parser('run')
     r.add_argument('model', nargs='?')
+    r.add_argument('--again', action='store_true', help='transcribe the public clips again')
+    r.add_argument('--compute', default=None,
+                   help='int8_float16 for a large model on a small graphics card (default: float16 on the GPU)')
+    sub.add_parser('public')
     sub.add_parser('report')
     a = ap.parse_args()
-    {'make': make, 'run': run_model, 'report': report}[a.cmd](a)
+    {'make': make, 'run': run_model, 'public': public, 'report': report}[a.cmd](a)
 
 
 if __name__ == '__main__':

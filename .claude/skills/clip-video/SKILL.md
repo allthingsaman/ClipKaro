@@ -108,7 +108,12 @@ least N" from the user, never fewer than N.
 
 **One part** (up to about 28 minutes of Hinglish, longer for English): read `transcript.txt` in
 full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
-the detector can be wrong, so judge them only by the words). Write a **shortlist of about twice
+the detector can be wrong, so judge them only by the words). Lines may carry **hints** from the sound
+and picture: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
+and in gameplay `(other voice)` before a line a game character says. They show where to look; the words
+decide; never quote them, and no hint is no reason to skip a moment. In gameplay, build clips around
+the streamer's own lines, not "(other voice)" ones. A video fetched before v2.3 gets them with
+`python run.py hints <project>` (skip it in quick mode). Write a **shortlist of about twice
 the clips you'll make** (`parts` prints the number) to clips.json, in the normal format, then
 let the critic judge them (section 2a).
 

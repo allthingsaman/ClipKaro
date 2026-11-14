@@ -14,6 +14,7 @@
   "caption_look": "classic",
   "music": false,
   "emoji": true,
+  "hints": true,
   "encoder": "auto",
   "render_workers": "auto"
 }
