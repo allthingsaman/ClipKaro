@@ -25,7 +25,12 @@
   last word ends; a split screen never switches for a split second at an edge. All 12 were re-made.
 - **A speech-model test with checked texts.** `run.py asr-bench public` downloads two public test sets
   (Hinglish conversation and everyday Hindi, with every right spelling listed) to compare speech models
-  fairly. Models can be one folder of a repo (`owner/repo:int8`).
+  fairly. Models can be one folder of a repo (`owner/repo:int8`); `--compute int8_float16` for a big one.
+  First result: a Hinglish fine-tune of Whisper (Hinglish-Prime) got 21 % of Hinglish conversation wrong
+  where today's model gets 50 %, and 19 % of everyday Hindi against 34 %. Not switched yet: the owner
+  checks it by ear first (roadmap 9b).
+- **`relisten --current`** hears unclear stretches of the transcript as it is now, keeping caption fixes
+  and every hidden word hidden.
 - **Tests from start to end.** `run.py test --full` runs a tiny made-up video through cut, edit and qa.
 - **Instagram and Facebook texts for the 64 older test clips**, so every clip has its own text per
   platform.

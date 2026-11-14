@@ -14,8 +14,8 @@ is for videos transcribed before that.
   context either side; new words replace the old ones only when they add words and keep most of the old
   ones. It works on the current words.json, so caption fixes and tidy marks stay. words.json is backed
   up once to words-before-stretched.json.
-`--current` hears the unsure stretches of the words as they are now, so caption fixes stay (then run
-`python run.py tidy <project>` again, which marks made-up words anew).
+`--current` hears the unsure stretches of the words as they are now, so caption fixes stay, and every
+word hidden before stays hidden (only lines now heard clearly can show).
 Then re-cut the clips it names.
 """
 import argparse
@@ -27,6 +27,14 @@ from .common import fmt_ts, load_json, project_dir
 from .fetch import (HINGLISH, HINGLISH_PROMPT, is_hindi, relisten, relisten_report, repair_stretched, to_wav16k,
                     write_transcript)
 from .models import model_path
+
+
+def keep_hidden(before, new):
+    """A word hidden before (a game voice, music or noise Whisper guessed at, a made-up word) stays hidden:
+    only new words (a line now heard in English) can show. Without this, the guesses that tidy and the
+    first listen had hidden came back as captions (tested on a GTA stream, Nov 2026)."""
+    hidden = {(round(w['s'], 2), w['w']) for w in before if w.get('unsure')}
+    return [dict(w, unsure=True) if (round(w['s'], 2), w['w']) in hidden else w for w in new]
 
 
 def changed_clips(pdir, before, new):
@@ -94,6 +102,8 @@ def main():
 
     new, info = relisten(model, audio, [{k: v for k, v in w.items() if k != 'unsure'} for w in words],
                          'hi' if is_hindi(lang) else lang, 5)
+    if a.current:
+        new = keep_hidden(words, new)
     if not info:
         print('nothing unclear: every stretch of speech was heard with confidence')
         return
@@ -103,8 +113,7 @@ def main():
         shutil.copy2(tdir / 'words.json', backup)
     write_transcript(pdir, new, project)
     changed_clips(pdir, before, new)
-    if a.current:
-        print(f'next: python run.py tidy {pdir.name}   (marks made-up words again)')
+
 
 
 if __name__ == '__main__':

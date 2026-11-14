@@ -307,6 +307,15 @@ class Hints(unittest.TestCase):
             fetch.audio_tracks, fetch._track_sample, fetch.track_quiet_gap = saved
 
 
+class Relisten(unittest.TestCase):
+    def test_hidden_words_stay_hidden(self):
+        from clipper.relisten import keep_hidden
+        before = [W('ye', 1.0, 1.2), dict(W('आंट्टी', 1.3, 1.6), unsure=True), W('chalo', 1.7, 2.0)]
+        new = [W('ye', 1.0, 1.2), W('आंट्टी', 1.3, 1.6), W('You', 2.1, 2.3), W('chalo', 1.7, 2.0)]
+        out = keep_hidden(before, new)
+        self.assertEqual([w['w'] for w in out if not w.get('unsure')], ['ye', 'You', 'chalo'])
+
+
 class SpeechTest(unittest.TestCase):
     def test_every_right_spelling_counts(self):
         from clipper import asrbench

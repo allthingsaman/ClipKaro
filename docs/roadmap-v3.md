@@ -39,6 +39,7 @@ first, and the fresh install on Windows and macOS last. Posting to X is not plan
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
 | 9 | **Cleaner transcripts: the rest.** Sometimes one long "word" hides several real words (a Khan Sir clip lost "ki ye America ki chaal hai"): find it and transcribe that bit again. Plus the speech-model test, scored against texts you corrected. | Missing or wrong words in captions look unprofessional. | 1 day | correct 5 short texts, 30-60 min | **Done on v2.3-dev** (2026-11-14): stretched words heard again (`fetch`, `relisten --stretched`); the speech-model test on two public test sets with checked texts (`asr-bench public`). Still yours: correcting the 4 draft texts of your own videos |
+| 9b | **A better speech model for Hindi and Hinglish.** The test (2026-11-14, share of words wrong, lower is better), on public test sets with checked texts: Hinglish conversation (CoSHE-500, 60 clips): today's large-v3-turbo 50 %, **Hinglish-Prime 21 %**, Trelis Hinglish 34 %; everyday Hindi (MonsoonASR, 300 clips): turbo 34 %, Prime 19 %, **Trelis 11 %** (Trelis is 2x slower and needs 8-bit weights on a 4 GB card). Prime also writes Hinglish in English letters, so the Roman-spelling step (Claude's romanize.json) would shrink. On your own review clip it read "Isilie filmon mein ... emotion ki thodi kami hai" where turbo wrote "पो संदे निकला ... इमोसन की तोरी कमी". To check before switching: its word timings, its spelling style against docs/hinglish.md, and how it handles game music. | Fewer wrong captions on Hindi and Hinglish videos, and maybe less Claude usage. | 1 day (a "hinglish_model" setting, spelling clean-up, the switch) | correct the 4 draft texts in output/_asrbench/refs by ear (30-60 min), or watch 3 clips captioned by each model | Waiting for your ear check |
 | 17 | **No flash of the next shot at a clip's end.** `run.py qa` finds it: 5 of the 106 test clips (Dr Vikas 1, Market 3 and 7, Khan Sir 13 and 16). `cut` should end such a clip a few frames earlier by itself. | A one-frame flash looks like a mistake. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): the wider qa check found 12; all 12 re-made |
 | 18 | **One tiny sample video run from start to end** inside `run.py test`. This is the part of item 8 still to do. | It catches a break anywhere in the chain before you see it. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): `run.py test --full` |
 
@@ -79,9 +80,10 @@ real views, and 15 is our answer to its editor. Not on the list yet:
   video" (the critic's next ideas), only if you want them.
 - ~~**Per-platform texts for the older clips.**~~ Done 2026-11-14: all 64 have Instagram and
   Facebook texts.
-- **Hear the older gameplay videos again** (GTA episode 2, Black Myth Wukong, the gamer video) with
-  the improved check for game voices (2026-11-12), and re-render the clips it changes. About 5
-  minutes per video, plus the re-render.
+- ~~**Hear the older gameplay videos again**~~ Tried 2026-11-14 (`relisten --current`, which keeps
+  caption fixes and every hidden word hidden): it recognised 47 English game lines in the GTA stream, but
+  inside the clips it only hid two short exclamations that may be real, and changed nothing in the
+  Wukong and gamer clips. So the three were left as they were.
 - **The first full "clip this video" run with the new defaults** (the deep-clip question, live
   stream detection, the clip range, v2.2's edit). The pieces were tested one by one; your next
   stream is the full test.
