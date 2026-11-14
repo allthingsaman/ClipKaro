@@ -13,8 +13,8 @@ New to Claude Code or coding? Read the [user guide](user-guide.md) first.
 | [troubleshooting.md](troubleshooting.md) | Fixes for common errors, and a FAQ | everyone |
 | [architecture.md](architecture.md) | How it works inside: components, data files, and the "clipping brain" | developers, curious users |
 | [since-v1.1.md](since-v1.1.md) | **Every change since v1.1** (the first stable version), each checked: an upgrade, different on purpose (with the way back), or costing more | everyone |
-| [roadmap-v3.md](roadmap-v3.md) | **What's next after v2.1**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
-| [roadmap-v2.md](roadmap-v2.md) | **How ClipKaro compares with Opus Clip** and others (updated for v2.1), and the plan to make its clips industry grade | contributors, curious users |
+| [roadmap-v3.md](roadmap-v3.md) | **What's next after v2.2**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
+| [roadmap-v2.md](roadmap-v2.md) | **How ClipKaro compares with Opus Clip** and others (updated for v2.2), and the plan to make its clips industry grade | contributors, curious users |
 | [adding-a-language.md](adding-a-language.md) | How to add proper support for a new language (fonts, detection, Roman captions) | developers |
 | [SETUP-FEDORA.md](SETUP-FEDORA.md) | A ready-made prompt that lets Claude Code set everything up on Fedora with an NVIDIA GPU | Fedora users |
 

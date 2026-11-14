@@ -51,10 +51,12 @@ you:  clip this video: https://youtu.be/...
 - ⚡ **Quick mode** *(new in v2.1)*. Say "quick clip this" to use much less of your Claude plan: Claude
   picks the clips alone, with every other feature kept.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
-  that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones. Pauses
-  and "um"s are cut out, captions stay off faces and clear of the apps' buttons, made-up words get no
-  caption, and a few strong words get an emoji.
-- 🎨 **Six caption looks.** Classic by default; say "box captions", "karaoke captions", "minimal
+  that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
+- ✂️ **Tighter and cleaner** *(new in v2.2)*. Pauses and "um"s are cut out, captions stay off faces
+  and clear of the apps' buttons, made-up words get no caption, and a few strong words get an emoji
+  (say "no emojis" to skip them). Every clip is checked by code before you see it, and editing is
+  about twice as fast on an NVIDIA card.
+- 🎨 **Six caption looks** *(new in v2.2)*. Classic by default; say "box captions", "karaoke captions", "minimal
   captions", "bold captions" or "comic captions" for another. The fonts come with ClipKaro.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
   ("aaj hum business ki baat karenge") or in Hindi letters.

@@ -1,11 +1,27 @@
 # What's new
 
-## Not released yet
+## v2.2 (November 2026): a cleaner, tighter edit
 
-The owner watched all 106 test clips with every new feature and chose (2026-11-14): **in every
-clip** pause cutting, no captions on made-up words, captions off faces and the apps' buttons, and the
-sound-peak limit; **emojis** too, unless you say "no emojis"; the **hook title** and the other
-**caption looks** only when you name them; **background music** on hold.
+v2.2 makes every clip look and sound more finished, without you asking for anything:
+- pauses and "um"s are cut out;
+- made-up words get no captions;
+- captions stay off faces and clear of the apps' buttons;
+- a few strong words get an emoji;
+- no sound peak goes over the limit;
+- code checks every clip before you see it.
+
+Editing is also about twice as fast on an NVIDIA card. Six caption looks and a hook title are there
+when you name them.
+
+The owner watched all 106 clips of the 13 test videos with these features before choosing what is on
+by default (2026-11-14):
+- **In every clip:** pause cutting, no captions on made-up words, captions off faces and the apps'
+  buttons, and the sound-peak limit.
+- **Emojis** too, unless you say "no emojis".
+- **Only when you name them:** the hook title and the other caption looks.
+- **On hold:** background music.
+
+Nothing v1.1 could do was lost: [docs/since-v1.1.md](docs/since-v1.1.md) lists every change.
 
 - **No made-up words in the captions during laughter, noise or loops.** Whisper invents words where
   nobody speaks clearly. Those now get no captions:

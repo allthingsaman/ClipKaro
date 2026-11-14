@@ -6,8 +6,10 @@ change does something differently from v1.1, it must be because the owner wanted
 a matter of taste, there must be a way to get v1.1's behaviour back.
 
 This page lists every change since v1.1 and checks it against that rule. **Each new change gets
-its line here, in the same commit.** Released so far: **v2.0** (2026-11-11, the lines marked v2.0)
-and **v2.1** (2026-11-13, the lines dated 2026-11-12 and 2026-11-13).
+its line here, in the same commit.** Released so far:
+- **v2.0** (2026-11-11): the lines marked v2.0;
+- **v2.1** (2026-11-13): the lines dated 2026-11-12 and 2026-11-13 without a v2.2 mark;
+- **v2.2** (2026-11-14): the lines marked v2.2.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -16,8 +18,8 @@ and **v2.1** (2026-11-13, the lines dated 2026-11-12 and 2026-11-13).
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
-Checked on 2026-11-13: no v1.1 command, option or setting has been removed or changed. Only new
-ones were added.
+Checked again for v2.2 on 2026-11-14: no v1.1 command, option or setting has been removed or
+changed. Only new ones were added.
 
 ---
 
@@ -33,7 +35,7 @@ ones were added.
   - Way back: none needed, because v1.1's captions there were wrong words.
 - ⬆ **No made-up words during laughter, noise or loops.** v1.1 captioned them ("कर दो कर दो कर
   दो", "झाल"). Now they get no captions; clear words said while laughing, and real repetition, stay.
-  No "…" in captions either. *(2026-11-13)*
+  No "…" in captions either. *(v2.2, 2026-11-13)*
   - Way back: none needed, because those captions were wrong words. The words themselves stay in
     the transcript, and `words-before-tidy.json` keeps the old marks.
 - ⬆ **The video downloads while the audio is transcribed** (YouTube links), instead of at the cut
@@ -100,32 +102,32 @@ ones were added.
     turns zooms off completely.
 - ↔ **Pauses cut out, in every clip.** v1.1 played every pause inside a clip. Now pauses of half a
   second or more are shortened to a natural 0.2 s and "um" / "uh" are cut out, never across a laugh,
-  and in gameplay only pauses up to 2 s. About 6 % of a clip on average. *(2026-11-13; the owner
+  and in gameplay only pauses up to 2 s. About 6 % of a clip on average. *(v2.2, 2026-11-13; the owner
   watched it on all 106 test clips and chose it for every clip, 2026-11-14)*
   - Way back: `"jump_cuts": false` in settings.json (or `cut --no-jump-cuts`).
 - ↔ **Captions clear of faces and the apps' buttons.** v1.1 put captions on one line, up to 940 px
   wide, whatever was under them. Now they keep out of TikTok's button column and the apps' top and
   bottom bars (at most 800 px wide), and a shot whose caption line would cover a face moves them to
-  the nearest free line. *(2026-11-13)*
+  the nearest free line. *(v2.2, 2026-11-13)*
   - Way back: `"safe_zones": false` in settings.json (or `--no-safe-zones`).
 - ⬆ **A hook title, only when asked.** Saying "hook title" (or `"hook_title": true`, `edit
   --hook-title`) shows a 3-6 word title on a coloured box for the first 2-3 seconds, never on a face.
-  Without it, no title, as in v1.1. *(2026-11-13; on for every clip for a day, then off after the
+  Without it, no title, as in v1.1. *(v2.2, 2026-11-13; on for every clip for a day, then off after the
   owner's test)*
 - ⬆ **Caption looks, emojis and background music.** Five more caption looks besides v1.1's (which
   stays the default); emojis on up to 3 strong words, never on a face; background music from your own
-  `music` folder, quietly under the voice. *(2026-11-13; music on hold since 2026-11-14,
+  `music` folder, quietly under the voice. *(v2.2, 2026-11-13; music on hold since 2026-11-14,
   `"music": false`, because it doesn't suit podcasts)*
   - Way back: the classic look is the default; "no emojis" or `"emoji": false`.
 - ⬆ **Sound effects by mood, from your own folder** (`sounds/shock`, `sounds/funny` ...). Claude
   marks the moments that call for one. Until you add sounds, clips sound exactly as before (the two
-  whooshes). *(2026-11-13)*
+  whooshes). *(v2.2, 2026-11-13)*
 - ⬆ **Editing is about twice as fast**: the NVIDIA card encodes the clips (3x faster than the
   processor, the same picture) and two clips are edited at once when the computer has room. Files are
-  about 1.3x bigger. *(2026-11-13)*
+  about 1.3x bigger. *(v2.2, 2026-11-13)*
   - Way back: `"encoder": "x264"` and `"render_workers": 1` in settings.json.
 - ⬆ **Every clip is checked by code before you see it** (`run.py qa`), and ClipKaro has its own tests
-  (`run.py test`) that keep v1.1's behaviour from breaking unnoticed. *(2026-11-13)*
+  (`run.py test`) that keep v1.1's behaviour from breaking unnoticed. *(v2.2, 2026-11-13)*
 - ⬆ **Fix a caption word everywhere** with one command: `run.py fixword <project> "bow" "boat"`, or
   just tell Claude. Before, it was fixed by hand. *(2026-11-13)*
 - ⬆ **Editing again no longer needs the original video** once the caption colours are saved, so
@@ -133,10 +135,10 @@ ones were added.
 - ⬆ **No sound peaks over the limit.** v1.1's loudness step could overshoot on a sharp sound, and the
   AAC encoder adds peaks to harsh phone-mic sound: three test clips peaked at -0.6 to +0.3 dB. Now a
   limiter holds the mix at -2 dB, and the encoded sound is measured and limited again when it's still
-  over -1.2 dB. The loudness and everything below the peaks sound exactly as before. *(2026-11-13)*
+  over -1.2 dB. The loudness and everything below the peaks sound exactly as before. *(v2.2, 2026-11-13)*
 - ⬆ **Cutting again after a clean-up keeps the podcast framing.** When only the video was kept, `cut`
   makes the voice track again from it, so the speaker crop and split screen work as before instead
-  of falling back to the plain framing. *(2026-11-13)*
+  of falling back to the plain framing. *(v2.2, 2026-11-13)*
 
 - ⬆ **Podcasts with painted faces on the wall** show the real person. **Dark studios**: camera cuts
   are found again. *(v2.0)*
