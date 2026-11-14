@@ -51,7 +51,11 @@ you:  clip this video: https://youtu.be/...
 - ⚡ **Quick mode** *(new in v2.1)*. Say "quick clip this" to use much less of your Claude plan: Claude
   picks the clips alone, with every other feature kept.
 - ✨ **A clean, lively edit.** Zoom-ins on the beat, captions that pop in word by word in a colour
-  that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones.
+  that fits the video, a couple of soft "whoosh" sounds, and volume set right for phones. Pauses
+  and "um"s are cut out, captions stay off faces and clear of the apps' buttons, made-up words get no
+  caption, and a few strong words get an emoji.
+- 🎨 **Six caption looks.** Classic by default; say "box captions", "karaoke captions", "minimal
+  captions", "bold captions" or "comic captions" for another. The fonts come with ClipKaro.
 - 🇮🇳 **Hindi + English (Hinglish).** Found automatically. Captions in English letters
   ("aaj hum business ki baat karenge") or in Hindi letters.
 - ⚡ **Fast with an NVIDIA graphics card.** A 7-minute Hinglish video is written down in about a
@@ -173,6 +177,8 @@ Add your wishes to the same message, in normal words (English, Hindi or Hinglish
 - "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money"
 - "show me the moments before you cut them" · "don't edit them, just cut"
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"
+- Caption looks: "box captions" · "karaoke captions" · "minimal captions" · "bold captions" · "comic captions" (classic otherwise)
+- "hook title" (a big 3-6 word title for the first seconds; only when you ask) · "no emojis"
 - "use #00E5FF as the caption colour" · "Hindi captions in Hindi letters"
 - "it's a gameplay video" · "keep it wide (16:9)" · "the video is in English"
 - After you see the clips: "clip 2 starts too early" · "make clip 1 shorter" · "use yellow captions"

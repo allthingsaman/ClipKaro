@@ -130,7 +130,6 @@ Write `output/<project>/clips.json`:
     {
       "id": 1,
       "title": "Why Hard Work Isn't Enough",
-      "hook_text": "Hard work isn't enough?",
       "hook": "Exact first line of the clip",
       "ranges": [[123.4, 171.9]],
       "score": 9,
@@ -191,11 +190,8 @@ Write `output/<project>/clips.json`:
   warning). It pops in above (or beside) the caption when the word is said, never on a face; one
   that has no free spot is left out. Fewer is better: none on a sad or sensitive moment, never as
   mockery, never two words in a row.
-- `music` (optional): one background-music mood for the clip (`"chill"`, `"upbeat"`, `"hype"`,
-  `"suspense"`, `"emotional"`, `"funny"`, `"inspiring"`, or the owner's own), only when `python run.py
-  music` lists tracks in it and the user didn't say "no music". Choose it by the clip's feeling;
-  leave it out where music would get in the way (a serious claim, a dense explanation).
-- `hook_text`: the **hook title** shown big on screen for the first 2-3 seconds, so the clip stops the
+- `music`: background music is **on hold** (2026-11-14): leave it out.
+- `hook_text` (only when the user asked for a **hook title**): the title shown big on screen for the first 2-3 seconds, so the clip stops the
   scroll with the sound off. 3-6 words (about 30 letters at most), in the captions' language and
   script (Roman Hinglish for Hindi/Hinglish videos): the question or tension of the clip, never its
   answer ("Pakistan ka PM banoge?", "Final boss yahin la diya", "Why he kept a brick"). Quotation

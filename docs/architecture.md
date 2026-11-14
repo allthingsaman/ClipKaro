@@ -729,7 +729,8 @@ to 2 s. The pieces then go through the normal multi-piece path (fades in the qui
 jump-cut edges get those small handles instead of the usual 0.12 / 0.30 s (`snap_piece`). The clip's
 `jump_cuts` times change the zoom when the last change is at least 1.2 s back (`plan.JUMP_GAP`), else
 the framing only follows. Measured on 106 clips: 267 cuts, 6.4 % of the time (up to 13 s in a slow
-interview clip). Off: `"jump_cuts": false` / `cut --no-jump-cuts`.
+interview clip). On in every clip (the owner's choice, 2026-11-14); `"jump_cuts": false` /
+`cut --no-jump-cuts` is only the way back to v1.1.
 
 ### 5.6 Reframing 16:9 to 9:16 (`reframe.py`)
 1. **Shot detection**: ffmpeg's scene score on 320-px frames; a jump above 0.30 is a camera cut,
@@ -868,7 +869,8 @@ detection; `--layout crop` turns the layout off.
   better), popping in and fading out. It takes the first of the lines y 400, 320, 500, 620, 760 that
   covers no face and no caption shown meanwhile, and the fewest lines (1-3) that fit the safe width,
   at most 10 % smaller (`plan.hook_lines`). Both engines draw it (Remotion: `HookTitle`).
-- Off: `"safe_zones": false` / `--no-safe-zones`, `"hook_title": false` / `--no-hook-title`.
+- Safe zones are on (off: `"safe_zones": false` / `--no-safe-zones`). The hook title is off unless asked
+  ("hook title": `--hook-title` / `"hook_title": true`; the owner didn't want it on every clip).
 
 ### 5.9 Captions (`plan.caption_groups`, `edit.write_ass`)
 - Whisper's split tokens are merged back (`$500` + `,000`, `e` + `-commerce`, `100` + `%`).
@@ -948,7 +950,7 @@ and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>`
   really uses then) and of the hook title; none free: left out. It leaves with its shot (if it got
   0.7 s), one at a time, at most 3. The python engine blends it into the frame with a pop (0.6 -> 1.0
   in 0.15 s) and a fade.
-- **Music** (clips.json `music`: a mood; tracks in `music/<mood>/`, gitignored): `edit.mix_audio` loops
+- **Music** (on hold since 2026-11-14: `"music": false`; clips.json `music`: a mood; tracks in `music/<mood>/`, gitignored): `edit.mix_audio` loops
   the track from its start, brings it to -21 LUFS, ducks it under the voice (sidechaincompress keyed
   by the voice: threshold 0.03, ratio 4), fades it in (0.8 s) and out (1.2 s), then the whole mix goes
   to -14 LUFS. Measured: the music sits about 10 dB under speech and 9 dB under the voice in pauses.

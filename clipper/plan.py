@@ -710,7 +710,7 @@ def build(meta, brand, opts):
     if safe:                            # move off a face (tight close-ups), once per shot
         safe_caption_y(caps, meta.get('shots', []), faces, style['y'], opts.get('caption_y_fixed'), cam, fps)
     hook = hook_title(opts.get('hook_text'), meta['duration'], meta.get('shots', []), faces, caps,
-                      upper, style, cam, fps) if opts.get('hook', True) else None
+                      upper, style, cam, fps) if opts.get('hook', False) else None
     emoji, emoji_missing = emoji_marks(opts.get('emoji'), meta['words'], caps, meta.get('shots', []), faces,
                                        style['y'], meta['duration'], style, cam, fps, hook) if caps else ([], [])
     return {

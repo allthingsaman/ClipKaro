@@ -443,7 +443,7 @@ def edit_one(job):
     clip_opts = dict(opts, caption_y=a.caption_y or meta.get('caption_y') or 1270,
                      caption_y_fixed=a.caption_y is not None)
     safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
-    hook_on = cfg.get('hook_title', True) if a.hook_title is None else a.hook_title
+    hook_on = cfg.get('hook_title', False) if a.hook_title is None else a.hook_title
     clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
     emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
     clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
@@ -469,7 +469,7 @@ def edit_one(job):
     plan['encoder'] = video_encoder(cfg)[0]
     audio = work / f"{meta['name']}.mix.m4a"
     track = None
-    music_on = cfg.get('music', True) if a.music is None else a.music
+    music_on = cfg.get('music', False) if a.music is None else a.music
     if music_on and picked.get('music') and opts['sfx'] != 'none':
         track = musiclib.pick(picked['music'], meta['name'])
         if not track:
@@ -532,9 +532,9 @@ def main():
                     help='video encoder (default: settings.json "encoder", auto: the NVIDIA one if it works)')
     ap.add_argument('--workers', type=int, default=None, help='clips edited at once (default: auto)')
     ap.add_argument('--music', action=argparse.BooleanOptionalAction, default=None,
-                    help='background music where clips.json names a mood (default: settings.json "music", on)')
+                    help='background music where clips.json names a mood (default: settings.json "music", off: on hold)')
     ap.add_argument('--hook-title', action=argparse.BooleanOptionalAction, default=None,
-                    help='the hook title for the first seconds (default: settings.json "hook_title", on)')
+                    help='the hook title for the first seconds (default: settings.json "hook_title", off; "hook title")')
     ap.add_argument('--safe-zones', action=argparse.BooleanOptionalAction, default=None,
                     help='captions clear of faces and the apps\' buttons (default: settings.json "safe_zones", on)')
     ap.add_argument('--jump-label', action=argparse.BooleanOptionalAction, default=None,

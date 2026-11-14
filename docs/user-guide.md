@@ -202,26 +202,25 @@ Sir video" and get them in a few minutes, without the video being read again.
 English-letter captions, captions inside the screen and off the apps' buttons, no word cut in half,
 the right loudness, no black frames. Claude fixes what fails before showing you the clips.
 
-**Caption looks, emojis, music.** Say "box captions", "karaoke captions", "minimal captions", "bold
-captions" or "comic captions" for another look. Emojis pop in on a few strong words (💰 on "paisa"),
-never on a face; say "no emojis" if you don't want them. For background music, put tracks you may use
-in the `music` folder, one folder per mood (`chill`, `upbeat`, `hype`, `suspense`, `emotional`,
-`funny`, `inspiring`); ClipKaro plays them quietly under the voice. It ships no music itself:
-copyrighted songs get clips muted or blocked.
+**Caption looks and emojis.** The captions use the classic look. Say "box captions", "karaoke
+captions", "minimal captions", "bold captions" or "comic captions" for another one (the fonts come
+with ClipKaro). Emojis pop in on a few strong words (💰 on "paisa"), never on a face; say "no emojis"
+if you don't want them. (Background music is on hold for now.)
 
 **Your own sound effects.** Put sounds in the `sounds` folder inside the ClipKaro folder, one folder
 per mood: `shock`, `funny`, `fear`, `attention`, `sad`, `hype`, `reveal`, `fail`, `money` (any file
 name). Or tell Claude "add this sound as shock: (path to the file)". Claude then adds one where a
 clip calls for it, like a boom on a shocking line.
 
-**Tight clips.** Pauses inside a clip are shortened and "um" / "uh" are cut out (jump cuts), so
-it feels quick. Laughs are never cut, and in gameplay a long quiet stretch stays (it may be the
-action). Say "keep the pauses" if you want a clip without them.
+**In every clip, by itself.** Pauses inside a clip are shortened and "um" / "uh" are cut out, so it
+feels quick (laughs are never cut, and in gameplay a long quiet stretch stays). Words Whisper made up
+during laughter or noise get no caption (the sound stays). The captions keep clear of faces and of the
+apps' buttons (TikTok's like and share column, the text at the bottom). The loudest moments stay
+under the apps' limit, so they don't crackle after upload.
 
-**A title on screen, captions out of the way.** Every clip opens with a big 3-6 word title for
-the first 2-3 seconds, so it stops the scroll even with the sound off. It sits in the upper part of
-the picture, never on a face. The captions keep clear of faces and of the apps' buttons (TikTok's
-like and share column, the text at the bottom). Say "no hook title" if you don't want it.
+**A title on screen, only when you name it.** Say "hook title" ("clip this video: (link) hook
+title"), or later "add a hook title to clip 3": a big 3-6 word title for the first 2-3 seconds, in the
+upper part of the picture, never on a face.
 
 **A wrong word in the captions?** Say "in clip 4, 'bow' should be 'boat'". It is fixed everywhere
 the word was heard, and the clips that have it are made again.
@@ -247,8 +246,8 @@ After you see the clips, you can ask for changes:
 - "make the captions bigger in all clips"
 - "in clip 4, show both of them when he laughs" · "show the other person there"
 
-You can ask for anything in your own words. If ClipKaro can't do something yet (for example adding
-background music), Claude will tell you.
+You can ask for anything in your own words. If ClipKaro can't do something yet (for example
+translated subtitles), Claude will tell you.
 
 More examples: [usage.md](usage.md).
 

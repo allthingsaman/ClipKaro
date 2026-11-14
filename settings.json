@@ -8,11 +8,11 @@
   "jump_label": false,
   "deep_clips": "ask",
   "max_clips": 20,
-  "hook_title": true,
+  "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
   "caption_look": "classic",
-  "music": true,
+  "music": false,
   "emoji": true,
   "encoder": "auto",
   "render_workers": "auto"

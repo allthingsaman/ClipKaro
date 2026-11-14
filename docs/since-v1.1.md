@@ -98,22 +98,25 @@ ones were added.
   clip. Joins between pieces and normal speech still change it as before. *(2026-11-13)*
   - Way back: no setting, because the zoom at every cut was the problem; `edit --no-zoom` still
     turns zooms off completely.
-- ↔ **Jump cuts.** v1.1 played every pause inside a clip. Now pauses of half a second or more are
-  shortened to a natural 0.2 s and "um" / "uh" are cut out, never across a laugh, and in gameplay
-  only pauses up to 2 s. About 6 % of a clip on average. *(2026-11-13)*
-  - Way back: `"jump_cuts": false` in settings.json (or `cut --no-jump-cuts`, or "keep the pauses").
-- ↔ **Captions clear of faces and the apps' buttons; a hook title.** v1.1 put captions on one line,
-  up to 940 px wide, whatever was under them. Now they keep out of TikTok's button column and the
-  apps' top and bottom bars (at most 800 px wide), and a shot whose caption line would cover a face
-  moves them to the nearest free line. A 3-6 word title shows on a coloured box for the first 2-3
-  seconds, never on a face. *(2026-11-13)*
-  - Way back: `"safe_zones": false` and `"hook_title": false` in settings.json (or `--no-safe-zones`,
-    `--no-hook-title`).
+- ↔ **Pauses cut out, in every clip.** v1.1 played every pause inside a clip. Now pauses of half a
+  second or more are shortened to a natural 0.2 s and "um" / "uh" are cut out, never across a laugh,
+  and in gameplay only pauses up to 2 s. About 6 % of a clip on average. *(2026-11-13; the owner
+  watched it on all 106 test clips and chose it for every clip, 2026-11-14)*
+  - Way back: `"jump_cuts": false` in settings.json (or `cut --no-jump-cuts`).
+- ↔ **Captions clear of faces and the apps' buttons.** v1.1 put captions on one line, up to 940 px
+  wide, whatever was under them. Now they keep out of TikTok's button column and the apps' top and
+  bottom bars (at most 800 px wide), and a shot whose caption line would cover a face moves them to
+  the nearest free line. *(2026-11-13)*
+  - Way back: `"safe_zones": false` in settings.json (or `--no-safe-zones`).
+- ⬆ **A hook title, only when asked.** Saying "hook title" (or `"hook_title": true`, `edit
+  --hook-title`) shows a 3-6 word title on a coloured box for the first 2-3 seconds, never on a face.
+  Without it, no title, as in v1.1. *(2026-11-13; on for every clip for a day, then off after the
+  owner's test)*
 - ⬆ **Caption looks, emojis and background music.** Five more caption looks besides v1.1's (which
   stays the default); emojis on up to 3 strong words, never on a face; background music from your own
-  `music` folder, quietly under the voice. *(2026-11-13)*
-  - Way back: the classic look is the default; `"emoji": false`; no tracks (or `"music": false`) means
-    no music.
+  `music` folder, quietly under the voice. *(2026-11-13; music on hold since 2026-11-14,
+  `"music": false`, because it doesn't suit podcasts)*
+  - Way back: the classic look is the default; "no emojis" or `"emoji": false`.
 - ⬆ **Sound effects by mood, from your own folder** (`sounds/shock`, `sounds/funny` ...). Claude
   marks the moments that call for one. Until you add sounds, clips sound exactly as before (the two
   whooshes). *(2026-11-13)*

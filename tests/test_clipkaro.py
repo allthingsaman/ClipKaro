@@ -56,6 +56,20 @@ class V11Baseline(unittest.TestCase):
             self.assertLessEqual(plan.caption_width(line, st) * g.get('scale', 1), plan.MAX_CAPTION_W + 1)
             self.assertEqual(line, line.upper())
 
+    def test_owner_defaults(self):
+        # the owner's choice (2026-11-14): pauses cut, captions off faces and app buttons, emojis on;
+        # no title on screen unless the message says "hook title"; background music on hold
+        from clipper.common import DEFAULT_SETTINGS
+        self.assertTrue(DEFAULT_SETTINGS['jump_cuts'] and DEFAULT_SETTINGS['safe_zones'] and DEFAULT_SETTINGS['emoji'])
+        self.assertFalse(DEFAULT_SETTINGS['hook_title'])
+        self.assertFalse(DEFAULT_SETTINGS['music'])
+        self.assertEqual(DEFAULT_SETTINGS['caption_look'], 'classic')
+        brand = {'accent': '#FFD60A', 'text': '#FFFFFF', 'outline': '#000000'}
+        p = plan.build(self.meta, brand, {k: v for k, v in V11.items() if k != 'hook'})
+        self.assertIsNone(p['hook'])
+        p = plan.build(self.meta, brand, dict(V11, hook=True, hook_text='Nobody tells you this'))
+        self.assertIsNotNone(p['hook'])
+
     def test_zoom_rhythm(self):
         keys, cam, transitions, beats = plan.build_camera(self.meta)
         self.assertEqual(transitions[0]['kind'], 'open')

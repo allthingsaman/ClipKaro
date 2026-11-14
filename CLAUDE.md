@@ -9,6 +9,10 @@ may ask: for a video longer than 21 minutes, whether they want deep clips too (o
 `"deep_clips"` is `"ask"`, they didn't ask for quick, and their message didn't already say). Ask it
 right at the start, while `fetch` runs. A number of clips in the message ("at least 10", "at most 5")
 goes to `parts`; without one, ClipKaro decides by the video's length.
+**Always on, in every mode** (not options to offer): pause cutting, no captions on made-up words,
+captions off faces and clear of the apps' buttons, the sound-peak limit; emojis too, unless the user
+says "no emojis". **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
+--hook-title`) and a caption look ("box captions" ...). Background music is on hold: no `music` mood.
 
 ## Rules
 - **Asked to install / set up this repo?** Follow "For AI agents installing ClipKaro" in README.md

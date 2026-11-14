@@ -53,6 +53,32 @@ Write your wishes **in the same message**, in normal words. You can combine as m
 The tables below show what you can say. The right-hand column shows what ClipKaro does behind the
 scenes; you don't need to type that part.
 
+### Always in every clip
+In every mode (quick, standard, deep), with nothing to say:
+- **Pauses cut out**: pauses of half a second or more inside a clip are shortened to a natural 0.2 s,
+  and "um" / "uh" are cut out. Never across a laugh; in gameplay only pauses up to 2 s.
+- **No made-up words in the captions**: where Whisper invents words (laughter, game noise, music), the
+  caption stays empty. The sound itself stays in the clip.
+- **Captions out of the way**: off faces in close-ups, and clear of the apps' buttons.
+- **Emojis** on up to 3 strong words, unless you say "no emojis".
+- **No sound too loud**: the loudest moments stay under the apps' limit, so they don't crackle after
+  upload.
+
+### Extras you switch on by name
+Put the name in your message, as many as you like:
+
+> clip this video: https://youtu.be/... **hook title, box captions**
+
+| Name | What it adds |
+|---|---|
+| **hook title** | 3-6 big words on a coloured box for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the upper part of the picture, never on a face |
+| **box captions**, **karaoke captions**, **minimal captions**, **bold captions**, **comic captions** | another caption look (below); normally the classic look |
+| **deep clips** | moments far apart joined into one story (see "Deep clips" below) |
+| **quick** | uses much less of your Claude plan: Claude picks the clips alone |
+
+They also work later, on clips you already have: "add a hook title to clip 3", "make clip 2 with box
+captions". To have one every time, add it to your preferences.
+
 ### How many clips, and how long
 | You write | What happens |
 |---|---|
@@ -88,15 +114,11 @@ scenes; you don't need to type that part.
 | "only one whoosh" / "fewer sound effects" | just one whoosh, at the start |
 | "no zooms" | no zoom effects |
 | "no captions" | no captions |
-| (nothing) | **a hook title**: 3-6 big words on a coloured box for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the upper part of the picture, never on a face. **Captions stay clear** of faces and of the apps' own buttons (TikTok's right column and bottom text, the top bars of Shorts and Reels) |
-| (nothing) | **jump cuts**: pauses of half a second or more inside a clip are shortened to a natural 0.2 s, and filler sounds ("um", "uh", "hmm") are cut out, so the clip feels tight. Never across a laugh; in gameplay and live streams only pauses up to 2 s (a longer quiet stretch may be the action) |
-| "keep the pauses" / "no jump cuts" | the clip plays without cuts inside a piece, as before (`cut --no-jump-cuts`) |
-| "no hook title" / "change clip 3's title to ..." | no title on screen (`--no-hook-title`), or a different one |
-| "captions exactly where they were" | captions on one fixed line again, the full width (`--no-safe-zones`) |
+| (nothing) | **Captions stay clear** of faces and of the apps' own buttons (TikTok's right column and bottom text, the top bars of Shorts and Reels), and **pauses are cut out** (half a second or more, shortened to 0.2 s; "um" / "uh" removed; never across a laugh). No title on screen |
+| "hook title" / "change clip 3's title to ..." | **a hook title**: 3-6 big words on a coloured box for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the upper part of the picture, never on a face (`edit --hook-title`). Off unless you ask |
 | "captions lower" / "captions higher" | moves the captions down or up (on that exact line: they don't move off faces then) |
 | "box captions" / "karaoke captions" / "minimal captions" / "bold captions" / "comic captions" | another **caption look**: on a dark box; each word filling with colour as it's said; smaller in normal case; big Anton letters; tilted comic letters (`--look box`, or `"caption_look"` in settings.json to keep it). Normally the classic look |
-| (nothing) | **emojis** on up to 3 strong words ("paisa" 💰, "shocking" 😱): they pop in above or beside the caption when the word is said, never on a face. Claude picks them; "no emojis" turns them off |
-| "add background music" / "no music" | music from **your own** music folder (see below), or none |
+| (nothing) | **emojis** on up to 3 strong words ("paisa" 💰, "shocking" 😱): they pop in above or beside the caption when the word is said, never on a face. Claude picks them; "no emojis" turns them off for that clip or that video |
 | "bigger captions" / "smaller captions" | changes the caption size |
 | "captions not in capital letters" | normal upper and lower case |
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
@@ -141,27 +163,10 @@ punchline), add your own sounds, sorted by mood, in the **`sounds` folder** insi
 - Use only sounds you may use in videos: Pixabay, Mixkit and the YouTube Audio Library give
   permission; a sound from someone else's video usually doesn't.
 
-### Background music (your own tracks)
-ClipKaro ships no music: songs are copyrighted, and YouTube, Instagram and Facebook mute or block
-clips with music you may not use. Put tracks you may use in the **`music` folder** inside the
-ClipKaro folder, one folder per mood:
-
-| Folder | For |
-|---|---|
-| `music/chill/` | calm talk, explanations, a relaxed story (lo-fi, soft beats) |
-| `music/upbeat/` | light, positive, quick |
-| `music/hype/` | gaming wins, sport, big energy |
-| `music/suspense/` | mystery, tension, true crime |
-| `music/emotional/` | sad or touching stories (piano, strings) |
-| `music/funny/` | comedy, awkward moments |
-| `music/inspiring/` | motivation, success stories |
-
-- Any file name; a new folder is a new mood. Or `python run.py music add "C:\Downloads\lofi.mp3" chill`,
-  or tell Claude "add this music as chill: <file>". `python run.py music` shows what you have.
-- Claude picks a mood for each clip that suits one; the music plays from its start, about 10 dB under
-  the voice, quieter still while someone talks, and fades in and out.
-- Free sources: the YouTube Audio Library (check each track's licence before posting outside
-  YouTube) and Pixabay Music.
+### Background music (on hold)
+Background music from your own tracks is built, but **on hold**: it doesn't suit podcasts, so clips
+get no music for now. It may come back later (`"music": true` in settings.json switches it on; the
+`music` folder holds the tracks).
 
 ### Changes after you've seen the clips
 | You write | What happens |
@@ -264,8 +269,8 @@ a 68-minute interview, 13 for a 2-hour podcast).
 
 ### Can I write anything else?
 Yes. Claude is an AI, so you can ask in your own words, in English, Hindi or Hinglish. If you ask
-for something ClipKaro **can't do yet**, Claude tells you instead of pretending. Examples: background
-music, extra footage, emojis and stickers, translated subtitles, or posting to the apps for you.
+for something ClipKaro **can't do yet**, Claude tells you instead of pretending. Examples: extra
+footage, stickers or translated subtitles (background music is built but on hold).
 If you want, you can ask Claude to **change ClipKaro's code** to add such a feature: it's your
 copy, and [architecture.md](architecture.md) shows where everything is.
 
@@ -326,12 +331,12 @@ Claude to change them.
   "jump_label": false,
   "deep_clips": "ask",
   "max_clips": 20,
-  "hook_title": true,
+  "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
   "caption_look": "classic",
   "emoji": true,
-  "music": true,
+  "music": false,
   "encoder": "auto",
   "render_workers": "auto"
 }
@@ -346,14 +351,14 @@ Claude to change them.
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
-| `hook_title` | `true` | `false`: no 3-6 word title on screen for the first seconds |
+| `hook_title` | `false` | `true`: a 3-6 word title on screen for the first seconds of every clip ("hook title") |
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |
-| `music` | `true` | `false`: no background music, even when you have tracks |
+| `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
-| `jump_cuts` | `true` | `false`: no pauses or filler sounds cut out of the clips |
-| `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (they may cover a chin in a close-up or sit under TikTok's buttons) |
+| `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
+| `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (only as a way back: they may cover a chin or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 

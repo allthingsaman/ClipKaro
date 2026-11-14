@@ -25,12 +25,15 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
-    'hook_title': True,            # a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text)
+    'hook_title': False,           # true: a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text);
+                                   # off unless asked ("hook title"): the owner didn't want it on every clip
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
-    'jump_cuts': True,             # cut long pauses (0.55 s+) and filler sounds out of each clip
+    'jump_cuts': True,             # cut long pauses (0.55 s+) and filler sounds out of every clip (the owner's
+                                   # choice, 2026-11-14); false only as the way back to v1.1
     'caption_look': 'classic',     # classic | box | karaoke | minimal | bold | comic
     'emoji': True,                 # emojis on the strong words Claude marks (clips.json emoji)
-    'music': True,                 # background music where a clip names a mood (only with your own tracks)
+    'music': False,                # background music where a clip names a mood (your own tracks): on hold
+                                   # since 2026-11-14 (it doesn't suit podcasts); true turns it back on
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

@@ -2,6 +2,11 @@
 
 ## Not released yet
 
+The owner watched all 106 test clips with every new feature and chose (2026-11-14): **in every
+clip** pause cutting, no captions on made-up words, captions off faces and the apps' buttons, and the
+sound-peak limit; **emojis** too, unless you say "no emojis"; the **hook title** and the other
+**caption looks** only when you name them; **background music** on hold.
+
 - **No made-up words in the captions during laughter, noise or loops.** Whisper invents words where
   nobody speaks clearly. Those now get no captions:
   - shaky words during a laugh, and "ha ha" / "हा हा" written out;
@@ -32,23 +37,20 @@
   above or beside the caption when the word is said (in gameplay beside it first, because the game's own
   subtitles sit just above), and are left out rather than put on a face.
   `"emoji": false` turns them off.
-- **Background music, your own.** Put tracks you may use in the `music` folder, one folder per mood
-  (chill, upbeat, hype, suspense, emotional, funny, inspiring), or say "add this music as chill:
-  <file>". Claude picks a mood per clip; the music plays about 10 dB under the voice and dips
-  further while someone talks. ClipKaro ships no music (copyrighted songs get clips muted).
+- **Background music, your own: built, but on hold.** It doesn't suit podcasts, so clips get no music
+  for now (`"music": true` in settings.json switches it on). Tracks go in the `music` folder, one
+  folder per mood; they play about 10 dB under the voice. ClipKaro ships no music.
 - **Sound effects by mood, your own.** Put sounds in the `sounds` folder, one folder per mood
   (attention, shock, fear, funny, sad, hype, reveal, fail, money, or your own), or say "add this sound
   as shock: <file>" (`run.py sfx add`). Claude marks the moments that call for one, a boom on a shocking
   line, a boing on a punchline, and the sound's loudest point lands right there, under the voice.
   Without your sounds, nothing changes.
-- **Jump cuts.** Pauses of half a second or more inside a clip are shortened to a natural 0.2 s,
-  and "um" / "uh" are cut out, so clips feel tight (about 6 % shorter on average, up to 13 seconds in
-  a slow interview clip). Laughs are never cut; in gameplay only pauses up to 2 s. Every word stays.
-  `"jump_cuts": false` keeps the pauses.
-- **A hook title on screen.** Every clip opens with a big 3-6 word title on a box in the video's
-  accent colour for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), so it stops the scroll with the
-  sound off. It goes in the upper part of the picture, never on a face. Claude writes it with the
-  posting text; older clips use their title. `"hook_title": false` turns it off.
+- **Pauses cut out, in every clip.** Pauses of half a second or more inside a clip are shortened to a
+  natural 0.2 s and "um" / "uh" are cut out (about 6 % shorter on average). Laughs are never cut; in
+  gameplay only pauses up to 2 s. Every word stays.
+- **A hook title, only when you ask.** Say "hook title": every clip opens with a big 3-6 word title on
+  a box in the video's accent colour for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the
+  upper part of the picture, never on a face. `"hook_title": true` turns it on for every clip.
 - **Captions clear of faces and app buttons.** Captions keep out of TikTok's like and share column
   and the apps' top and bottom bars, and move to a free line in a close-up where they would cover a
   chin. `"safe_zones": false` puts them back on one fixed line.

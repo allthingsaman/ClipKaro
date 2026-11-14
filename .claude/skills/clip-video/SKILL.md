@@ -35,6 +35,10 @@ game voices, break screens, cut, edit). They differ only in how the moments are 
 ## 1. Get the transcript
 The user only has to say "clip this: <link>". Everything else has a default: the mode (standard),
 how many clips, what kind of video it is, and (for long videos) one question about deep clips.
+**Always on** (every mode, nothing to ask): pause cutting, no captions on made-up words, captions off
+faces and the apps' buttons, the sound-peak limit, emojis (unless "no emojis": `edit --no-emoji`).
+**Only when named** (in any message, or in "My preferences"): **"hook title"** (write `hook_text` for
+each clip, then `edit --hook-title`) and a caption look. Without "hook title": no `hook_text`.
 
 **First, a quick look** (a few seconds, nothing is downloaded):
 ```
@@ -194,7 +198,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
-   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, its `"hook_text"` (the 3-6 word title on screen for the first seconds), and its posting text:
+   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, its `"hook_text"` only when the user asked for a hook title (the 3-6 word title on screen for the first seconds), and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
    readers' candidates have none, so write them here. A clip that says "इस movie" / "he" / "वो" and
@@ -291,6 +295,8 @@ python run.py cut <project>
 This downloads the video (max 1080p) the first time, snaps every range to whole words, reframes
 each camera shot around the speaker's face (9:16, 1080x1920), and writes `clips/NN-title.mp4`.
 Shots with no detectable face (slides, b-roll) get a blurred-background "fit" layout.
+Inside each piece, pauses of 0.55 s+ are shortened and "um" / "uh" cut out (always; never across a
+laugh, in gameplay only pauses up to 2 s; it prints `jump cuts: N`).
 **Gameplay with a webcam overlay** is detected automatically and stacked instead: gameplay on top,
 the cam enlarged below, captions on the seam (`-> layout: facecam` in the output). `--layout crop`
 turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (see README). In gameplay
@@ -363,13 +369,14 @@ For each clip this adds:
 `karaoke` (each word fills with colour as it's said), `minimal` (smaller, normal case), `bold`
 (Anton, big), `comic` (Bangers, tilted). Use the one the user asks for ("box captions", "karaoke
 style"), or what "My preferences" say; otherwise classic. Hindi-letter captions always use Poppins.
-**Emojis and music** come from clips.json (`emoji`, `music`; `references/picking-moments.md`); a mood
-without tracks plays no music. "Add this sound as shock: <file>" -> `python run.py sfx add "<file>"
-shock`; "add this music as chill: <file>" -> `python run.py music add "<file>" chill`.
+**Emojis** come from clips.json (`emoji`; `references/picking-moments.md`). Background music is on
+hold: write no `music` mood. "Add this sound as shock: <file>" -> `python run.py sfx add "<file>"
+shock`.
 Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentence case),
 `--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
-or `"jump_label": true` in settings.json).
+or `"jump_label": true` in settings.json), `--hook-title` (only when the user said "hook title", or
+`"hook_title": true`; clips.json `hook_text`, else the clip's title).
 Read `references/editing.md` if the user wants a different look.
 
 ## 5a. Quality check (every time, before showing anything)
