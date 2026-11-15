@@ -70,9 +70,11 @@ def main():
     wav = pdir / 'source' / 'audio16k.wav'
     if not wav.exists():
         src = next((f for f in (pdir / 'source').glob('audio.*')), None)
-        if not src:
-            raise SystemExit(f'no audio in {pdir / "source"}: run fetch again')
-        to_wav16k(src, wav)
+        if src:
+            to_wav16k(src, wav)
+        else:                                   # only the video was kept: the sound comes from it
+            from .cut import audio16k, ensure_video
+            wav = audio16k(pdir, ensure_video(pdir, project))
     import soundfile as sf
     from faster_whisper import WhisperModel
     audio, _ = sf.read(str(wav), dtype='float32')
