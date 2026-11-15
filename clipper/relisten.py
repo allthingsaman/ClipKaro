@@ -87,8 +87,12 @@ def main():
     before = [dict(w) for w in words]
 
     if a.stretched:
+        # hidden words and words fixed by hand stay exactly as they are
+        first = {round(w['s'], 2): w['w'] for w in load_json(tdir / 'words-before-fixes.json') or []}
+        protect = {i for i, w in enumerate(words)
+                   if w.get('unsure') or (first and first.get(round(w['s'], 2), w['w']) != w['w'])}
         new, changes = repair_stretched(model, audio, [dict(w) for w in words], 'hi' if is_hindi(lang) else lang, 5,
-                                        HINGLISH_PROMPT if lang == HINGLISH else None)
+                                        HINGLISH_PROMPT if lang == HINGLISH else None, protect=protect)
         if not changes:
             print('no stretched word hid any skipped words')
             return

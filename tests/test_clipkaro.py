@@ -230,6 +230,11 @@ class StretchedWords(unittest.TestCase):
         self.assertEqual(changes, [])
         self.assertEqual([w['w'] for w in new], [w['w'] for w in self.words])
 
+    def test_hidden_or_fixed_words_are_never_touched(self):
+        self.heard('तो सबको पता है कि ये America की चाल है बात')
+        _, changes = self.fetch.repair_stretched(None, None, [dict(w) for w in self.words], 'hi', 5, protect={3})
+        self.assertEqual(changes, [])
+
     def test_fillers_alone_are_not_a_repair(self):
         self.heard('तो सबको um um पता पता बात')
         _, changes = self.fetch.repair_stretched(None, None, [dict(w) for w in self.words], 'hi', 5)
@@ -314,6 +319,38 @@ class Relisten(unittest.TestCase):
         new = [W('ye', 1.0, 1.2), W('आंट्टी', 1.3, 1.6), W('You', 2.1, 2.3), W('chalo', 1.7, 2.0)]
         out = keep_hidden(before, new)
         self.assertEqual([w['w'] for w in out if not w.get('unsure')], ['ye', 'You', 'chalo'])
+
+
+class HinglishModel(unittest.TestCase):
+    """The Hinglish speech model for Hindi / Hinglish videos on an NVIDIA card (roadmap 9b)."""
+    def pick(self, lang, device, **cfg):
+        from clipper import common, fetch
+        saved = fetch.settings
+        fetch.settings = lambda: dict(common.DEFAULT_SETTINGS, **cfg)
+        try:
+            return fetch.pick_model('auto', lang, device)
+        finally:
+            fetch.settings = saved
+
+    def test_which_model(self):
+        from clipper.fetch import HINGLISH_MODEL
+        self.assertEqual(self.pick('hinglish', 'cuda'), HINGLISH_MODEL)
+        self.assertEqual(self.pick('hi', 'cuda'), HINGLISH_MODEL)
+        self.assertEqual(self.pick('hinglish', 'cpu'), 'large-v3-turbo')         # the big model is slow there
+        self.assertEqual(self.pick('en', 'cuda'), 'large-v3-turbo')              # English stays as it was
+        self.assertEqual(self.pick('en', 'cpu'), 'small.en')
+        self.assertEqual(self.pick('hinglish', 'cuda', hinglish_captions='devanagari'), 'large-v3-turbo')
+        self.assertEqual(self.pick('hinglish', 'cuda', hinglish_model='large-v3-turbo'), 'large-v3-turbo')  # way back
+
+    def test_silence_word_and_spelling(self):
+        from clipper import fetch, romanize
+        self.assertTrue(fetch.is_nan('nan') and fetch.is_nan(' Nan.') and not fetch.is_nan('naan'))
+        self.assertTrue(fetch.writes_roman(fetch.HINGLISH_MODEL) and not fetch.writes_roman('large-v3-turbo'))
+        table = {k: v for k, v in romanize.ROMAN_RESPELL.items() if v != k}
+        out, missing = romanize.apply([W('Nahin', 0, 0.3), W('vahaan', 0.4, 0.7), W('the', 0.8, 1.0),
+                                       W('VFX', 1.1, 1.4)], table)
+        self.assertEqual([w['w'] for w in out], ['Nahi', 'wahan', 'the', 'VFX'])
+        self.assertEqual(missing, [])
 
 
 class SpeechTest(unittest.TestCase):

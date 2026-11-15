@@ -342,6 +342,7 @@ Claude to change them.
   "caption_look": "classic",
   "emoji": true,
   "music": false,
+  "hinglish_model": "auto",
   "hints": true,
   "encoder": "auto",
   "render_workers": "auto"
@@ -361,6 +362,7 @@ Claude to change them.
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
+| `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |

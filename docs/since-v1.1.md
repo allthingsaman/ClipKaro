@@ -49,6 +49,13 @@ changed. Only new ones were added.
   real words and keep the old ones (on the test podcast: 42 lines repaired). *(v2.3, 2026-11-14)*
   - Way back: none needed, the old words stay unless the new ones add to them. For older videos it is
     `run.py relisten <project> --stretched`, which keeps `words-before-stretched.json`.
+- ↔ **A Hinglish speech model for Hindi and Hinglish videos** (with an NVIDIA card). v1.1 used
+  `large-v3-turbo` for every language. On public test sets with checked texts, the Hinglish model
+  (Whisper-Hindi2Hinglish-Prime) got 21 % of Hinglish conversation wrong against turbo's 50 %, and 19 % of
+  everyday Hindi against 34 %. It writes Hindi in English letters, so Claude reads about 40 % fewer tokens
+  and spells far fewer words. It takes about 1.3x as long to write a video down. English videos, the
+  processor, and Hindi-letter captions keep `large-v3-turbo`. The owner chose it (2026-11-15). *(v2.3)*
+  - Way back: `"hinglish_model": "large-v3-turbo"` in settings.json.
 - ⬆ **Your microphone on its own track.** A recording with the microphone on a separate audio track
   (OBS can do that) is written down from the microphone alone, without the game's sound and
   characters. The clips keep the full sound. A file with one track works exactly as before. *(v2.3)*

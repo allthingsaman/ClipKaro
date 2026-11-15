@@ -12,6 +12,13 @@
 
   They show where to look; the words decide, and no note never counts against a moment. `"hints":
   false` in settings.json gives the plain transcript. `run.py hints <project>` adds them to older videos.
+- **A Hinglish speech model for Hindi and Hinglish videos.** With an NVIDIA card, Hindi and Hinglish
+  videos are now written down by a Whisper model trained on Hinglish (Whisper-Hindi2Hinglish-Prime): on
+  public test sets it got 21 % of Hinglish conversation wrong where the old model got 50 %, and 19 % of
+  everyday Hindi against 34 %. It writes straight in English letters (ClipKaro turns its textbook
+  spellings like "nahin" into "nahi"), so Claude reads about 40 % fewer tokens and spells far fewer
+  words; transcribing takes about 1.3x as long. It hears speech in short pieces (in long windows it could
+  loop). English videos keep large-v3-turbo. `"hinglish_model": "large-v3-turbo"` goes back.
 - **Your microphone on its own track.** OBS can record the microphone and the game on separate audio
   tracks. ClipKaro now notices that and writes down your words from the microphone alone; the clips keep
   the full sound. (Research for this release found that separating a voice from a mix afterwards makes

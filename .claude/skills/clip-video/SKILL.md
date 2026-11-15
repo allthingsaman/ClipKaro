@@ -284,6 +284,9 @@ It adds every Hindi word of the picked clips to `output/<project>/romanize.json`
 value and prints the clips' text. Fill in every value following the spelling style in
 `docs/hinglish.md` (write the whole file back, keys unchanged), then run it again until it
 prints the finished Roman caption text. If you change clips.json later, run it again.
+A video written down by the **Hinglish model** (with an NVIDIA card, since v2.3) is already in English
+letters: `romanize` then lists its rarer English-letter words once. Add the ones the house style spells
+differently to romanize.json (`"vichaar": "vichar"`), and run `python run.py romanize <project> --checked`.
 
 ## 3. Cut to vertical
 First check the boundaries (it takes a second and cuts nothing):

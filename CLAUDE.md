@@ -28,7 +28,9 @@ says "no emojis". **Only when the user names it**: "hook title" (write `hook_tex
 - **Hindi / Hinglish videos**: read `docs/hinglish.md`. Captions are Roman Hinglish unless
   settings.json says otherwise: after writing clips.json, run `python run.py romanize <project>`,
   fill every empty value in `output/<project>/romanize.json` with the Roman spelling, and run it
-  again until it prints the finished caption text. Then cut and edit as usual.
+  again until it prints the finished caption text. Then cut and edit as usual. (Written down by the
+  Hinglish model, the default with an NVIDIA card: it lists English-letter words to check instead;
+  add any respellings, then `romanize <project> --checked`.)
 - Local video files are passed straight to `fetch` as a quoted path, e.g.
   `python run.py fetch "C:\Users\you\Videos\my video.mp4"` or `python3 run.py fetch "/home/you/Videos/my video.mp4"`.
 - Gameplay videos with a webcam overlay get the facecam layout automatically at `cut` (gameplay on

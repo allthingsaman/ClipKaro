@@ -6,9 +6,23 @@ writes the captions.
 
 ## How the transcript looks
 `fetch` finds Hindi/Hinglish by itself (`language: hinglish` in project.json and at the top of
-transcript.txt) and writes down the words with Whisper's big `large-v3-turbo` model. It's nudged to
-write **Hindi in Hindi letters (Devanagari) and English words in English letters**, with `।` (the
-Hindi full stop, "danda") at the end of sentences:
+transcript.txt).
+
+**With an NVIDIA graphics card (since v2.3)** the words are written down by a **Hinglish speech
+model** (Whisper-Hindi2Hinglish-Prime), straight in English letters:
+
+```
+[12.40-17.85] To aaj main aapko bataunga ki content creation mein log sabse badi galti kya karte hain.
+```
+On public test sets it got 21 % of Hinglish conversation wrong where `large-v3-turbo` got 50 %, and
+its text costs Claude about 40 % fewer tokens to read. It spells Hindi the textbook way ("nahin",
+"achchha", "vahaan"); the captions use the house spelling below (`run.py romanize` does that). English
+videos still use `large-v3-turbo`. `"hinglish_model": "large-v3-turbo"` in settings.json goes back to
+the old way for Hindi videos too.
+
+**On the processor, or with `"hinglish_captions": "devanagari"`**, `large-v3-turbo` writes them down,
+nudged to write **Hindi in Hindi letters (Devanagari) and English words in English letters**, with `।`
+(the Hindi full stop, "danda") at the end of sentences:
 
 ```
 [12.40-17.85] तो आज मैं आपको बताऊँगा कि content creation में लोग सबसे बड़ी गलती क्या करते हैं।
@@ -37,6 +51,13 @@ Unless settings.json says `"hinglish_captions": "devanagari"`, captions are show
 2. Fill in **every** value (write the whole file back; keep the keys exactly as they are).
 3. Run `python run.py romanize <project>` again. When it's complete, it prints each clip's caption
    text in English letters. Read it once as a viewer would, and fix anything that looks off.
+
+**Written down by the Hinglish model?** Then there are no Hindi letters to spell. ClipKaro already
+turns its most common textbook spellings into the house ones (`nahin` -> `nahi`, `vahaan` -> `wahan`,
+`sirph` -> `sirf`; the table is in `clipper/romanize.py`). `romanize` lists the rarer English-letter
+words of the picked clips once: add the ones spelled differently to romanize.json (`"vichaar": "vichar"`;
+English words and words already right need nothing), then run `python run.py romanize <project>
+--checked`, which prints the finished caption text.
 
 `edit` uses this list automatically; the timing of each word doesn't change. Words left empty stay
 in Hindi letters (drawn with the Poppins font, which has Hindi letters).

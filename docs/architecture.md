@@ -601,6 +601,22 @@ minutes, `hints.rare`). `"hints": false` gives the plain v1.1 lines. Research (N
   voice from a mix afterwards (vocal stems, denoising) made speech recognition worse in 2025-26
   studies, so a mixed recording is left as it is.
 
+### 5.4b-4 The Hinglish speech model (v2.3: `fetch.hinglish_model`, `romanize.ROMAN_RESPELL`)
+With an NVIDIA card and English-letter captions, Hindi and Hinglish videos are written down by
+Whisper-Hindi2Hinglish-Prime (Oriserve, Apache 2.0; the CTranslate2 int8 build `Hub84/faster-whisper-
+hinglish-prime`, about 1.6 GB, loaded as `int8_float16`, since 16-bit needs ~3 GB). Measured
+(`asr-bench public`, 2026-11-14): Hinglish conversation (CoSHE-500) 21 % of words wrong against turbo's
+50 %, everyday Hindi (MonsoonASR, spelling lattices) 19 % against 34 %; Trelis Hinglish 34 % and 11 %, but
+2x slower. Its word times matched turbo's within 0.04 s (median, the English words both wrote). Three
+habits are handled: in one 30 s window it looped once (385 words in 30 s), so it hears each piece of
+speech on its own (Silero VAD, at most 12 s: `decode_in_pieces`); it writes "nan" for silence (dropped);
+and on an English podcast it repeated lines with times off by seconds, so English stays on turbo. On the
+processor turbo stays too (the big model is slow there), and so do Hindi-letter captions. Its text is
+English letters in a textbook spelling ("nahin", "achchha", "vahaan"): `ROMAN_RESPELL` turns the ~180
+most common into the house spelling (counted on 11,800 words of its output), `romanize` lists the rarer
+ones once for Claude (`--checked` when done). About 40 % fewer tokens for Claude to read than turbo's
+Devanagari, and about 1.3x the time to transcribe (3-minute snippets: 36-76 s against 22-51 s).
+
 ### 5.4b-3 Skipped words heard again (v2.3: `fetch.repair_stretched`)
 Whisper sometimes skips a few words and stretches the word next to them over their time: lost text,
 not a timing fault, so forced alignment can't help. `fill_gaps` already catches holes of 1 s or more;

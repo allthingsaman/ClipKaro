@@ -63,6 +63,9 @@ LANG_NOTE = {
     'hinglish': 'Hinglish: Hindi in Devanagari plus English words in Roman letters. Code-mixing is normal, '
                 'not a flaw. Feelings and jokes often sit in the Hindi phrases: read them closely.',
     'hi': 'Hindi (Devanagari). Feelings and jokes often sit in turns of phrase: read them closely.',
+    'hinglish-roman': 'Hinglish, all in English letters (Hindi words in a textbook spelling: "nahin", "achchha", '
+                      '"vahaan"). Code-mixing is normal, not a flaw. Feelings and jokes often sit in the Hindi '
+                      'phrases: read them closely.',
 }
 
 
@@ -209,6 +212,9 @@ def prepare(pdir, source, runs):
     cdir.mkdir(parents=True, exist_ok=True)
     lang = (project.get('language') or '').lower()
     note = LANG_NOTE.get(lang) or LANG_NOTE.get('hinglish' if lang.startswith('hi') else '', '')
+    from .fetch import writes_roman
+    if lang.startswith('hi') and writes_roman(project.get('asr_model')):
+        note = LANG_NOTE['hinglish-roman']
     key, files = {}, {}
     for r in range(1, runs + 1):
         rng = random.Random(f'{pdir.name}-{sig}-run{r}')

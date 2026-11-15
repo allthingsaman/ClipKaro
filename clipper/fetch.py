@@ -344,12 +344,68 @@ def is_hindi(lang):
     return lang == HINGLISH or lang in HINDI_LIKE
 
 
+# ---------------- the Hinglish speech model ----------------
+# On public test sets with checked texts (Nov 2026, `run.py asr-bench public`), a Hinglish fine-tune of
+# Whisper large-v3 (Oriserve's Whisper-Hindi2Hinglish-Prime, Apache 2.0, here as a CTranslate2 int8 build
+# that fits a 4 GB card) got 21 % of Hinglish conversation wrong where large-v3-turbo got 50 %, and 19 %
+# of everyday Hindi against 34 %. On the owner's noisy review it read "Isilie filmon mein ... emotion ki
+# thodi kami hai" where turbo wrote "पो संदे निकला ... इमोसन की तोरी कमी". Its word times matched turbo's
+# within 0.04 s (median). It writes Hindi in English letters (a textbook spelling that romanize turns into
+# the house one), so Claude writes far fewer spellings and reads about half the tokens. Two habits are
+# handled: in one 30 s window it can loop (385 words in 30 s of the review), so it hears speech in pieces
+# of at most 12 s; and it writes "nan" for silence, which is dropped. English videos keep large-v3-turbo:
+# on an English podcast this model repeated lines and its word times were off by seconds.
+HINGLISH_MODEL = 'Hub84/faster-whisper-hinglish-prime'
+PIECE_MAX_S = 12.0
+
+
+def writes_roman(model_name):
+    """True for a speech model that writes Hindi in English letters (the Hinglish model)."""
+    return bool(model_name) and (model_name == HINGLISH_MODEL or 'hinglish' in str(model_name).lower())
+
+
+def hinglish_model(device):
+    """The model for a Hindi / Hinglish video: settings.json "hinglish_model" ("auto": the Hinglish model
+    on an NVIDIA card when captions are in English letters; large-v3-turbo on the processor, where the
+    big model is slow, and for captions in Hindi letters, which it can't write)."""
+    cfg = settings()
+    want = cfg.get('hinglish_model', 'auto') or 'auto'
+    if want != 'auto':
+        return want
+    if device == 'cuda' and cfg.get('hinglish_captions', 'roman') != 'devanagari':
+        return HINGLISH_MODEL
+    return 'large-v3-turbo'
+
+
 def pick_model(requested, lang, device):
     if requested and requested != 'auto':
         return requested[:-3] if lang != 'en' and requested.endswith('.en') else requested
-    if device == 'cuda' or is_hindi(lang):
-        return 'large-v3-turbo'      # far better Hindi than small; fast on an NVIDIA GPU
+    if is_hindi(lang):
+        return hinglish_model(device)
+    if device == 'cuda':
+        return 'large-v3-turbo'      # far better than small; fast on an NVIDIA GPU
     return 'small.en' if lang == 'en' else 'small'
+
+
+def is_nan(word):
+    """The Hinglish model's word for silence."""
+    return word.strip().strip('.,!?').lower() == 'nan'
+
+
+def decode_in_pieces(model, audio, language, beam_size, prompt=None, progress=None):
+    """Words of the speech in `audio`, each piece of speech (at most PIECE_MAX_S) heard on its own."""
+    from faster_whisper.vad import VadOptions, get_speech_timestamps
+    regions = [(r['start'] / SR, r['end'] / SR) for r in get_speech_timestamps(
+        audio, VadOptions(min_silence_duration_ms=300, speech_pad_ms=150, max_speech_duration_s=PIECE_MAX_S))]
+    got = []
+    for a, b in regions:
+        segs, _ = model.transcribe(audio[int(a * SR):int(b * SR)], language=language, beam_size=beam_size,
+                                   word_timestamps=True, condition_on_previous_text=False, hotwords=prompt)
+        got += [{**_word(w), 's': round(a + w.start, 3), 'e': round(a + w.end, 3)}
+                for seg in segs for w in (seg.words or []) if w.word.strip() and not is_nan(w.word)]
+        if progress:
+            progress(b)
+    return got
 
 
 # ---------------- transcription ----------------
@@ -769,8 +825,10 @@ def _lost(old, new):
     return len(a) - sum(blk.size for blk in m.get_matching_blocks())
 
 
-def repair_stretched(model, audio, words, lang, beam_size, prompt=None, around=2):
-    """Hear each stretched word again with `around` words on each side. -> (words, [(old, new) texts])."""
+def repair_stretched(model, audio, words, lang, beam_size, prompt=None, around=2, protect=()):
+    """Hear each stretched word again with `around` words on each side. -> (words, [(old, new) texts]).
+    A stretch that holds a word of `protect` (indexes: a hidden word, a caption fixed by hand) is left
+    as it is, so nothing hidden comes back and no fix is undone."""
     sus = stretched_words(audio, words)
     if not sus:
         return words, []
@@ -782,6 +840,10 @@ def repair_stretched(model, audio, words, lang, beam_size, prompt=None, around=2
             spans[-1][1] = i1
         else:
             spans.append([i0, i1])
+    protect = set(protect or ())
+    spans = [sp for sp in spans if not protect.intersection(range(sp[0], sp[1] + 1))]
+    if not spans:
+        return words, []
     print(f'   listening again to {len(spans)} stretched word(s) (one word over several that were skipped)',
           flush=True)
     out, changes, last = [], [], 0
@@ -845,7 +907,17 @@ def _transcribe_once(audio, model_name, lang, device, compute, beam):
         # piece hears OVERLAP_S past its cut and keeps only the words before the cut, which then lie
         # in a full window. The next piece starts right at the cut, in a pause (starts were clean).
         piece, off = audio[a:min(len(audio), b + OVERLAP_S * SR)], a / SR
-        if hindi:
+        if hindi and writes_roman(model_name):
+            # the Hinglish model: each piece of speech on its own (in one 30 s window it can loop)
+            def progress(t, off=off):
+                nonlocal last_print
+                if time.time() - last_print > 20:
+                    print(f'   {(off + t) / total:5.0%}  ({fmt_ts(off + t)} / {fmt_ts(total)})', flush=True)
+                    last_print = time.time()
+            segments = []
+            got = decode_in_pieces(model, piece, language, beam_size,
+                                   HINGLISH_PROMPT if lang == HINGLISH else None, progress)
+        elif hindi:
             # One window at a time. Hindi in Devanagari needs 3-4x the tokens of English, so a 30 s
             # window can hit Whisper's 448-token limit: here decoding resumes where it stopped instead
             # of dropping the rest (batched mode lost whole sentences in tests), and a looping window
@@ -857,7 +929,8 @@ def _transcribe_once(audio, model_name, lang, device, compute, beam):
             # batched inference: ~2x faster than sequential on CPU with the same words (benchmarked)
             segments, _ = pipe.transcribe(piece, language=language, batch_size=8, word_timestamps=True,
                                           beam_size=beam_size)
-        got = []
+        if not (hindi and writes_roman(model_name)):
+            got = []
         for seg in segments:
             got += [_word(w) for w in seg.words or [] if w.word.strip()]
             if time.time() - last_print > 20:
@@ -873,6 +946,8 @@ def _transcribe_once(audio, model_name, lang, device, compute, beam):
                                 HINGLISH_PROMPT if lang == HINGLISH else None)
     words, info = relisten(model, audio, words, language, beam_size)
     relisten_report(info)
+    if writes_roman(model_name):
+        words = [w for w in words if not is_nan(w['w'])]
     return words
 
 
@@ -906,11 +981,19 @@ def transcribe(wav, model_req, lang_req, device_req, beam=None):
         top = ', '.join(f'{k} {p:.0%}' for k, p in ranked[:3])
         print(f'-> detected language: {lang}  ({top})')
         if lang == HINGLISH:
-            print('   Hindi/Hinglish: Hindi is written in Devanagari, English words in Roman. '
-                  'Not right? rerun with --lang en --retranscribe')
+            if writes_roman(pick_model(model_req, lang, gpu.pick_device(device_req))):
+                print('   Hindi/Hinglish: written down in English letters by the Hinglish speech model. '
+                      'Not right? rerun with --lang en --retranscribe')
+            else:
+                print('   Hindi/Hinglish: Hindi is written in Devanagari, English words in Roman. '
+                      'Not right? rerun with --lang en --retranscribe')
     device = gpu.pick_device(device_req)
     attempts = [('cuda', 'float16'), ('cuda', 'int8_float16'), ('cpu', 'int8')] if device == 'cuda' \
         else [('cpu', 'int8')]
+    if device == 'cuda' and writes_roman(pick_model(model_req, lang, 'cuda')):
+        # the Hinglish model's weights are 8-bit; as 16-bit it needs ~3 GB and fails on a 4 GB card,
+        # and a failed load can leave the card too full for a second try
+        attempts = [('cuda', 'int8_float16'), ('cpu', 'int8')]
     i = 0
     while True:
         dev, compute = attempts[i]
@@ -963,7 +1046,9 @@ def render_transcript(pdir, project, lines):
     tdir = pdir / 'transcript'
     lang = project.get('language') or '-'
     if is_hindi(lang):
-        lang += '  (Hindi in Devanagari, English words in Roman; captions: python run.py romanize <project>)'
+        lang += ('  (Hindi in English letters, written by the Hinglish speech model; captions: python run.py '
+                 'romanize <project>)' if writes_roman(project.get('asr_model')) else
+                 '  (Hindi in Devanagari, English words in Roman; captions: python run.py romanize <project>)')
     from . import hints
     try:
         nt = hints.notes(pdir, project)
