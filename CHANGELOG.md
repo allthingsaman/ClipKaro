@@ -1,6 +1,20 @@
 # What's new
 
-## Not released yet (v2.3, on the branch v2.3-dev)
+## v2.3 (November 2026): cleaner captions, smarter picks
+
+v2.3 makes the captions more correct and the picks smarter, and you still don't have to ask for anything:
+- Hindi and Hinglish videos are written down by a speech model trained on Hinglish: on public tests it
+  got half as many words wrong;
+- skipped words are heard again;
+- Claude checks every clip's captions for misheard words (standard and deep mode);
+- game characters' lines get no captions in gameplay (the game shows its own subtitles);
+- Claude reads hints from the sound and picture (a raised voice, an explosion, big action, game
+  characters);
+- no clip ends on a flash of another shot.
+
+The README now shows the real video next to the clip ClipKaro made, and explains the three modes:
+Quick (basic), Standard and Deep (advanced). The owner reviewed every part on the test videos before
+release.
 
 - **It hears what the words can't show.** Claude now reads short notes next to the words:
   - `[voice raised]` and `[shouting]`: the line is higher and louder than that speaker's own normal

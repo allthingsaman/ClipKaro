@@ -4,7 +4,8 @@ This repo turns long videos into vertical short-form clips. When the user pastes
 file, or asks for clips, shorts, reels or TikToks, **use the `clip-video` skill**
 (`.claude/skills/clip-video/SKILL.md`) and follow it end to end without stopping for confirmation.
 The mode is **standard** unless the user asks otherwise: **quick** only when they ask for it ("quick",
-"use fewer tokens"), **deep** when they ask for deep clips or say yes to the one question the skill
+"basic mode", "use fewer tokens"), **deep** when they ask for deep clips ("deep clip", "advanced mode")
+or say yes to the one question the skill
 may ask: for a video longer than 21 minutes, whether they want deep clips too (only when settings.json
 `"deep_clips"` is `"ask"`, they didn't ask for quick, and their message didn't already say). Ask it
 right at the start, while `fetch` runs. A number of clips in the message ("at least 10", "at most 5")

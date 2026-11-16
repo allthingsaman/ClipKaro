@@ -23,10 +23,12 @@ Install Remotion (`python install.py --remotion`) only if the user asks for the 
 Every mode makes clips the same way after picking (posting texts, captions that fit, Roman Hinglish,
 game voices, break screens, cut, edit). They differ only in how the moments are picked:
 - **Standard** (the default): reader helpers for long videos, the blind critic, the repair round.
-- **Deep**: standard plus deep clips (section 2d). When the user's message asks for deep clips, or
+- **Deep** (the README also calls it "advanced mode"): standard plus deep clips (section 2d). When the
+  user's message asks for deep clips ("deep clip this", "advanced mode", "advanced"), or
   they answer yes to the deep-clip question for a video over 21 minutes (step 1).
 - **Quick**: **only when the user asks for it**, in the message or in "My preferences": "quick",
-  "quick mode", "fast", "jaldi", "use fewer tokens", "use less usage", "save my limit", "kam tokens".
+  "quick mode", "basic", "basic mode", "fast", "jaldi", "use fewer tokens", "use less usage", "save my
+  limit", "kam tokens".
   Never choose it yourself. Then don't ask the deep-clip question; pass `--mode quick` to `parts`;
   read the transcript yourself (step 2, "Quick mode"), with no helpers, no critic, no repair round,
   no deep pass and no caption check (2c). About v1.1's Claude usage.

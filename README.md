@@ -106,12 +106,36 @@ captions". "Hook title" adds a big title for the first seconds.
 ### And more
 - 🔢 **The right number of clips.** Every good moment: 3 to 8, more for long videos, or "at least 10" /
   "at most 5". 💾 The good moments that weren't cut stay saved: "3 more clips from that video" later.
-- ⚡ **Quick mode.** "quick clip this" uses much less of your Claude plan: Claude picks the clips
-  alone (no helpers, no critic, no deep clips, no caption check), with every other feature kept.
+- ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.
 - 🔒 **Free and private.** No extra accounts, keys or subscriptions for ClipKaro, nothing uploaded.
   Fast with an NVIDIA graphics card (a 7-minute Hinglish video is written down in about a minute).
+
+## Three modes: Quick, Standard and Deep
+ClipKaro uses your Claude plan (Claude Code) to choose the best moments. The three modes only change
+**how carefully the moments are chosen**, and so how much of your plan a video uses. Everything else is
+the same in every mode: the framing, the captions, the edit, Hinglish, gameplay and the posting texts.
+
+| | ⚡ **Quick** (basic) | ⭐ **Standard** (the default) | 🧵 **Deep** (advanced) |
+|---|---|---|---|
+| **How you ask** | "quick clip this: (link)" or "basic mode" | just "clip this: (link)" | "deep clip this: (link)" or "advanced mode" |
+| **Who reads the video** | Claude alone, once | Claude, plus helpers that read a long video in parts at the same time, so nothing in the middle is skimmed | same as Standard |
+| **A second opinion** (a blind AI critic scores every idea 3 times; weak starts and endings are repaired) | no | yes | yes |
+| **Caption check** (Claude fixes misheard words, like "sorry" written as "saari") | no | yes | yes |
+| **Deep clips** (two moments far apart joined into one story, checked by 3 honesty judges) | no | no | yes |
+| **How much of your Claude plan** (rough) | least | more | most (about twice Standard on a long podcast) |
+| **How long it takes** | fastest | a few minutes more | the longest |
+| **Best for** | short videos, many videos a day, saving your plan, a quick first look | most videos: the best clips without thinking about it | long podcasts and interviews (40 minutes or more) where a question and its answer are far apart |
+
+**Which one is for you?**
+- **Not sure? Use Standard.** Just say "clip this". It's the default for a reason.
+- **On Claude's Pro plan and clipping a lot?** Use **Quick**, and look over the captions yourself
+  before posting (Quick doesn't check them).
+- **A long podcast with a great story spread across it?** Use **Deep**. For any video longer than 21
+  minutes, ClipKaro asks you once whether you want deep clips too.
+- Want one of them every time? Write "always use quick mode" (or deep) under "My preferences" at the
+  end of [CLAUDE.md](CLAUDE.md), or tell Claude "add to my preferences: always use quick mode".
 
 ## How it works
 1. **Listen**: it downloads the sound and writes down every word with its exact time.
@@ -223,7 +247,7 @@ If a user asked you to install this repo, follow these steps (details per system
 ## What you can ask for
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
 
-- "quick clip this" (uses much less of your Claude plan) · "deep clip this" · later: "3 more clips from that video"
+- "quick clip this" / "basic mode" (uses the least of your Claude plan) · "deep clip this" / "advanced mode" · later: "3 more clips from that video"
 - "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money"
 - "show me the moments before you cut them" · "don't edit them, just cut"
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"

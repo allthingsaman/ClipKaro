@@ -207,12 +207,14 @@ ideas are left, "find more clips in this video" reads it again.
 | (nothing: it's automatic) | if the creator's own teaser at the start, or YouTube's "most replayed" graph, points at a moment nobody picked, that stretch is read again carefully |
 | "show me the topic map" | Claude shows `topics.txt`: every topic with its time, what it's about, and the key lines |
 
-### Quick, standard or deep
+### Quick (basic), standard or deep (advanced)
+The README has a side-by-side chart of the three modes and when each one fits best.
+
 | You write | What happens |
 |---|---|
 | (nothing) | **standard**: the best quality. Long videos are read by several AI readers at once, a second AI editor (the critic) checks every idea, the clips with notes are repaired, and Claude checks every clip's captions for misheard words |
-| "deep clip this", "use deep clipping", or **yes** to the question for videos over 21 minutes | **deep**: standard, plus clips that join moments far apart (see "Deep clips" below) |
-| "quick clip this", "quick mode", "use fewer tokens", "save my Claude limit", "jaldi clip karo" | **quick**: Claude reads the video itself and picks the clips, without the readers, the critic and the caption check. It uses much less of your Claude plan (about what v1.1 used) and is faster; the picks get no second opinion, and misheard words stay as the speech model wrote them. No deep-clip question is asked |
+| "deep clip this", "use deep clipping", "advanced mode", or **yes** to the question for videos over 21 minutes | **deep**: standard, plus clips that join moments far apart (see "Deep clips" below) |
+| "quick clip this", "quick mode", "basic mode", "use fewer tokens", "save my Claude limit", "jaldi clip karo" | **quick**: Claude reads the video itself and picks the clips, without the readers, the critic and the caption check. It uses much less of your Claude plan (about what v1.1 used) and is faster; the picks get no second opinion, and misheard words stay as the speech model wrote them. No deep-clip question is asked |
 
 Everything after picking is the same in all three (except the caption check, which quick mode
 skips): captions, Hinglish spelling, game voices, break screens, cutting, the edit and the posting texts. Write "always use quick mode" under "My

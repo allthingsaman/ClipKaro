@@ -189,10 +189,12 @@ live stream or is gameplay with your webcam in a corner. It then leaves out the 
 "Be right back" and stream-ending screens, builds clips around what *you* say (not the game's
 characters), and doesn't mind the quiet stretches where you just play.
 
-**Quick, standard or deep.** Normally ClipKaro uses *standard*: a second AI editor checks every
-clip idea before anything is cut. If you want to save your Claude plan, say "quick clip this" or
-"use fewer tokens": Claude then picks the clips alone, like the first versions did. It's faster and
-much lighter, but the picks get no second opinion.
+**Quick (basic), standard or deep (advanced).** Normally ClipKaro uses *standard*: a second AI editor
+checks every clip idea before anything is cut, and Claude checks the captions for misheard words. If
+you want to save your Claude plan, say "quick clip this" or "basic mode": Claude then picks the clips
+alone, like the first versions did. It's faster and much lighter, but the picks get no second opinion
+and the captions no check. "Deep clip this" (or "advanced mode") adds clips that join moments far
+apart. The README has a chart of all three.
 
 **Want more clips later?** ClipKaro judges every possible clip in a video, often 15 to 30, and
 makes only the best ones. The rest are saved. Days later you can say "3 more clips from the Khan

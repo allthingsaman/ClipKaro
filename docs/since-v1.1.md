@@ -10,7 +10,7 @@ its line here, in the same commit.** Released so far:
 - **v2.0** (2026-11-11): the lines marked v2.0;
 - **v2.1** (2026-11-13): the lines dated 2026-11-12 and 2026-11-13 without a v2.2 mark;
 - **v2.2** (2026-11-14): the lines marked v2.2;
-- **v2.3** (not released yet, branch v2.3-dev): the lines marked v2.3.
+- **v2.3** (2026-11-16): the lines marked v2.3.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -19,7 +19,7 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
-Checked again for v2.2 on 2026-11-14: no v1.1 command, option or setting has been removed or
+Checked again for v2.3 on 2026-11-16: no v1.1 command, option or setting has been removed or
 changed. Only new ones were added.
 
 ---
@@ -65,7 +65,8 @@ changed. Only new ones were added.
 - ⬆ **Three modes: standard, deep, quick.** Standard is the default. Deep adds deep clips when you
   ask or say yes to the question. Quick, only when you ask ("quick clip this", "use fewer tokens"),
   picks like v1.1: Claude reads the video itself, with no helpers and no critic. All three keep every
-  other upgrade on this page. *(2026-11-13)*
+  other upgrade on this page. *(2026-11-13)* Since v2.3 they can also be called by the README's names,
+  "basic mode" (quick) and "advanced mode" (deep), and quick mode also skips the caption check. *(v2.3)*
 - ⬆ ⚠ **Long videos are read in parts**, so the middle and the end get the same attention as the
   start. Several AI readers work at once. *(v2.0)*
 - ⬆ ⚠ **A second opinion (the critic).**
