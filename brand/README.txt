@@ -4,7 +4,7 @@ YOUR BRAND ON EVERY CLIP
 Put up to two files in this folder. ClipKaro adds them to every clip it edits from then on.
 
 logo.png     Your logo. It goes in the bottom-right corner, a little in from the edges, small and
-             slightly see-through, for the whole clip.
+             70% visible (a little see-through), for the whole clip.
              - A PNG with a see-through background looks best (JPG and WebP work too).
              - Any size: ClipKaro makes it about 120 px tall (up to 220 px wide for a wide logo).
 

@@ -143,7 +143,7 @@ captions". To have one every time, add it to your preferences.
 ### Your logo and outro (your brand)
 Put two files in the `brand` folder inside ClipKaro (it has a short note on what to put there):
 - **`logo.png`**: your logo, in the bottom-right corner of every clip, a little in from the edges,
-  small and slightly see-through. A PNG with a see-through background looks best; JPG works too.
+  small and 70 % visible (like the credit: a formality, not something to read). A PNG with a see-through background looks best; JPG works too.
 - **`outro.mp4`**: your own outro, added after every clip. Make it **standing (9:16)** and **3-5
   seconds** long. Longer than 5 s: ClipKaro warns you; longer than 10 s: it is left out, so an outro is
   never longer than the clip. Its sound is evened out to the clip's volume.

@@ -22,7 +22,7 @@ from .plan import HINDI_FONT, LATIN_FONT
 
 PAD = 40                          # px in from the frame's edges (1080x1920), for the logo and the credit
 LOGO_MAX_W, LOGO_MAX_H = 220, 120 # the logo fits this box: a square logo 120x120, a wide one up to 220 px
-LOGO_ALPHA = 0.9                  # slightly see-through
+OPACITY = 0.7                     # the logo and the credit: 70 % visible, a formality (the owner, 2026-11-17)
 CREDIT_SIZE = 34                  # CSS px: small
 CREDIT_MAX = 40                   # characters of the channel's name before it is shortened with "..."
 OUTRO_IDEAL = 5.0                 # longer than this: a warning (3-5 s is ideal)
@@ -83,7 +83,7 @@ def logo(on=True, where=None):
     if img is None:
         return None, [f'! {p.name}: not a picture ClipKaro can read (use PNG or JPG): left out']
     lw, lh, x, y = logo_box(img.shape[1], img.shape[0])
-    return {'file': str(p.resolve()), 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': LOGO_ALPHA}, []
+    return {'file': str(p.resolve()), 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': OPACITY}, []
 
 
 def outro_check(duration, width, height):

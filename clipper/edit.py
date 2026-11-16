@@ -196,12 +196,15 @@ def hook_style(plan):
 
 
 def credit_style(plan):
-    """The ASS style of the source credit: small, white and a little see-through, a thin dark outline."""
+    """The ASS style of the source credit: small and white with a thin dark outline, at the brand kit's
+    opacity (70 %, like the logo)."""
     cr = plan.get('credit')
     if not cr:
         return ''
-    return (f"Style: Credit,{cr['font']},{css_to_ass_size(cr['size'], cr['font_file'])},&H30FFFFFF,&H30FFFFFF,"
-            f"&H60000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,1,0,0,0,1")
+    see = lambda opacity: f'{round(255 * (1 - opacity)):02X}'          # noqa: E731  (ASS alpha: 00 = solid)
+    text, edge, shadow = see(brandkit.OPACITY), see(brandkit.OPACITY * 0.75), see(brandkit.OPACITY * 0.5)
+    return (f"Style: Credit,{cr['font']},{css_to_ass_size(cr['size'], cr['font_file'])},&H{text}FFFFFF,"
+            f"&H{text}FFFFFF,&H{edge}000000,&H{shadow}000000,0,0,0,0,100,100,0,0,1,2,1,1,0,0,0,1")
 
 
 def write_ass(plan, path):

@@ -655,6 +655,8 @@ class BrandKit(unittest.TestCase):
             edit.write_ass(p, ass)
             text = ass.read_text(encoding='utf-8')
         self.assertIn('Style: Credit,', text)
+        self.assertIn(',&H4DFFFFFF,', text)                     # 70 % visible, like the logo
+        self.assertEqual(brandkit.logo_box(400, 400)[:2], (120, 120))
         self.assertIn('{\\an1\\pos(40,1880)}© Raj Shamani', text)
 
     def test_way_back(self):

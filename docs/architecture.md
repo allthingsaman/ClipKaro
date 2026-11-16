@@ -1104,7 +1104,7 @@ Zooms stay in Python (ffmpeg would save about 2 s a clip, at the risk of a diffe
 **Your brand and the source credit (v2.4, `brandkit.py`).** `edit` looks in `brand/` (or the folder in
 `CLIPKARO_BRAND`) once per run: `logo.png|jpg|webp` and `outro.mp4|mov|mkv|webm`. The credit,
 "© Channel" in the caption font at 34 px, goes into the same `.ass` file as the captions (bottom-left
-anchored, 40 px in). The logo (fit into 220x120 px, 90 % opaque, 40 px in from the bottom-right corner)
+anchored, 40 px in). The logo (fit into 220x120 px, 70 % opaque, like the credit, 40 px in from the bottom-right corner)
 and the outro go into the encoder's `-filter_complex`: `[0:v]ass,...[main]`, the logo overlaid, then
 `concat` with the outro (fitted to 1080x1920 over a blurred copy of itself, at the clip's frame rate),
 so neither the logo nor the credit shows on the outro and the whole clip is encoded once. The outro's
