@@ -290,7 +290,8 @@ def main():
         save_json(pdir / 'project.json', project)
     breaks = kind.active_breaks(project)
     target = clip_target(project, lines[0]['s'], lines[-1]['e'], wish, settings().get('max_clips', 20))
-    lines = kind.hide_breaks(lines, breaks)
+    from . import hints
+    lines = hints.with_silent(kind.hide_breaks(lines, breaks), hints.silent_notes(pdir, project, lines), breaks)
     cues = sound.load(pdir)
     if cues and breaks:                         # break music isn't a lively spot
         cues = dict(cues, lively=[sp for sp in cues.get('lively') or []

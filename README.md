@@ -92,8 +92,8 @@ so a line isn't lost to one stretched "word".
 ### 👂 It hears what the words can't show *(new in v2.3)*
 Some of the best moments live in **how** something is said or shown. Claude reads short notes next to
 the words: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
-and in gameplay `(other voice)` on lines spoken by a game character, not the streamer. They show where
-to look; the words decide. A recording with your microphone on its own track (OBS can do that) is
+and in gameplay `(other voice)` on lines spoken by a game character, not the streamer, and a line of
+its own for big action where nobody talks. They show where to look; the words decide. A recording with your microphone on its own track (OBS can do that) is
 written down from your voice alone.
 
 ### ✂️ A clean, tight edit, every time

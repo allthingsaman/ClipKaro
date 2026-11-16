@@ -19,6 +19,13 @@ import argparse
 from .common import die, load_json, project_dir, settings
 
 
+RULES = ('Fix: an English word heard as a Hindi look-alike ("sorry" written सारी); names of games, characters, '
+         'people, places and brands spelled right (the title helps); numbers said in words that are amounts, '
+         'counts, years, prices, scores or percentages, as digits ("दो हजार तेरा" -> 2013, "पांच लाख" -> 5 lakh, '
+         '"eleven kills" -> 11 kills), but not "एक दिन" or "ek baar"; a word bent by the accent when the meaning is '
+         'certain. Leave a word alone when you are not sure.')
+
+
 def clip_lines(pdir, project, clip, words, lines, table, game, roman):
     """[(start, shown text, transcript text)] for one clip, one row per transcript line."""
     from .romanize import apply
@@ -58,8 +65,9 @@ def main():
         game = voices.game_words(pdir, project, words, lines)
     want = {int(x) for x in a.clips.split(',')} if a.clips else None
     print(f'# Captions as they will show. Read them like a viewer of "{project.get("title") or pdir.name}" and fix only '
-          f'clear mishearings (an English word heard as a Hindi look-alike, a name, an accent slip), never what was '
-          f'really said: python run.py fixword {pdir.name} "<word as in the transcript>" "<right word>" --at <seconds>\n')
+          f'what is clearly wrong, never what was really said: python run.py fixword {pdir.name} '
+          f'"<word or phrase as in the transcript>" "<right word>" --at <seconds>')
+    print('# ' + RULES + '\n')
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:

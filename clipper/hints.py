@@ -10,6 +10,7 @@ Claude reads (transcript.txt, the parts of a long video, the critic's clip texts
     [18.10-21.40] arre arre arre [shouting] [explosion]                          (gameplay)
     [30.00-33.00] tu bhi na yaar [laughter ~2 s]
     [41.00-44.20] chalo chalo nikal [big action on screen ~4 s]                  (gameplay)
+    [45.10-49.00] (no talking) [big action on screen ~4 s] [explosion]          (gameplay, nobody talking)
 
 They are measurements, never verdicts: they show where to look, the words decide. A hint never makes a
 clip by itself, and no hint does not mean a moment is weak (most good moments have none). Kept rare on
@@ -49,7 +50,8 @@ BASE_MIN_LINES = 8                   # ... at least this many, else all their li
 MIN_VOICED = 0.5                     # seconds of voiced speech a line needs to be judged
 PER_10_MIN = 6                       # at most this many raised-voice hints per 10 minutes (the clearest)
 HINT_RE = re.compile(r'\[(?:voice raised|shouting|laughter[^\]]*|applause|explosion|gunfire|crash|'
-                     r'big action on screen[^\]]*|both talk at once)\]|\(other voice\)')
+                     r'big action on screen[^\]]*|both talk at once)\]|\(other voice\)|\(no talking\)')
+SILENT_GAP = 3.0                     # notes where nobody talks, closer than this, share one line
 
 READER_NOTE = ('Notes in [brackets] like [laughter ~2 s], [voice raised], [shouting], [explosion] or '
                '[big action on screen], and "(other voice)" before a line, are measurements of the sound and '
@@ -165,6 +167,13 @@ def notes(pdir, project=None):
     mot = load_json(pdir / 'transcript' / 'motion.json') or {}
     v = voices.load(pdir) if is_irregular(project) else None
     other = voices.other_lines(v, lines)
+    idx = [i for i, ln in enumerate(lines) if 's' in ln]
+    spans = [(lines[i]['s'], lines[i]['e']) for i in idx]
+    hosted = {}                                   # line index -> game-sound / action notes on it
+    for ev in sorted(event_notes(cues, mot)):
+        k = host_line(ev, spans)
+        if k is not None:
+            hosted.setdefault(idx[k], []).append(ev[2])
     out = {}
     for i, ln in enumerate(lines):
         if 's' not in ln:
@@ -180,22 +189,72 @@ def notes(pdir, project=None):
         for s, e, kind, *_ in h.get('raised', []):
             if abs(s - a) < 0.01:
                 post.append(f'[{kind}]')
-        for s, e, kind, *_ in cues.get('bursts', []):
-            if a <= s < b:
-                post.append(f'[{kind}]')
-        for s, e, *_ in mot.get('action', []):
-            if a <= s < b:
-                post.append(f'[big action on screen ~{max(1, round(e - s))} s]')
+        post += hosted.get(i, [])
         pre = '(other voice)' if i in other else ''
         if pre or post:
             out[round(a, 2)] = (pre, list(dict.fromkeys(post)))
     return out
 
 
+def event_notes(cues, mot):
+    """[(start, end, text)] of the notes that are about the picture or the game's sound."""
+    events = [(a, b, f'[big action on screen ~{max(1, round(b - a))} s]') for a, b, *_ in (mot or {}).get('action', [])]
+    events += [(a, b, f'[{kind}]') for a, b, kind, *_ in (cues or {}).get('bursts', [])]
+    return events
+
+
+def host_line(event, spans):
+    """Index of the spoken line an event's note goes on: the one covering at least half of the event, else
+    the one it starts in; None when nobody talks then (it gets a line of its own)."""
+    a, b = event[0], event[1]
+    best, best_over = None, 0.0
+    for i, (s, e) in enumerate(spans):
+        over = min(b, e) - max(a, s)
+        if over > best_over:
+            best, best_over = i, over
+    if best is not None and best_over >= 0.5 * max(1e-6, b - a):
+        return best
+    return next((i for i, (s, e) in enumerate(spans) if s <= a < e), None)
+
+
+def silent_notes(pdir, project=None, lines=None):
+    """Lines of their own for notes where nobody talks: [{'s', 'e', 'note'}]. A game explosion or big
+    action on screen is shown on the line spoken while it starts; in a stretch of pure gameplay there is
+    no such line, and the note used to be lost (37 of 58 in three test streams, Nov 2026). Now it gets
+    its own line: "[1800.00-1803.00] (no talking) [big action on screen ~3 s] [explosion]"."""
+    from . import sound
+    from .common import settings
+    if not settings().get('hints', True):
+        return []
+    lines = lines if lines is not None else load_json(pdir / 'transcript' / 'sentences.json') or []
+    cues = sound.load(pdir) or {}
+    mot = load_json(pdir / 'transcript' / 'motion.json') or {}
+    spoken = [(ln['s'], ln['e']) for ln in lines if 's' in ln and 'marker' not in ln and 'note' not in ln]
+    alone = sorted(ev for ev in event_notes(cues, mot) if host_line(ev, spoken) is None)
+    out = []
+    for a, b, text in alone:
+        if out and a - out[-1]['e'] <= SILENT_GAP:
+            out[-1]['e'] = max(out[-1]['e'], b)
+            out[-1]['parts'].append(text)
+        else:
+            out.append({'s': a, 'e': b, 'parts': [text]})
+    return [{'s': round(o['s'], 2), 'e': round(o['e'], 2),
+             'note': '(no talking) ' + ' '.join(dict.fromkeys(o['parts']))} for o in out]
+
+
+def with_silent(lines, silent, breaks=()):
+    """The lines with the silent-note lines in time order (none inside a break screen)."""
+    from .kind import in_break
+    keep = [n for n in silent if not (breaks and in_break(n['s'], n['e'], breaks))]
+    return sorted(list(lines) + keep, key=lambda x: x['s'])
+
+
 def line_text(ln, nt=None):
     """A transcript line as Claude reads it, with its notes."""
     if 'marker' in ln:
         return ln['marker']
+    if 'note' in ln:                       # a note where nobody talks (silent_notes)
+        return f"[{ln['s']:.2f}-{ln['e']:.2f}] {ln['note']}"
     pre, post = (nt or {}).get(round(ln['s'], 2), ('', []))
     return f"[{ln['s']:.2f}-{ln['e']:.2f}] " + (pre + ' ' if pre else '') + ln['text'] + \
         (' ' + ' '.join(post) if post else '')

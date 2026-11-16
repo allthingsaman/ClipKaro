@@ -84,6 +84,7 @@ class Transcript:
         self.lines = load_json(pdir / 'transcript' / 'sentences.json') or []
         self.starts = [ln.get('s', 0.0) for ln in self.lines]
         self.notes = {}
+        self.silent = []        # notes where nobody talks: game action, explosions (hints.silent_notes)
         if not self.words:
             die(f'no transcript in {pdir}: run `python run.py fetch` first')
 
@@ -132,7 +133,7 @@ def clip_block(tr, cues, label, ranges):
     for k, (a, b) in enumerate(ranges):
         if k:
             rows.append('[--- cut: the next piece comes from later in the video ---]')
-        lines = tr.lines_in(a, b)
+        lines = sorted(tr.lines_in(a, b) + [(n['s'], n['note']) for n in tr.silent if a <= n['s'] < b])
         marks = sound.markers(cues, a, b)
         starts = [t0 for t0, _ in lines]
         at = {}                                  # a marker goes after the line during which it starts
@@ -205,8 +206,9 @@ def prepare(pdir, source, runs):
     try:
         from . import hints
         tr.notes = hints.notes(pdir, project)
+        tr.silent = hints.silent_notes(pdir, project, tr.lines)
     except Exception:
-        tr.notes = {}
+        tr.notes, tr.silent = {}, []
     sig = signature(pool)
     cdir = where(pdir, source)[0]
     cdir.mkdir(parents=True, exist_ok=True)

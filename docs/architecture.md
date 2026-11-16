@@ -590,6 +590,11 @@ minutes, `hints.rare`). `"hints": false` gives the plain v1.1 lines. Research (N
 - **Game sound bursts** (`sound.py`): YAMNet's Explosion / Boom / Artillery, Gunshot / Machine gun /
   Fusillade, and Smash / Shatter / Skidding classes (AudioSet rates these labels 100 % right), at 0.4 or
   more, bursts within 3 s merged, one kind per moment.
+- **Where a note goes** (v2.4, `hints.host_line`): a game-sound or action note goes on the spoken line that
+  covers at least half of it, else the line it starts in. When nobody talks then, it gets a line of its own
+  (`silent_notes`): "[1800.00-1803.00] (no talking) [big action on screen ~3 s] [explosion]", notes less than
+  3 s apart sharing one line, none inside a break screen. Before, such notes were lost (37 of 58 in three
+  test streams). These lines show in transcript.txt, the part files and the critic's clip texts.
 - **Big action on screen** (`motion.py`, gameplay and live streams): the video at 4 frames a second,
   256x144 grey, webcam blacked out; DIS optical flow; the camera's own pan (median motion) taken out;
   the median of 8x8 cells, so a minimap or HUD that always moves doesn't count; above the video's 98th
@@ -635,7 +640,9 @@ English-speaking streamers aren't covered (no language difference to go by).
 **The caption check** (`run.py captions`, skill step 2c, standard and deep mode): each picked clip's
 captions as they will show (Roman, without hidden words), one row per transcript line with its time and
 the transcript's own words. Claude fixes clear mishearings with `fixword --at` (an English word heard as
-a Hindi look-alike, "sorry" -> सारी; names; accent slips) before cutting. Quick mode skips it.
+a Hindi look-alike, "sorry" -> सारी; names of games, characters, people and brands; numbers said in words
+written as digits where they are amounts, years or scores, v2.4; accent slips) before cutting. The rules
+are printed with the captions (`captions.RULES`), so any AI helper sees them. Quick mode skips it.
 
 ### 5.4b-3 Skipped words heard again (v2.3: `fetch.repair_stretched`)
 Whisper sometimes skips a few words and stretches the word next to them over their time: lost text,

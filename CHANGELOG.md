@@ -1,5 +1,18 @@
 # What's new
 
+## Not released yet (v2.4, on the branch v2.4-dev)
+
+- **Action without talking isn't missed anymore.** A game explosion or big action on screen was noted
+  only on a line someone was speaking; in a stretch of pure gameplay the note was lost (37 of 58 in
+  three test streams). Now it gets a line of its own in what Claude reads, "(no talking) [big action on
+  screen ~6 s] [explosion]", so a clip can keep your setup, the action and your reaction together. A
+  note now goes on the line that covers most of it, so action you talk over stays on your line.
+- **The caption check knows more** (standard and deep mode): names of games, characters, people and
+  brands spelled right, and numbers said in words written as digits where they are amounts, years or
+  scores ("do hazaar tera" -> 2013, "paanch lakh" -> 5 lakh), never where they aren't ("ek din" stays).
+- **Which AI helper you need**, in the README: Claude Code (Pro or higher), Google Antigravity (it has
+  a free plan), or another agent that can work on your computer; Claude's free chat can't run it.
+
 ## v2.3 (November 2026): cleaner captions, smarter picks
 
 v2.3 makes the captions more correct and the picks smarter, and you still don't have to ask for anything:

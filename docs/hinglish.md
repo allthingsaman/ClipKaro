@@ -53,8 +53,10 @@ Unless settings.json says `"hinglish_captions": "devanagari"`, captions are show
    text in English letters.
 4. **Caption check** (standard and deep mode): `python run.py captions <project>` prints every clip's
    captions with times. Read them as a viewer would and fix clear mishearings with `python run.py
-   fixword <project> "सारी" "sorry" --at <seconds>`: English words heard as Hindi look-alikes, names,
-   accent slips. Never change what was really said.
+   fixword <project> "सारी" "sorry" --at <seconds>`: English words heard as Hindi look-alikes, names
+   (games, characters, people, brands) spelled right, numbers as digits where they are amounts, years or
+   scores ("दो हजार तेरा" -> 2013, "पांच लाख" -> 5 lakh; but "एक दिन" stays), accent slips. Never change
+   what was really said.
 
 **Written down by the Hinglish model?** Then there are no Hindi letters to spell. ClipKaro already
 turns its most common textbook spellings into the house ones (`nahin` -> `nahi`, `vahaan` -> `wahan`,

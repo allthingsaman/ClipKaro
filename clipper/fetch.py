@@ -1060,7 +1060,12 @@ def render_transcript(pdir, project, lines):
             '# format: [start_seconds-end_seconds] text   (seconds are what clips.json uses)']
     if nt:
         head.append('# ' + hints.READER_NOTE)
-    body = [hints.line_text(s, nt) for s in hide_breaks(lines, active_breaks(project))]
+    breaks = active_breaks(project)
+    try:
+        silent = hints.silent_notes(pdir, project, lines)
+    except Exception:
+        silent = []
+    body = [hints.line_text(s, nt) for s in hints.with_silent(hide_breaks(lines, breaks), silent, breaks)]
     head.append('')
     (tdir / 'transcript.txt').write_text('\n'.join(head + body) + '\n', encoding='utf-8')
     return tdir / 'transcript.txt'

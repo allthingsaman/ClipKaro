@@ -305,7 +305,13 @@ title, the game, the people in it), fix **only clear mishearings**:
 python run.py fixword <project> "सारी" "sorry" --at 898.6
 ```
 - an English word heard as a Hindi look-alike ("sorry" -> सारी, "phone" -> फून), or the other way round;
-- a name: a game character (Franklin, Trevor), a person, a place, a brand;
+- a name: a game, a game character (GTA, Wukong, Franklin, Trevor), a person (Raj Shamani, Khan Sir),
+  a place or a brand (PS5, iPhone), spelled the way it is really written; the video's title helps;
+- a number said in words, when it is an amount, a count, a year, a price, a score or a percentage:
+  write the digits ("दो हजार तेरा" -> 2013, "पांच लाख" -> 5 lakh, "eleven kills" -> 11 kills,
+  "चालीस percent" -> 40%). A phrase becomes one word: `fixword <project> "दो हजार तेरा" "2013" --at <s>`.
+  Never when it isn't a number in meaning: "एक दिन" (one day, a day), "ek baar", "do-teen log" (a few
+  people) stay as they are;
 - a word bent by the accent where the meaning is certain.
 Use the word exactly as the transcript writes it (in the brackets, when shown), and `--at` the line's
 time. Write the right word in English letters for Roman captions. Never rewrite what was really said,

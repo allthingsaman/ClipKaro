@@ -10,7 +10,8 @@ its line here, in the same commit.** Released so far:
 - **v2.0** (2026-11-11): the lines marked v2.0;
 - **v2.1** (2026-11-13): the lines dated 2026-11-12 and 2026-11-13 without a v2.2 mark;
 - **v2.2** (2026-11-14): the lines marked v2.2;
-- **v2.3** (2026-11-16): the lines marked v2.3.
+- **v2.3** (2026-11-16): the lines marked v2.3;
+- **v2.4** (not released yet, branch v2.4-dev): the lines marked v2.4.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -170,6 +171,12 @@ changed. Only new ones were added.
 - ⬆ **Captions always fit the frame.** Before, some ran off the sides. *(v2.0)*
 - ⬆ **Clips joined from pieces** sound smooth. Where the video jumps more than 20 seconds, a short
   white flash and a soft whoosh show it. Clips of one piece sound exactly as in v1.1. *(v2.0)*
+- ⬆ **Action without talking gets its own line** in what Claude reads (gameplay): "(no talking) [big
+  action on screen ~6 s] [explosion]", where before the note was lost because no line was spoken then.
+  A note goes on the spoken line that covers most of it. *(v2.4)*
+  - Way back: `"hints": false` (no notes at all, as in v1.1).
+- ⬆ **The caption check also spells names right and writes numbers as digits** where they are amounts,
+  years or scores (standard and deep mode; quick mode skips the check, as before). *(v2.4)*
 - ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
   every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles
   and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in

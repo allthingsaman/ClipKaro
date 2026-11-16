@@ -287,6 +287,25 @@ class Hints(unittest.TestCase):
         self.assertEqual(len(got), 1)
         self.assertAlmostEqual(got[0][0], 100.0, delta=1.0)
 
+    def test_action_without_talking_gets_its_own_line(self):
+        from clipper import hints
+        spans = [(10.0, 14.0), (20.0, 24.0)]
+        self.assertEqual(hints.host_line((11.0, 13.0, 'x'), spans), 0)          # said over it
+        self.assertEqual(hints.host_line((9.8, 12.3, 'x'), spans), 0)           # starts just before: most is on the line
+        self.assertIsNone(hints.host_line((15.0, 19.0, 'x'), spans))            # nobody talks then
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            lines = [{'s': 10.0, 'e': 14.0, 'i0': 0, 'i1': 0, 'text': 'bhai dekho'},
+                     {'s': 20.0, 'e': 24.0, 'i0': 1, 'i1': 1, 'text': 'arre arre'}]
+            (pdir / 'transcript' / 'motion.json').write_text(json.dumps({'v': 1, 'action': [[15.0, 18.0, 1.4]]}))
+            (pdir / 'transcript' / 'cues.json').write_text(json.dumps({'v': 1, 'bursts': [[16.5, 17.5, 'explosion', 0.8]]}))
+            silent = hints.silent_notes(pdir, {}, lines)
+            self.assertEqual(silent, [{'s': 15.0, 'e': 18.0, 'note': '(no talking) [big action on screen ~3 s] [explosion]'}])
+            shown = [hints.line_text(ln) for ln in hints.with_silent(lines, silent)]
+            self.assertEqual(shown[1], '[15.00-18.00] (no talking) [big action on screen ~3 s] [explosion]')
+            self.assertEqual(hints.strip_hints(shown[1].split('] ', 1)[1]).split(), [])   # nothing to quote
+
     def test_notes_in_a_line_and_never_in_a_quote(self):
         from clipper import hints
         ln = {'s': 12.4, 'e': 15.1, 'text': 'You call it whatever you want'}
@@ -375,6 +394,13 @@ class CaptionCheck(unittest.TestCase):
         table = {'फ्रैंक्लिन': 'Franklin', 'को': 'ko', 'सारी': 'saari', 'भाई': 'bhai'}
         rows = captions.clip_lines(None, {}, {'ranges': [[9.0, 12.9]]}, words, lines, table, {4}, True)
         self.assertEqual(rows, [(10.0, 'Franklin ko saari.', 'फ्रैंक्लिन को सारी।')])   # no made-up word, no game line
+
+
+class CaptionCheckRules(unittest.TestCase):
+    def test_the_check_names_its_rules(self):
+        from clipper import captions
+        for must in ('sorry', 'names', 'digits', '2013', 'एक दिन', 'not sure'):
+            self.assertIn(must, captions.RULES)
 
 
 class HinglishModel(unittest.TestCase):
