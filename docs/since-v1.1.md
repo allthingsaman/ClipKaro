@@ -169,6 +169,14 @@ changed. Only new ones were added.
 - ⬆ **Captions always fit the frame.** Before, some ran off the sides. *(v2.0)*
 - ⬆ **Clips joined from pieces** sound smooth. Where the video jumps more than 20 seconds, a short
   white flash and a soft whoosh show it. Clips of one piece sound exactly as in v1.1. *(v2.0)*
+- ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
+  every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles
+  and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in
+  the transcript (Claude can still pick a game scene). The owner asked for it (2026-11-16). *(v2.3)*
+  - Way back: `"game_voice_captions": true` in settings.json.
+- ⬆ ⚠ **Claude checks the captions** before cutting (standard and deep mode): it reads every clip's
+  captions like a viewer and fixes clear mishearings ("sorry" heard as सारी, a wrong name) with
+  `fixword`. A little more Claude usage per video; quick mode skips it, as before. *(v2.3)*
 - ⬆ **No flash of the next shot at a clip's end.** A camera cut in a clip's last frames showed a few
   frames of another shot (12 of the 106 test clips). Now the clip ends just before such a cut, or, when
   the last word is still being said, the picture holds the last frame for a moment while the word ends;
@@ -186,7 +194,7 @@ changed. Only new ones were added.
 - ⬆ All six v1.1 settings work as before. There are three new ones: `jump_label`, `deep_clips` and
   `max_clips`. An old settings.json works unchanged.
 - ⬆ Every v1.1 command works as before. The new ones are extra: `info`, `kind`, `parts`, `topics`,
-  `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`, `voices`, `hints`.
+  `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`, `voices`, `hints`, `captions`.
 - ⬆ `run.py test --full` also runs a tiny made-up video from start to end (cut, edit, qa), and
   `asr-bench public` scores speech models on public Hindi and Hinglish test sets. *(v2.3)*
 

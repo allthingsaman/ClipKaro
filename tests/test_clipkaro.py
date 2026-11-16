@@ -321,6 +321,62 @@ class Relisten(unittest.TestCase):
         self.assertEqual([w['w'] for w in out if not w.get('unsure')], ['ye', 'You', 'chalo'])
 
 
+class GameVoiceCaptions(unittest.TestCase):
+    """Gameplay: no captions for game characters, the streamer's words keep theirs (owner, Nov 2026)."""
+    def project(self, d, kind=True, lang='hinglish'):
+        pdir = Path(d)
+        (pdir / 'transcript').mkdir()
+        words = [W('आप', 0.0, 0.3), W('माइकल', 0.4, 0.8), W('को', 0.9, 1.0), W('बचा', 1.1, 1.4), W('लाएं।', 1.5, 2.0),
+                 W('That', 3.0, 3.3), W("doesn't", 3.4, 3.7), W('sound', 3.8, 4.1), W('good.', 4.2, 4.6),
+                 W('Stay', 5.0, 5.3), W('with', 5.4, 5.6), W('me.', 5.7, 5.9),
+                 W('यार', 7.0, 7.3), W('but', 7.4, 7.6), W('he', 7.7, 7.8), W('broke', 7.9, 8.2), W('it.', 8.3, 8.6)]
+        lines = [{'s': 0.0, 'e': 2.0, 'i0': 0, 'i1': 4, 'text': ''}, {'s': 3.0, 'e': 4.6, 'i0': 5, 'i1': 8, 'text': ''},
+                 {'s': 5.0, 'e': 5.9, 'i0': 9, 'i1': 11, 'text': ''}, {'s': 7.0, 'e': 8.6, 'i0': 12, 'i1': 16, 'text': ''}]
+        voices_ = {'v': 1, 'main': 0, 'voices': {}, 'lines': [[0.0, 2.0, 0, 0.8], [3.0, 4.6, None, 0.1],
+                                                              [5.0, 5.9, None, None], [7.0, 8.6, None, 0.2]]}
+        for name, data in (('words.json', words), ('sentences.json', lines), ('voices.json', voices_)):
+            (pdir / 'transcript' / name).write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+        project = {'language': lang, 'video_kind': {'gaming': kind, 'facecam': kind}}
+        return pdir, project, words
+
+    def test_game_lines_lose_captions_streamer_keeps_his(self):
+        from clipper import voices
+        with tempfile.TemporaryDirectory() as d:
+            pdir, project, words = self.project(d)
+            game = voices.game_words(pdir, project, words)
+            self.assertEqual({words[k]['w'] for k in game},
+                             {'That', "doesn't", 'sound', 'good.', 'Stay', 'with', 'me.', 'but', 'he', 'broke', 'it.'})
+            self.assertNotIn(12, game)                                    # "यार": the streamer, in a mixed line
+            self.assertFalse(any(k in game for k in range(5)))            # the streamer's own line
+
+    def test_only_gameplay_with_a_hindi_streamer(self):
+        from clipper import voices
+        with tempfile.TemporaryDirectory() as d:
+            pdir, project, words = self.project(d, kind=False)
+            self.assertEqual(voices.game_words(pdir, project, words), set())
+        with tempfile.TemporaryDirectory() as d:
+            pdir, project, words = self.project(d, lang='en')
+            self.assertEqual(voices.game_words(pdir, project, words), set())
+
+    def test_captions_skip_game_words(self):
+        groups = plan.caption_groups(meta_for([W('Franklin', 0.0, 0.4), dict(W('Stay', 0.5, 0.8), game=True),
+                                               W('sorry', 0.9, 1.2)]))
+        shown = ' '.join(w['text'] for g in groups for w in g['words']).upper().split()
+        self.assertEqual(shown, ['FRANKLIN', 'SORRY'])
+
+
+class CaptionCheck(unittest.TestCase):
+    def test_lines_as_viewers_read_them(self):
+        from clipper import captions
+        words = [W('फ्रैंक्लिन', 10.0, 10.4), W('को', 10.5, 10.6), W('सारी।', 10.7, 11.0),
+                 dict(W('झाल', 11.2, 11.5), unsure=True), W('Stay', 12.0, 12.3), W('भाई', 13.0, 13.3)]
+        lines = [{'s': 10.0, 'e': 11.5, 'i0': 0, 'i1': 3}, {'s': 12.0, 'e': 12.3, 'i0': 4, 'i1': 4},
+                 {'s': 13.0, 'e': 13.3, 'i0': 5, 'i1': 5}]
+        table = {'फ्रैंक्लिन': 'Franklin', 'को': 'ko', 'सारी': 'saari', 'भाई': 'bhai'}
+        rows = captions.clip_lines(None, {}, {'ranges': [[9.0, 12.9]]}, words, lines, table, {4}, True)
+        self.assertEqual(rows, [(10.0, 'Franklin ko saari.', 'फ्रैंक्लिन को सारी।')])   # no made-up word, no game line
+
+
 class HinglishModel(unittest.TestCase):
     """The Hinglish speech model for Hindi / Hinglish videos on an NVIDIA card (roadmap 9b)."""
     def pick(self, lang, device, **cfg):

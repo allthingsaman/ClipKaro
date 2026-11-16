@@ -28,8 +28,8 @@ game voices, break screens, cut, edit). They differ only in how the moments are 
 - **Quick**: **only when the user asks for it**, in the message or in "My preferences": "quick",
   "quick mode", "fast", "jaldi", "use fewer tokens", "use less usage", "save my limit", "kam tokens".
   Never choose it yourself. Then don't ask the deep-clip question; pass `--mode quick` to `parts`;
-  read the transcript yourself (step 2, "Quick mode"), with no helpers, no critic, no repair round
-  and no deep pass. About v1.1's Claude usage.
+  read the transcript yourself (step 2, "Quick mode"), with no helpers, no critic, no repair round,
+  no deep pass and no caption check (2c). About v1.1's Claude usage.
 - Quick and deep both asked: deep clips need the standard read, so say so in one line and do deep.
 
 ## 1. Get the transcript
@@ -287,6 +287,28 @@ prints the finished Roman caption text. If you change clips.json later, run it a
 A video written down by the **Hinglish model** (with an NVIDIA card, since v2.3) is already in English
 letters: `romanize` then lists its rarer English-letter words once. Add the ones the house style spells
 differently to romanize.json (`"vichaar": "vichar"`), and run `python run.py romanize <project> --checked`.
+
+## 2c. Caption check (standard and deep mode; skip it in quick mode)
+Speech models mishear, most of all Hinglish with an accent: "sorry" comes out as सारी ("saari"), a
+name comes out wrong, a word is bent by the accent. Before cutting, read every picked clip's captions
+the way a viewer will:
+```
+python run.py captions <project>
+```
+It prints each clip's captions as they will show (English letters for Roman Hinglish; made-up words and
+game characters' lines already left out), one line per transcript line with its start time, and the
+transcript's own words in brackets when they look different. With what the video is about in mind (its
+title, the game, the people in it), fix **only clear mishearings**:
+```
+python run.py fixword <project> "सारी" "sorry" --at 898.6
+```
+- an English word heard as a Hindi look-alike ("sorry" -> सारी, "phone" -> फून), or the other way round;
+- a name: a game character (Franklin, Trevor), a person, a place, a brand;
+- a word bent by the accent where the meaning is certain.
+Use the word exactly as the transcript writes it (in the brackets, when shown), and `--at` the line's
+time. Write the right word in English letters for Roman captions. Never rewrite what was really said,
+never fix grammar or slang, and leave a word alone when you aren't sure. Quick mode skips this step
+(it saves Claude usage); say so in your report.
 
 ## 3. Cut to vertical
 First check the boundaries (it takes a second and cuts nothing):

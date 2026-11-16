@@ -164,7 +164,7 @@ def notes(pdir, project=None):
     h = load_json(pdir / 'transcript' / 'hints.json') or {}
     mot = load_json(pdir / 'transcript' / 'motion.json') or {}
     v = voices.load(pdir) if is_irregular(project) else None
-    other = voices.other_lines(v)
+    other = voices.other_lines(v, lines)
     out = {}
     for i, ln in enumerate(lines):
         if 's' not in ln:

@@ -62,7 +62,9 @@ talk goes quickly back and forth, it shows **both**, stacked, with the captions 
 ### 💬 Captions that stay off faces and out of the apps' buttons
 Captions keep out of the like and share buttons and the apps' top and bottom texts, and move to a
 free line when they would cover a face or a chin. Made-up words (Whisper inventing text during a laugh
-or game music) get no caption at all.
+or game music) get no caption at all. Before cutting, Claude reads every clip's captions like a viewer
+and fixes clear mishearings ("sorry" heard as "saari", a wrong name) *(new in v2.3; standard and deep
+mode, quick mode skips it)*.
 
 <p align="center">
   <img src="docs/media/captions-clear.png" alt="Three frames of finished clips with the apps' button areas marked in red: a close-up with the caption below the chin, a split screen with the caption on the seam, and gameplay with the caption between the game and the webcam." width="800">
@@ -72,6 +74,8 @@ or game music) get no caption at all.
 It notices a webcam overlay by itself: **the game on top, you below**, the captions in between. It
 sees that a video was a live stream, leaves out "Starting soon", "Be right back" and the ending
 screen, and builds clips around **your** commentary and reactions, not the game characters' lines.
+Game characters' lines get **no captions** (the game shows its own subtitles, so they'd appear twice);
+their sound stays, and a great game scene can still be in a clip *(new in v2.3)*.
 
 <p align="center">
   <img src="docs/media/gameplay.gif" alt="Left: a Black Myth Wukong stream with a round webcam in the corner. Right: the vertical clip with the game on top, the webcam enlarged below and Hinglish captions between them." width="800">
@@ -80,8 +84,10 @@ screen, and builds clips around **your** commentary and reactions, not the game 
 
 ### 🇮🇳 Hindi and Hinglish, for real
 Found by itself. Captions in English letters ("aaj hum business ki baat karenge") or in Hindi
-letters, spelled the way people write Hinglish online. Whisper's skipped words are heard again, so a
-line isn't lost to one stretched "word" *(new in v2.3)*.
+letters, spelled the way people write Hinglish online. With an NVIDIA card, a **speech model trained
+on Hinglish** writes the words down: on public tests it got half as many words wrong as before, and
+its text costs Claude about 40 % fewer tokens to read *(new in v2.3)*. Skipped words are heard again,
+so a line isn't lost to one stretched "word".
 
 ### 👂 It hears what the words can't show *(new in v2.3)*
 Some of the best moments live in **how** something is said or shown. Claude reads short notes next to
@@ -100,7 +106,8 @@ captions". "Hook title" adds a big title for the first seconds.
 ### And more
 - 🔢 **The right number of clips.** Every good moment: 3 to 8, more for long videos, or "at least 10" /
   "at most 5". 💾 The good moments that weren't cut stay saved: "3 more clips from that video" later.
-- ⚡ **Quick mode.** "quick clip this" uses much less of your Claude plan.
+- ⚡ **Quick mode.** "quick clip this" uses much less of your Claude plan: Claude picks the clips
+  alone (no helpers, no critic, no deep clips, no caption check), with every other feature kept.
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.
 - 🔒 **Free and private.** No extra accounts, keys or subscriptions for ClipKaro, nothing uploaded.

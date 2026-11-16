@@ -50,7 +50,11 @@ Unless settings.json says `"hinglish_captions": "devanagari"`, captions are show
    `output/<project>/romanize.json` with an empty value, and prints each clip's text for context.
 2. Fill in **every** value (write the whole file back; keep the keys exactly as they are).
 3. Run `python run.py romanize <project>` again. When it's complete, it prints each clip's caption
-   text in English letters. Read it once as a viewer would, and fix anything that looks off.
+   text in English letters.
+4. **Caption check** (standard and deep mode): `python run.py captions <project>` prints every clip's
+   captions with times. Read them as a viewer would and fix clear mishearings with `python run.py
+   fixword <project> "सारी" "sorry" --at <seconds>`: English words heard as Hindi look-alikes, names,
+   accent slips. Never change what was really said.
 
 **Written down by the Hinglish model?** Then there are no Hindi letters to spell. ClipKaro already
 turns its most common textbook spellings into the house ones (`nahin` -> `nahi`, `vahaan` -> `wahan`,

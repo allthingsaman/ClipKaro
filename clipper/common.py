@@ -36,6 +36,8 @@ DEFAULT_SETTINGS = {
                                    # since 2026-11-14 (it doesn't suit podcasts); true turns it back on
     'hinglish_model': 'auto',      # Hindi / Hinglish speech model: auto (the Hinglish model on an NVIDIA card,
                                    # large-v3-turbo otherwise), or a model name; "large-v3-turbo": as in v2.2
+    'game_voice_captions': False,  # gameplay: captions for game characters too (the game shows its own subtitles,
+                                   # so they are off since v2.3); true: as before
     'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...
                                    # (run.py hints); false: the plain transcript, as in v1.1
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264

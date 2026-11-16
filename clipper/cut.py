@@ -529,7 +529,7 @@ def piece_fades(ranges, k, start, end, dur, first_word, last_word):
             f'afade=t=out:st={max(0, dur - f_out):.3f}:d={f_out:.3f}{":curve=qsin" if not last else ""}')
 
 
-def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, planned=None, auto=None):
+def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, planned=None, auto=None, game=()):
     src_w, src_h = info['width'], info['height']
     planned_by_start = {round(p[0], 3): p[2] for p in planned or []}
     fps = out_fps(info.get('fps', 30))
@@ -581,9 +581,11 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
                               f'concat=n={len(shots)}:v=1:a=0[v{n}]')
         chains.append(f'[{n}:a]aresample=48000,{piece_fades(clip["ranges"], k, start, end, dur, words[i0], words[i1])}[a{n}]')
         labels.append(f'[v{n}][a{n}]')
-        for w in words[i0:i1 + 1]:
-            clip_words.append({**w, 's': round(w['s'] - start + timeline, 3),
-                               'e': round(w['e'] - start + timeline, 3)})
+        for k, w in enumerate(words[i0:i1 + 1], i0):
+            cw = {**w, 's': round(w['s'] - start + timeline, 3), 'e': round(w['e'] - start + timeline, 3)}
+            if k in game:
+                cw['game'] = True               # a game character: no caption (the game shows its own)
+            clip_words.append(cw)
         offset = (math.ceil((start - st0) * fps - 1e-6) / fps + st0 - start) if exact else 0.0
         for sh in shots:
             out_sh = {'t0': round(sh['a'] + timeline, 3), 't1': round(sh['b'] + timeline, 3),
@@ -782,6 +784,13 @@ def main():
                 plans[cid] = (prepared[cid], range_shots(video, info, prepared[cid], words))
     auto = two_person(pdir, video, plans, words) if plans else {}
 
+    # gameplay with a Hindi / Hinglish streamer: game characters' lines get no captions (the game
+    # shows its own subtitles; "game_voice_captions": true shows them again)
+    game = set()
+    if not settings().get('game_voice_captions', False):
+        from . import voices
+        game = voices.game_words(pdir, project, words)
+
     done = []
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
@@ -794,7 +803,10 @@ def main():
         if pc.get('jump_edges'):
             print(f"   jump cuts: {len(pc['ranges']) - len(clip['ranges'])}, {pc['jump_saved']} s of pauses taken out")
         meta = build_clip(video, info, pc, words, out, a.horizontal, fc,
-                          plans.get(cid, (None, None))[1], auto.get(cid))
+                          plans.get(cid, (None, None))[1], auto.get(cid), game)
+        n_game = sum(1 for w in meta['words'] if w.get('game')) if meta else 0
+        if n_game:
+            print(f'   {n_game} word(s) of game characters without captions (the game shows its own subtitles)')
         if not meta:
             print('   ! skipped (no words in its ranges)')
             continue

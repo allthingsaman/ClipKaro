@@ -183,11 +183,87 @@ def is_other(row, main):
     return lab != main and like is not None and like < OTHER_MAX_LIKE and e - s >= OTHER_MIN_S
 
 
-def other_lines(v):
-    """Indexes of the sentences.json lines spoken in another voice than the main one."""
+def rows_for(v, lines):
+    """The voices row of each sentence line, matched by start time (the transcript can be rewritten
+    after the voices were measured: a repaired word, a caption fix); None where none matches."""
+    by_start = {round(r[0], 2): r for r in (v or {}).get('lines') or [] if r}
+    return [by_start.get(round(ln['s'], 2)) if 's' in ln else None for ln in lines]
+
+
+def other_lines(v, lines=None):
+    """Indexes of the sentence lines spoken in another voice than the main one."""
     if not v:
         return set()
-    return {i for i, row in enumerate(v['lines']) if is_other(row, v['main'])}
+    rows = rows_for(v, lines) if lines is not None else v['lines']
+    return {i for i, row in enumerate(rows) if is_other(row, v['main'])}
+
+
+# ---------- game characters' lines: no captions (v2.3) ----------
+# In a gameplay video the game shows its own subtitles, so ClipKaro's captions show only the streamer
+# (the owner's wish, Nov 2026: a captioned game line appeared twice on screen). With a Hindi / Hinglish
+# streamer the game's characters speak English, so a game line is one that is (a) unlike the streamer's
+# voice (or too short for a voice print and right next to a game line) and (b) mostly English; inside it,
+# the streamer's Hindi words keep their captions. The sound stays, and the line stays in the transcript,
+# so Claude can still pick a great game scene. `"game_voice_captions": true` shows them again.
+GAME_MAX_LIKE = 0.35       # unlike the streamer's voice
+GAME_ENGLISH = 0.6         # at least this share of the line's words is English
+GAME_NEAR_S = 2.0          # a short line within this gap of a game line counts with it
+# words only Hindi / Hinglish uses, in English letters (the Hinglish model writes Hindi this way)
+HINDI_COMMON = set("""hai hain ho hoga hogi honge tha thi the thhe ka ki ke ko se mein me mai main mujhe mera meri mere
+tera teri tere tu tum tumhe aap aapka aapki apna apni apne hum ham humne hamne hamara hamari ye yeh yah wo woh vo vah
+kya kyun kyon kyunki kyonki kaise kahan kab kaun kitna kitne nahi nahin na mat bhi aur ya to toh par pe bas abhi
+ab phir fir sab kuch kuchh koi ek do teen bahut bohot zyada thoda accha achha achchha theek thik haan han bhai
+yaar yar arre are oye chal chalo dekho dekh suno bolo bol kar karo karna karte karta karti kiya kiye karenge raha
+rahi rahe gaya gayi gaye diya diye liya liye de do le lo jao jaa ja jaana aaya aayi aaye aa lag laga lagta lagti
+wala wali wale wahan vahan yahan idhar udhar matlab lekin magar jab tab agar waise aise kaisa jaisa bilkul
+sahi galat pehle baad saath upar neeche andar bahar ghar paisa paise log logon""".split()) - {
+    'the', 'to', 'do', 'me', 'main', 'are', 'log', 'lag', 'ya', 'par', 'mat'}   # also everyday English words
+
+
+def is_hindi_word(word):
+    """A Hindi word: in Hindi letters, or one of the common Hindi words in English letters."""
+    from .common import has_devanagari, norm_token
+    return has_devanagari(word) or norm_token(word) in HINDI_COMMON
+
+
+def game_words(pdir, project, words, lines=None, v=None):
+    """Indexes (in words.json) of the words a game character says in a gameplay video with a Hindi /
+    Hinglish streamer: their captions are left out. Empty for every other video, or without voices."""
+    from .common import norm_token
+    from .fetch import is_hindi
+    from .kind import is_irregular
+    if not (is_irregular(project) and is_hindi(project.get('language') or '')):
+        return set()
+    v = v or load(pdir)
+    lines = lines if lines is not None else load_json(pdir / 'transcript' / 'sentences.json') or []
+    if not v or not lines:
+        return set()
+    rows = rows_for(v, lines)
+
+    def english(ln):
+        ws = [w for w in words[ln['i0']:ln['i1'] + 1] if norm_token(w['w']) and not w.get('unsure')]   # shown words
+        return bool(ws) and sum(not is_hindi_word(w['w']) for w in ws) >= GAME_ENGLISH * len(ws)
+
+    real = [i for i, ln in enumerate(lines) if 'i0' in ln]
+    game = {i for i in real if rows[i] and rows[i][3] is not None and rows[i][3] < GAME_MAX_LIKE and english(lines[i])}
+    def near_game(i):
+        ln = lines[i]
+        return [j for j in (i - 1, i + 1) if 0 <= j < len(lines) and j in game and 's' in lines[j]
+                and min(abs(lines[j]['s'] - ln['e']), abs(ln['s'] - lines[j]['e'])) <= GAME_NEAR_S]
+
+    grown = True
+    while grown:
+        grown = False
+        for i in real:
+            if i in game or not english(lines[i]):
+                continue
+            like = rows[i][3] if rows[i] else None
+            # a short line (no voice print, or rewritten since) next to a game line joins it; a line only
+            # somewhat like the streamer joins when game lines sit on both sides of it
+            if (like is None and near_game(i)) or (like is not None and like < NEAR and len(near_game(i)) == 2):
+                game.add(i)
+                grown = True
+    return {k for i in game for k in range(lines[i]['i0'], lines[i]['i1'] + 1) if not is_hindi_word(words[k]['w'])}
 
 
 def load(pdir):

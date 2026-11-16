@@ -210,12 +210,12 @@ ideas are left, "find more clips in this video" reads it again.
 ### Quick, standard or deep
 | You write | What happens |
 |---|---|
-| (nothing) | **standard**: the best quality. Long videos are read by several AI readers at once, a second AI editor (the critic) checks every idea, and the clips with notes are repaired |
+| (nothing) | **standard**: the best quality. Long videos are read by several AI readers at once, a second AI editor (the critic) checks every idea, the clips with notes are repaired, and Claude checks every clip's captions for misheard words |
 | "deep clip this", "use deep clipping", or **yes** to the question for videos over 21 minutes | **deep**: standard, plus clips that join moments far apart (see "Deep clips" below) |
-| "quick clip this", "quick mode", "use fewer tokens", "save my Claude limit", "jaldi clip karo" | **quick**: Claude reads the video itself and picks the clips, without the readers and the critic. It uses much less of your Claude plan (about what v1.1 used) and is faster; the picks get no second opinion. No deep-clip question is asked |
+| "quick clip this", "quick mode", "use fewer tokens", "save my Claude limit", "jaldi clip karo" | **quick**: Claude reads the video itself and picks the clips, without the readers, the critic and the caption check. It uses much less of your Claude plan (about what v1.1 used) and is faster; the picks get no second opinion, and misheard words stay as the speech model wrote them. No deep-clip question is asked |
 
-Everything after picking is the same in all three: captions, Hinglish spelling, game voices, break
-screens, cutting, the edit and the posting texts. Write "always use quick mode" under "My
+Everything after picking is the same in all three (except the caption check, which quick mode
+skips): captions, Hinglish spelling, game voices, break screens, cutting, the edit and the posting texts. Write "always use quick mode" under "My
 preferences" in CLAUDE.md to make quick your default.
 
 ### The second opinion (standard and deep)
@@ -244,6 +244,10 @@ a corner of the picture). Then:
 - **Stream housekeeping is left out**: hello chat, "is the audio OK", viewer counts, "I'm back".
 - **Game characters are told apart from you.** Lines in another voice than yours are marked
   "(other voice)" in what Claude reads, so clips are built around your words, not the cutscenes.
+- **No captions for game characters.** The game already shows its own subtitles, so ClipKaro's
+  captions show only you (their sound stays, and a great game scene can still be in a clip). This works
+  when you speak Hindi or Hinglish and the game speaks English. `"game_voice_captions": true` captions
+  them too.
 - **Your microphone on its own track?** If you record with OBS and keep the microphone on its own audio
   track, give ClipKaro that file: it writes down your words from the microphone alone (no game sound,
   no game characters) and keeps the full sound in the clips.
@@ -343,6 +347,7 @@ Claude to change them.
   "emoji": true,
   "music": false,
   "hinglish_model": "auto",
+  "game_voice_captions": false,
   "hints": true,
   "encoder": "auto",
   "render_workers": "auto"
@@ -363,6 +368,7 @@ Claude to change them.
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
+| `game_voice_captions` | `false` | gameplay with a Hindi/Hinglish streamer: game characters' lines get no captions, because the game shows its own subtitles (their sound stays); `true`: captioned too, as before v2.3 |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
@@ -407,6 +413,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py topics <project>` | `--check` (check topics.json again after editing it), `--rebuild`, `--dir` |
 | `run.py sound <project>` | measures laughs, applause, both talking at once, game sound bursts and lively spots (`fetch` does this by itself) |
 | `run.py voices <project>` | who speaks each line: the main voice and up to two more (`hints` runs it) |
+| `run.py captions <project>` | every picked clip's captions as viewers will read them, with times, for Claude's caption check (fix a misheard word with `fixword "<word>" "<right>" --at <seconds>`); `--clips 2,5` |
 | `run.py hints <project>` | the notes next to the words: a raised voice, shouting, game sounds, big action on screen, other voices in gameplay; for videos fetched before v2.3 (`fetch` does it by itself) |
 | `run.py critic <project>` | `--fresh` (start over), `--from clips\|candidates\|deep` (what to judge), `--runs 3` |
 | `run.py deep <project>` | run again after each helper step, it does the next stage itself; `--fresh` (start over; earlier files go to `deep/old/`) |

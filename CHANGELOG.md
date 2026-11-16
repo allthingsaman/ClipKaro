@@ -19,6 +19,15 @@
   spellings like "nahin" into "nahi"), so Claude reads about 40 % fewer tokens and spells far fewer
   words; transcribing takes about 1.3x as long. It hears speech in short pieces (in long windows it could
   loop). English videos keep large-v3-turbo. `"hinglish_model": "large-v3-turbo"` goes back.
+- **No captions for game characters.** In gameplay with a Hindi or Hinglish streamer, the game's own
+  subtitles already show its characters' lines, so ClipKaro's captions now show only the streamer (the
+  game lines keep their sound, and a great game scene can still be in a clip). `"game_voice_captions":
+  true` captions them too.
+- **Claude checks the captions** (standard and deep mode). Before cutting, Claude reads every clip's
+  captions like a viewer (`run.py captions`) and fixes clear mishearings: "sorry" written as "saari", a
+  wrong name, a word bent by an accent. Quick mode skips it to save your Claude plan.
+- **The hints passed their first blind test.** On a GTA stream, clips picked with and without hints
+  matched 6 times out of 8; of the 2 that differed, the owner preferred the hints version both times.
 - **Your microphone on its own track.** OBS can record the microphone and the game on separate audio
   tracks. ClipKaro now notices that and writes down your words from the microphone alone; the clips keep
   the full sound. (Research for this release found that separating a voice from a mix afterwards makes

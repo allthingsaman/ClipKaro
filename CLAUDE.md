@@ -10,8 +10,10 @@ may ask: for a video longer than 21 minutes, whether they want deep clips too (o
 right at the start, while `fetch` runs. A number of clips in the message ("at least 10", "at most 5")
 goes to `parts`; without one, ClipKaro decides by the video's length.
 **Always on, in every mode** (not options to offer): pause cutting, no captions on made-up words,
-captions off faces and clear of the apps' buttons, the sound-peak limit; emojis too, unless the user
-says "no emojis". **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
+captions off faces and clear of the apps' buttons, the sound-peak limit, no captions for game
+characters in gameplay (the game shows its own); emojis too, unless the user says "no emojis".
+**Standard and deep only** (quick mode skips it to save usage): the caption check (`run.py captions`,
+fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
 --hook-title`) and a caption look ("box captions" ...). Background music is on hold: no `music` mood.
 
 ## Rules

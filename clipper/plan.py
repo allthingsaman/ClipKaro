@@ -380,7 +380,7 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, sty
         text = display(w['w'], upper)
         if not text:
             continue
-        if w.get('unsure'):             # the recogniser was guessing (a game voice, music): no caption
+        if w.get('unsure') or w.get('game'):    # the recogniser was guessing, or a game character: no caption
             flush()
             continue
         if w.get('clarify') and cur:    # a [noun] always shows with the words it explains
@@ -605,7 +605,7 @@ def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=Non
         if not (isinstance(m, (list, tuple)) and len(m) == 2 and str(m[1]).strip()):
             continue
         want = {norm_token(t) for t in str(m[0]).split()[:1]} - {''}
-        w = next((w for w in words if not w.get('unsure') and
+        w = next((w for w in words if not w.get('unsure') and not w.get('game') and
                   want & {norm_token(w['w']), norm_token(w.get('orig', ''))}), None)
         if not w:
             missing.append(str(m[0]))

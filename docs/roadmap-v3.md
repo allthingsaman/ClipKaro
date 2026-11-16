@@ -1,8 +1,8 @@
-# ClipKaro after v2.2: what's next, in order
+# ClipKaro after v2.3: what's next, in order
 
-ClipKaro v2.2 is out (2026-11-14). v2.1 came the day before it, and v2.0 on 2026-11-11. This page
-lists what is still to do, in the order we plan to do it, with a rough time for each item. We close
-the items one by one. When one is done, it moves to **Done** with the date.
+ClipKaro v2.3 is the newest version (November 2026; v2.2 came on 2026-11-14). This page lists what is
+still to do, in the order we plan to do it, with a rough time for each item. We close the items one
+by one. When one is done, it moves to **Done** with the date.
 
 **Every item must be an upgrade to v1.1**, the first stable version: nothing v1.1 could do may be
 lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against that.
@@ -12,113 +12,89 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 - "Your part" is your own time: testing, watching, choosing.
 - Both are estimates. Items that need a blind test may take one more round.
 
-**How we got here.** On 2026-11-13 the owner put the small fixes, "more clips" and the usage modes
-first, and the fresh install on Windows and macOS last. Posting to X is not planned for now.
-- The small fixes (item 1) and the three modes (item 3) were done the same day.
-- The professional look (items 4-8, 10 and 11) was built on 2026-11-13 as well.
-- It was released as **v2.2** on 2026-11-14, after the owner watched all 106 test clips and chose
-  what is on by default.
+**How we got here.**
+- v2.2 (2026-11-14): the professional look (items 4-8, 10 and 11).
+- v2.3 (2026-11-16): cleaner captions and smarter picking: a Hinglish speech model, skipped words heard
+  again, hints from the sound and picture, game characters told apart from the streamer (and no
+  captions for them), Claude's caption check, no flash at a clip's end, and a README that shows it all.
+  The owner reviewed every part on the test videos before it went in.
 
 ---
 
-## Now
+## Waiting on you
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode is built; its real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | To do: **start here** (needs you to run `/usage`) |
+| 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode's real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | Waiting for your `/usage` runs |
+| 4b | **Try sound effects by mood with real sounds.** The feature is built, but the `sounds` folders are empty, so no clip has used it yet. You add 2-3 free sounds (a boom, a ding, a "fail" sound); Claude makes 2-3 example clips with them. | So you decide to keep the feature, or remove it, from clips you have watched. | 30 min | add the sounds, watch 3 clips, 20 min | Waiting for your sounds |
+| 13b | **Your microphone on its own track.** Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
+| 19 | **The first full "clip this video" run with everything new** (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
 
-## Waiting for your choice
-
-| # | What | Why | Build | Your part | Status |
-|---|---|---|---|---|---|
-| 4b | **Try sound effects by mood with real sounds.** The feature is built (item 4), but the `sounds` folders are still empty, so no clip has used it yet. You add 2-3 free sounds (a boom, a ding, a "fail" sound); Claude makes 2-3 example clips with them. | So you decide to keep the feature, or remove it, from clips you have watched. | 30 min | add the sounds, watch 3 clips, 20 min | Waiting for your sounds |
-| 10b | **Background music**, from your own `music` folder (built in item 10). | It doesn't suit podcasts. It may suit gaming or motivation clips later. | none, it's built | decide when to try it again | **On hold** since 2026-11-14 (`"music": true` turns it on) |
-
-## Next: cleaner still
+## Next phase
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 9 | **Cleaner transcripts: the rest.** Sometimes one long "word" hides several real words (a Khan Sir clip lost "ki ye America ki chaal hai"): find it and transcribe that bit again. Plus the speech-model test, scored against texts you corrected. | Missing or wrong words in captions look unprofessional. | 1 day | correct 5 short texts, 30-60 min | **Done on v2.3-dev** (2026-11-14): stretched words heard again (`fetch`, `relisten --stretched`); the speech-model test on two public test sets with checked texts (`asr-bench public`). Still yours: correcting the 4 draft texts of your own videos |
-| 9b | **A better speech model for Hindi and Hinglish.** The test (2026-11-14, share of words wrong, lower is better), on public test sets with checked texts: Hinglish conversation (CoSHE-500, 60 clips): today's large-v3-turbo 50 %, **Hinglish-Prime 21 %**, Trelis Hinglish 34 %; everyday Hindi (MonsoonASR, 300 clips): turbo 34 %, Prime 19 %, **Trelis 11 %** (Trelis is 2x slower and needs 8-bit weights on a 4 GB card). Prime also writes Hinglish in English letters, so the Roman-spelling step (Claude's romanize.json) would shrink. On your own review clip it read "Isilie filmon mein ... emotion ki thodi kami hai" where turbo wrote "पो संदे निकला ... इमोसन की तोरी कमी". To check before switching: its word timings, its spelling style against docs/hinglish.md, and how it handles game music. | Fewer wrong captions on Hindi and Hinglish videos, and maybe less Claude usage. | 1 day (a "hinglish_model" setting, spelling clean-up, the switch) | correct the 4 draft texts in output/_asrbench/refs by ear (30-60 min), or watch 3 clips captioned by each model | **Done on v2.3-dev** (2026-11-15): the owner chose Hinglish-Prime (Trelis is 2x slower). It is the default for Hindi and Hinglish videos with an NVIDIA card; it hears speech in pieces of 12 s or less (it looped in longer windows) and its textbook spellings are respelled; English stays on turbo |
-| 17 | **No flash of the next shot at a clip's end.** `run.py qa` finds it: 5 of the 106 test clips (Dr Vikas 1, Market 3 and 7, Khan Sir 13 and 16). `cut` should end such a clip a few frames earlier by itself. | A one-frame flash looks like a mistake. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): the wider qa check found 12; all 12 re-made |
-| 18 | **One tiny sample video run from start to end** inside `run.py test`. This is the part of item 8 still to do. | It catches a break anywhere in the chain before you see it. | 2-3 h | none | **Done on v2.3-dev** (2026-11-14): `run.py test --full` |
+| 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. | 2-3 days | needs about 50 posted clips with 2+ weeks of views | Next phase (posting started 2026-11-12) |
+| 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days | try it | Next phase |
+| 16 | **A fresh install on Windows and macOS**, checked from zero. | So far ClipKaro has only run on this Fedora laptop. | about 1 day | a Windows or Mac computer (yours or a friend's), 1 h | Next phase |
 
-## Then: smarter
+## Later, if we need it
+We review these when the next phase is done and decide which are worth building.
 
-| # | What | Why | Build | Your part | Status |
-|---|---|---|---|---|---|
-| 12 | **Sound and picture cues for Claude.** Laughter, applause, a raised voice, and big movement in games are given to Claude as hints when it picks moments. | Some of the best moments live in a laugh or a reaction, not in the words. | 1.5-2 days | blind test | **Built on v2.3-dev** (2026-11-14): `[voice raised]`, `[shouting]`, game sound bursts, `[big action on screen]` next to the words (`run.py hints`). Still to do: the blind test |
-| 13 | **Gameplay: your voice apart from the game.** Separate the player's voice from the game's sound before transcribing. We research the best voice-separation model first. | Game characters' lines still mix into the transcript. | 1-2 days | one gameplay video | **Built on v2.3-dev** (2026-11-14): research found that separating a voice from the mix makes speech recognition worse, so the voices are told apart instead: `(other voice)` on game characters' lines; a recording with the microphone on its own track is written down from the microphone alone. Still yours: a stream recorded that way, to try it |
-| 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. | 2-3 days | needs about 50 posted clips with 2+ weeks of views | Waiting for posted clips (posting started 2026-11-12) |
-| 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days | try it | To do |
-
-## Last
-
-| # | What | Why | Build | Your part | Status |
-|---|---|---|---|---|---|
-| 16 | **A fresh install on Windows and macOS**, checked from zero. | So far ClipKaro has only run on this Fedora laptop. | about 1 day | a Windows or Mac computer (yours or a friend's), 1 h | To do (not a priority now) |
-
-## To match Opus Clip (not scheduled yet)
-The [comparison with Opus Clip](roadmap-v2.md) (updated for v2.2) shows where it is still ahead.
-v2.2 closed most of the polish gap: pauses cut, a hook title when asked, captions clear of the apps'
-buttons, six caption looks and emojis. Item 12 adds picture cues, 14 is a score that learns from
-real views, and 15 is our answer to its editor. Not on the list yet:
-
-| What | Opus Clip has | Rough size |
+| What | Why | Rough size |
 |---|---|---|
-| **The side-by-side test**: the same English and gaming videos through Opus Clip and ClipKaro, rated blind | the reason to trust any of this | 1 day, plus a few people to rate |
-| **B-roll**: short stock clips or pictures over the speaker where the words name something | AI B-roll (stock and generated) | 2-3 days |
-| **Brand templates**: your logo, an intro and an outro on every clip | brand templates | 1 day |
-| **Following people who move**, and objects | ReframeAnything | 1-2 weeks |
-| **Three or more people**: panels, picture-in-picture for remote guests | layouts in Klap and Vizard | 1 week |
-| **TikTok and LinkedIn in PostKaro** | a scheduler for six platforms | 1-2 days each, depending on their APIs |
-| **Export to Premiere Pro** (XML), for creators who finish by hand | XML export | 1 day |
+| **No game-character captions for English-speaking streamers** | v2.3 tells game lines apart by language (an English game, a Hinglish streamer); with an English streamer it needs another clue (the voice alone, or the game's own subtitles on screen) | 1-2 days |
+| **A facial-reaction hint** (a listener's silent laugh or shock in a podcast) | the one moment sound can't catch | 1-2 days |
+| **More pairs for the hints test** (on a podcast and a second stream) | the first test was 2 pairs, both won by the hints | your time, 20 min a video |
+| **The side-by-side test**: the same English and gaming videos through Opus Clip and ClipKaro, rated blind | the reason to trust any comparison | 1 day, plus a few people to rate |
+| **B-roll**: short stock clips or pictures over the speaker where the words name something | Opus Clip has AI B-roll | 2-3 days |
+| **Brand templates**: your logo, an intro and an outro on every clip | Opus Clip has them | 1 day |
+| **Following people who move**, and objects | Opus Clip's ReframeAnything | 1-2 weeks |
+| **Three or more people**: panels, picture-in-picture for remote guests | Klap and Vizard have layouts | 1 week |
+| **TikTok and LinkedIn in PostKaro** | a scheduler for more platforms | 1-2 days each, depending on their APIs |
+| **Export to Premiere Pro** (XML), for creators who finish by hand | Opus Clip has it | 1 day |
 
-## Small extras (any time)
-- **Re-cut the MCU and gamer videos with v2.** Checked 2026-11-14: their clips already are v2 picks
-  (MCU 3 of 4, the gamer video 7 of 8 match the critic's ranking). Left: "2 more clips from the MCU
-  video" (the critic's next ideas), only if you want them.
-- ~~**Per-platform texts for the older clips.**~~ Done 2026-11-14: all 64 have Instagram and
-  Facebook texts.
-- ~~**Hear the older gameplay videos again**~~ Tried 2026-11-14 (`relisten --current`, which keeps
-  caption fixes and every hidden word hidden): it recognised 47 English game lines in the GTA stream, but
-  inside the clips it only hid two short exclamations that may be real, and changed nothing in the
-  Wukong and gamer clips. So the three were left as they were.
-- **The first full "clip this video" run with the new defaults** (the deep-clip question, live
-  stream detection, the clip range, v2.2's edit). The pieces were tested one by one; your next
-  stream is the full test.
+The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
+
+## On hold
+- **Background music** from your own `music` folder: built, but it doesn't suit podcasts
+  (`"music": true` turns it on).
+- **Posting to X (Twitter)**: left out by the owner for now.
+
+## Not planned for now
+- **More Indian languages** (Tamil, Bengali, Marathi, Telugu…). ClipKaro supports Hindi, Hinglish
+  and English only, on purpose. [adding-a-language.md](adding-a-language.md) explains how, for later.
+
+## Small extras (any time, only if you want them)
+- **2 more clips from the MCU video** (the critic's next ideas): "3 more clips from that video".
+- **Delete the test folders** `output/_feature-examples/` and `output/_hints_ab/` once you don't need them.
 
 ## Done
 | What | Done |
 |---|---|
+| **v2.3**: no captions for game characters (gameplay, Hindi/Hinglish streamer) and Claude's caption check (standard and deep), on top of everything below. | 2026-11-16 |
+| **The hints' first blind test** (item 12): on a GTA stream, picks with and without hints matched 6 of 8; of the 2 that differed, the owner preferred the hints version both times. | 2026-11-16 |
+| **A Hinglish speech model** (item 9b): Whisper-Hindi2Hinglish-Prime for Hindi and Hinglish videos with an NVIDIA card. On public test sets 21 % of Hinglish conversation wrong against turbo's 50 %, 19 % of everyday Hindi against 34 %; about 40 % fewer tokens for Claude; about 1.3x the transcription time. English stays on turbo. | 2026-11-15 |
+| **Skipped words heard again** (item 9) on new videos and, with `relisten --stretched`, on all 13 test videos (10 clips re-made; hidden and hand-fixed words never touched). Plus the speech-model test on public test sets (`asr-bench public`). | 2026-11-15 |
+| **Hints from the sound and picture** (item 12): `[voice raised]`, `[shouting]`, game sound bursts, `[big action on screen]` next to the words Claude reads. | 2026-11-14 |
+| **Game characters told apart from the streamer** (item 13): `(other voice)` in what Claude reads; a recording with the mic on its own track is written down from the mic alone. Research showed that separating a voice from the mix makes speech recognition worse, so it isn't done. | 2026-11-14 |
+| **No flash of the next shot at a clip's end** (item 17): 12 test clips re-made. | 2026-11-14 |
+| **Tests from start to end** (item 18): `run.py test --full`. | 2026-11-14 |
+| **A README that shows it**: the real video next to the clip ClipKaro made (deep clip, two people, gameplay, caption placement). | 2026-11-14 |
+| **Instagram and Facebook texts for the 64 older test clips.** | 2026-11-14 |
 | **v2.2 released**, after the owner watched all 106 re-edited test clips and chose the defaults: pauses cut, captions off faces and the apps' buttons, no captions on made-up words, emojis and the sound-peak limit in every clip; the hook title and caption looks only when named; music on hold. | 2026-11-14 |
-| **Sound effects by mood, from your own folder** (item 4). Claude marks the moments that call for one, and the sound's loudest point lands on the word, under the voice. | 2026-11-13 (not yet tried with real sounds: item 4b) |
-| **Pauses cut out** (item 5). Pauses of half a second or more are shortened to 0.2 s and "um" / "uh" are cut, never across a laugh. | 2026-11-13 (on in every clip since 2026-11-14) |
-| **Hook title on screen** (item 6), only when you say "hook title". | 2026-11-13 (off unless asked since 2026-11-14) |
-| **Captions clear of faces and app buttons** (item 7). | 2026-11-13 |
-| **Automatic quality check** (item 8): `run.py qa` checks every finished clip, and `run.py test` runs 23 tests. | 2026-11-13 (the sample video run is item 18) |
-| **No made-up words in the captions** (part of item 9): laughter, the noise word "झाल", loops and "…". | 2026-11-13 |
-| **More editing styles** (item 10): six caption looks and emojis on strong words. Background music is built but on hold (item 10b). | 2026-11-13 |
-| **Faster rendering** (item 11): the NVIDIA encoder and two clips at once, 1.9x faster. | 2026-11-13 |
-| **The critic judges craft, never the topic.** Politics, religion, rude jokes and controversial views are judged like any other clip. | 2026-11-12 |
-| **More clips from long videos.** 3-8 for short videos as in v1.1, up to about one per 7 minutes for long ones, at most `max_clips`; "at least / at most N" always wins. Built together with live streams and gameplay found by themselves (break screens left out) and one deep-clip question for long videos. | 2026-11-12 (the range fixed on 2026-11-13) |
-| **First real posts with PostKaro**, on Instagram and YouTube, scheduled. Some Instagram posts got a 400 error and worked on retry; that is being fixed in a PostKaro session. | 2026-11-12 |
-| **PostKaro 1.0: the new look** (made with Hallmark), approved by the owner. | 2026-11-13 |
-| **Game characters' English caught more often**, never a translation of the streamer's Hinglish; listening again works on only the few seconds it needs. | 2026-11-12 |
+| **Sound effects by mood, from your own folder** (item 4). | 2026-11-13 (not yet tried with real sounds: item 4b) |
+| **Pauses cut out** (item 5), **hook title on screen** only when asked (item 6), **captions clear of faces and app buttons** (item 7), **automatic quality check** (item 8), **six caption looks and emojis** (item 10), **faster rendering** (item 11). | 2026-11-13 |
+| **The critic judges craft, never the topic.** | 2026-11-12 |
+| **More clips from long videos**, live streams and gameplay found by themselves, one deep-clip question for long videos. | 2026-11-12 |
+| **First real posts with PostKaro**, and **PostKaro 1.0: the new look**. | 2026-11-12 / 13 |
+| **Game characters' English caught more often**, never a translation of the streamer's Hinglish. | 2026-11-12 |
 | **Every change since v1.1 checked** ([since-v1.1.md](since-v1.1.md)). | 2026-11-13 |
-| **Small fixes** (item 1): `run.py fixword` fixes a caption word everywhere; a fast camera cut only follows the new face instead of zooming (anime: 48 zoom changes in 68 s, now 28); repaired clips keep their place and their id; editing again works without the original video. | 2026-11-13 |
-| **More clips later** (item 2, "clips 9-12 too"): the good ideas that weren't cut stay saved (`more.txt`), and "3 more clips from that video" makes them without reading again (`run.py more`). | 2026-11-13 |
-| **Three modes** (item 3): standard by default, deep when asked or on yes to the question for long videos, quick only when asked (one read by Claude, no helpers, no critic). | 2026-11-13 (measuring with `/usage` is item 3b) |
-
-## Not planned for now
-- **Posting to X (Twitter).** Left out by the owner for now.
-- **More Indian languages** (Tamil, Bengali, Marathi, Telugu…). ClipKaro supports Hindi, Hinglish
-  and English only, on purpose. [adding-a-language.md](adding-a-language.md) explains how, for later.
+| **Small fixes** (item 1), **more clips later** (item 2), **three modes** (item 3). | 2026-11-13 |
 
 ---
 
-**Now (item 3b): a few hours, with your `/usage` runs. Next and then (items 9, 12-15, 17 and 18):
-about 2-3 weeks.**
+**Waiting on you: items 3b, 4b, 13b and 19. Next phase (items 14-16): about 1-2 weeks of building.**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).

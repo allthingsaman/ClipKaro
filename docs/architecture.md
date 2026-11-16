@@ -152,6 +152,7 @@ clipper/                     the toolbox (Python)
     sound.py      sound cues for the whole video: laughter, applause, both talking at once, game sound bursts, lively spots
     voices.py     who speaks each line: the main voice (the streamer, the guest) and up to two more
     hints.py      the notes next to the words Claude reads: a raised voice, shouting, game sounds, big action, other voices
+    captions.py   the picked clips' captions as viewers will read them, for Claude's caption check
     motion.py     gameplay: where the game picture moves most (big action on screen)
     critic.py     the blind second opinion: critic packets, merging the runs, clip scores, hints
     deep.py       deep clips: the map for the thread finder, thread files, checks, the report
@@ -616,6 +617,25 @@ English letters in a textbook spelling ("nahin", "achchha", "vahaan"): `ROMAN_RE
 most common into the house spelling (counted on 11,800 words of its output), `romanize` lists the rarer
 ones once for Claude (`--checked` when done). About 40 % fewer tokens for Claude to read than turbo's
 Devanagari, and about 1.3x the time to transcribe (3-minute snippets: 36-76 s against 22-51 s).
+
+### 5.4b-5 Game characters get no captions; Claude checks the captions (v2.3)
+**Game characters' lines** (`voices.game_words`, used by `cut`): in gameplay with a Hindi / Hinglish
+streamer, the game shows its own subtitles, so a captioned game line appears twice (the owner's review,
+Nov 2026). A line is the game's when it is mostly English (60 %+ of its shown words: no Hindi letters,
+and not one of ~160 common Hindi words in English letters) and its voice print is unlike the streamer's
+(below 0.35), or it has no print (too short, or the line was rewritten since) and sits within 2 s of a
+game line, or it is only somewhat like the streamer (below 0.5) with game lines on both sides. Inside
+such a line the streamer's Hindi words keep their captions. `cut` marks the other words `game` in the
+clip's words; the captions and emojis skip them; their sound stays, and the transcript keeps them, so
+Claude can still pick a game scene. Tested on two clips of a GTA stream: every English game line lost
+its captions, every line of the streamer kept them (one short English shout of his would lose it).
+English-speaking streamers aren't covered (no language difference to go by).
+`"game_voice_captions": true` captions them as before.
+
+**The caption check** (`run.py captions`, skill step 2c, standard and deep mode): each picked clip's
+captions as they will show (Roman, without hidden words), one row per transcript line with its time and
+the transcript's own words. Claude fixes clear mishearings with `fixword --at` (an English word heard as
+a Hindi look-alike, "sorry" -> सारी; names; accent slips) before cutting. Quick mode skips it.
 
 ### 5.4b-3 Skipped words heard again (v2.3: `fetch.repair_stretched`)
 Whisper sometimes skips a few words and stretches the word next to them over their time: lost text,
