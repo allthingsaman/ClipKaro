@@ -267,6 +267,24 @@ More examples: [usage.md](usage.md).
 
 ---
 
+## Your logo and outro
+
+Want your own logo on every clip, and your own short ending? Open the **`brand`** folder inside the
+ClipKaro folder and put in:
+- **`logo.png`**: your logo. It appears small in the bottom-right corner of every clip.
+- **`outro.mp4`**: a short standing (9:16) video, **3 to 5 seconds**, that plays after every clip
+  ("thanks for watching", your channel name...). Longer than 10 seconds is left out, so the outro is
+  never longer than the clip itself.
+
+That's all: every clip you make from then on gets them. There's no intro, so every clip still starts
+with its best line.
+
+Clips made from a **YouTube link** also get a small **"© Channel name"** in the bottom-left corner, a
+credit to the person whose video it is. Your own video files never get one. Don't want it? Tell
+Claude "no credit", or ask Claude to turn off `source_credit` in your settings.
+
+---
+
 ## Saving your own preferences
 
 If you always want the same things (for example "always 5 clips" or "my videos are in English"),
@@ -330,4 +348,4 @@ version and runs the setup again.
 ## Please be fair
 
 Only clip and post videos that **you own** or that you have **permission** to use. Respect other
-creators and each platform's rules.
+creators and each platform's rules. The small "© Channel name" credit is a courtesy, not permission.

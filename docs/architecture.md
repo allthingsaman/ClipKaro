@@ -145,6 +145,7 @@ clipper/                     the toolbox (Python)
     brand.py      caption accent colour (override or picked from the video)
     plan.py       the edit plan: camera zooms, caption groups, sound cues
     edit.py       renders the plan (python or Remotion engine) and mixes the audio
+    brandkit.py   your logo and outro (the brand/ folder) and the "© Channel" credit to the source
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog
     find.py       word-accurate phrase search in the transcript
     parts.py      splits a long transcript into parts for careful reading
@@ -344,8 +345,9 @@ layout.
 
 ### .work/NN-title.plan.json (written by edit)
 The full edit plan: camera keyframes, caption groups with per-word timings and emphasis flags,
-caption style, brand colours, sound-effect cues and transitions. Both render engines draw this
-same plan.
+caption style, brand colours, sound-effect cues and transitions, and (v2.4) the source credit, the
+logo and the outro (`credit`, `logo`, `outro`; the quality check leaves the outro out of its checks).
+Both render engines draw this same plan.
 
 ---
 
@@ -1098,6 +1100,20 @@ clips at once in worker processes when there are 4+ cores and 4+ GB of free memo
 each render holds about 1-2 GB). Four clips (4 min): 160 s before, 85 s now, the sound identical.
 Zooms stay in Python (ffmpeg would save about 2 s a clip, at the risk of a different look). Settings
 `"encoder"` (auto | nvenc | x264) and `"render_workers"`; `edit --encoder`, `--workers`.
+
+**Your brand and the source credit (v2.4, `brandkit.py`).** `edit` looks in `brand/` (or the folder in
+`CLIPKARO_BRAND`) once per run: `logo.png|jpg|webp` and `outro.mp4|mov|mkv|webm`. The credit,
+"© Channel" in the caption font at 34 px, goes into the same `.ass` file as the captions (bottom-left
+anchored, 40 px in). The logo (fit into 220x120 px, 90 % opaque, 40 px in from the bottom-right corner)
+and the outro go into the encoder's `-filter_complex`: `[0:v]ass,...[main]`, the logo overlaid, then
+`concat` with the outro (fitted to 1080x1920 over a blurred copy of itself, at the clip's frame rate),
+so neither the logo nor the credit shows on the outro and the whole clip is encoded once. The outro's
+sound is made once per file (`.work/outro-*.wav`: -14 LUFS, 48 kHz, a 20 ms fade-in) and joined after the
+clip's mix before the peak limiter. Without a logo and an outro the encoder gets exactly the arguments
+it got before (`-vf`). The Remotion engine adds them in its final ffmpeg step instead of copying the
+picture. Outros over 5 s get a warning, over 10 s are left out. The credit only shows when
+`project.json` says `kind: youtube` and names a channel (local files have none); settings
+`source_credit`, `logo`, `outro`; `edit --no-credit / --no-logo / --no-outro`.
 
 ### 5.13 Posting: the hand-off to PostKaro (`post.py`)
 PostKaro is a separate app (its own repo) that posts clips to YouTube Shorts, Instagram Reels and a

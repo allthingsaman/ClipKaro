@@ -40,6 +40,10 @@ DEFAULT_SETTINGS = {
                                    # so they are off since v2.3); true: as before
     'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...
                                    # (run.py hints); false: the plain transcript, as in v1.1
+    'source_credit': True,         # "(C) Channel name" in the bottom-left corner of clips from a YouTube link
+                                   # (never your own files); false: no credit (as before v2.4)
+    'logo': True,                  # your logo (brand/logo.png) in the bottom-right corner, when the file is there
+    'outro': True,                 # your outro (brand/outro.mp4, ideally 3-5 s) after every clip, when it's there
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

@@ -41,8 +41,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 20 | **Your brand on every clip**: your logo in a corner and your own outro (9:16, ideally 3-5 s) at the end, from a `brand` folder. No intro: a clip must open on its hook. | A logo and an outro make the clips yours (Opus Clip has brand templates). | about 1 day, with item 21 | put your logo and outro in the folder, watch 2-3 clips | Plan ready, waiting for the owner's yes |
-| 21 | **Credit to the source**: "© Channel name" on clips made from a YouTube link, never on your own video files. On in every mode; `"source_credit": false` in settings.json turns it off. | Fair to the creator whose video it is. | (with item 20) | watch 2-3 clips | Plan ready, waiting for the owner's yes |
+| 20 | **Your brand on every clip**: your logo in a corner and your own outro (9:16, ideally 3-5 s) at the end, from a `brand` folder. No intro: a clip must open on its hook. | A logo and an outro make the clips yours (Opus Clip has brand templates). | about 1 day, with item 21 | put your logo and outro in the folder, watch the review clip | **Built on v2.4-dev** (2026-11-17), waiting for the owner's review |
+| 21 | **Credit to the source**: "© Channel name" on clips made from a YouTube link, never on your own video files. On in every mode; `"source_credit": false` in settings.json turns it off. | Fair to the creator whose video it is. | (with item 20) | watch the review clip | **Built on v2.4-dev** (2026-11-17), waiting for the owner's review |
 | 16 | **Install check for Windows and macOS**: read the install steps and `install.py` once more and fix what's wrong or unclear. The AI helper that installs ClipKaro sorts out most surprises on the user's own computer, so this is a polish, not a full test. | So far ClipKaro has only run on this Fedora laptop. | 1-2 h | none now (a real run on a Windows or Mac computer when one is at hand) | Next |
 
 ## Major update (v3.0), later

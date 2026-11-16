@@ -586,5 +586,84 @@ class Posting(unittest.TestCase):
         self.assertIsNone(honesty_note({}))
 
 
+class BrandKit(unittest.TestCase):
+    """v2.4: your logo bottom right, your outro after the clip, "(C) Channel" bottom left (YouTube links)."""
+
+    def test_credit_only_for_youtube_links(self):
+        from clipper import brandkit
+        yt = {'kind': 'youtube', 'channel': 'Raj Shamani'}
+        self.assertEqual(brandkit.credit_text(yt), '© Raj Shamani')
+        self.assertIsNone(brandkit.credit_text({'kind': 'local', 'channel': None}))   # your own file
+        self.assertIsNone(brandkit.credit_text(yt, on=False))                         # "source_credit": false
+        self.assertIsNone(brandkit.credit_text({'kind': 'youtube', 'channel': '  '}))
+        long = brandkit.credit_text({'kind': 'youtube', 'channel': 'A very long channel name ' * 4})
+        self.assertLessEqual(len(long), brandkit.CREDIT_MAX + 2)
+        self.assertTrue(long.endswith('…'))
+        cr = brandkit.credit(yt)
+        self.assertEqual((cr['x'], cr['y']), (brandkit.PAD, 1920 - brandkit.PAD))       # bottom left, padded
+        self.assertEqual(brandkit.credit({'kind': 'youtube', 'channel': 'खान सर'})['font_file'],
+                         'Poppins-ExtraBold.ttf')                                       # Hindi letters
+
+    def test_logo_bottom_right_with_padding(self):
+        from clipper import brandkit
+        for w, h in ((400, 400), (800, 200), (300, 900)):
+            lw, lh, x, y = brandkit.logo_box(w, h)
+            self.assertLessEqual(lw, brandkit.LOGO_MAX_W)
+            self.assertLessEqual(lh, brandkit.LOGO_MAX_H)
+            self.assertEqual((x + lw, y + lh), (1080 - brandkit.PAD, 1920 - brandkit.PAD))
+            self.assertLess(abs(lw / lh - w / h), 0.1)                                  # not stretched
+        self.assertEqual(brandkit.logo_box(400, 400)[:2], (120, 120))
+
+    def test_outro_length_and_shape(self):
+        from clipper import brandkit
+        self.assertEqual(brandkit.outro_check(4.0, 1080, 1920), (True, []))
+        ok, msgs = brandkit.outro_check(7.0, 1080, 1920)
+        self.assertTrue(ok and len(msgs) == 1)                  # a warning: 3-5 s is ideal
+        ok, msgs = brandkit.outro_check(12.0, 1080, 1920)
+        self.assertFalse(ok)                                    # never longer than the clip itself
+        ok, msgs = brandkit.outro_check(4.0, 1920, 1080)
+        self.assertTrue(ok and 'blurred' in msgs[0])            # not standing: fitted
+
+    def test_files_found_in_the_folder(self):
+        from clipper import brandkit
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(brandkit.find('logo', brandkit.IMAGE_EXT, d))
+            (Path(d) / 'logo.txt').write_text('x')
+            (Path(d) / 'Logo.PNG').write_bytes(b'x')
+            self.assertEqual(brandkit.find('logo', brandkit.IMAGE_EXT, d).name, 'Logo.PNG')
+            self.assertEqual(brandkit.logo(True, d)[0], None)   # not a real picture: left out, with a note
+            self.assertTrue(brandkit.logo(True, d)[1])
+            kit, _ = brandkit.resolve({'kind': 'local'}, d, where=d)
+            self.assertEqual(kit, {'credit': None, 'logo': None, 'outro': None})
+
+    def test_logo_before_the_outro(self):
+        from clipper import brandkit
+        lg = {'w': 120, 'h': 120, 'x': 920, 'y': 1760, 'alpha': 0.9}
+        g = brandkit.video_graph('ass=x.ass', 30, lg, {'duration': 4}, 2, 3)
+        self.assertIn('overlay=920:1760', g)
+        self.assertLess(g.index('overlay=920:1760'), g.index('concat=n=2'))       # no logo on the outro
+        self.assertTrue(g.endswith('[v]'))
+        self.assertEqual(brandkit.inputs({'logo': {'file': 'l.png'}, 'outro': None}), (['-i', 'l.png'], 2, None))
+
+    def test_credit_in_the_captions_file(self):
+        from clipper import brandkit, edit
+        p = plan.build(meta_for(sentence('this is the first point.', 0.0)),
+                       {'accent': '#FFD60A', 'text': '#FFFFFF', 'outline': '#000000'}, V11)
+        p['credit'] = brandkit.credit({'kind': 'youtube', 'channel': 'Raj Shamani'})
+        with tempfile.TemporaryDirectory() as d:
+            ass = Path(d) / 'x.ass'
+            edit.write_ass(p, ass)
+            text = ass.read_text(encoding='utf-8')
+        self.assertIn('Style: Credit,', text)
+        self.assertIn('{\\an1\\pos(40,1880)}© Raj Shamani', text)
+
+    def test_way_back(self):
+        from clipper import edit
+        from clipper.common import DEFAULT_SETTINGS
+        self.assertTrue(DEFAULT_SETTINGS['source_credit'] and DEFAULT_SETTINGS['logo'] and DEFAULT_SETTINGS['outro'])
+        # no logo, no outro: the encoder gets exactly the picture arguments it got before v2.4
+        self.assertEqual(edit.finish_args({'fps': 30}, 'null'), ([], ['-vf', 'null', '-map', '0:v']))
+
+
 if __name__ == '__main__':
     unittest.main()

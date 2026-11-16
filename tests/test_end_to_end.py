@@ -29,9 +29,12 @@ def sentence(text, start, gap=0.08, dur=0.3):
     return out
 
 
-def run(*args):
+def run(*args, brand=None):
+    import os
+    # your brand folder stays out of the test (an empty one), unless the test brings its own
+    env = dict(os.environ, CLIPKARO_BRAND=str(brand or Path(tempfile.gettempdir()) / 'clipkaro-no-brand'))
     r = subprocess.run([sys.executable, str(ROOT / 'run.py'), *args], cwd=ROOT, capture_output=True, text=True,
-                       encoding='utf-8', errors='replace', timeout=600)
+                       encoding='utf-8', errors='replace', timeout=600, env=env)
     return r.returncode, r.stdout + r.stderr
 
 
@@ -79,6 +82,28 @@ class EndToEnd(unittest.TestCase):
 
             code, out = run('qa', str(pdir))
             self.assertEqual(code, 0, out)                       # nothing to fix
+            self.assertIn('0 to fix', out)
+
+            # v2.4: a logo, an outro and the credit (as for a YouTube link): the outro comes after the clip,
+            # and the quality check still finds nothing to fix
+            kit = Path(d) / 'brand'
+            kit.mkdir()
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=blue:s=200x200', '-frames:v', '1',
+                            str(kit / 'logo.png')], check=True)
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=1080x1920:r=30:d=3',
+                            '-f', 'lavfi', '-i', 'sine=f=440:d=3:sample_rate=48000', '-shortest', '-c:v', 'libx264',
+                            '-pix_fmt', 'yuv420p', '-c:a', 'aac', str(kit / 'outro.mp4')], check=True)
+            proj = json.loads((pdir / 'project.json').read_text(encoding='utf-8'))
+            proj.update(kind='youtube', channel='Test Channel')
+            (pdir / 'project.json').write_text(json.dumps(proj), encoding='utf-8')
+            code, out = run('edit', str(pdir), '--workers', '1', brand=kit)
+            self.assertEqual(code, 0, out)
+            self.assertIn('credit "© Test Channel"', out)
+            dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of',
+                                        'csv=p=0', str(edited[0])], capture_output=True, text=True).stdout)
+            self.assertAlmostEqual(dur, meta['duration'] + 3.0, delta=0.25)
+            code, out = run('qa', str(pdir))
+            self.assertEqual(code, 0, out)
             self.assertIn('0 to fix', out)
 
 

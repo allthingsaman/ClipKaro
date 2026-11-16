@@ -44,7 +44,8 @@ def media_stats(path):
     lufs = re.findall(r'I:\s+(-?[\d.]+) LUFS', err)
     peak = re.findall(r'Peak:\s+(-?[\d.]+|-inf) dBFS', err)
     black = [(float(a), float(b)) for a, b in re.findall(r'black_start:([\d.]+) black_end:([\d.]+)', err)]
-    frozen = [float(x) for x in re.findall(r'freeze_duration: ([\d.]+)', err)]
+    frozen = [(float(a), float(b)) for a, b in
+              zip(re.findall(r'freeze_start: ([\d.]+)', err), re.findall(r'freeze_duration: ([\d.]+)', err))]
     dur = re.findall(r'Duration: (\d+):(\d+):([\d.]+)', err)
     seconds = (int(dur[0][0]) * 3600 + int(dur[0][1]) * 60 + float(dur[0][2])) if dur else None
     return {'lufs': float(lufs[-1]) if lufs else None,
@@ -62,10 +63,12 @@ def black_runs(path):
 FLASH_S = 0.35     # a new shot that starts this close to the end is only a flash
 
 
-def end_flash(path, duration):
+def end_flash(path, duration, until=None):
     """True when a different shot starts in the clip's last FLASH_S seconds (a flash of the next shot).
-    It looked at the last 3 frames only until Nov 2026; a 6-frame flash slipped through."""
-    r = subprocess.run(['ffmpeg', '-v', 'error', '-sseof', '-1.2', '-i', str(path), '-vf',
+    It looked at the last 3 frames only until Nov 2026; a 6-frame flash slipped through. `until`: where the
+    clip itself ends when your outro follows it (the outro's own cuts are yours)."""
+    where = ['-sseof', '-1.2'] if until is None else ['-ss', f'{max(0.0, until - 1.2):.3f}', '-t', '1.2']
+    r = subprocess.run(['ffmpeg', '-v', 'error', *where, '-i', str(path), '-vf',
                         'scale=64:114,format=gray', '-f', 'rawvideo', '-'], capture_output=True)
     fr = np.frombuffer(r.stdout, np.uint8)
     n = len(fr) // (64 * 114)
@@ -130,6 +133,13 @@ def check_clip(pdir, project, cfg, words, picked, meta, plan, edited, clip_mp4):
                 fail.append(f"piece {k + 1} {side} inside the word \"{w['w']}\" ({fmt_ts(w['s'])}): cut again "
                             f"(python run.py cut {pdir.name} --clips {meta['id']})")
     ms = media_stats(edited)
+    outro = (plan.get('outro') or {}).get('duration') or 0.0
+    end = plan.get('duration') if outro else None         # the clip's own end; your outro comes after it
+    if outro:                                            # black or a still picture in your outro is yours
+        ms['black'] = [(a, b) for a, b in ms['black'] if a < end - 0.05]
+        ms['frozen'] = [(a, d) for a, d in ms['frozen'] if a < end - 0.05]
+        if ms['duration']:
+            ms['duration'] -= outro
     if ms['lufs'] is not None and abs(ms['lufs'] - LUFS_TARGET) > LUFS_FAIL:
         fail.append(f"loudness {ms['lufs']:.1f} LUFS (should be about {LUFS_TARGET:.0f}): edit again")
     elif ms['lufs'] is not None and abs(ms['lufs'] - LUFS_TARGET) > LUFS_CHECK:
@@ -146,12 +156,14 @@ def check_clip(pdir, project, cfg, words, picked, meta, plan, edited, clip_mp4):
             check.append(f"the video itself is black at {a:.1f}-{b:.1f} s (a text card or a dark scene): fine if "
                          f"it belongs there")
     if ms['duration'] and not 15 <= ms['duration'] <= 90:
-        check.append(f"{ms['duration']:.0f} s long (the usual limits are 15-90 s): on purpose?")
+        check.append(f"{ms['duration']:.0f} s long{' without the outro' if outro else ''} (the usual limits are "
+                     f"15-90 s): on purpose?")
     if edited.stat().st_mtime < clip_mp4.stat().st_mtime - 1:
         fail.append(f"the edited clip is older than its cut: python run.py edit {pdir.name} --clips {meta['id']}")
     if ms['frozen']:
-        check.append(f"the picture stands still for {max(ms['frozen']):.1f} s (a pause in the video, or a slide?)")
-    if ms['duration'] and end_flash(edited, ms['duration']):
+        check.append(f"the picture stands still for {max(d for _, d in ms['frozen']):.1f} s (a pause in the video, "
+                     f"or a slide?)")
+    if ms['duration'] and end_flash(edited, ms['duration'], end):
         check.append('a flash of another shot in the last frames: end the clip a little earlier')
     covered = caption_faces(clip_mp4, meta, plan) if plan.get('safe', False) else []
     if covered:

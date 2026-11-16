@@ -83,3 +83,6 @@ desktop.ini
 sounds/
 # your own background music (python run.py music)
 music/
+# your logo and outro (brand/): yours, not part of the project
+brand/*
+!brand/README.txt

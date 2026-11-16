@@ -38,7 +38,10 @@ game voices, break screens, cut, edit). They differ only in how the moments are 
 The user only has to say "clip this: <link>". Everything else has a default: the mode (standard),
 how many clips, what kind of video it is, and (for long videos) one question about deep clips.
 **Always on** (every mode, nothing to ask): pause cutting, no captions on made-up words, captions off
-faces and the apps' buttons, the sound-peak limit, emojis (unless "no emojis": `edit --no-emoji`).
+faces and the apps' buttons, the sound-peak limit, emojis (unless "no emojis": `edit --no-emoji`),
+the "© Channel" credit bottom left on clips from a YouTube link (unless "no credit": `edit --no-credit`),
+and the user's logo (bottom right) and outro from `brand/` when the files are there (unless "no logo" /
+"no outro": `edit --no-logo` / `--no-outro`).
 **Only when named** (in any message, or in "My preferences"): **"hook title"** (write `hook_text` for
 each clip, then `edit --hook-title`) and a caption look. Without "hook title": no `hook_text`.
 
@@ -414,7 +417,8 @@ Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentenc
 `--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
 or `"jump_label": true` in settings.json), `--hook-title` (only when the user said "hook title", or
-`"hook_title": true`; clips.json `hook_text`, else the clip's title).
+`"hook_title": true`; clips.json `hook_text`, else the clip's title), `--no-credit`, `--no-logo`,
+`--no-outro` (only when the user says "no credit", "no logo", "no outro").
 Read `references/editing.md` if the user wants a different look.
 
 ## 5a. Quality check (every time, before showing anything)

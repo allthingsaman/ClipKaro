@@ -63,6 +63,9 @@ In every mode (quick, standard, deep), with nothing to say:
 - **Emojis** on up to 3 strong words, unless you say "no emojis".
 - **No sound too loud**: the loudest moments stay under the apps' limit, so they don't crackle after
   upload.
+- **Credit to the source**: a small "© Channel name" in the bottom-left corner of clips made from a
+  YouTube link (never your own video files). Say "no credit" to leave it out.
+- **Your logo and outro**, when you have put them in the `brand` folder (below).
 
 ### Extras you switch on by name
 Put the name in your message, as many as you like:
@@ -136,6 +139,18 @@ captions". To have one every time, add it to your preferences.
 | (nothing: it's automatic) | in podcasts with two people on screen, the person talking is shown; around laughs and when they talk over each other, both are shown stacked (split screen) |
 | "show both of them when Raj laughs at 2:10" / "show Khan Sir there, not Raj" | Claude changes the framing of that moment only |
 | "show the whole picture when he holds up the box" | that moment shows the full landscape frame over a blurred background |
+
+### Your logo and outro (your brand)
+Put two files in the `brand` folder inside ClipKaro (it has a short note on what to put there):
+- **`logo.png`**: your logo, in the bottom-right corner of every clip, a little in from the edges,
+  small and slightly see-through. A PNG with a see-through background looks best; JPG works too.
+- **`outro.mp4`**: your own outro, added after every clip. Make it **standing (9:16)** and **3-5
+  seconds** long. Longer than 5 s: ClipKaro warns you; longer than 10 s: it is left out, so an outro is
+  never longer than the clip. Its sound is evened out to the clip's volume.
+
+There is no intro on purpose: a clip must open on its hook. Neither the logo nor the credit shows during
+the outro. For one video, say "no logo" or "no outro"; for good, take the file out of the folder. The
+plain cuts in `clips/` stay without them.
 
 ### Sound effects by mood (your own sounds)
 ClipKaro plays two soft whooshes on its own. For more (a boom on a shocking line, a "boing" on a
@@ -351,6 +366,9 @@ Claude to change them.
   "hinglish_model": "auto",
   "game_voice_captions": false,
   "hints": true,
+  "source_credit": true,
+  "logo": true,
+  "outro": true,
   "encoder": "auto",
   "render_workers": "auto"
 }
@@ -372,6 +390,9 @@ Claude to change them.
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
 | `game_voice_captions` | `false` | gameplay with a Hindi/Hinglish streamer: game characters' lines get no captions, because the game shows its own subtitles (their sound stays); `true`: captioned too, as before v2.3 |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
+| `source_credit` | `true` | "© Channel name" in the bottom-left corner of clips made from a YouTube link (never your own files); `false`: no credit, as before v2.4 |
+| `logo` | `true` | your logo from `brand/` in the bottom-right corner, when the file is there; `false`: never |
+| `outro` | `true` | your outro from `brand/` after every clip, when the file is there; `false`: never |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
@@ -402,7 +423,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py romanize <project>` | `--clips 1,3` |
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |
-| `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>` |
+| `run.py edit <project>` | `--clips 2`, `--jump-label` / `--no-jump-label`, `--engine python\|remotion`, `--sfx auto\|light\|none`, `--no-zoom`, `--no-captions`, `--no-upper`, `--caption-y 1270` (bigger number = lower), `--size 96`, `--out <folder>`, `--no-credit`, `--no-logo`, `--no-outro` |
 | `run.py more <project>` | `--add 3` (the next 3 ideas become clips), `--upto 12` (enough for 12 clips), `--pick 2,5` (those from the list) |
 | `run.py qa <project>` | checks every finished clip and writes `qa.txt`: FAIL (fix first) for Hindi letters in Roman captions, captions outside the safe zone, a cut inside a word, loudness far off -14 LUFS, black frames, a stale edit; CHECK for captions over a face, a frozen picture, a flash at the end, a short clip, many words without captions. `--clips 2,5` |
 | `run.py test` | ClipKaro's own tests (a second; no video needed): run after changing the code. `--full` also runs a tiny made-up video through cut, edit and qa (about 30 seconds) |

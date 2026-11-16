@@ -17,6 +17,9 @@
   "hinglish_model": "auto",
   "game_voice_captions": false,
   "hints": true,
+  "source_credit": true,
+  "logo": true,
+  "outro": true,
   "encoder": "auto",
   "render_workers": "auto"
 }

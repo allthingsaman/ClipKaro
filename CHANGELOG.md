@@ -7,6 +7,11 @@
   three test streams). Now it gets a line of its own in what Claude reads, "(no talking) [big action on
   screen ~6 s] [explosion]", so a clip can keep your setup, the action and your reaction together. A
   note now goes on the line that covers most of it, so action you talk over stays on your line.
+- **Your brand on every clip.** Put your logo and a 3-5 s outro (9:16) in the new `brand` folder: the
+  logo goes in the bottom-right corner of every clip, the outro after it. No intro, so a clip still
+  opens on its hook. An outro longer than 10 s is left out, so it is never longer than the clip.
+- **Credit to the source.** Clips made from a YouTube link get a small "© Channel name" in the
+  bottom-left corner (never your own video files). `"source_credit": false` in settings.json turns it off.
 - **The caption check knows more** (standard and deep mode): names of games, characters, people and
   brands spelled right, and numbers said in words written as digits where they are amounts, years or
   scores ("do hazaar tera" -> 2013, "paanch lakh" -> 5 lakh), never where they aren't ("ek din" stays).

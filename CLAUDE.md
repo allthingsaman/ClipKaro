@@ -12,7 +12,9 @@ right at the start, while `fetch` runs. A number of clips in the message ("at le
 goes to `parts`; without one, ClipKaro decides by the video's length.
 **Always on, in every mode** (not options to offer): pause cutting, no captions on made-up words,
 captions off faces and clear of the apps' buttons, the sound-peak limit, no captions for game
-characters in gameplay (the game shows its own); emojis too, unless the user says "no emojis".
+characters in gameplay (the game shows its own); emojis too, unless the user says "no emojis";
+the "© Channel" credit on clips from a YouTube link (`edit --no-credit` for "no credit"), and the
+user's logo and outro when they are in `brand/` (`--no-logo` / `--no-outro` when asked).
 **Standard and deep only** (quick mode skips it to save usage): the caption check (`run.py captions`,
 fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
 --hook-title`) and a caption look ("box captions" ...). Background music is on hold: no `music` mood.

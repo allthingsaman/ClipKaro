@@ -177,6 +177,14 @@ changed. Only new ones were added.
   - Way back: `"hints": false` (no notes at all, as in v1.1).
 - ⬆ **The caption check also spells names right and writes numbers as digits** where they are amounts,
   years or scores (standard and deep mode; quick mode skips the check, as before). *(v2.4)*
+- ⬆ **Your logo and outro.** Put `logo.png` and `outro.mp4` (9:16, ideally 3-5 s) in the `brand`
+  folder: the logo goes in the bottom-right corner of every edited clip, the outro after it. Nothing
+  changes until a file is there. An outro over 10 s is left out (never longer than the clip). *(v2.4)*
+  - Way back: take the file out, `"logo": false` / `"outro": false`, or "no logo" / "no outro".
+- ↔ **"© Channel name" in the bottom-left corner** of clips made from a YouTube link (never your own
+  video files): a small credit to the source, in the very corner on purpose (a formality, not something
+  to read). v1.1 had none. The owner asked for it (2026-11-17). *(v2.4)*
+  - Way back: `"source_credit": false` in settings.json, or "no credit" for one video.
 - ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
   every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles
   and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in
@@ -205,6 +213,8 @@ changed. Only new ones were added.
   `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`, `voices`, `hints`, `captions`.
 - ⬆ `run.py test --full` also runs a tiny made-up video from start to end (cut, edit, qa), and
   `asr-bench public` scores speech models on public Hindi and Hinglish test sets. *(v2.3)*
+- ⬆ New settings `source_credit`, `logo` and `outro`, and `edit --no-credit`, `--no-logo`, `--no-outro`.
+  No Claude usage; an outro adds about a second of rendering per clip. *(v2.4)*
 
 ## Cost
 

@@ -106,6 +106,9 @@ captions". "Hook title" adds a big title for the first seconds.
 ### And more
 - 🔢 **The right number of clips.** Every good moment: 3 to 8, more for long videos, or "at least 10" /
   "at most 5". 💾 The good moments that weren't cut stay saved: "3 more clips from that video" later.
+- 🏷️ **Your brand, and credit to the source.** Put your logo and a 3-5 s outro in the `brand` folder:
+  the logo goes in the bottom-right corner of every clip, the outro at the end. Clips from a YouTube
+  link get a small "© Channel name" in the bottom-left corner (`"source_credit": false` turns it off).
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.
@@ -144,7 +147,7 @@ the same from the outside, since you ask Claude for clips either way, but it wor
 | **Gameplay and live streams** | basic (reviews call it weaker on gaming) | ✅ webcam under the game, no captions for game characters, "Starting soon" screens left out |
 | **Deep clips** (a question and its answer far apart, joined into one story) | ❌ | ✅ |
 | **B-roll, following people who move** | ✅ | not yet |
-| **Your logo and outro** | ✅ | coming in the next version |
+| **Your logo and outro** | ✅ | ✅ from the `brand` folder |
 | **Editing by hand** | ✅ a timeline editor | in words ("start clip 2 at 1:05", "'bow' should be 'boat'") |
 | **Where your video goes** | uploaded to Opus Clip | stays on your computer |
 
@@ -350,8 +353,8 @@ it's slow and not recommended for long videos.
 Your defaults are in `settings.json`: the language (`auto`), the speech model (`auto`), whether to
 use the graphics card (`auto`), how Hindi captions are written (`roman` = English letters, or
 `devanagari` = Hindi letters), the gameplay layout (`auto`), whether to ask about deep clips (`ask`)
-and the most clips to make when you don't give a number (`20`). You can also just ask Claude to change
-them. Details: [docs/usage.md](docs/usage.md#5-your-defaults-settingsjson).
+the most clips to make when you don't give a number (`20`), and the "© Channel" credit on clips from a
+YouTube link (`source_credit`, on). You can also just ask Claude to change them. Details: [docs/usage.md](docs/usage.md#5-your-defaults-settingsjson).
 
 ## Running it by hand (optional)
 Every step is a plain command you can run yourself:
@@ -395,12 +398,13 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 ## Folder layout
 ```
 .claude/skills/clip-video/   the instructions Claude follows to make clips
-clipper/                     the program's steps: fetch, sound, voices, hints, motion, parts, topics, critic, deep, romanize, cut, reframe, director, speakers, frames, facecam, brand, plan, edit, qa, sfx, find, gpu
+clipper/                     the program's steps: fetch, sound, voices, hints, motion, parts, topics, critic, deep, romanize, cut, reframe, director, speakers, frames, facecam, brand, brandkit, plan, edit, qa, sfx, find, gpu
 remotion/                    an optional second way to draw the edit
 assets/                      fonts, the face-finding model, sound effects
 docs/                        documentation (docs/media: the README's demo pictures and the script that makes them)
 CLAUDE.md                    rules for Claude + your own preferences
 settings.json                your defaults
+brand/                       your logo and outro (yours, never uploaded)
 run.py / install.py          starts each step / the setup
 output/                      your projects (never uploaded)
 ```
@@ -408,6 +412,7 @@ output/                      your projects (never uploaded)
 ## Please clip fairly
 Only clip and post videos you own or have permission to use. Respect other creators and each
 platform's rules. Watch your clips once before posting: automatic captions are good, not perfect.
+The small "© Channel name" credit ClipKaro adds is a courtesy to the creator, not permission.
 
 The demo pictures above use a few seconds of public podcasts (Sam Altman and Khan Sir on *Figuring
 Out* with Raj Shamani) only to show what the tool does, with credit; nothing is offered for download.

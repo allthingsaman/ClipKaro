@@ -5,6 +5,7 @@ in the video's brand colours, and 1-2 subtle whooshes. Loudness normalised for p
     python run.py edit <project> --clips 2               # one clip
     python run.py edit <project> --engine remotion       # same edit drawn by Remotion (python install.py --remotion)
     options: --no-zoom  --no-captions  --sfx auto|light|none  --no-upper  --caption-y 1270  --size 96
+             --no-credit  --no-logo  --no-outro   (your brand: clipper/brandkit.py, the brand/ folder)
 
 Writes edited/NN-title.mp4 (+ .srt captions file for platforms that want one).
 """
@@ -20,6 +21,7 @@ import cv2
 import numpy as np
 
 from . import brand as brandlib
+from . import brandkit
 from . import emoji as emojilib
 from . import music as musiclib
 from . import layout as layoutlib
@@ -80,20 +82,29 @@ def true_peak(path):
     return float(m[-1]) if m and m[-1] != '-inf' else None
 
 
-def encode_audio(clip_mp4, cues, out_m4a, duration, music=None):
+def encode_audio(clip_mp4, cues, out_m4a, duration, music=None, tail=None):
     """The mix as AAC, its true peak under MAX_PEAK_DB. The AAC encoder can add 2-3 dB of peak to harsh,
     clipped sound (a phone mic: a PS5 clip went from -2 dB in the mix to +0.3 dB after encoding), so the
     encoded peak is measured and, when it's too high, the limiter goes that much lower and the mix is
-    encoded again (at most 3 tries). The loudness stays at -14 LUFS."""
+    encoded again (at most 3 tries). The loudness stays at -14 LUFS. `tail`: the outro's sound (a wav),
+    joined after the clip's and limited with it."""
     wav, limit = out_m4a.with_suffix('.wav'), LIMIT_DB
+    full = out_m4a.with_suffix('.full.wav')
     for _ in range(3):
         mix_audio(clip_mp4, cues, wav, duration, music, limit)
-        ffmpeg('-i', wav, '-c:a', 'aac', '-b:a', AAC_RATE, out_m4a)
+        src = wav
+        if tail:
+            ffmpeg('-i', wav, '-i', tail, '-filter_complex',
+                   f'[0:a]afade=t=out:st={max(0.0, duration - 0.025):.3f}:d=0.025[c];[c][1:a]concat=n=2:v=0:a=1,alimiter=limit={10 ** (limit / 20):.4f}:attack=5:release=50:'
+                   f'level=false:latency=true[out]', '-map', '[out]', '-c:a', 'pcm_s16le', full)
+            src = full
+        ffmpeg('-i', src, '-c:a', 'aac', '-b:a', AAC_RATE, out_m4a)
         peak = true_peak(out_m4a)
         if peak is None or peak <= MAX_PEAK_DB:
             break
         limit -= peak - MAX_PEAK_DB + 0.3
     wav.unlink(missing_ok=True)
+    full.unlink(missing_ok=True)
     return out_m4a
 
 
@@ -184,6 +195,15 @@ def hook_style(plan):
             f"0,0,0,0,100,100,1,0,3,18,0,5,60,60,0,1")
 
 
+def credit_style(plan):
+    """The ASS style of the source credit: small, white and a little see-through, a thin dark outline."""
+    cr = plan.get('credit')
+    if not cr:
+        return ''
+    return (f"Style: Credit,{cr['font']},{css_to_ass_size(cr['size'], cr['font_file'])},&H30FFFFFF,&H30FFFFFF,"
+            f"&H60000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,1,0,0,0,1")
+
+
 def write_ass(plan, path):
     st, br = dict(plan['caption_style']), plan['brand']
     st['size'] = css_to_ass_size(st['size'], st['font_file'])
@@ -200,6 +220,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 {cap_style(st, white, accent, outline)}
 Style: Jump,{st['font']},{css_to_ass_size(JUMP_SIZE, st['font_file'])},&H00FFFFFF,&H00FFFFFF,&H5A000000,&H5A000000,0,0,0,0,100,100,1,0,3,14,0,5,60,60,0,1
 {hook_style(plan)}
+{credit_style(plan)}
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -273,6 +294,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for lb in plan.get('labels', []):        # "27 MIN LATER" at a jump across time (optional)
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
                       f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
+    cr = plan.get('credit')
+    if cr:                                   # "(C) Channel": the bottom-left corner, the whole clip (not the outro)
+        text = cr['text'].replace('\\', '/').replace('{', '(').replace('}', ')')
+        events.append(f"Dialogue: 3,{t(0)},{t(plan['duration'])},Credit,,0,0,0,,"
+                      f"{{\\an1\\pos({cr['x']},{cr['y']})}}{text}")
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
 
 
@@ -333,18 +359,31 @@ def draw_emojis(frame, emojis, t):
     return frame if out is None else out
 
 
+def finish_args(plan, vf):
+    """(extra inputs, picture arguments) for the encoder: input 0's picture through vf (the captions and the
+    credit), plus your logo and outro when there are any (brandkit). Without them, as before."""
+    kit = {'logo': plan.get('logo'), 'outro': plan.get('outro')}
+    if not (kit['logo'] or kit['outro']):
+        return [], ['-vf', vf, '-map', '0:v']
+    extra, li, oi = brandkit.inputs(kit)
+    graph = brandkit.video_graph(vf, plan['fps'], kit['logo'], kit['outro'], li, oi)
+    return extra, ['-filter_complex', graph, '-map', '[v]']
+
+
 def render_python(clip_mp4, plan, audio, out_mp4, workdir):
     need('ffmpeg')
     ass = workdir / f'{out_mp4.stem}.ass'
     write_ass(plan, ass)
     fonts_rel = os.path.relpath(FONTS, workdir).replace('\\', '/')
-    vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan['captions'] or plan.get('labels') else 'null'
+    vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan['captions'] or plan.get('labels') or plan.get('credit') \
+        else 'null'
     dec = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', str(clip_mp4), '-f', 'rawvideo', '-pix_fmt', 'bgr24',
                             '-r', str(plan['fps']), '-s', f'{W}x{H}', '-'], stdout=subprocess.PIPE)
     tmp = out_mp4.with_suffix('.part.mp4')
+    extra, video = finish_args(plan, vf)
     enc = subprocess.Popen(['ffmpeg', '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'bgr24', '-s', f'{W}x{H}',
-                            '-r', str(plan['fps']), '-i', '-', '-i', str(audio), '-vf', vf,
-                            '-map', '0:v', '-map', '1:a', *(plan.get('encoder') or video_encoder(settings())[0]),
+                            '-r', str(plan['fps']), '-i', '-', '-i', str(audio), *extra, *video,
+                            '-map', '1:a', *(plan.get('encoder') or video_encoder(settings())[0]),
                             '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-shortest',
                             '-movflags', '+faststart', str(tmp.resolve())],
                            stdin=subprocess.PIPE, cwd=workdir)
@@ -414,8 +453,22 @@ def render_remotion(clip_mp4, plan, audio, out_mp4, workdir):
     (pub / tag).unlink(missing_ok=True)
     if r.returncode != 0 or not silent.exists():
         die('remotion render failed (see output above)')
-    ffmpeg('-i', silent, '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'copy', '-shortest',
-           '-movflags', '+faststart', out_mp4)
+    if plan.get('credit') or plan.get('logo') or plan.get('outro'):
+        # your brand on top (Remotion draws the captions; the credit, logo and outro are added here)
+        ass = workdir / f'{out_mp4.stem}.credit.ass'
+        write_ass(dict(plan, captions=[], labels=[], hook=None), ass)
+        fonts_rel = os.path.relpath(FONTS, workdir).replace('\\', '/')
+        vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan.get('credit') else 'null'
+        extra, video = finish_args(plan, vf)
+        r = subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(silent.resolve()), '-i', str(Path(audio).resolve()),
+                            *extra, *video, '-map', '1:a', *(plan.get('encoder') or video_encoder(settings())[0]),
+                            '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-shortest', '-movflags', '+faststart',
+                            str(Path(out_mp4).resolve())], cwd=workdir)
+        if r.returncode != 0:
+            die('remotion engine: adding the credit / logo / outro failed')
+    else:
+        ffmpeg('-i', silent, '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'copy', '-shortest',
+               '-movflags', '+faststart', out_mp4)
     silent.unlink(missing_ok=True)
 
 
@@ -465,6 +518,8 @@ def edit_one(job):
         say('   (the Remotion engine draws the classic caption look and no emojis: use the python engine for those)')
     if any(has_devanagari(w['text']) for g in plan['captions'] for w in g['words']):
         say(f"   captions include Devanagari -> font {plan['caption_style']['font']}")
+    kit = job.get('kit') or {}
+    plan.update(credit=kit.get('credit'), logo=kit.get('logo'), outro=kit.get('outro'))
     save_json(work / f"{meta['name']}.plan.json", {k: v for k, v in plan.items() if k != 'cam'})
     plan['encoder'] = video_encoder(cfg)[0]
     audio = work / f"{meta['name']}.mix.m4a"
@@ -474,7 +529,7 @@ def edit_one(job):
         track = musiclib.pick(picked['music'], meta['name'])
         if not track:
             say(f"   ! music \"{picked['music']}\": no tracks in music/{picked['music']}/ (`python run.py music`)")
-    encode_audio(clip_mp4, plan['sfx'], audio, plan['duration'], track)
+    encode_audio(clip_mp4, plan['sfx'], audio, plan['duration'], track, tail=(plan['outro'] or {}).get('audio'))
     (render_remotion if a.engine == 'remotion' else render_python)(clip_mp4, plan, audio, out, work)
     if plan['captions']:
         write_srt(plan, out.with_suffix('.srt'))
@@ -540,6 +595,14 @@ def main():
     ap.add_argument('--jump-label', action=argparse.BooleanOptionalAction, default=None,
                     help='a small "27 MIN LATER" label where a joined clip jumps in time '
                          '(default: "jump_label" in settings.json, else off)')
+    ap.add_argument('--credit', action=argparse.BooleanOptionalAction, default=None,
+                    help='"(C) Channel name" bottom left on clips from a YouTube link '
+                         '(default: settings.json "source_credit", on; "no credit")')
+    ap.add_argument('--logo', action=argparse.BooleanOptionalAction, default=None,
+                    help='your logo (brand/logo.png) bottom right (default: settings.json "logo", on when the file is there)')
+    ap.add_argument('--outro', action=argparse.BooleanOptionalAction, default=None,
+                    help='your outro (brand/outro.mp4, 3-5 s) after every clip (default: settings.json "outro", on '
+                         'when the file is there)')
     a = ap.parse_args()
 
     pdir = project_dir(a.project)
@@ -567,13 +630,20 @@ def main():
             'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size,
             'look': a.look or cfg.get('caption_look', 'classic'),
             'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
+    on = lambda flag, key: cfg.get(key, True) if flag is None else flag      # noqa: E731
+    kit, notes = brandkit.resolve(project, work, on(a.credit, 'source_credit'), on(a.logo, 'logo'),
+                                  on(a.outro, 'outro'))
+    for m in notes:
+        print('   ' + m)
+    if brandkit.summary(kit):
+        print(brandkit.summary(kit))
     jobs = []
     for mpath in metas:
         meta = load_json(mpath)
         if want and meta['id'] not in want:
             continue
         jobs.append({'a': a, 'opts': opts, 'cfg': cfg, 'brand': brand, 'pdir': pdir, 'out_dir': out_dir,
-                     'work': work, 'clips_dir': clips_dir, 'meta': mpath})
+                     'work': work, 'clips_dir': clips_dir, 'meta': mpath, 'kit': kit})
     n = min(a.workers, len(jobs)) if a.workers else workers(cfg, len(jobs), a.engine)
     enc = 'the NVIDIA encoder' if video_encoder(cfg)[1] == 'h264_nvenc' else 'the processor (libx264)'
     print(f"-> {len(jobs)} clip(s), {n} at a time, encoded on {enc}")
