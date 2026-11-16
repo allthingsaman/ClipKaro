@@ -112,9 +112,24 @@ captions". "Hook title" adds a big title for the first seconds.
 - 🔒 **Free and private.** No extra accounts, keys or subscriptions for ClipKaro, nothing uploaded.
   Fast with an NVIDIA graphics card (a 7-minute Hinglish video is written down in about a minute).
 
+## Which AI helper do you need?
+ClipKaro is driven by an **AI coding agent**: an AI helper that can work on your computer (run its
+programs, read and write its files). The AI is the editor that picks the moments; ClipKaro's own
+programs do the downloading, cutting and editing. It was built with **Claude Code**, but it doesn't
+depend on it: any agent that can work on your computer can drive it.
+
+| AI helper | Cost | Does it work? |
+|---|---|---|
+| **Claude Code** (what ClipKaro is made with) | a Claude plan that includes Claude Code (Pro or higher) | ✅ best: every feature, helpers working at the same time |
+| **Google Antigravity** | has a **free plan** (weekly limits, which Google changes now and then) | ✅ the free limits are usually enough for about one video per session |
+| Codex, Cursor, Gemini CLI, GitHub Copilot and other agents that read [AGENTS.md](AGENTS.md) | their own plans | ✅ they follow the same steps (helpers may run one after another) |
+| **Claude's free plan** (the chat on claude.ai or the Claude app) | free | ❌ the chat can't reach your computer, so it can't run ClipKaro's programs |
+
+Short on usage? Say **"quick clip this"** (basic mode): it uses the least.
+
 ## Three modes: Quick, Standard and Deep
-ClipKaro uses your Claude plan (Claude Code) to choose the best moments. The three modes only change
-**how carefully the moments are chosen**, and so how much of your plan a video uses. Everything else is
+ClipKaro uses your AI helper's plan (Claude Code, Antigravity ...) to choose the best moments. The three
+modes only change **how carefully the moments are chosen**, and so how much of your plan a video uses. Everything else is
 the same in every mode: the framing, the captions, the edit, Hinglish, gameplay and the posting texts.
 
 | | ⚡ **Quick** (basic) | ⭐ **Standard** (the default) | 🧵 **Deep** (advanced) |
@@ -167,8 +182,12 @@ whether you have an NVIDIA graphics card (and sets it up if you do). Anything th
 computer's password, it gives you to run yourself. When it's done, **open Claude Code inside the
 new `ClipKaro` folder** (step 3). Every step explained simply: [docs/user-guide.md](docs/user-guide.md).
 
-**Or install it yourself.** You need: [Claude Code](https://claude.com/claude-code),
-**Python 3.10-3.14**, **ffmpeg** and **Node.js** (recommended).
+Using **Google Antigravity** or another agent instead? Open the folder in it and type the same
+sentence; it follows the same steps ([AGENTS.md](AGENTS.md)).
+
+**Or install it yourself.** You need: an AI helper ([Claude Code](https://claude.com/claude-code), or
+another one from [the table above](#which-ai-helper-do-you-need)), **Python 3.10-3.14**, **ffmpeg** and
+**Node.js** (recommended).
 
 **Windows** (in PowerShell; open a new window after the `winget` lines):
 ```powershell
@@ -216,7 +235,8 @@ or, for a file on your computer (put the path in quotes):
 Claude does the rest by itself and shows you a table of finished clips, each with a caption you can
 copy when you post.
 
-Using a different AI helper (Codex, Cursor, Copilot, Gemini CLI, ...)? See [AGENTS.md](AGENTS.md).
+Using a different AI helper (Google Antigravity, Codex, Cursor, Copilot, Gemini CLI, ...)? Open the
+ClipKaro folder in it and type the same sentence; it follows [AGENTS.md](AGENTS.md).
 
 ### For AI agents installing ClipKaro
 If a user asked you to install this repo, follow these steps (details per system in

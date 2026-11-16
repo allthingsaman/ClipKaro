@@ -30,7 +30,7 @@ Everything happens **on your own computer**. Your videos are not uploaded anywhe
 |---|---|
 | **A computer** | Windows, Mac or Linux, with at least 8 GB of memory (RAM) and about 20 GB of free space |
 | **An NVIDIA graphics card** | **Strongly recommended.** With one, a video is ready in minutes. Without one, ClipKaro still works, but it is **very slow**: one video can take a couple of hours. Macs don't have NVIDIA cards, so on a Mac it's always the slow way. |
-| **Claude Code** | the AI helper that does all the work for you (it needs a Claude account with a plan that includes Claude Code: see [claude.com/claude-code](https://claude.com/claude-code)) |
+| **An AI helper** | the AI that does all the work for you. **Claude Code** is what ClipKaro is made with (it needs a Claude plan that includes Claude Code, Pro or higher: see [claude.com/claude-code](https://claude.com/claude-code)). **Google Antigravity** also works and has a free plan (weekly limits; usually enough for about one video per session). Claude's free plan is only a chat and can't reach your computer, so it can't run ClipKaro. |
 | **Internet** | for the first setup (it downloads a few GB once) and for YouTube links |
 
 **Do I have an NVIDIA graphics card?**
@@ -55,6 +55,9 @@ Everything happens **on your own computer**. Your videos are not uploaded anywhe
 ---
 
 ## Step 1: Get Claude Code
+
+(Using Google Antigravity instead? Install it from Google, open the ClipKaro folder in it, and type
+the same sentences as below: it follows the same steps.)
 
 1. Go to **[claude.com/claude-code](https://claude.com/claude-code)**.
 2. Download it for your computer and sign in with your Claude account. On **Windows** and **Mac**,

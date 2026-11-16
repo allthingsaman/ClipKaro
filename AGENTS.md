@@ -1,7 +1,9 @@
 # Instructions for AI coding agents
 
-This file is for AI coding agents other than Claude Code (Codex, Cursor, GitHub Copilot, Gemini
-CLI and others that read `AGENTS.md`). Claude Code reads `CLAUDE.md` and the skill directly.
+This file is for AI coding agents other than Claude Code (Google Antigravity, Codex, Cursor, GitHub
+Copilot, Gemini CLI and others that read `AGENTS.md`). Claude Code reads `CLAUDE.md` and the skill
+directly. On a free plan with tight limits (Antigravity's free plan, for example), suggest quick mode
+("quick clip this") to the user: it uses the least.
 
 ClipKaro turns long videos into vertical short-form clips. **You are the editor who picks the
 moments**; the Python scripts do the download, transcription, cutting and rendering.
