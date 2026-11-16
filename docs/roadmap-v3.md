@@ -37,36 +37,45 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | P3 | **More caption-check rules**: names spelled right, numbers as digits where they are amounts, years or scores. | **Done on v2.4-dev** (2026-11-17) |
 | P4 | **YouTube's own captions as a second opinion.** | **On hold, for the owner to decide** (research, 2026-11-17): a study of 8,740 hours of Indian speakers found YouTube's captions worse than even a small Whisper model, with errors in the same places (so it would mostly repeat our mistakes), no published test exists for Hinglish (guides say it garbles fast Hindi-English switching), and a wrong second opinion could lead the caption check astray. |
 
-## Next phase
+## Next phase (v2.4)
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. | 2-3 days | needs about 50 posted clips with 2+ weeks of views | Next phase (posting started 2026-11-12) |
-| 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days | try it | Next phase |
-| 16 | **A fresh install on Windows and macOS**, checked from zero. | So far ClipKaro has only run on this Fedora laptop. | about 1 day | a Windows or Mac computer (yours or a friend's), 1 h | Next phase |
+| 20 | **Your brand on every clip**: your logo in a corner and your own outro (9:16, ideally 3-5 s) at the end, from a `brand` folder. No intro: a clip must open on its hook. | A logo and an outro make the clips yours (Opus Clip has brand templates). | about 1 day, with item 21 | put your logo and outro in the folder, watch 2-3 clips | Plan ready, waiting for the owner's yes |
+| 21 | **Credit to the source**: "© Channel name" on clips made from a YouTube link, never on your own video files. On in every mode; `"source_credit": false` in settings.json turns it off. | Fair to the creator whose video it is. | (with item 20) | watch 2-3 clips | Plan ready, waiting for the owner's yes |
+| 16 | **Install check for Windows and macOS**: read the install steps and `install.py` once more and fix what's wrong or unclear. The AI helper that installs ClipKaro sorts out most surprises on the user's own computer, so this is a polish, not a full test. | So far ClipKaro has only run on this Fedora laptop. | 1-2 h | none now (a real run on a Windows or Mac computer when one is at hand) | Next |
+
+## Major update (v3.0), later
+Big new features for a later major version, once everything essential for clipping is done.
+
+| # | What | Why | Rough size |
+|---|---|---|---|
+| 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days |
+| 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. Needs about 50 posted clips with 2+ weeks of views. | 2-3 days |
+| | **B-roll**: short stock clips or pictures over the speaker where the words name something | Opus Clip has AI B-roll | 2-3 days |
+| | **Following people who move**, and objects | Opus Clip's ReframeAnything | 1-2 weeks |
+| | **Three or more people**: panels, picture-in-picture for remote guests | Klap and Vizard have layouts | 1 week |
+| | **TikTok and LinkedIn in PostKaro** | a scheduler for more platforms | 1-2 days each, depending on their APIs |
 
 ## Later, if we need it
-We review these when the next phase is done and decide which are worth building.
+Smaller items. We review them when the next phase is done and decide which are worth building.
 
 | What | Why | Rough size |
 |---|---|---|
 | **No game-character captions for English-speaking streamers** | v2.3 tells game lines apart by language (an English game, a Hinglish streamer); with an English streamer it needs another clue (the voice alone, or the game's own subtitles on screen) | 1-2 days |
 | **A facial-reaction hint** (a listener's silent laugh or shock in a podcast) | the one moment sound can't catch | 1-2 days |
 | **More pairs for the hints test** (on a podcast and a second stream) | the first test was 2 pairs, both won by the hints | your time, 20 min a video |
-| **The side-by-side test**: the same English and gaming videos through Opus Clip and ClipKaro, rated blind | the reason to trust any comparison | 1 day, plus a few people to rate |
-| **B-roll**: short stock clips or pictures over the speaker where the words name something | Opus Clip has AI B-roll | 2-3 days |
-| **Brand templates**: your logo, an intro and an outro on every clip | Opus Clip has them | 1 day |
-| **Following people who move**, and objects | Opus Clip's ReframeAnything | 1-2 weeks |
-| **Three or more people**: panels, picture-in-picture for remote guests | Klap and Vizard have layouts | 1 week |
-| **TikTok and LinkedIn in PostKaro** | a scheduler for more platforms | 1-2 days each, depending on their APIs |
 | **Export to Premiere Pro** (XML), for creators who finish by hand | Opus Clip has it | 1 day |
 
 The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ## On hold
+- **The side-by-side test against Opus Clip**: the same English and gaming videos through both, rated
+  blind. It needs an Opus Clip subscription, which the owner doesn't have right now.
 - **Background music** from your own `music` folder: built, but it doesn't suit podcasts
   (`"music": true` turns it on).
 - **Posting to X (Twitter)**: left out by the owner for now.
+- **YouTube's own captions as a second opinion** (idea P4, above).
 
 ## Not planned for now
 - **More Indian languages** (Tamil, Bengali, Marathi, Telugu…). ClipKaro supports Hindi, Hinglish
@@ -101,7 +110,8 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ---
 
-**Waiting on you: items 3b, 4b, 13b and 19. Next phase (items 14-16): about 1-2 weeks of building.**
+**Waiting on you: items 3b, 4b, 13b and 19. Next phase (v2.4: items 20, 21 and 16): about 1-2 days of
+building. The major update (v3.0) comes later.**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).

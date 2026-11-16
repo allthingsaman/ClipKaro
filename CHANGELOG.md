@@ -12,6 +12,8 @@
   scores ("do hazaar tera" -> 2013, "paanch lakh" -> 5 lakh), never where they aren't ("ek din" stays).
 - **Which AI helper you need**, in the README: Claude Code (Pro or higher), Google Antigravity (it has
   a free plan), or another agent that can work on your computer; Claude's free chat can't run it.
+- **ClipKaro or Opus Clip inside Claude?**, in the README: with Opus Clip's Claude connector, Opus Clip
+  makes the clips (a paid Opus Clip plan and credits, no Hindi); with ClipKaro, your AI helper is the editor.
 
 ## v2.3 (November 2026): cleaner captions, smarter picks
 

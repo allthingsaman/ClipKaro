@@ -127,6 +127,35 @@ depend on it: any agent that can work on your computer can drive it.
 
 Short on usage? Say **"quick clip this"** (basic mode): it uses the least.
 
+## ClipKaro or Opus Clip inside Claude?
+Opus Clip, the best-known AI clipper, can also be used from inside Claude (a "connector"). It looks
+the same from the outside, since you ask Claude for clips either way, but it works very differently:
+- **With the Opus Clip connector, Opus Clip makes the clips** on its own servers. Claude only sends
+  the link and brings the clips back, so you get the same clips as on Opus Clip's website.
+- **With ClipKaro, your AI helper is the editor.** It reads every word of the video and chooses the
+  moments, and ClipKaro's own programs cut and edit them on your computer.
+
+| | Opus Clip inside Claude | ClipKaro |
+|---|---|---|
+| **Who picks the moments** | Opus Clip's own AI | your AI helper, reading every word; a second, blind AI critic checks every idea |
+| **What you pay** | your Claude plan **plus** a paid Opus Clip plan (Pro or higher), and Opus Clip credits for every video (at least 10 per video) | your AI helper's plan only |
+| **Limits** | 15 hours of video a month, at most 4 videos at a time | only your AI plan's usage limits |
+| **Hindi and Hinglish** | ❌ Opus Clip says it doesn't support Hindi | ✅ a Hinglish speech model; captions in English letters |
+| **Gameplay and live streams** | basic (reviews call it weaker on gaming) | ✅ webcam under the game, no captions for game characters, "Starting soon" screens left out |
+| **Deep clips** (a question and its answer far apart, joined into one story) | ❌ | ✅ |
+| **B-roll, following people who move** | ✅ | not yet |
+| **Your logo and outro** | ✅ | coming in the next version |
+| **Editing by hand** | ✅ a timeline editor | in words ("start clip 2 at 1:05", "'bow' should be 'boat'") |
+| **Where your video goes** | uploaded to Opus Clip | stays on your computer |
+
+**In short:** for Hindi, Hinglish and gaming, ClipKaro is the clear choice, and it costs nothing on top
+of your AI plan. Opus Clip is more polished for English talking videos (B-roll, a hand editor). Which
+one picks better moments on English podcasts hasn't been tested side by side yet.
+
+<sub>Opus Clip's facts are from its own help pages, checked in November 2026 (they may change):
+[the Claude connector](https://help.opus.pro/api-reference/claude-connector) and
+[Hindi](https://help.opus.pro/docs/article/does-opusclip-support-hindi). More: [ClipKaro compared with Opus Clip](docs/roadmap-v2.md).</sub>
+
 ## Three modes: Quick, Standard and Deep
 ClipKaro uses your AI helper's plan (Claude Code, Antigravity ...) to choose the best moments. The three
 modes only change **how carefully the moments are chosen**, and so how much of your plan a video uses. Everything else is
