@@ -30,6 +30,15 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | 13b | **Your microphone on its own track.** Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
 | 19 | **The first full "clip this video" run with everything new** (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
 
+## Ideas waiting for your choice
+Nothing is built until you choose.
+
+| # | What | Why | Build |
+|---|---|---|---|
+| P2 | **Action without talking gets its own line.** Today a game explosion or big action is noted only on a line someone speaks; in a stretch of pure gameplay the note is lost (in the test streams, 37 of 58 such notes). It would get a line of its own: "[812.0-818.0] (no talking) [big action on screen ~6 s] [explosion]". | Some of the best gameplay moments have no words. | half a day |
+| P3 | **More caption-check rules**: numbers as digits ("do hazaar tera" -> 2013, "eleven" -> 11), names of games, brands and people spelled right. | Punchier, correct captions. | 1 hour |
+| P4 | **YouTube's own captions as a second opinion** (YouTube links only): where YouTube heard a different word than our transcript, the line is marked for Claude in the caption check. | Two listeners catch more mishearings than one. | half a day (a test first) |
+
 ## Next phase
 
 | # | What | Why | Build | Your part | Status |
