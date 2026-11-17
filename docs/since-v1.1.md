@@ -12,7 +12,8 @@ its line here, in the same commit.** Released so far:
 - **v2.2** (2026-11-14): the lines marked v2.2;
 - **v2.3** (2026-11-16): the lines marked v2.3;
 - **v2.4** (2026-11-17): the lines marked v2.4;
-- **v2.5** (2026-11-17): the lines marked v2.5.
+- **v2.5** (2026-11-17): the lines marked v2.5;
+- **v2.6** (not released yet, branch v2.6-dev): the lines marked v2.6.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -222,6 +223,12 @@ changed. Only new ones were added.
   draw captions) is found by itself. On Linux, and for plain English names, nothing changes.
 - ⬆ `install.py` stops at once, with the fix, on a Python the speech engine can't use (3.15, or 3.14 on an
   Intel Mac), instead of failing half-way; a `.venv` made with one is made again. *(v2.5)*
+- ⬆ **Live clipping** *(v2.6)*: `run.py live` (a watcher on OBS's 10-minute recording pieces, Twitch chat and
+  viewer clips as hints), `post --now` (everything posted at once through PostKaro's new `post-now`), and
+  the settings `live_folder`, `twitch_channel`, `twitch_delay`, `live_post`, `live_vram_mb`. Nothing changes
+  unless a live session is started; while one runs, heavy steps run at low priority and edit with the
+  processor's encoder (the stream comes first). Auto-posting without review is the owner's choice for live
+  streams only; normal clipping still ends with PostKaro's review page.
 - ⬆ New settings `source_credit`, `logo` and `outro`, and `edit --no-credit`, `--no-logo`, `--no-outro`.
   No Claude usage; an outro adds about a second of rendering per clip. *(v2.4)*
 

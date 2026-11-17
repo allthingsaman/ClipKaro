@@ -109,6 +109,8 @@ captions". "Hook title" adds a big title for the first seconds.
 - 🏷️ **Your brand, and credit to the source.** Put your logo and a 3-5 s outro in the `brand` folder:
   the logo goes in the bottom-right corner of every clip, the outro at the end. Clips from a YouTube
   link get a small "© Channel name" in the bottom-left corner (`"source_credit": false` turns it off).
+- 🔴 **Live clipping** for game launches: clips posted to Shorts, Reels and Facebook while your stream is
+  still running, with your Twitch chat and viewers' clips as hints ([docs/live.md](docs/live.md)).
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.
@@ -404,6 +406,7 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 | [Troubleshooting](docs/troubleshooting.md) | common problems and questions |
 | [Architecture](docs/architecture.md) | how it works inside, and how it picks moments (for developers) |
 | [Adding a language](docs/adding-a-language.md) | step by step, for developers |
+| [Live clipping](docs/live.md) | clips posted while you stream: setup, stream settings, cost |
 | [Roadmap](docs/roadmap-v3.md) | what's next, in order |
 | [Compared with Opus Clip](docs/roadmap-v2.md) | how ClipKaro compares with Opus Clip today |
 | [Changelog](CHANGELOG.md) | what's new in each version |

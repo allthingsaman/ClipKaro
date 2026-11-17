@@ -472,6 +472,35 @@ clips.json after the last one, and their words are printed. For each: write `cap
 post.json; clips already posted stay as they are). Report them like the others. When `more` says
 nothing is left, say so: a fresh read ("find more clips in this video") is the only way to more.
 
+## 8. Live clipping (only when the user asks: "live clip my stream", "start live clipping")
+Clips posted **while the stream is still running**: OBS records in pieces of ~10 minutes, a watcher
+writes down each finished piece, and every 10 minutes a helper clips the new pieces and posts them at
+once (the owner chose auto-posting for live streams). Setup and what the user does: `docs/live.md`.
+1. **Check once:** OBS splits its recording every 10 minutes (Settings > Output > Recording >
+   "Automatically split file"), its recording folder, PostKaro installed with its accounts connected,
+   and, for Twitch hints, the channel name (`"twitch_channel"`) and the developer app keys
+   (`python run.py live keys --client-id ... --client-secret ...`). Missing keys only turn off the
+   viewer-clip notes; chat is read anyway.
+2. **Start the watcher in the background** (it keeps running; never stop it yourself):
+   `python run.py live start <name> --folder "<OBS recording folder>" --twitch <channel>`
+   (or `"live_folder"` / `"twitch_channel"` from settings.json).
+3. **Start the loop:** invoke the `loop` skill with `10m live clip <name>`. If you can't, ask the user to
+   type `/loop 10m live clip <name>`.
+4. **Each "live clip <name>" run:** `python run.py live next <name>`. While it names a piece, start ONE
+   `clipkaro-live` helper (prompt: "Session: <name>") and wait for it, then ask `live next` again. When it
+   says NONE READY, write one status line (`python run.py live status <name>`) and end the run. Before
+   Claude Code restarts, the helper type may not exist yet: start a general helper with "You are the
+   ClipKaro live helper: read .claude/agents/clipkaro-live.md (everything after its front matter is
+   your instructions). Session: <name>". **Never two helpers at once** (memory, and the graphics card
+   belongs to OBS).
+5. **When the user says the stream is over:** keep running until `live status` shows every piece done
+   (the last piece is taken ~2 minutes after OBS stops writing), then `python run.py live stop <name>`
+   and end the loop. Report: clips posted, any `!` lines, the time from piece to post.
+
+While a live session runs, `run.py` lowers the priority of every heavy step and edits with the
+processor's encoder, and the watcher uses the graphics card for the words only when OBS leaves it
+enough memory: don't override that.
+
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.
 - Never commit anything in `output/` (it's gitignored). Don't upload anything anywhere yourself:

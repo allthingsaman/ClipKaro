@@ -16,7 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .common import load_json, probe, project_dir, save_json
+from .common import load_json, probe, project_dir, save_json, settings
 
 KIT_VERSION = 1
 PLATFORMS = ('youtube', 'instagram', 'facebook')
@@ -109,6 +109,25 @@ def link_from_postkaro(app, pdir):
     return None, (r.stderr or r.stdout).strip()[-400:]
 
 
+def post_now_via_postkaro(app, pdir, dry=False):
+    """Live clipping: PostKaro adds the clips and posts each on every connected platform at once.
+    -> (result dict or None, problem)."""
+    root = Path(app['path'])
+    py = root / '.venv' / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
+    exe = [str(py)] if py.exists() else [sys.executable]
+    try:
+        r = subprocess.run([*exe, str(root / 'run.py'), 'post-now', str(pdir), *(['--dry'] if dry else [])],
+                           capture_output=True, text=True, timeout=300, encoding='utf-8', errors='replace')
+    except (OSError, subprocess.SubprocessError) as e:
+        return None, str(e)
+    for line in reversed(r.stdout.strip().splitlines()):
+        try:
+            return json.loads(line), None
+        except ValueError:
+            continue
+    return None, (r.stderr or r.stdout).strip()[-400:] or 'PostKaro has no "post-now" yet: update PostKaro'
+
+
 def open_link(url):
     if sys.platform.startswith('linux') and shutil.which('xdg-open'):
         subprocess.Popen(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -124,6 +143,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('project')
     ap.add_argument('--open', action='store_true', help='open the PostKaro link in the browser')
+    ap.add_argument('--now', action='store_true',
+                    help='live clipping: post every clip on every connected platform at once (no review)')
+    ap.add_argument('--dry', action='store_true', help='with --now: only show what would be posted')
     a = ap.parse_args()
     pdir = project_dir(a.project)
     kit, notes = build(pdir)
@@ -142,6 +164,23 @@ def main():
     if not app:
         print('PostKaro (the posting app) is not installed, so post the files in edited/ by hand. '
               'PostKaro posts them to YouTube, Instagram and Facebook for you: see docs/usage.md, "Posting".')
+        return
+    if a.now:
+        # a test stream: settings.json "live_post": "dry" shows what would be posted, and posts nothing
+        a.dry = a.dry or str(settings().get('live_post', 'now')).lower() == 'dry'
+        res, err = post_now_via_postkaro(app, pdir, a.dry)
+        if not res:
+            print(f'PostKaro did not post ({err})')
+            sys.exit(1)
+        if a.dry:
+            print('(test: nothing posted) Would post now: ' + ', '.join(f"clip {x['clip']} on {x['platform']}" for x in res.get('would_post', []))
+                  or 'nothing (no connected platform?)')
+            return
+        print(f"Posting now: {res.get('scheduled', 0)} post(s) on their way (PostKaro uploads within a minute)")
+        for s in res.get('skipped', []):
+            print(f"  ! clip {s['clip']} on {s['platform']} not posted: {' '.join(s['why'])}")
+        if res.get('link'):
+            print(f"Follow them: {res['link']}")
         return
     link, err = link_from_postkaro(app, pdir)
     if not link:

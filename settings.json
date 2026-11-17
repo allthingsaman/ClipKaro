@@ -23,6 +23,11 @@
   "logo_corner": "bottom-right",
   "credit_corner": "bottom-left",
   "logo_background": "remove",
+  "live_folder": null,
+  "twitch_channel": null,
+  "twitch_delay": 10,
+  "live_post": "now",
+  "live_vram_mb": 2800,
   "encoder": "auto",
   "render_workers": "auto"
 }

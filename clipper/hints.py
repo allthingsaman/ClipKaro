@@ -50,12 +50,14 @@ BASE_MIN_LINES = 8                   # ... at least this many, else all their li
 MIN_VOICED = 0.5                     # seconds of voiced speech a line needs to be judged
 PER_10_MIN = 6                       # at most this many raised-voice hints per 10 minutes (the clearest)
 HINT_RE = re.compile(r'\[(?:voice raised|shouting|laughter[^\]]*|applause|explosion|gunfire|crash|'
-                     r'big action on screen[^\]]*|both talk at once)\]|\(other voice\)|\(no talking\)')
+                     r'big action on screen[^\]]*|both talk at once|chat exploded[^\]]*|viewers clipped this[^\]]*)\]'
+                     r'|\(other voice\)|\(no talking\)')
 SILENT_GAP = 3.0                     # notes where nobody talks, closer than this, share one line
 
 READER_NOTE = ('Notes in [brackets] like [laughter ~2 s], [voice raised], [shouting], [explosion] or '
                '[big action on screen], and "(other voice)" before a line, are measurements of the sound and '
-               'picture, not words: never quote them. They show where to look; the words decide. A note never '
+               'picture (in a live stream also [chat exploded ...] and [viewers clipped this]: the audience, '
+               'a few seconds late), not words: never quote them. They show where to look; the words decide. A note never '
                'makes a clip by itself, and no note does not mean a moment is weak.')
 
 
@@ -170,7 +172,7 @@ def notes(pdir, project=None):
     idx = [i for i, ln in enumerate(lines) if 's' in ln]
     spans = [(lines[i]['s'], lines[i]['e']) for i in idx]
     hosted = {}                                   # line index -> game-sound / action notes on it
-    for ev in sorted(event_notes(cues, mot)):
+    for ev in sorted(event_notes(cues, mot) + twitch_events(pdir)):
         k = host_line(ev, spans)
         if k is not None:
             hosted.setdefault(idx[k], []).append(ev[2])
@@ -203,6 +205,11 @@ def event_notes(cues, mot):
     return events
 
 
+def twitch_events(pdir):
+    """[(start, end, text)] of a live piece's Twitch notes (live.py writes transcript/twitch.json), else []."""
+    return [tuple(e) for e in (load_json(pdir / 'transcript' / 'twitch.json') or []) if len(e) == 3]
+
+
 def host_line(event, spans):
     """Index of the spoken line an event's note goes on: the one covering at least half of the event, else
     the one it starts in; None when nobody talks then (it gets a line of its own)."""
@@ -230,7 +237,7 @@ def silent_notes(pdir, project=None, lines=None):
     cues = sound.load(pdir) or {}
     mot = load_json(pdir / 'transcript' / 'motion.json') or {}
     spoken = [(ln['s'], ln['e']) for ln in lines if 's' in ln and 'marker' not in ln and 'note' not in ln]
-    alone = sorted(ev for ev in event_notes(cues, mot) if host_line(ev, spoken) is None)
+    alone = sorted(ev for ev in event_notes(cues, mot) + twitch_events(pdir) if host_line(ev, spoken) is None)
     out = []
     for a, b, text in alone:
         if out and a - out[-1]['e'] <= SILENT_GAP:

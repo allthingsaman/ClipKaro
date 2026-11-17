@@ -49,6 +49,11 @@ DEFAULT_SETTINGS = {
     'credit_corner': 'bottom-left',# where the credit goes: the same four (right in the corner, no gap)
     'logo_background': 'remove',   # remove: a plain background around the logo (a black or white square) is
                                    # made see-through by itself; keep: the logo exactly as it is
+    'live_folder': None,           # live clipping: the folder OBS records into (pieces of 10 minutes)
+    'twitch_channel': None,        # live clipping: your Twitch channel (chat and viewer clips as hints)
+    'twitch_delay': 10,            # seconds the Twitch audience is behind you (their reactions come later)
+    'live_post': 'now',            # live clipping: now (post everywhere at once) | dry (a test stream: post nothing)
+    'live_vram_mb': 2800,          # live: write down the words on the graphics card only with this much free memory
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

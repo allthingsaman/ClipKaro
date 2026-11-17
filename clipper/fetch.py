@@ -195,7 +195,7 @@ def download_video(pdir, project):
     return found
 
 
-def local_source(path):
+def local_source(path, name=None):
     p = Path(path.strip().strip('"\'')).expanduser().resolve()
     if not p.exists():
         die(f'file not found: {p}\n(tip: put the path in quotes if it has spaces)')
@@ -204,7 +204,7 @@ def local_source(path):
     info = probe(p)
     if not info.get('width'):
         die(f'{p.name} has no video track. Clipping needs a video file (mp4, mov, mkv, webm, ...).')
-    pdir = OUTPUT / slugify(p.stem, 50)
+    pdir = OUTPUT / slugify(name or p.stem, 50)       # name: live clipping names its pieces (live-gta6-p03)
     old = load_json(pdir / 'project.json')
     if old and old.get('source') != str(p):
         # another file with the same name already has a project: keep them apart
@@ -1083,6 +1083,7 @@ def main():
     ap.add_argument('--beam', type=int, default=None, help='beam size (default 5 for Hindi or on GPU, else 1)')
     ap.add_argument('--cookies-from-browser', default=None, help='chrome / firefox / edge (if YouTube blocks)')
     ap.add_argument('--retranscribe', action='store_true')
+    ap.add_argument('--name', default=None, help='project name for a local file (default: from the file name)')
     ap.add_argument('--no-video', action='store_true',
                     help="don't download the video now (cut does it later; break screens aren't checked then)")
     a = ap.parse_args()
@@ -1094,7 +1095,7 @@ def main():
         if not a.no_video:
             video_job = start_video_download(pdir, project)
     else:
-        pdir, project = local_source(a.source)
+        pdir, project = local_source(a.source, a.name)
         audio_src = Path(project['video'])
         # the microphone on its own audio track (OBS can record that): the words come from it alone
         if 'mic_track' not in project:

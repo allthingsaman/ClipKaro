@@ -25,6 +25,7 @@
     python run.py qa <project>                           check every finished clip (captions, cuts, loudness, black frames ...)
     python run.py test                                   ClipKaro's own tests (fast; protect v1.1's behaviour)
     python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
+    python run.py live start|next|done|status|stop <name> live clipping: clips posted while you stream (docs/live.md)
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """
@@ -66,7 +67,25 @@ COMMANDS = {
     'relisten': 'clipper.relisten',
     'asr-bench': 'clipper.asrbench',
     'gpu': 'clipper.gpu',
+    'live': 'clipper.live',
 }
+
+# heavy steps: while a live clipping session runs they get a low priority and the processor's video encoder,
+# so OBS keeps the graphics card's encoder and the stream never drops frames
+HEAVY = {'fetch', 'cut', 'edit', 'qa', 'frames', 'sound', 'hints', 'voices', 'relisten', 'kind'}
+
+
+def live_running():
+    """True while a live clipping session has a fresh heartbeat (clipper/live.py writes it)."""
+    import glob
+    import time
+    for hb in glob.glob(str(ROOT / 'output' / '_live' / '*' / 'heartbeat')):
+        try:
+            if time.time() - float(open(hb).read()) < 90:
+                return True
+        except (OSError, ValueError):
+            pass
+    return False
 
 
 def with_nvidia_libs(env):
@@ -121,7 +140,11 @@ def main():
     env = dict(os.environ, PYTHONIOENCODING='utf-8', PYTHONUTF8='1', PYTHONUNBUFFERED='1', HF_HUB_DISABLE_XET='1',
                HF_HUB_DISABLE_SYMLINKS_WARNING='1', HF_HUB_VERBOSITY='error')
     cmd = [str(PY), '-m', COMMANDS[sys.argv[1]], *sys.argv[2:]]
-    sys.exit(subprocess.run(cmd, cwd=ROOT, env=with_nvidia_libs(env)).returncode)
+    kw = {}
+    if sys.argv[1] in HEAVY and live_running():
+        env.setdefault('CLIPKARO_ENCODER', 'x264')
+        kw = {'creationflags': 0x00004000} if os.name == 'nt' else {'preexec_fn': lambda: os.nice(10)}
+    sys.exit(subprocess.run(cmd, cwd=ROOT, env=with_nvidia_libs(env), **kw).returncode)
 
 
 if __name__ == '__main__':

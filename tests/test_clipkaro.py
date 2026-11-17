@@ -771,5 +771,85 @@ class WindowsAndMac(unittest.TestCase):
             self.assertTrue(os.environ['PATH'].endswith(os.pathsep + '/opt/homebrew/bin'))
 
 
+class LiveClipping(unittest.TestCase):
+    """v2.6: clips while the stream runs (OBS pieces, Twitch chat and viewer clips as hints)."""
+
+    def test_chat_lines(self):
+        from clipper import twitch
+        self.assertEqual(twitch.parse_privmsg(':ravi!ravi@ravi.tmi.twitch.tv PRIVMSG #gamingthings :KEKW bhai'),
+                         ('ravi', 'KEKW bhai'))
+        self.assertIsNone(twitch.parse_privmsg(':tmi.twitch.tv 001 justinfan123 :Welcome'))
+        self.assertEqual(twitch.reaction(['KEKW', 'kekw bro', 'nice']), 'KEKW')
+        self.assertEqual(twitch.reaction(['nice', 'ok']), '')
+
+    def test_chat_spike_lands_before_the_reaction(self):
+        from clipper import twitch
+        t0 = 1_000_000.0
+        chat = [{'t': t0 + i * 5, 'u': 'a', 'm': 'hi'} for i in range(120)]             # one message per 5 s
+        chat += [{'t': t0 + 300 + k * 0.4, 'u': f'u{k}', 'm': 'KEKW'} for k in range(12)]  # 12 in 5 s at +300 s
+        spikes = twitch.chat_spikes(sorted(chat, key=lambda c: c['t']), start=t0 + 100, end=t0 + 700, delay=10)
+        self.assertEqual(len(spikes), 1)
+        a, b, note = spikes[0]
+        self.assertAlmostEqual(a, 190, delta=5)               # 300 s - 10 s delay - 100 s piece start
+        self.assertIn('chat exploded', note)
+        self.assertIn('KEKW', note)
+        self.assertEqual(twitch.chat_spikes([], t0, t0 + 600), [])
+
+    def test_viewer_clips(self):
+        from clipper import twitch
+        t0 = 2_000_000.0
+        clips = [{'created': t0 + 100, 'duration': 30}, {'created': t0 + 110, 'duration': 30},
+                 {'created': t0 + 900, 'duration': 30}]                                # the last one: another piece
+        marks = twitch.clip_marks(clips, t0, t0 + 600, delay=10)
+        self.assertEqual(len(marks), 1)
+        a, b, note = marks[0]
+        self.assertEqual((a, b), (60.0, 100.0))
+        self.assertIn('x2', note)
+
+    def test_obs_pieces(self):
+        import os
+        import time
+        from clipper import live
+        from datetime import datetime
+        self.assertEqual(live.piece_start('/x/2026-11-19 00-10-03.mkv'), datetime(2026, 11, 19, 0, 10, 3).timestamp())
+        with tempfile.TemporaryDirectory() as d:
+            a, b = Path(d) / '2026-11-19 00-00-00.mkv', Path(d) / '2026-11-19 00-10-00.mkv'
+            a.write_bytes(b'x' * 10)
+            b.write_bytes(b'y' * 10)
+            os.utime(a, (time.time() - 50, time.time() - 50))
+            (Path(d) / 'notes.txt').write_text('not a video')
+            sizes = {}
+            self.assertEqual(live.finished_pieces(d, 0, sizes), [a])                  # the newest is still recording
+            now = time.time()
+            self.assertEqual(live.finished_pieces(d, 0, sizes, now=now + live.IDLE_S + 1), [a, b])  # stream ended
+
+    def test_twitch_notes_are_hints(self):
+        from clipper import hints
+        self.assertEqual(hints.strip_hints('kya hua [chat exploded ~15 s: KEKW] [viewers clipped this x2]').split(),
+                         ['kya', 'hua'])
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'transcript').mkdir()
+            (Path(d) / 'transcript' / 'twitch.json').write_text('[[10.0, 25.0, "[viewers clipped this]"]]')
+            self.assertEqual(hints.twitch_events(Path(d)), [(10.0, 25.0, '[viewers clipped this]')])
+            self.assertEqual(hints.twitch_events(Path(d) / 'nothing'), [])
+
+    def test_heavy_steps_step_aside_for_obs(self):
+        import os
+        import time
+        from unittest import mock
+        import run
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(run, 'ROOT', Path(d)):
+                self.assertFalse(run.live_running())
+                hb = Path(d) / 'output' / '_live' / 'gta6'
+                hb.mkdir(parents=True)
+                (hb / 'heartbeat').write_text(str(time.time()))
+                self.assertTrue(run.live_running())
+                (hb / 'heartbeat').write_text(str(time.time() - 600))                 # a session that stopped
+                self.assertFalse(run.live_running())
+        self.assertIn('edit', run.HEAVY)
+        self.assertNotIn('live', run.HEAVY)
+
+
 if __name__ == '__main__':
     unittest.main()
