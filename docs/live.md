@@ -23,6 +23,51 @@ ask for it.
 4. **PostKaro posts each clip at once on every connected platform.** You chose this for live streams: there
    is no review step. A clip that fails the quality check is never posted.
 
+### The whole flow
+```
+ PS5 ──► capture card ──► OBS on your PC
+                            │
+            ┌───────────────┴──────────────────┐
+            ▼                                  ▼
+  streams to YouTube,               records the same picture to your disk
+  Twitch and Kick                   (e.g. C:\Users\<you>\Videos\live):
+  (your viewers watch)              a new file every 10 minutes
+            │                                  │
+            ▼                                  ▼
+  Twitch chat + viewer clips ──►   ClipKaro WATCHER  (starts when you say
+  (hints only: WHERE people         "start live clipping gta6")
+   reacted, never the video)        - waits until a piece is finished
+                                    - writes down your words (Hinglish model)
+                                    - adds the Twitch hints to the transcript
+                                               │
+                                               ▼
+                                    CLAUDE, every 10 minutes (/loop)
+                                    a helper takes the finished piece and
+                                    picks 0-2 clips: captions → cut (cam
+                                    layout) → edit (your logo) → quality check
+                                               │
+                                failed? ───────┤  never posted
+                                               ▼  passed
+                                    POSTKARO posts each clip at once to
+                                    YouTube Shorts, Instagram Reels and your
+                                    Facebook Page (with your saved logins)
+```
+A moment you play at minute 3 of a piece is online about 15-30 minutes later: the piece ends at minute
+10, writing down the words takes about 4-6 minutes on the graphics card, Claude checks every 10 minutes,
+and a helper needs about 3-4 minutes per piece.
+
+### Where the video comes from (and why Twitch)
+- **The video is your own OBS recording**, never a download from Twitch or YouTube. It is the best
+  picture there is (the full-quality original, before any platform compresses it), it has your cam in
+  it, and there is nothing to wait for or download.
+- **Clipping runs whenever OBS is recording**, whichever platforms you stream to. Not recording (only
+  streaming)? Then there is nothing to clip. Streaming only to YouTube that day? Clipping works the
+  same, just without the audience hints.
+- **Twitch is used only for hints:** its chat can be read live without logging in, and with your free
+  Twitch developer keys ClipKaro also sees the clips your viewers make. Both only tell Claude where
+  people reacted; your words decide what becomes a clip. Without keys the chat hints still work; only
+  the viewer-clip notes are off.
+
 While a live session runs, ClipKaro's heavy steps run at **low priority** and edit on the **processor**,
 so OBS keeps the graphics card's video encoder and your stream never drops frames because of ClipKaro.
 The words are written down on the graphics card only when OBS leaves enough of its memory free;
@@ -46,6 +91,8 @@ otherwise on the processor (slower, but safe).
    - Video Encoder: **(Use stream encoder)**. Recording then costs no extra encoding.
    - **Automatically split file: on, Split by time: 10 minutes.**
    - Audio Track: tick **1 and 2**.
+   - Then Settings → **Advanced** → Recording: tick **Automatically record when streaming**. OBS's
+     "Start Streaming" doesn't record by itself, and without a recording there is nothing to clip.
 4. **Your mic on its own track** (Edit → Advanced Audio Properties): microphone on tracks **1 and 2**,
    the capture card's game sound on track **1** only. ClipKaro then writes down your voice alone, so game
    characters never get into your captions.
@@ -92,8 +139,10 @@ otherwise on the processor (slower, but safe).
   radio off or down while streaming.
 
 ## Going live
-1. Start OBS, start streaming (it records too), then in Claude Code (inside the ClipKaro folder) say:
-   **"start live clipping gta6"**.
+1. Start OBS, start streaming (it records too, with "Automatically record when streaming" on; check
+   that the red recording dot shows at the bottom of OBS), then in Claude Code (inside the ClipKaro
+   folder) say: **"start live clipping gta6"**. Saying it before you go live is fine too: the watcher
+   simply waits for the first piece.
 2. Claude starts the watcher and a 10-minute loop (`/loop 10m live clip gta6`). Keep Claude Code open;
    you can minimise it.
 3. **To see how it goes:** `python run.py live status gta6`, or PostKaro's Queue page.

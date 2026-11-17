@@ -477,7 +477,8 @@ Clips posted **while the stream is still running**: OBS records in pieces of ~10
 writes down each finished piece, and every 10 minutes a helper clips the new pieces and posts them at
 once (the owner chose auto-posting for live streams). Setup and what the user does: `docs/live.md`.
 1. **Check once:** OBS splits its recording every 10 minutes (Settings > Output > Recording >
-   "Automatically split file"), its recording folder, PostKaro installed with its accounts connected,
+   "Automatically split file") and records while streaming (Settings > Advanced > Recording >
+   "Automatically record when streaming"), its recording folder, PostKaro installed with its accounts connected,
    and, for Twitch hints, the channel name (`"twitch_channel"`) and the developer app keys
    (`python run.py live keys --client-id ... --client-secret ...`). Missing keys only turn off the
    viewer-clip notes; chat is read anyway.
