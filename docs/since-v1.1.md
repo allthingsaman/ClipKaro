@@ -13,7 +13,7 @@ its line here, in the same commit.** Released so far:
 - **v2.3** (2026-11-16): the lines marked v2.3;
 - **v2.4** (2026-11-17): the lines marked v2.4;
 - **v2.5** (2026-11-17): the lines marked v2.5;
-- **v2.6** (not released yet, branch v2.6-dev): the lines marked v2.6.
+- **v2.6** (2026-11-17): the lines marked v2.6.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing

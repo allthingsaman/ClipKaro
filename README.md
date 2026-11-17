@@ -30,6 +30,47 @@ you:  clip this video: https://youtu.be/...
 > **New to all this?** Start with the **[user guide](docs/user-guide.md)**: simple steps, no coding
 > needed.
 
+## 🔴 New in v2.6: live clipping, clips posted while you stream
+
+Made for game launches like GTA 6, where the first clips get the views. You stream as usual, and
+ClipKaro clips your stream **while it is still running**. It posts the clips to YouTube Shorts,
+Instagram Reels and your Facebook Page about **15-30 minutes after the moment**.
+
+```
+OBS streams to YouTube / Twitch / Kick, and records the same picture: a new file every 10 minutes
+        │
+        ▼
+ClipKaro writes down each finished piece   (+ hints: Twitch chat going wild, the clips viewers made)
+        │
+        ▼
+Claude, every 10 minutes: 0-2 clips per piece → captions → cut → edit → quality check
+        │                                                        (a clip that fails is never posted)
+        ▼
+PostKaro posts each clip at once on every connected platform
+```
+
+- **The video is your own OBS recording**, never a download: full quality, with your cam in it.
+  Twitch only adds hints about where people reacted. Your words decide what becomes a clip.
+- **Your stream stays smooth.** While it runs, ClipKaro works at low priority and edits on the
+  processor. It uses the graphics card only when OBS leaves enough room.
+- **No review step.** For live streams the clips go out at once (a clip that fails the quality check
+  is never posted). For a test stream, `"live_post": "dry"` only shows what it would post.
+- **What you need:**
+  - OBS recording in 10-minute pieces;
+  - [PostKaro](https://github.com/allthingsaman/PostKaro) with your accounts connected;
+  - Claude Code left open;
+  - free Twitch developer keys (optional).
+- **Cost:** no money. Claude usage is roughly 150-250k tokens per hour of stream: comfortable on Max,
+  a few hours on Pro.
+- **Start and stop.** In Claude Code, inside the ClipKaro folder, say **"start live clipping gta6"**.
+  When you end the stream, say **"the stream is over"**.
+
+**Set it up:** **[docs/live.md](docs/live.md)**, step by step:
+- the OBS settings (10-minute pieces, recording while streaming, your mic on its own track);
+- the Twitch keys;
+- multistream bitrates for YouTube, Twitch and Kick;
+- a test stream before the real one.
+
 ## The best of ClipKaro
 
 ### 🧵 Deep clips: one story from moments far apart
@@ -109,8 +150,7 @@ captions". "Hook title" adds a big title for the first seconds.
 - 🏷️ **Your brand, and credit to the source.** Put your logo and a 3-5 s outro in the `brand` folder:
   the logo goes in the bottom-right corner of every clip, the outro at the end. Clips from a YouTube
   link get a small "© Channel name" in the bottom-left corner (`"source_credit": false` turns it off).
-- 🔴 **Live clipping** for game launches: clips posted to Shorts, Reels and Facebook while your stream is
-  still running, with your Twitch chat and viewers' clips as hints ([docs/live.md](docs/live.md)).
+- 🔴 **Live clipping** for game launches: clips posted while you stream ([see above](#-new-in-v26-live-clipping-clips-posted-while-you-stream)).
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.

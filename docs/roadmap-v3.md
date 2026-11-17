@@ -1,6 +1,6 @@
-# ClipKaro after v2.5: what's next, in order
+# ClipKaro after v2.6: what's next, in order
 
-ClipKaro v2.5 is the newest version (2026-11-17, like v2.4; v2.3 came on 2026-11-16). This page lists what is
+ClipKaro v2.6 is the newest version (2026-11-17, like v2.4 and v2.5; v2.3 came on 2026-11-16). This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
 by one. When one is done, it moves to **Done** with the date.
 
@@ -90,7 +90,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 ## Done
 | What | Done |
 |---|---|
-| **Live clipping** (built on v2.6-dev for the GTA 6 launch): clips posted while you stream, from OBS's 10-minute pieces, with Twitch chat and viewer clips as hints and auto-posting through PostKaro. First real use: the GTA 6 launch stream. | 2026-11-17 (v2.6-dev) |
+| **Live clipping** (v2.6, for the GTA 6 launch): clips posted while you stream, from OBS's 10-minute pieces, with Twitch chat and viewer clips as hints and auto-posting through PostKaro. First real use: the GTA 6 launch stream. | 2026-11-17 (v2.6) |
 | **Install check for Windows and macOS** (item 16), for ClipKaro and PostKaro: the Mac steps fixed (Homebrew's Python 3.15 and its caption-less ffmpeg), Hindi folder names on Windows, a Python check in setup, PostKaro's setup for every system. Checked by reading and tests; a real run is item 22. | 2026-11-17 (v2.5) |
 | **v2.4**: your brand on every clip (items 20 and 21): your logo and a 3-5 s outro from the `brand` folder, and "© Channel name" on clips from a YouTube link, right in the corners at 70 % opacity, any corner by setting; action without talking gets its own line (P2); the caption check spells names and numbers right (P3). | 2026-11-17 |
 | **v2.3**: no captions for game characters (gameplay, Hindi/Hinglish streamer) and Claude's caption check (standard and deep), on top of everything below. | 2026-11-16 |

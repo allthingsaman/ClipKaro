@@ -1,6 +1,11 @@
 # What's new
 
-## Not released yet (v2.6, on the branch v2.6-dev)
+## v2.6 (November 2026): live clipping
+
+v2.6 clips your stream while it is still running, for game launches like GTA 6. Normal clipping is
+unchanged. Checked in a rehearsal: a recorded stream was fed in as OBS-style 10-minute pieces, and
+a piece went from finished to posted (a dry run: nothing went online) in about 9 minutes. The first
+real stream is the owner's GTA 6 launch stream.
 
 - **Live clipping: clips posted while you stream** (for game launches like GTA 6). OBS records in pieces
   of 10 minutes; ClipKaro writes down each finished piece, adds what your Twitch audience did (chat going
@@ -9,6 +14,12 @@
   PostKaro (no review step: your choice for live streams; a clip that fails the quality check is never
   posted). While it runs, ClipKaro's heavy steps give way to OBS. `"live_post": "dry"` makes a test
   stream post nothing. How to set it up: [docs/live.md](docs/live.md). Normal clipping is unchanged.
+- **The live clipping guide** ([docs/live.md](docs/live.md)) has the whole flow as a chart and explains
+  where the video comes from: your own OBS recording, never a download (Twitch only adds hints).
+  The OBS setup now includes "Automatically record when streaming" (streaming alone records nothing).
+- **README:** live clipping is explained at the top, with a link to the guide.
+- **PostKaro 0.6.0:** `post-now` posts every clip of a piece on every connected platform at once (what
+  live clipping uses); `--dry` only lists what it would post.
 
 ## v2.5 (November 2026): Windows and Mac, checked
 
