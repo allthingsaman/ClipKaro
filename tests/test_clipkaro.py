@@ -718,5 +718,58 @@ class BrandKit(unittest.TestCase):
         self.assertEqual(edit.finish_args({'fps': 30}, 'null'), ([], ['-vf', 'null', '-map', '0:v']))
 
 
+class WindowsAndMac(unittest.TestCase):
+    """Install check for Windows and macOS (v2.5): things this Linux laptop can still check."""
+
+    def test_pictures_in_a_hindi_folder(self):
+        import numpy as np
+        from clipper.common import imread, imwrite
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / 'black-myth-wukong-इतना-मुश्किल'
+            folder.mkdir()
+            img = np.zeros((20, 30, 3), np.uint8)
+            img[5:10, 5:10] = (0, 128, 255)
+            f = folder / 'frame.png'
+            self.assertTrue(imwrite(f, img))
+            back = imread(f)
+            self.assertEqual(back.shape, img.shape)
+            self.assertTrue((back == img).all())
+            self.assertIsNone(imread(folder / 'missing.png'))
+
+    def test_caption_file_names(self):
+        from clipper.edit import ass_name
+        self.assertEqual(ass_name('01-final-boss'), '01-final-boss.ass')          # as before
+        name = ass_name('02-पहली-बड़ी-डकैती')
+        self.assertTrue(name.isascii() and name.endswith('.ass'))
+        self.assertNotEqual(name, ass_name('02-पहली-बड़ी-चोरी'))                       # two clips never share one
+        self.assertTrue(ass_name('03-हिंदी', '.credit').endswith('.credit.ass'))
+
+    def test_python_versions(self):
+        import install
+        self.assertIsNone(install.python_problem((3, 12), 'nt', 'AMD64'))
+        self.assertIsNone(install.python_problem((3, 14), 'darwin', 'arm64'))
+        self.assertIsNone(install.python_problem((3, 13), 'darwin', 'x86_64'))
+        self.assertIn('too new', install.python_problem((3, 15), 'darwin', 'arm64'))   # "brew install python"
+        self.assertIn('Intel Mac', install.python_problem((3, 14), 'darwin', 'x86_64'))
+        self.assertIn('3.10', install.python_problem((3, 9), 'fedora', 'x86_64'))
+
+    def test_mac_finds_the_full_ffmpeg(self):
+        import os
+        import sys
+        from unittest import mock
+        import run
+        full = '/opt/homebrew/opt/ffmpeg-full/bin'
+        with mock.patch.object(sys, 'platform', 'darwin'), \
+                mock.patch('os.path.isfile', lambda p: p == full + '/ffmpeg'), \
+                mock.patch.dict(os.environ, {'PATH': '/usr/bin:/opt/homebrew/bin'}):
+            run.find_ffmpeg()
+            self.assertTrue(os.environ['PATH'].startswith(full + os.pathsep))     # ahead of a plain ffmpeg
+        with mock.patch.object(sys, 'platform', 'darwin'), mock.patch('shutil.which', lambda n: None), \
+                mock.patch('os.path.isfile', lambda p: p == '/opt/homebrew/bin/ffmpeg'), \
+                mock.patch.dict(os.environ, {'PATH': '/usr/bin:/bin'}):
+            run.find_ffmpeg()                                     # a background app without Homebrew's folder
+            self.assertTrue(os.environ['PATH'].endswith(os.pathsep + '/opt/homebrew/bin'))
+
+
 if __name__ == '__main__':
     unittest.main()

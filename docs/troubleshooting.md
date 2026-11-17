@@ -11,7 +11,9 @@ On Mac and Linux, type `python3` wherever this page says `python`.
 |---|---|
 | `python` isn't found, or it opens the Microsoft Store (Windows) | Install Python (see [installation.md](installation.md)) and open a **new** window. In Windows Settings → Apps → Advanced app settings → App execution aliases, switch off the two "python" entries. |
 | `ffmpeg not found` | Install ffmpeg (see [installation.md](installation.md)) and open a **new** window. |
-| `[X] your ffmpeg has no libx264` or `no libass` | Your ffmpeg is a cut-down version. Fedora: `sudo dnf swap ffmpeg-free ffmpeg --allowerasing` (from RPM Fusion). openSUSE: ffmpeg from Packman. Others: install your system's full `ffmpeg`. |
+| `[X] your ffmpeg has no libx264` or `no libass` | Your ffmpeg is a cut-down version. Mac: `brew install ffmpeg-full` (Homebrew's plain `ffmpeg` has no libass; ClipKaro finds ffmpeg-full by itself). Fedora: `sudo dnf swap ffmpeg-free ffmpeg --allowerasing` (from RPM Fusion). openSUSE: ffmpeg from Packman. Others: install your system's full `ffmpeg`. |
+| `[X] Python 3.15 is too new` (or `On an Intel Mac ... stops at Python 3.13`) | Install Python 3.12 or 3.13 and run the setup with it. Windows: `winget install -e --id Python.Python.3.12`, then `py -3.12 install.py`. Mac: `brew install python@3.13`, then `python3.13 install.py`. A `.venv` made with the wrong Python is made again by itself. |
+| Windows: everything is slow, or OneDrive fills up | ClipKaro is in a folder OneDrive backs up (often Documents or Desktop). Move the ClipKaro folder to your home folder (`C:\Users\<you>\ClipKaro`), delete the `.venv` folder inside it, and run `python install.py` again. |
 | `No module named venv` / `ensurepip is not available` (Ubuntu/Debian) | `sudo apt install python3-venv`, delete the `.venv` folder, and run `python3 install.py` again. |
 | `First run setup: python install.py` | ClipKaro isn't set up yet in this folder: run `python install.py`. |
 | You copied the ClipKaro folder from another computer | Delete the `.venv` folder inside it and run `python install.py` again. That folder only works on the computer that made it. |

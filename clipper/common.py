@@ -1,5 +1,6 @@
 """Shared helpers: paths, json, settings, text helpers (incl. Hindi), ffmpeg/ffprobe wrappers."""
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -92,6 +93,41 @@ def slugify(text, maxlen=50):
     text = ''.join(c for c in text if unicodedata.category(c)[0] in 'LMN' or c in ' \t_-').strip().lower()
     text = re.sub(r'[\s_-]+', '-', text)
     return text[:maxlen].strip('-') or 'video'
+
+
+def open_video(path):
+    """cv2.VideoCapture for a video file. On Windows it goes through OpenCV's FFmpeg reader, which
+    understands paths with Hindi (or any non-English) letters, like a project folder named after a Hindi
+    title; Windows' other readers don't. Elsewhere exactly as before."""
+    import cv2
+    if os.name == 'nt':
+        cap = cv2.VideoCapture(str(path), cv2.CAP_FFMPEG)
+        if cap.isOpened():
+            return cap
+    return cv2.VideoCapture(str(path))
+
+
+def imread(path, flags=None):
+    """cv2.imread that also works on Windows with non-English letters in the path (OpenCV's own reads
+    the path the old Windows way and fails there). None when the file is missing or not a picture."""
+    import cv2
+    import numpy as np
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)
+    except OSError:
+        return None
+    if not data.size:
+        return None
+    return cv2.imdecode(data, cv2.IMREAD_COLOR if flags is None else flags)
+
+
+def imwrite(path, img, params=()):
+    """cv2.imwrite that also works on Windows with non-English letters in the path. -> True when written."""
+    import cv2
+    ok, buf = cv2.imencode(Path(path).suffix or '.png', img, list(params))
+    if ok:
+        buf.tofile(str(path))
+    return bool(ok)
 
 
 def load_json(path, default=None):

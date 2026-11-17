@@ -20,7 +20,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from .common import H, ROOT, W, ffmpeg, has_devanagari, probe
+from .common import H, ROOT, W, ffmpeg, has_devanagari, imread, imwrite, probe
 from .plan import HINDI_FONT, LATIN_FONT
 
 PAD = 0                           # px in from the frame's edges: none, right in the corner (the owner's choice)
@@ -146,7 +146,7 @@ def clean_logo(p, work, keep=False):
     project's .work folder); or the file itself ("logo_background": "keep", or nothing to do)."""
     import cv2
     import numpy as np
-    img = cv2.imread(str(p), cv2.IMREAD_UNCHANGED)
+    img = imread(p, cv2.IMREAD_UNCHANGED)
     size = (img.shape[1], img.shape[0])
     if keep or work is None:
         return p, None, size
@@ -171,7 +171,7 @@ def clean_logo(p, work, keep=False):
     out = Path(work) / f'logo-ready-{int(st.st_mtime)}-{st.st_size}.png'
     if not out.exists():
         tmp = out.with_name(out.stem + f'.{os.getpid()}.part.png')
-        cv2.imwrite(str(tmp), rgba[y0:y1, x0:x1])
+        imwrite(tmp, rgba[y0:y1, x0:x1])
         os.replace(tmp, out)
     return out, note, (int(x1 - x0), int(y1 - y0))
 
@@ -182,7 +182,7 @@ def logo(on=True, where=None, place=LOGO_CORNER, work=None, keep_background=Fals
     if not on or not p:
         return None, []
     import cv2
-    if cv2.imread(str(p), cv2.IMREAD_UNCHANGED) is None:
+    if imread(p, cv2.IMREAD_UNCHANGED) is None:
         return None, [f'! {p.name}: not a picture ClipKaro can read (use PNG or JPG): left out']
     use, note, (w, h) = clean_logo(p, work, keep_background)
     lw, lh, x, y = logo_box(w, h, place)

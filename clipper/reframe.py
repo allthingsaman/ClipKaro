@@ -7,7 +7,7 @@ import subprocess
 import cv2
 import numpy as np
 
-from .common import ASSETS, FPS, H, W
+from .common import ASSETS, FPS, H, W, open_video
 
 # YuNet face detector (OpenCV Zoo, MIT licence): small, fast, and handles turned heads and small faces
 YUNET = ASSETS / 'models' / 'face_detection_yunet_2023mar.onnx'
@@ -258,7 +258,7 @@ def analyse_range(video, start, dur, src_w, src_h):
     (times relative to start). A camera shot with one steady subject keeps the classic 5-frame median;
     shots whose layout changes are split, and shots with several subjects get choose_subject()."""
     shots = scene_cuts(video, start, dur)
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     crop_frac = crop_width(src_w, src_h) / src_w
     out = []
     for a, b in shots:

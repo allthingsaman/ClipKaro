@@ -27,7 +27,7 @@ import re
 import cv2
 import numpy as np
 
-from .common import load_json, probe, project_dir, settings, slugify
+from .common import imwrite, load_json, open_video, probe, project_dir, settings, slugify
 from .cut import apply_framing, ensure_video, framing_spans, range_shots, two_person
 from .reframe import crop_width
 
@@ -196,7 +196,7 @@ def main():
         if not want or cid in want:
             plans[cid] = (clip, range_shots(video, info, clip, words))
     auto = two_person(pdir, video, plans, words)
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if cid not in plans:
@@ -205,7 +205,7 @@ def main():
         if img is None:
             continue
         path = out_dir / f'{cid:02d}-{slugify(clip.get("title", "clip"), 40)}.jpg'
-        cv2.imwrite(str(path), img, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        imwrite(path, img, [cv2.IMWRITE_JPEG_QUALITY, 82])
         note = ''
         if flags:
             note = ('  <- movement outside the crop at ' + ', '.join(f'{x:.1f}-{y:.1f}s' for x, y in flags) +

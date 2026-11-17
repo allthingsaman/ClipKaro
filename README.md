@@ -205,7 +205,7 @@ a video can take a couple of hours. Details: [docs/requirements.md](docs/require
 ### 2. Install (once)
 
 **The easy way: let Claude Code install it.** Open [Claude Code](https://claude.com/claude-code) in
-the folder where you want ClipKaro (for example your Documents folder) and type:
+the folder where you want ClipKaro (for example your home folder. On Windows, not Documents or Desktop when OneDrive backs them up: the videos and ClipKaro's own files (a few GB) would fill your OneDrive) and type:
 
 > **install this repo: https://github.com/allthingsaman/ClipKaro**
 
@@ -234,11 +234,13 @@ python install.py
 
 **Mac** (with [Homebrew](https://brew.sh)):
 ```bash
-brew install python ffmpeg node git
+brew install python@3.13 ffmpeg-full node git
 git clone https://github.com/allthingsaman/ClipKaro.git
 cd ClipKaro
-python3 install.py
+python3.13 install.py
 ```
+(`brew install python` now gives Python 3.15, which is too new for the speech engine, and Homebrew's plain
+`ffmpeg` can't draw captions: `ffmpeg-full` can, and ClipKaro finds it by itself.)
 
 **Linux** (Ubuntu/Debian shown; Fedora needs the full ffmpeg from RPM Fusion, see the guide):
 ```bash
@@ -276,9 +278,14 @@ If a user asked you to install this repo, follow these steps (details per system
 1. Clone it where the user is working (or where they ask):
    `git clone https://github.com/allthingsaman/ClipKaro.git`. No git? Download
    `https://github.com/allthingsaman/ClipKaro/archive/refs/heads/main.zip` and unpack it as `ClipKaro`.
-2. Check the system: OS, `python --version` (3.10-3.14; use `python3` on macOS/Linux), ffmpeg with
-   **libx264** and **libass** (`ffmpeg -hide_banner -encoders`, `-filters`), `node --version`
-   (20+ recommended), and `nvidia-smi` (an NVIDIA GPU?).
+   On Windows, don't clone into a folder OneDrive backs up (often Documents and Desktop): use the home
+   folder (`C:\Users\<you>\ClipKaro`).
+2. Check the system: OS, `python --version` (3.10-3.14; 3.15 is too new for the speech engine; use
+   `python3` on macOS/Linux), ffmpeg with **libx264** and **libass** (`ffmpeg -hide_banner -encoders`,
+   `-filters`), `node --version` (20+ recommended), and `nvidia-smi` (an NVIDIA GPU?). On a Mac,
+   Homebrew's `python` is 3.15 and its plain `ffmpeg` has no libass: install `python@3.13` and
+   `ffmpeg-full` (`install.py` and `run.py` find ffmpeg-full by themselves) and run
+   `python3.13 install.py`. On Windows, if `python` is 3.15, run `py -3.12 install.py`.
 3. Install what's missing, using the commands in [docs/installation.md](docs/installation.md) for
    that system. **Don't run commands that need admin rights (`sudo`) yourself:** give the user the
    exact commands in one block and wait until they say they're done. On Windows, `winget` may show a
@@ -295,6 +302,10 @@ If a user asked you to install this repo, follow these steps (details per system
 6. Report what was installed, then tell the user to **start Claude Code inside the ClipKaro folder**
    and type `clip this video: <link or file>`. A session started in another folder doesn't load
    ClipKaro's clipping skill (`.claude/skills/clip-video/`).
+7. **PostKaro too?** (only if the user wants their clips posted for them): clone
+   `https://github.com/allthingsaman/PostKaro.git` next to ClipKaro (not inside it) and run its
+   `install.py` with the same Python. It sets PostKaro to start at login. Connecting the YouTube,
+   Instagram and Facebook accounts is done by the user, once, with its `docs/connect-accounts.md`.
 
 ## What you can ask for
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
@@ -327,9 +338,11 @@ output/<video>/
     transcript/             everything that was said, with times
 ```
 
-Want them posted for you? **PostKaro**, ClipKaro's partner app (a separate install), posts them to
-YouTube Shorts, Instagram Reels and your Facebook Page from your laptop, each at its own time. With
-PostKaro installed, Claude ends with a "Post them" link that opens every clip ready to schedule.
+Want them posted for you? **[PostKaro](https://github.com/allthingsaman/PostKaro)**, ClipKaro's partner
+app (a separate install, on Windows, Mac and Linux), posts them to YouTube Shorts, Instagram Reels and
+your Facebook Page from your laptop, each at its own time. With PostKaro installed, Claude ends with a
+"Post them" link that opens every clip ready to schedule. To install it, tell Claude "install PostKaro
+too", or see [docs/installation.md](docs/installation.md#postkaro-the-posting-app-optional).
 
 ## Languages
 | Language | How well |

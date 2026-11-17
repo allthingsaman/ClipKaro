@@ -11,6 +11,7 @@ Writes edited/NN-title.mp4 (+ .srt captions file for platforms that want one).
 """
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -27,7 +28,7 @@ from . import music as musiclib
 from . import layout as layoutlib
 from . import plan as planlib
 from . import romanize
-from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, load_json, need, project_dir, save_json, settings
+from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, imread, load_json, need, project_dir, save_json, settings
 from .sfx import path_of
 
 FONTS = ASSETS / 'fonts'
@@ -207,6 +208,17 @@ def credit_style(plan):
             f"&H{text}FFFFFF,&H{edge}000000,&H{shadow}000000,0,0,0,0,100,100,0,0,1,2,1,1,0,0,0,1")
 
 
+def ass_name(stem, tag=''):
+    """The captions file's name: the clip's own name when it is plain English letters, as before; otherwise
+    an English-letters name, because on Windows the caption library (libass) opens files the old way,
+    which fails on Hindi letters."""
+    if stem.isascii():
+        return f'{stem}{tag}.ass'
+    import zlib
+    safe = re.sub(r'[^A-Za-z0-9_-]+', '', stem)[:40].strip('-') or 'clip'
+    return f'{safe}-{zlib.crc32(stem.encode("utf-8")):08x}{tag}.ass'
+
+
 def write_ass(plan, path):
     st, br = dict(plan['caption_style']), plan['brand']
     st['size'] = css_to_ass_size(st['size'], st['font_file'])
@@ -332,7 +344,7 @@ def load_emojis(marks):
     """The emoji pictures (BGRA, full size) for the frame loop."""
     out = []
     for e in marks:
-        img = cv2.imread(e['png'], cv2.IMREAD_UNCHANGED)
+        img = imread(e['png'], cv2.IMREAD_UNCHANGED)
         if img is not None and img.shape[2] == 4:
             out.append(dict(e, img=cv2.resize(img, (e['size'], e['size']), interpolation=cv2.INTER_AREA)))
     return out
@@ -375,7 +387,7 @@ def finish_args(plan, vf):
 
 def render_python(clip_mp4, plan, audio, out_mp4, workdir):
     need('ffmpeg')
-    ass = workdir / f'{out_mp4.stem}.ass'
+    ass = workdir / ass_name(out_mp4.stem)
     write_ass(plan, ass)
     fonts_rel = os.path.relpath(FONTS, workdir).replace('\\', '/')
     vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan['captions'] or plan.get('labels') or plan.get('credit') \
@@ -458,7 +470,7 @@ def render_remotion(clip_mp4, plan, audio, out_mp4, workdir):
         die('remotion render failed (see output above)')
     if plan.get('credit') or plan.get('logo') or plan.get('outro'):
         # your brand on top (Remotion draws the captions; the credit, logo and outro are added here)
-        ass = workdir / f'{out_mp4.stem}.credit.ass'
+        ass = workdir / ass_name(out_mp4.stem, '.credit')
         write_ass(dict(plan, captions=[], labels=[], hook=None), ass)
         fonts_rel = os.path.relpath(FONTS, workdir).replace('\\', '/')
         vf = f"ass={ass.name}:fontsdir={fonts_rel}" if plan.get('credit') else 'null'

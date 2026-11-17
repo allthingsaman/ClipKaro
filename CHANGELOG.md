@@ -1,5 +1,21 @@
 # What's new
 
+## Not released yet (v2.5, on the branch v2.5-dev)
+
+- **Windows and Mac, checked.** The install steps and the code were checked for both, together with
+  PostKaro (0.5.0):
+  - **Mac:** Homebrew's `python` is now 3.15, too new for the speech engine, and its plain `ffmpeg` can't
+    draw captions. The steps now say `brew install python@3.13 ffmpeg-full`, and ClipKaro and PostKaro
+    find `ffmpeg-full` by themselves (Homebrew keeps it off the PATH).
+  - **Windows:** project folders named after a Hindi title work: pictures are read and written in a
+    way that understands Hindi letters, videos are opened through FFmpeg, and caption files get
+    English-letter names. Keep ClipKaro out of OneDrive-synced folders (the docs say why).
+  - **Setup** stops at once, with the command to fix it, on a Python the speech engine can't use (3.15,
+    or 3.14 on an Intel Mac), and makes `.venv` again if it was made with one.
+  - **PostKaro** on all three systems: setup steps for each in both READMEs, "install PostKaro too" for
+    the AI helper, UTF-8 output for Hindi titles, and ffmpeg found for thumbnails (also for the Mac
+    login item).
+
 ## v2.4 (November 2026): your brand on every clip
 
 v2.4 puts your logo, your outro and a credit to the source on every clip, notes gameplay action

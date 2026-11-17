@@ -68,8 +68,9 @@ the same sentences as below: it follows the same steps.)
 
 ## Step 2: Ask Claude to install ClipKaro
 
-1. Open Claude Code in the folder where you want ClipKaro to live, for example your
-   **Documents** folder.
+1. Open Claude Code in the folder where you want ClipKaro to live, for example your **home folder**
+   (on Windows `C:\Users\<your name>`). On Windows, not **Documents** or **Desktop** if OneDrive backs
+   them up: the videos would fill your OneDrive.
 2. Type this and press Enter:
 
    > **install this repo: https://github.com/allthingsaman/ClipKaro**
@@ -107,8 +108,8 @@ When Claude says the setup is complete, go on to Step 3.
 **This step matters.** Claude only knows how to make clips when it is opened **inside the
 ClipKaro folder**.
 
-- **Desktop app**: open the **ClipKaro** folder (for example `Documents/ClipKaro`) as the folder
-  to work in.
+- **Desktop app**: open the **ClipKaro** folder (for example `ClipKaro` in your home folder) as the
+  folder to work in.
 - **Terminal version**: type `cd ClipKaro`, press Enter, then type `claude` and press Enter.
 
 Do this every time you want to make clips.

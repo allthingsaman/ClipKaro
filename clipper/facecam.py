@@ -13,7 +13,7 @@ picks the wrong spot, set the box yourself in settings.json, in fractions of the
 import cv2
 import numpy as np
 
-from .common import H, W
+from .common import H, W, imwrite, open_video
 from .reframe import _faces
 
 TOP_H = 1150                 # gameplay panel height (of 1920); the cam panel gets the rest
@@ -22,7 +22,7 @@ CAM_TOP_PAD, CAM_BOTTOM_PAD = 90, 30   # room for the captions above the cam
 
 
 def _sample(video, duration, n=24):
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     out = []
     for k in range(n):
         cap.set(cv2.CAP_PROP_POS_MSEC, duration * (k + 0.5) / n * 1000)
@@ -127,7 +127,7 @@ def mask_png(path, w, h):
     """Round mask for a round cam (white circle, anti-aliased edge)."""
     m = np.zeros((h, w), np.uint8)
     cv2.ellipse(m, (w // 2, h // 2), (w // 2 - 1, h // 2 - 1), 0, 0, 360, 255, -1, lineType=cv2.LINE_AA)
-    cv2.imwrite(str(path), m)
+    imwrite(path, m)
     return path
 
 

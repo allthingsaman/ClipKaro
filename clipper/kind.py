@@ -29,7 +29,7 @@ import subprocess
 
 import numpy as np
 
-from .common import ROOT, die, fmt_ts, load_json, probe, project_dir, save_json, settings
+from .common import ROOT, die, fmt_ts, imwrite, load_json, open_video, probe, project_dir, save_json, settings
 
 STILL = 8.0                # mean change per keyframe (0-255 grey, 64x36) below which the picture "stands still"
 MIN_BREAK_S = 30.0         # a break screen lasts at least this long
@@ -165,7 +165,7 @@ def find_breaks(pdir, project, video, words):
         cam = project['facecam'] or None
     times, frames = keyframe_strip(video)
     runs = still_runs(times, frames)
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     if cam:
         how = 'cam'
     elif faces_common(cap, dur):
@@ -206,7 +206,7 @@ def break_sheet(video, breaks, out):
         if out.exists():
             out.unlink()
         return None
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     tiles = []
     for b in breaks:
         cap.set(cv2.CAP_PROP_POS_MSEC, (b['start'] + b['end']) / 2 * 1000)
@@ -220,7 +220,7 @@ def break_sheet(video, breaks, out):
     while len(tiles) % 3 and len(tiles) > 3:
         tiles.append(np.zeros((270, 480, 3), np.uint8))
     rows = [np.hstack(tiles[k:k + 3]) for k in range(0, len(tiles), 3)]
-    cv2.imwrite(str(out), np.vstack(rows) if len(rows) > 1 else rows[0], [cv2.IMWRITE_JPEG_QUALITY, 80])
+    imwrite(out, np.vstack(rows) if len(rows) > 1 else rows[0], [cv2.IMWRITE_JPEG_QUALITY, 80])
     return out
 
 

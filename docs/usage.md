@@ -339,7 +339,8 @@ Claude's last message lists each clip with its length, file and a caption to pos
 ### Posting your clips (PostKaro)
 PostKaro is ClipKaro's partner app: it posts the clips to YouTube Shorts, Instagram Reels and your
 Facebook Page from your own laptop, each at its own time. It is a separate install (its own folder
-and README). When it is installed, Claude's last message ends with **"Post them: <link>"**. Click it:
+and README), on Windows, Mac and Linux: tell Claude "install PostKaro too", or see
+[installation.md](installation.md#postkaro-the-posting-app-optional). When it is installed, Claude's last message ends with **"Post them: <link>"**. Click it:
 every clip is there with its title and caption for each platform, ready to check and schedule.
 Without PostKaro, upload the files in `edited/` yourself; the text for each platform is in
 `clips.json` under `post`.

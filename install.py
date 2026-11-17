@@ -25,7 +25,7 @@ PY = VENV / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
 INSTALL_HINTS = {
     'ffmpeg': {
         'nt': 'winget install -e --id Gyan.FFmpeg   (then open a NEW terminal)',
-        'darwin': 'brew install ffmpeg',
+        'darwin': 'brew install ffmpeg-full   (the plain "ffmpeg" has no libass for captions; ClipKaro finds ffmpeg-full by itself)',
         'debian': 'sudo apt install ffmpeg',
         'fedora': 'sudo dnf swap ffmpeg-free ffmpeg --allowerasing   (needs RPM Fusion enabled: '
                   "Fedora's own ffmpeg-free has no libx264. See docs/installation.md)",
@@ -85,11 +85,25 @@ def example_path():
         system(), '/home/you/Videos/my video.mp4')
 
 
-def find_winget_ffmpeg():
-    """winget puts ffmpeg on the PATH of NEW terminals only. Find it for this one too."""
+def find_ffmpeg():
+    """Windows: winget puts ffmpeg on the PATH of NEW terminals only, so find it for this one too.
+    macOS: Homebrew's plain "ffmpeg" has no libass (captions), so ClipKaro uses "ffmpeg-full", which
+    Homebrew keeps off the PATH: put it first. A background app on a Mac may not see Homebrew's folder
+    at all: add it when ffmpeg isn't found otherwise."""
+    import glob
+    if sys.platform == 'darwin':
+        for d in ('/opt/homebrew/opt/ffmpeg-full/bin', '/usr/local/opt/ffmpeg-full/bin'):
+            if os.path.isfile(os.path.join(d, 'ffmpeg')):
+                os.environ['PATH'] = d + os.pathsep + os.environ.get('PATH', '')
+                return
+        if not shutil.which('ffmpeg'):
+            for d in ('/opt/homebrew/bin', '/usr/local/bin'):
+                if os.path.isfile(os.path.join(d, 'ffmpeg')):
+                    os.environ['PATH'] = os.environ.get('PATH', '') + os.pathsep + d
+                    return
+        return
     if os.name != 'nt' or shutil.which('ffmpeg'):
         return
-    import glob
     local = os.environ.get('LOCALAPPDATA', '')
     places = [os.path.join(local, 'Microsoft', 'WinGet', 'Links'),
               os.path.join(os.environ.get('ProgramFiles', ''), 'WinGet', 'Links')]
@@ -100,16 +114,53 @@ def find_winget_ffmpeg():
             return
 
 
+PYTHON_HINT = {
+    'nt': 'winget install -e --id Python.Python.3.12   then run:  py -3.12 install.py',
+    'darwin': 'brew install python@3.13   then run:  python3.13 install.py',
+}
+
+
+def python_problem(version=None, system_name=None, machine=None):
+    """A sentence when this Python can't run ClipKaro, else None. The speech engine needs onnxruntime,
+    which has no version for Python 3.15 yet (checked 2026-11-17), and none for Intel Macs after 3.13.
+    `brew install python` gives 3.15 today, so this catches it before a long failed install."""
+    import platform
+    v = tuple(version or sys.version_info[:2])
+    sysn = system_name or system()
+    mach = (machine or platform.machine()).lower()
+    shown = '.'.join(str(x) for x in v[:2])
+    if v < (3, 10):
+        return f'Python 3.10 or newer is needed (you have {shown}).'
+    if v >= (3, 15):
+        return f'Python {shown} is too new: the speech engine (onnxruntime) has no version for it yet. Use 3.12 or 3.13.'
+    if sysn == 'darwin' and mach in ('x86_64', 'i386') and v >= (3, 14):
+        return f'On an Intel Mac the speech engine (onnxruntime) stops at Python 3.13 (you have {shown}). Use 3.12 or 3.13.'
+    return None
+
+
+def venv_python_version():
+    """(major, minor) of the Python inside .venv, or None."""
+    if not PY.exists():
+        return None
+    r = subprocess.run([str(PY), '-c', 'import sys; print(*sys.version_info[:2])'], capture_output=True, text=True)
+    try:
+        return tuple(int(x) for x in r.stdout.split())
+    except ValueError:
+        return None
+
+
 def main():
     ok = True
     print('== ClipKaro setup ==')
 
-    if sys.version_info < (3, 10):
-        print(f'[X] Python 3.10+ needed (you have {sys.version.split()[0]}).')
+    problem = python_problem()
+    if problem:
+        print(f'[X] {problem}')
+        print(f'    Install it:  {PYTHON_HINT.get(system(), "Python 3.12 or 3.13 from your package manager (or python.org), then run install.py with it")}')
         sys.exit(1)
     print(f'[ok] Python {sys.version.split()[0]}')
 
-    find_winget_ffmpeg()
+    find_ffmpeg()
     for tool in ('ffmpeg', 'ffprobe'):
         if shutil.which(tool):
             print(f'[ok] {tool}')
@@ -136,6 +187,11 @@ def main():
     else:
         print(f'[!] node not found (recommended for reliable YouTube downloads):  {hint("node")}')
 
+    old = venv_python_version()
+    if old and python_problem(old):
+        # made earlier with a Python the speech engine can't use (say 3.15 from "brew install python")
+        print(f'-> .venv was made with Python {old[0]}.{old[1]}, which ClipKaro can\'t use: making it again')
+        venv.create(VENV, with_pip=True, clear=True)
     if not PY.exists():
         print('-> creating .venv ...')
         venv.create(VENV, with_pip=True)

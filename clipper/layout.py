@@ -14,7 +14,7 @@ upper part of the frame, above or below the faces.
 """
 import cv2
 
-from .common import H, W
+from .common import H, W, open_video
 
 SAFE_TOP, SAFE_BOTTOM = 230, 1436       # px of 1920: Shorts / Reels top bar; TikTok's bottom 484 px
 SAFE_RIGHT = 940                        # TikTok's button column starts here
@@ -31,7 +31,7 @@ def face_boxes(clip_mp4, shots):
     seen in a few frames of the shot, with room for the forehead and the jawline. `zoomed` grows them
     by the zoom the edit really uses while a text is on screen."""
     from .reframe import _faces
-    cap = cv2.VideoCapture(str(clip_mp4))
+    cap = open_video(clip_mp4)
     out = {}
     for i, sh in enumerate(shots):
         t0, t1 = sh['t0'], sh['t1']

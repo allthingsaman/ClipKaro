@@ -32,6 +32,7 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode's real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | Waiting for your `/usage` runs |
 | 4b | **Try sound effects by mood with real sounds.** The feature is built, but the `sounds` folders are empty, so no clip has used it yet. You add 2-3 free sounds (a boom, a ding, a "fail" sound); Claude makes 2-3 example clips with them. | So you decide to keep the feature, or remove it, from clips you have watched. | 30 min | add the sounds, watch 3 clips, 20 min | Waiting for your sounds |
 | 13b | **Your microphone on its own track.** Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
+| 22 | **A first real install on a Windows PC or a Mac.** v2.5 checked both by reading the code and the steps and by tests on this laptop; nobody has run it on one yet. | The AI helper sorts out most surprises, but a real run finds what reading can't. | none | 1 h on a Windows or Mac computer (yours or a friend's): "install this repo", then one short video | When one is at hand |
 | 19 | **The first full "clip this video" run with everything new** (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
 
 ## Ideas
@@ -42,10 +43,7 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | P4 | **YouTube's own captions as a second opinion.** | **On hold, for the owner to decide** (research, 2026-11-17): a study of 8,740 hours of Indian speakers found YouTube's captions worse than even a small Whisper model, with errors in the same places (so it would mostly repeat our mistakes), no published test exists for Hinglish (guides say it garbles fast Hindi-English switching), and a wrong second opinion could lead the caption check astray. |
 
 ## Next phase
-
-| # | What | Why | Build | Your part | Status |
-|---|---|---|---|---|---|
-| 16 | **Install check for Windows and macOS**: read the install steps and `install.py` once more and fix what's wrong or unclear. The AI helper that installs ClipKaro sorts out most surprises on the user's own computer, so this is a polish, not a full test. | So far ClipKaro has only run on this Fedora laptop. | 1-2 h | none now (a real run on a Windows or Mac computer when one is at hand) | Next |
+Everything planned before the major update is done. Next is the major update (v3.0), below.
 
 ## Major update (v3.0), later
 Big new features for a later major version, once everything essential for clipping is done.
@@ -90,6 +88,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 ## Done
 | What | Done |
 |---|---|
+| **Install check for Windows and macOS** (item 16), for ClipKaro and PostKaro: the Mac steps fixed (Homebrew's Python 3.15 and its caption-less ffmpeg), Hindi folder names on Windows, a Python check in setup, PostKaro's setup for every system. Checked by reading and tests; a real run is item 22. | 2026-11-17 (v2.5) |
 | **v2.4**: your brand on every clip (items 20 and 21): your logo and a 3-5 s outro from the `brand` folder, and "© Channel name" on clips from a YouTube link, right in the corners at 70 % opacity, any corner by setting; action without talking gets its own line (P2); the caption check spells names and numbers right (P3). | 2026-11-17 |
 | **v2.3**: no captions for game characters (gameplay, Hindi/Hinglish streamer) and Claude's caption check (standard and deep), on top of everything below. | 2026-11-16 |
 | **The hints' first blind test** (item 12): on a GTA stream, picks with and without hints matched 6 of 8; of the 2 that differed, the owner preferred the hints version both times. | 2026-11-16 |
@@ -113,8 +112,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ---
 
-**Waiting on you: items 3b, 4b, 13b and 19. Next: the install check for Windows and macOS (item 16),
-1-2 h. The major update (v3.0) comes later.**
+**Waiting on you: items 3b, 4b, 13b, 19 and 22. Next: the major update (v3.0).**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).

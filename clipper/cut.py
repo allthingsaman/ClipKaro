@@ -19,7 +19,7 @@ from pathlib import Path
 
 from . import facecam as fclib
 from .common import (H, JUMP_FLASH, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
-                     settings, slugify)
+                     open_video, settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
 PAD_IN, PAD_OUT = 0.12, 0.30
@@ -427,7 +427,7 @@ def two_person(pdir, video, plans, words):
         print(f'   ! no 16 kHz audio to analyse ({e}); classic framing for those shots')
         return {}
     import cv2
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     work = pdir / '.work'
     work.mkdir(exist_ok=True)
     signals = {}

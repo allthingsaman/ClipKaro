@@ -14,7 +14,7 @@ import colorsys
 import cv2
 import numpy as np
 
-from .common import die, load_json, project_dir, save_json
+from .common import die, load_json, open_video, project_dir, save_json
 
 DEFAULT_ACCENT = '#FFD60A'   # classic short-form highlight yellow, readable on anything with a black outline
 
@@ -39,7 +39,7 @@ def vivid(rgb, min_s=0.55, min_v=0.92):
 
 
 def sample_frames(video, n=24):
-    cap = cv2.VideoCapture(str(video))
+    cap = open_video(video)
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
     frames = []
     for k in range(n):

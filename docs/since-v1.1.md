@@ -11,7 +11,8 @@ its line here, in the same commit.** Released so far:
 - **v2.1** (2026-11-13): the lines dated 2026-11-12 and 2026-11-13 without a v2.2 mark;
 - **v2.2** (2026-11-14): the lines marked v2.2;
 - **v2.3** (2026-11-16): the lines marked v2.3;
-- **v2.4** (2026-11-17): the lines marked v2.4.
+- **v2.4** (2026-11-17): the lines marked v2.4;
+- **v2.5** (not released yet, branch v2.5-dev): the lines marked v2.5.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -215,6 +216,12 @@ changed. Only new ones were added.
   `sound`, `critic`, `deep`, `honesty`, `post`, `relisten`, `asr-bench`, `voices`, `hints`, `captions`.
 - ⬆ `run.py test --full` also runs a tiny made-up video from start to end (cut, edit, qa), and
   `asr-bench public` scores speech models on public Hindi and Hinglish test sets. *(v2.3)*
+- ⬆ **Windows and Mac** *(v2.5)*: on Windows, pictures in folders with Hindi letters are read and written
+  through a way that understands them (OpenCV's own can't), videos open through FFmpeg, and caption files
+  of clips with Hindi names get English-letter names; on a Mac, Homebrew's `ffmpeg-full` (the one that can
+  draw captions) is found by itself. On Linux, and for plain English names, nothing changes.
+- ⬆ `install.py` stops at once, with the fix, on a Python the speech engine can't use (3.15, or 3.14 on an
+  Intel Mac), instead of failing half-way; a `.venv` made with one is made again. *(v2.5)*
 - ⬆ New settings `source_credit`, `logo` and `outro`, and `edit --no-credit`, `--no-logo`, `--no-outro`.
   No Claude usage; an outro adds about a second of rendering per clip. *(v2.4)*
 

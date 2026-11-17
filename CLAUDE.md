@@ -23,8 +23,11 @@ fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user 
 - **Asked to install / set up this repo?** Follow "For AI agents installing ClipKaro" in README.md
   (details per system in docs/installation.md). Never run `sudo` yourself: give the user the exact
   commands in one block. Finish by telling the user to start Claude Code inside this folder.
-- Setup is `python install.py` (`python3` on macOS/Linux). It finds an NVIDIA graphics card by itself
-  and then sets up GPU transcription too (`--cpu` skips that). Safe to run again.
+- Setup is `python install.py` (`python3` on macOS/Linux; on a Mac `python3.13 install.py`, because
+  Homebrew's default Python 3.15 is too new for the speech engine). It finds an NVIDIA graphics card by
+  itself and then sets up GPU transcription too (`--cpu` skips that). Safe to run again.
+- **Asked to install PostKaro too** (the posting app)? Step 7 of "For AI agents installing ClipKaro" in
+  README.md: clone it next to this folder and run its `install.py` with the same Python.
 - Run everything through `python run.py <command>` from the repo root.
 - **Asked to update ClipKaro?** `git pull`, then `python install.py`, and report what changed.
 - Results go to `output/<project>/` (gitignored). Never commit or upload user videos.

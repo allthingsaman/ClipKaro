@@ -21,7 +21,7 @@ work, so how fast it goes depends a lot on your computer.
 | **Processor (CPU)** | 64-bit, 4 cores | 8 cores or more |
 | **Memory (RAM)** | 8 GB | 16 GB |
 | **Free disk space** | 8 GB | 20 GB or more (videos take space) |
-| **Python** | 3.10 | 3.12 or 3.13 (3.14 works too) |
+| **Python** | 3.10 | 3.12 or 3.13 (3.14 works too, except on Intel Macs; 3.15 is too new for the speech engine) |
 | **ffmpeg** (video tool) | a version with libx264 and libass | ffmpeg 6 or 7 |
 | **Node.js** | not needed | version 20 or newer (helps YouTube downloads) |
 | **Internet** | for the first setup (2-4 GB, once) and for YouTube links | |
@@ -31,7 +31,11 @@ because the speech engine has no version for them. Linux on ARM and Apple Silico
 work.
 
 **Python versions:** 3.10 and 3.11 work, but get older versions of some parts; 3.12 to 3.14 get the
-newest.
+newest. 3.15 doesn't work yet: the speech engine's onnxruntime part has no version for it (November
+2026). `install.py` says so before it starts.
+
+**Macs:** Apple Silicon (M1 or newer). Intel Macs can work, with Python 3.12 or 3.13, but Homebrew has no
+ready-made full ffmpeg for them (it builds it, which takes a long time).
 
 ## Graphics cards
 

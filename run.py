@@ -80,10 +80,24 @@ def with_nvidia_libs(env):
     return env
 
 
-def find_winget_ffmpeg():
-    """winget puts ffmpeg on the PATH of NEW terminals only. Find it for this one too."""
+def find_ffmpeg():
+    """Windows: winget puts ffmpeg on the PATH of NEW terminals only, so find it for this one too.
+    macOS: Homebrew's plain "ffmpeg" has no libass (captions), so ClipKaro uses "ffmpeg-full", which
+    Homebrew keeps off the PATH: put it first. A background app on a Mac may not see Homebrew's folder
+    at all: add it when ffmpeg isn't found otherwise."""
     import glob
     import shutil
+    if sys.platform == 'darwin':
+        for d in ('/opt/homebrew/opt/ffmpeg-full/bin', '/usr/local/opt/ffmpeg-full/bin'):
+            if os.path.isfile(os.path.join(d, 'ffmpeg')):
+                os.environ['PATH'] = d + os.pathsep + os.environ.get('PATH', '')
+                return
+        if not shutil.which('ffmpeg'):
+            for d in ('/opt/homebrew/bin', '/usr/local/bin'):
+                if os.path.isfile(os.path.join(d, 'ffmpeg')):
+                    os.environ['PATH'] = os.environ.get('PATH', '') + os.pathsep + d
+                    return
+        return
     if os.name != 'nt' or shutil.which('ffmpeg'):
         return
     local = os.environ.get('LOCALAPPDATA', '')
@@ -103,7 +117,7 @@ def main():
     if not PY.exists():
         print('First run setup:  python install.py')
         sys.exit(1)
-    find_winget_ffmpeg()
+    find_ffmpeg()
     env = dict(os.environ, PYTHONIOENCODING='utf-8', PYTHONUTF8='1', PYTHONUNBUFFERED='1', HF_HUB_DISABLE_XET='1',
                HF_HUB_DISABLE_SYMLINKS_WARNING='1', HF_HUB_VERBOSITY='error')
     cmd = [str(PY), '-m', COMMANDS[sys.argv[1]], *sys.argv[2:]]

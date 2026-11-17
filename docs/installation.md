@@ -12,7 +12,7 @@ NVIDIA graphics card is strongly recommended; without one ClipKaro works, but sl
 ## The easiest way: let Claude Code do it
 1. Get [Claude Code](https://claude.com/claude-code) (desktop app, terminal version, or the
    VS Code / JetBrains add-on) and sign in.
-2. Open it in the folder where ClipKaro should go (for example your Documents folder) and type:
+2. Open it in the folder where ClipKaro should go (for example your home folder. On Windows, not Documents or Desktop when OneDrive backs them up: the videos and ClipKaro's own files (a few GB) would fill your OneDrive) and type:
 
    > **install this repo: https://github.com/allthingsaman/ClipKaro**
 
@@ -36,7 +36,7 @@ The rest of this page is the same setup done by hand.
 | | What | Why |
 |---|---|---|
 | 1 | **[Claude Code](https://claude.com/claude-code)** (or another AI helper, see [AGENTS.md](../AGENTS.md)) | the "editor" that reads what's said in the video and picks the best moments |
-| 2 | **Python 3.10-3.14** (3.12 or 3.13 is the safest choice) | the language ClipKaro is written in |
+| 2 | **Python 3.10-3.14** (3.12 or 3.13 is the safest choice; 3.15 is too new for the speech engine) | the language ClipKaro is written in |
 | 3 | **ffmpeg**, a version with **libx264** and **libass** | the tool that cuts the video and draws the captions |
 | 4 | **Node.js 20+** (recommended) | helps download from YouTube without problems |
 | 5 | **Git** (optional) | downloads and updates ClipKaro; you can also download it as a ZIP file |
@@ -77,13 +77,20 @@ execution aliases → switch off the two "python" entries. If you install Python
 [python.org](https://www.python.org/downloads/) instead, tick **"Add python.exe to PATH"** during
 the install.
 
-Download ClipKaro and set it up:
+Download ClipKaro and set it up. A new Terminal window starts in your home folder
+(`C:\Users\<you>`), which is a good place: **don't put ClipKaro in Documents or Desktop when OneDrive
+backs them up** (Windows 11 often does). The videos and ClipKaro's own files (a few GB) would fill your
+OneDrive and slow everything down.
 
 ```powershell
 git clone https://github.com/allthingsaman/ClipKaro.git
 cd ClipKaro
 python install.py
 ```
+
+If `python --version` shows another version than 3.12 (for example 3.15, which is too new for the
+speech engine), run `py -3.12 install.py` instead. After that, `python run.py ...` works with any
+Python: ClipKaro uses its own.
 
 **NVIDIA graphics card?** Install or update its driver first, with the
 [NVIDIA App](https://www.nvidia.com/en-us/software/nvidia-app/) (or from nvidia.com). `install.py`
@@ -102,15 +109,25 @@ Install [Homebrew](https://brew.sh) if you don't have it yet (paste this into th
 Then:
 
 ```bash
-brew install python ffmpeg node git
+brew install python@3.13 ffmpeg-full node git
 git clone https://github.com/allthingsaman/ClipKaro.git
 cd ClipKaro
-python3 install.py
+python3.13 install.py
 ```
+
+Two Mac details (as of November 2026):
+- **`python@3.13`, not `python`:** `brew install python` now gives Python 3.15, which is too new for the
+  speech engine (its onnxruntime part has no version for 3.15 yet). Only `install.py` needs
+  `python3.13`; afterwards `python3 run.py ...` works with any Python, because ClipKaro uses its own.
+- **`ffmpeg-full`, not `ffmpeg`:** Homebrew's plain `ffmpeg` has no libass, so it can't draw captions.
+  `ffmpeg-full` has everything. Homebrew doesn't put it on the PATH; ClipKaro and PostKaro find it by
+  themselves.
 
 Macs don't have NVIDIA graphics cards, so ClipKaro writes down the words on the processor. It works,
 but it's slow, especially for Hindi/Hinglish (1-4 times the video's length). Apple Silicon (M1 or
-newer) is the quickest Mac for this. On a Mac, type `python3` wherever these docs say `python`.
+newer) is the Mac to use: Homebrew has no ready-made `ffmpeg-full` for Intel Macs (it builds it, which
+takes a long time), and on Intel Macs the speech engine stops at Python 3.13. On a Mac, type `python3`
+wherever these docs say `python`.
 
 ---
 
@@ -258,6 +275,28 @@ Then open Claude Code inside the ClipKaro folder and try a short video:
 | Your clips and projects | the `output` folder inside ClipKaro | about 0.1-1 GB per video |
 
 To keep the speech models somewhere else, set the `HF_HOME` environment variable to another folder.
+
+## PostKaro, the posting app (optional)
+PostKaro posts your finished clips to YouTube Shorts, Instagram Reels and your Facebook Page from your
+own computer. It is a separate app with its own folder, on Windows, Mac and Linux. Put it **next to**
+the ClipKaro folder, not inside it. It needs Python 3.11 or newer: use the same one as for ClipKaro.
+
+Ask Claude Code: **install PostKaro too**. Or by hand:
+
+```bash
+git clone https://github.com/allthingsaman/PostKaro.git
+cd PostKaro
+python install.py          # Mac: python3.13 install.py   Linux: python3 install.py
+python run.py open         # opens it in your browser (Mac/Linux: python3)
+```
+
+`install.py` sets PostKaro to start by itself when you log in (Windows: a login entry for your user;
+Mac: a login item, and macOS shows "Background Items Added"; Linux: a systemd user service), so the
+"Post them" link always works. Your logins are kept in the computer's own password store (Windows
+Credential Manager, the Mac Keychain, or the Linux keyring). On a Mac, if it asks whether Python may
+use the "postkaro" Keychain item, choose **Always Allow**. Then connect your accounts once with
+PostKaro's guide: `docs/connect-accounts.md` (about 30-45 minutes). From then on, ClipKaro ends every
+video with a "Post them" link.
 
 ## Updating
 Ask Claude Code (inside the ClipKaro folder): **update ClipKaro**. Or by hand:
