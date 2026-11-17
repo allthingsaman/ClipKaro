@@ -12,7 +12,7 @@ its line here, in the same commit.** Released so far:
 - **v2.2** (2026-11-14): the lines marked v2.2;
 - **v2.3** (2026-11-16): the lines marked v2.3;
 - **v2.4** (2026-11-17): the lines marked v2.4;
-- **v2.5** (not released yet, branch v2.5-dev): the lines marked v2.5.
+- **v2.5** (2026-11-17): the lines marked v2.5.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -21,7 +21,7 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
-Checked again for v2.4 on 2026-11-17: no v1.1 command, option or setting has been removed or
+Checked again for v2.5 on 2026-11-17: no v1.1 command, option or setting has been removed or
 changed. Only new ones were added.
 
 ---

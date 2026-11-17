@@ -1,6 +1,10 @@
 # What's new
 
-## Not released yet (v2.5, on the branch v2.5-dev)
+## v2.5 (November 2026): Windows and Mac, checked
+
+v2.5 closes everything planned before the major update (v3.0): ClipKaro and PostKaro now install and
+run the same way on Windows, Mac and Linux. Checked by reading the code and the steps, and by tests on
+Linux; the first real run on a Windows PC or a Mac is still to come (roadmap item 22).
 
 - **Windows and Mac, checked.** The install steps and the code were checked for both, together with
   PostKaro (0.5.0):

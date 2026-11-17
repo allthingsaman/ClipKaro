@@ -1,6 +1,6 @@
-# ClipKaro after v2.4: what's next, in order
+# ClipKaro after v2.5: what's next, in order
 
-ClipKaro v2.4 is the newest version (2026-11-17; v2.3 came on 2026-11-16). This page lists what is
+ClipKaro v2.5 is the newest version (2026-11-17, like v2.4; v2.3 came on 2026-11-16). This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
 by one. When one is done, it moves to **Done** with the date.
 
@@ -22,6 +22,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
   any corner), action without talking noted in gameplay, a caption check that spells names and numbers
   right, and a README that says which AI helper you need and how ClipKaro compares with Opus Clip inside
   Claude.
+- v2.5 (2026-11-17): ClipKaro and PostKaro checked for Windows and Mac (item 16). Everything planned
+  before the major update (v3.0) is done.
 
 ---
 
