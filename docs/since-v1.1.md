@@ -231,6 +231,13 @@ changed. Only new ones were added.
   streams only; normal clipping still ends with PostKaro's review page.
 - ⬆ New settings `source_credit`, `logo` and `outro`, and `edit --no-credit`, `--no-logo`, `--no-outro`.
   No Claude usage; an outro adds about a second of rendering per clip. *(v2.4)*
+- ⬆ **YouTube's sign-in check on Windows** *(2026-11-17)*: on Windows, `--cookies-from-browser` can't read
+  Chrome, Edge or Brave (they lock their logins: "Failed to decrypt with DPAPI"), so a video YouTube asked
+  about couldn't be downloaded. Now a cookies file in the ClipKaro folder (`cookies.txt`, or the
+  extension's `www.youtube.com_cookies.txt`; another place: setting `cookies_file` or `fetch --cookies <file>`)
+  is tried by itself, **only when YouTube asks**, and the rest of that video's downloads use it too. The
+  error messages now say what to do in plain words. Without such a file every download is exactly as
+  before, and `--cookies-from-browser` works as before. Git ignores any `*cookies*.txt`.
 
 ## Cost
 

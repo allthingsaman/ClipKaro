@@ -90,8 +90,13 @@ python run.py fetch "<youtube url or path to a video file>"
   `references/picking-moments.md`); the part files carry them too.
 - It prints the project name, the detected language and the transcript path:
   `output/<project>/transcript/transcript.txt`.
-- If YouTube blocks the download ("confirm you're not a bot"), retry with
-  `--cookies-from-browser chrome` (or firefox / edge). Ask the user which browser they use.
+- If YouTube blocks the download ("confirm you're not a bot"): ClipKaro tries again by itself with a
+  cookies file in the ClipKaro folder (`cookies.txt`, the extension's `www.youtube.com_cookies.txt`, or
+  settings.json `"cookies_file"`), only when YouTube asks. Without one, the error prints the 3 steps to make
+  it: give the user those steps, wait, then run `fetch` again. Never read a browser's cookies yourself.
+  On Windows, `--cookies-from-browser` fails for Chrome, Edge and Brave (they lock their logins: "DPAPI");
+  only Firefox works there. On Mac/Linux, `--cookies-from-browser chrome` (or firefox / edge) works too:
+  ask which browser they use. Details: `docs/troubleshooting.md` ("YouTube asks you to sign in").
 - The language is detected automatically. **Hindi/Hinglish** gets `language: hinglish`: Hindi in
   Devanagari, English words in Roman. Read `docs/hinglish.md` for those videos. If the user
   says what language the video is in, pass it: `--lang hinglish` or `--lang en`.

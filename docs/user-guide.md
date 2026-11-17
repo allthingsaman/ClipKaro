@@ -330,8 +330,10 @@ The very first time also includes downloading (once).
 1. **Ask Claude.** Copy the error message, paste it into Claude Code and add "please fix this".
    Claude can usually solve it.
 2. Some common ones:
-   - **YouTube says "Sign in to confirm you're not a bot"**: tell Claude
-     "use my Chrome cookies" (or Firefox, or Edge: the browser where you're logged in to YouTube).
+   - **YouTube says "Sign in to confirm you're not a bot"**: YouTube wants your login. Save it once as
+     a cookies file in the ClipKaro folder, using a browser extension (2 minutes; steps in
+     [troubleshooting.md](troubleshooting.md#youtube-asks-you-to-sign-in)), then tell Claude "try again".
+     On a Mac or Linux, "use my Chrome cookies" (or Firefox, or Edge) works too.
    - **The wrong language was detected**: tell Claude "the video is in English" (or Hinglish).
    - **A word in the captions is misspelled**: tell Claude which word and which clip.
    - **It's very slow**: you probably don't have an NVIDIA graphics card, or its driver isn't

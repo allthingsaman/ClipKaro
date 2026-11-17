@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from .common import die, fmt_ts, probe, settings
-from .fetch import is_url, page_facts, ytdlp
+from .fetch import given_cookies_file, is_url, page_facts, ytdlp
 from .kind import live_info
 from .parts import DEEP_ASK_MIN, MIN_CLIPS, MINUTES_PER_CLIP, V11_MAX
 
@@ -22,11 +22,14 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('source', help='YouTube URL or local video file')
     ap.add_argument('--cookies-from-browser', default=None)
+    ap.add_argument('--cookies', default=None, metavar='FILE',
+                    help='a cookies file with your YouTube login (cookies.txt in the ClipKaro folder is found by itself)')
     a = ap.parse_args()
     cfg = settings()
 
     if is_url(a.source):
-        meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', a.source], a.cookies_from_browser))
+        meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', a.source], a.cookies_from_browser,
+                                given_cookies_file(a.cookies)))
         facts = {'source': a.source, 'kind': 'youtube', 'title': meta.get('title'),
                  'channel': meta.get('channel') or meta.get('uploader'), 'duration': meta.get('duration'),
                  **page_facts(meta)}

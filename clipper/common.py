@@ -56,6 +56,9 @@ DEFAULT_SETTINGS = {
     'live_vram_mb': 2800,          # live: write down the words on the graphics card only with this much free memory
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
+    'cookies_file': None,          # a cookies file with your YouTube login, used only when YouTube asks for a
+                                   # sign-in check; without it, cookies.txt (or *cookies*.txt) in the ClipKaro
+                                   # folder is found by itself
 }
 
 SENT_END = '.?!।॥'                 # sentence ends, incl. the Hindi danda

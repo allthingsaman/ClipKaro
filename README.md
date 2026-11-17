@@ -428,7 +428,7 @@ All commands and options: [docs/usage.md](docs/usage.md#command-reference).
 |---|---|
 | `ffmpeg not found` | install ffmpeg ([docs/installation.md](docs/installation.md)), then open a **new** window |
 | `your ffmpeg has no libx264` | install the full ffmpeg (Fedora: from RPM Fusion) |
-| `Sign in to confirm you're not a bot` | `python run.py fetch <link> --cookies-from-browser chrome` (or firefox / edge) |
+| `Sign in to confirm you're not a bot` | put your YouTube cookies in the ClipKaro folder as `cookies.txt` ([how](docs/troubleshooting.md#youtube-asks-you-to-sign-in)) and run it again; on Mac/Linux `--cookies-from-browser chrome` (or firefox / edge) works too |
 | Wrong language detected | `python run.py fetch <link> --lang en --retranscribe` (or `--lang hinglish`) |
 | Very slow / graphics card not used | `python run.py gpu` tells you why; `python install.py` sets up the card |
 

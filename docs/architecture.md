@@ -175,7 +175,7 @@ output/                      your projects (never committed)
 
 | Component | Used for | Where |
 |---|---|---|
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | downloading the audio (fetch) and the video, max 1080p (cut) from YouTube and other sites | `fetch.ytdlp`, `cut.ensure_video` |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | downloading the audio (fetch) and the video, max 1080p (cut) from YouTube and other sites. When YouTube asks for a sign-in check, `ytdlp` tries once more with the cookies file (`find_cookies_file`: setting `cookies_file`, else `*cookies*.txt` in the repo root) and keeps it in project.json (`cookies_file`) for the video download | `fetch.ytdlp`, `cut.ensure_video` |
 | [Node.js](https://nodejs.org) | JavaScript runtime yt-dlp uses to solve YouTube's player challenges (optional, recommended) | passed to yt-dlp as `--js-runtimes node` |
 | [ffmpeg / ffprobe](https://ffmpeg.org) | probing, audio conversion, scene-cut detection, cropping/scaling, H.264 encoding (libx264), AAC audio, burning captions (libass), loudness normalisation | everywhere, via `common.ffmpeg` |
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | speech recognition with word timestamps; runs OpenAI's Whisper models on [CTranslate2](https://github.com/OpenNMT/CTranslate2) | `fetch.py` |

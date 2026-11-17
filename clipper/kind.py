@@ -57,9 +57,9 @@ def refresh_metadata(project):
         return
     try:
         import json
-        from .fetch import ytdlp, page_facts
+        from .fetch import ytdlp, page_facts, saved_cookies_file
         meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', project['source']],
-                                project.get('cookies_from_browser')))
+                                project.get('cookies_from_browser'), saved_cookies_file(project)))
         project.update(page_facts(meta))
     except SystemExit:
         project['live_status'] = None

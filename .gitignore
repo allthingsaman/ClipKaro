@@ -68,7 +68,7 @@ remotion/out/
 # secrets, cookies
 .env
 *.cookies
-cookies*.txt
+*cookies*.txt
 
 # OS / editor
 .DS_Store

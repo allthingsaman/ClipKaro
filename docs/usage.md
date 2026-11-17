@@ -216,7 +216,8 @@ ideas are left, "find more clips in this video" reads it again.
 ### Downloading
 | You write | What happens |
 |---|---|
-| "YouTube says sign in to confirm you're not a bot" / "use my Firefox cookies" | downloads using your browser's YouTube login (Chrome, Firefox or Edge) |
+| "YouTube says sign in to confirm you're not a bot" / "try again" | uses the cookies file in the ClipKaro folder (your YouTube login, saved once with a browser extension: [how](troubleshooting.md#youtube-asks-you-to-sign-in)) |
+| "use my Firefox cookies" | downloads using your browser's YouTube login (Firefox anywhere; Chrome or Edge on Mac and Linux) |
 
 ### Long videos (podcasts of an hour or more)
 | You write | What happens |
@@ -377,7 +378,8 @@ Claude to change them.
   "credit_corner": "bottom-left",
   "logo_background": "remove",
   "encoder": "auto",
-  "render_workers": "auto"
+  "render_workers": "auto",
+  "cookies_file": null
 }
 ```
 
@@ -405,6 +407,7 @@ Claude to change them.
 | `logo_background` | `remove` | a plain background around your logo (a black or white square) is made see-through, so only the logo shows; `keep`: the logo exactly as it is |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
+| `cookies_file` | `null` | a cookies file with your YouTube login, for when YouTube asks "confirm you're not a bot" (used only then). Without it, `cookies.txt` (or the extension's `www.youtube.com_cookies.txt`) in the ClipKaro folder is found by itself. How to make one: [troubleshooting.md](troubleshooting.md#youtube-asks-you-to-sign-in) |
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (only as a way back: they may cover a chin or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
@@ -429,7 +432,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 ### All commands and options
 | Command | Options |
 |---|---|
-| `run.py fetch <link or file>` | `--lang auto\|hinglish\|en\|hi\|<code>`, `--model auto\|large-v3-turbo\|large-v3\|medium\|small\|small.en`, `--device auto\|cuda\|cpu`, `--beam N`, `--cookies-from-browser chrome\|firefox\|edge`, `--retranscribe` |
+| `run.py fetch <link or file>` | `--lang auto\|hinglish\|en\|hi\|<code>`, `--model auto\|large-v3-turbo\|large-v3\|medium\|small\|small.en`, `--device auto\|cuda\|cpu`, `--beam N`, `--cookies-from-browser chrome\|firefox\|edge`, `--cookies <file>`, `--retranscribe` |
 | `run.py romanize <project>` | `--clips 1,3` |
 | `run.py cut <project>` | `--check`, `--clips 1,3`, `--horizontal`, `--layout auto\|facecam\|crop` |
 | `run.py brand <project>` | `--accent "#RRGGBB"`, `--text "#RRGGBB"`, `--outline "#RRGGBB"`, `--note "why"`, `--reset` |

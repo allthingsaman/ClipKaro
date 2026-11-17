@@ -49,21 +49,130 @@ PIECE_S = 20 * 60
 OVERLAP_S = 45         # more than one 30 s Whisper window, even after VAD drops some silence
 
 
-def ytdlp(args, cookies_browser=None):
-    import subprocess
+# YouTube's sign-in check ("Sign in to confirm you're not a bot") needs your YouTube login as cookies. On
+# Windows, Chrome, Edge and Brave lock theirs (app-bound encryption, since 2024), so `--cookies-from-browser`
+# fails there ("Failed to decrypt with DPAPI"). A cookies file works everywhere: exported once from the
+# browser, put in the ClipKaro folder, and found by itself. It is used only when YouTube asks for the check,
+# so most downloads never send your login.
+SIGN_IN = ('not a bot', 'Sign in to confirm')
+COOKIES_GUIDE = 'docs/troubleshooting.md ("YouTube asks you to sign in")'
+# The cookies file that got past the sign-in check in this run: the next downloads of the video use it at once.
+signed_in = {'file': None}
+
+
+def find_cookies_file(cfg=None, root=None):
+    """The cookies file for YouTube's sign-in check, or None: settings.json "cookies_file" (a path, relative
+    to the ClipKaro folder or full), else cookies.txt in the ClipKaro folder, else a file the browser
+    extension named itself there (www.youtube.com_cookies.txt), the newest first."""
+    from .common import ROOT
+    root = Path(root or ROOT)
+    cfg = settings() if cfg is None else cfg
+    named = cfg.get('cookies_file')
+    if named:
+        p = Path(str(named).strip().strip('"\'')).expanduser()
+        p = p if p.is_absolute() else root / p
+        if p.is_file():
+            return p
+        print(f'   ! settings.json "cookies_file": {p} not found; looking for cookies.txt instead', flush=True)
+    found = [p for p in root.glob('*cookies*.txt') if p.is_file()]
+    found.sort(key=lambda p: (p.name.lower() != 'cookies.txt', -p.stat().st_mtime))
+    return found[0] if found else None
+
+
+def saved_cookies_file(project):
+    """The cookies file a project was fetched with, while it is still there."""
+    p = project.get('cookies_file')
+    return p if p and Path(p).is_file() else None
+
+
+def given_cookies_file(path):
+    """--cookies FILE: the file, checked (None when not given)."""
+    if not path:
+        return None
+    p = Path(path.strip().strip('"\'')).expanduser()
+    if not p.is_file():
+        die(f'cookies file not found: {p}\nHow to make one: {COOKIES_GUIDE}')
+    return p
+
+
+def ytdlp_cmd(cookies_browser=None, cookies_file=None):
     cmd = [sys.executable, '-m', 'yt_dlp', *YTDLP_BASE]
     if shutil.which('node'):
         cmd += ['--js-runtimes', 'node']
     if cookies_browser:
         cmd += ['--cookies-from-browser', cookies_browser]
-    r = subprocess.run(cmd + args, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    elif cookies_file:
+        cmd += ['--cookies', str(cookies_file)]
+    return cmd
+
+
+def run_ytdlp(cmd):
+    import subprocess
+    return subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+
+
+def asks_sign_in(text):
+    return any(s in (text or '') for s in SIGN_IN)
+
+
+def ytdlp_problem(stderr, cookies_browser=None, cookies_file=None, windows=None):
+    """yt-dlp's last lines, and what to do about them in plain words."""
+    from .common import ROOT
+    msg = '\n'.join((stderr or '').strip().splitlines()[-8:])
+    low = msg.lower()
+    windows = os.name == 'nt' if windows is None else windows
+    browser = (cookies_browser or 'the browser').split(':')[0]
+    steps = ('  1. In the browser where you are logged in to YouTube, add the extension "Get cookies.txt LOCALLY".\n'
+             '  2. Open youtube.com, click the extension and press "Export": it saves www.youtube.com_cookies.txt.\n'
+             f'  3. Move that file into the ClipKaro folder ({ROOT}) and run the same command again,\n'
+             '     without --cookies-from-browser. ClipKaro finds the file by itself.\n'
+             f'  More: {COOKIES_GUIDE}')
+    export = 'Use a cookies file instead (once, about 2 minutes):\n' + steps
+    if 'dpapi' in low or 'app-bound' in low or 'app_bound' in low:
+        tip = (f"Windows locks {browser}'s saved logins (Chrome, Edge and Brave do this since 2024), so no other "
+               'program can read them, even with the browser closed.\n' + export +
+               '\n  (Firefox logins can still be read: --cookies-from-browser firefox)')
+    elif 'could not copy' in low and 'cookie' in low:
+        tip = (f'{browser} is still running (perhaps in the background, with its icon next to the clock) and keeps '
+               'its cookies locked. Close it completely and try again.')
+        if windows:
+            tip += ('\nOn Windows, Chrome, Edge and Brave may still refuse after that (they lock their logins):\n'
+                    + export)
+    elif 'netscape' in low or ('cookies' in low and ('no such file' in low or 'does not exist' in low)):
+        tip = (f"{cookies_file or 'The cookies file'} is not a cookies file ClipKaro can read. Export it again "
+               'with "Get cookies.txt LOCALLY" (it writes the right format).\n  More: ' + COOKIES_GUIDE)
+    elif asks_sign_in(msg) and cookies_file:
+        tip = (f'YouTube did not accept the login in {Path(str(cookies_file)).name}: it is probably old (YouTube '
+               'changes it now and then, and logging out ends it). Export the cookies again, replace the file, '
+               'and run the same command again.\n  More: ' + COOKIES_GUIDE)
+    elif asks_sign_in(msg) and cookies_browser:
+        tip = (f"YouTube did not accept {browser}'s login: is YouTube logged in there?\n" + export)
+    elif asks_sign_in(msg):
+        tip = ('YouTube asked for a sign-in check: ClipKaro needs your YouTube login, saved as a cookies file '
+               '(once, about 2 minutes):\n' + steps +
+               ('\n  (On Windows, Chrome, Edge and Brave logins cannot be read; Firefox works: '
+                '--cookies-from-browser firefox)' if windows else
+                '\n  Or use a browser where you are logged in: --cookies-from-browser chrome   (or firefox / edge)'))
+    else:
+        return msg
+    return f'{msg}\n\n{tip}'
+
+
+def ytdlp(args, cookies_browser=None, cookies_file=None):
+    """Run yt-dlp and return what it prints. Cookies only when given, or when YouTube asks for a sign-in
+    check: then the cookies file (find_cookies_file) is tried once, and kept for the next downloads."""
+    cookies_file = cookies_file or signed_in['file']
+    r = run_ytdlp(ytdlp_cmd(cookies_browser, cookies_file) + args)
+    if r.returncode != 0 and not cookies_browser and not cookies_file and asks_sign_in(r.stderr):
+        spare = find_cookies_file()
+        if spare:
+            print(f'-> YouTube asked for a sign-in check: trying again with your login from {spare.name}', flush=True)
+            cookies_file = spare
+            r = run_ytdlp(ytdlp_cmd(None, spare) + args)
+            if r.returncode == 0:
+                signed_in['file'] = str(spare)
     if r.returncode != 0:
-        err = r.stderr.strip().splitlines()[-8:]
-        msg = '\n'.join(err)
-        if "not a bot" in msg or 'Sign in to confirm' in msg:
-            msg += ('\n\nYouTube asked for a sign-in check. Retry with your browser cookies, e.g.\n'
-                    '  python run.py fetch <url> --cookies-from-browser chrome   (or firefox / edge)')
-        die(f'yt-dlp failed:\n{msg}')
+        die('yt-dlp failed:\n' + ytdlp_problem(r.stderr, cookies_browser, cookies_file))
     return r.stdout
 
 
@@ -106,9 +215,10 @@ def length_line(project):
     return ', '.join(bits)
 
 
-def download_audio(url, proj, cookies):
+def download_audio(url, proj, cookies, cookies_file=None):
     import json
-    meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', url], cookies))
+    meta = json.loads(ytdlp(['--dump-single-json', '--skip-download', url], cookies, cookies_file))
+    cookies_file = cookies_file or signed_in['file']
     title = meta.get('title') or 'video'
     slug = f"{slugify(title, 40)}-{meta.get('id', '')}".strip('-')
     pdir = proj or (OUTPUT / slug)
@@ -119,7 +229,7 @@ def download_audio(url, proj, cookies):
     print(f'-> {title}  ({length_line(facts)})', flush=True)
     if not existing:
         print('-> downloading audio')
-        ytdlp(['-f', 'ba[ext=m4a]/ba/b', '-o', str(src / 'audio.%(ext)s'), url], cookies)
+        ytdlp(['-f', 'ba[ext=m4a]/ba/b', '-o', str(src / 'audio.%(ext)s'), url], cookies, cookies_file)
         existing = list(src.glob('audio.*'))
     if not existing:
         die('audio download produced no file')
@@ -133,6 +243,8 @@ def download_audio(url, proj, cookies):
     project.update(video_extras(meta))
     if cookies:
         project['cookies_from_browser'] = cookies
+    if cookies_file:          # YouTube asked for the sign-in check: the video download (and cut) use it too
+        project['cookies_file'] = str(Path(cookies_file).resolve())
     save_json(pdir / 'project.json', project)
     return pdir, project
 
@@ -148,12 +260,7 @@ def video_file(pdir):
 
 
 def video_download_cmd(pdir, project):
-    import subprocess  # noqa: F401  (kept next to its use)
-    cmd = [sys.executable, '-m', 'yt_dlp', *YTDLP_BASE]
-    if shutil.which('node'):
-        cmd += ['--js-runtimes', 'node']
-    if project.get('cookies_from_browser'):
-        cmd += ['--cookies-from-browser', project['cookies_from_browser']]
+    cmd = ytdlp_cmd(project.get('cookies_from_browser'), saved_cookies_file(project))
     return cmd + ['-f', VIDEO_FORMAT, '--merge-output-format', 'mp4',
                   '-o', str(pdir / 'source' / 'video.%(ext)s'), project['source']]
 
@@ -188,7 +295,7 @@ def download_video(pdir, project):
     """Download the video now and wait for it (what `cut` does when fetch didn't)."""
     print('-> downloading video (max 1080p, first time only) ...', flush=True)
     ytdlp(['-f', VIDEO_FORMAT, '--merge-output-format', 'mp4', '-o', str(pdir / 'source' / 'video.%(ext)s'),
-           project['source']], project.get('cookies_from_browser'))
+           project['source']], project.get('cookies_from_browser'), saved_cookies_file(project))
     found = video_file(pdir)
     if not found:
         die('video download produced no file')
@@ -1082,6 +1189,9 @@ def main():
     ap.add_argument('--device', default=cfg['device'], help='auto (default: NVIDIA GPU if usable), cuda or cpu')
     ap.add_argument('--beam', type=int, default=None, help='beam size (default 5 for Hindi or on GPU, else 1)')
     ap.add_argument('--cookies-from-browser', default=None, help='chrome / firefox / edge (if YouTube blocks)')
+    ap.add_argument('--cookies', default=None, metavar='FILE',
+                    help='a cookies file with your YouTube login (if YouTube blocks; cookies.txt in the ClipKaro '
+                         'folder is found by itself, and used only when YouTube asks)')
     ap.add_argument('--retranscribe', action='store_true')
     ap.add_argument('--name', default=None, help='project name for a local file (default: from the file name)')
     ap.add_argument('--no-video', action='store_true',
@@ -1090,7 +1200,7 @@ def main():
 
     video_job = None
     if is_url(a.source):
-        pdir, project = download_audio(a.source, None, a.cookies_from_browser)
+        pdir, project = download_audio(a.source, None, a.cookies_from_browser, given_cookies_file(a.cookies))
         audio_src = pdir / 'source' / project['audio']
         if not a.no_video:
             video_job = start_video_download(pdir, project)

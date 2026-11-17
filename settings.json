@@ -29,5 +29,6 @@
   "live_post": "now",
   "live_vram_mb": 2800,
   "encoder": "auto",
-  "render_workers": "auto"
+  "render_workers": "auto",
+  "cookies_file": null
 }

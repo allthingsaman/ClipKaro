@@ -771,6 +771,100 @@ class WindowsAndMac(unittest.TestCase):
             self.assertTrue(os.environ['PATH'].endswith(os.pathsep + '/opt/homebrew/bin'))
 
 
+class YouTubeSignIn(unittest.TestCase):
+    """2026-11-17: YouTube's sign-in check on Windows, where Chrome, Edge and Brave lock their logins.
+    A cookies file in the ClipKaro folder is used, but only when YouTube asks."""
+
+    BOT = ("ERROR: [youtube] CswOUBuokjo: Sign in to confirm you're not a bot. Use --cookies-from-browser or "
+           '--cookies for the authentication.')
+
+    def setUp(self):
+        from clipper import fetch
+        self.fetch = fetch
+        fetch.signed_in['file'] = None
+        self.addCleanup(fetch.signed_in.update, {'file': None})
+
+    def test_finds_the_cookies_file(self):
+        import os
+        import time
+        find = self.fetch.find_cookies_file
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            self.assertIsNone(find({}, root))                                     # none: as before
+            ext = root / 'www.youtube.com_cookies.txt'                            # the extension's own name
+            ext.write_text('# Netscape HTTP Cookie File\n', encoding='utf-8')
+            self.assertEqual(find({}, root), ext)
+            plain = root / 'cookies.txt'
+            plain.write_text('# Netscape HTTP Cookie File\n', encoding='utf-8')
+            os.utime(ext, (time.time() + 60, time.time() + 60))                   # newer, but cookies.txt wins
+            self.assertEqual(find({}, root), plain)
+            (root / 'mine').mkdir()
+            own = root / 'mine' / 'yt.txt'
+            own.write_text('x', encoding='utf-8')
+            self.assertEqual(find({'cookies_file': 'mine/yt.txt'}, root), own)  # settings.json wins
+            self.assertEqual(find({'cookies_file': 'gone.txt'}, root), plain)    # missing: falls back
+
+    def test_used_only_when_youtube_asks(self):
+        from types import SimpleNamespace as R
+        from unittest import mock
+        calls = []
+
+        def answers(*replies):
+            it = iter(replies)
+            return lambda cmd: (calls.append(cmd), next(it))[1]
+
+        ok, bot = R(returncode=0, stdout='{}', stderr=''), R(returncode=1, stdout='', stderr=self.BOT)
+        spare = Path('C:/ClipKaro/cookies.txt')
+        # no check: the same command as before, no login sent
+        with mock.patch.object(self.fetch, 'run_ytdlp', answers(ok)), \
+                mock.patch.object(self.fetch, 'find_cookies_file', lambda: spare):
+            self.assertEqual(self.fetch.ytdlp(['URL']), '{}')
+        self.assertNotIn('--cookies', calls[-1])
+        self.assertIsNone(self.fetch.signed_in['file'])
+        # the check: tried again with the file, which the next downloads then use at once
+        calls.clear()
+        with mock.patch.object(self.fetch, 'run_ytdlp', answers(bot, ok, ok)), \
+                mock.patch.object(self.fetch, 'find_cookies_file', lambda: spare):
+            self.fetch.ytdlp(['URL'])
+            self.assertEqual(calls[1][calls[1].index('--cookies') + 1], str(spare))
+            self.fetch.ytdlp(['AUDIO'])
+        self.assertEqual(len(calls), 3)
+        self.assertIn('--cookies', calls[2])
+        # a browser named by hand: used as before, never mixed with the file
+        self.fetch.signed_in['file'] = None
+        cmd = self.fetch.ytdlp_cmd('firefox', spare)
+        self.assertEqual(cmd[cmd.index('--cookies-from-browser') + 1], 'firefox')
+        self.assertNotIn('--cookies', cmd)
+        # the check and no file: stops, with the way to make one
+        with mock.patch.object(self.fetch, 'run_ytdlp', answers(bot)), \
+                mock.patch.object(self.fetch, 'find_cookies_file', lambda: None), \
+                self.assertRaises(SystemExit):
+            self.fetch.ytdlp(['URL'])
+
+    def test_plain_words_for_each_problem(self):
+        problem = self.fetch.ytdlp_problem
+        dpapi = problem('ERROR: Failed to decrypt with DPAPI. See https://github.com/yt-dlp/yt-dlp/issues/10927',
+                        'brave', windows=True)
+        self.assertIn('Get cookies.txt LOCALLY', dpapi)
+        self.assertIn('without --cookies-from-browser', dpapi)
+        locked = problem('ERROR: Could not copy Chrome cookie database. See ...', 'brave', windows=True)
+        self.assertIn('Close it completely', locked)
+        self.assertIn('Get cookies.txt LOCALLY', locked)
+        self.assertNotIn('Get cookies.txt', problem('ERROR: Could not copy Chrome cookie database.', 'chrome',
+                                                     windows=False))
+        self.assertIn('firefox', problem(self.BOT, windows=True))
+        self.assertIn('probably old', problem(self.BOT, None, 'C:/ClipKaro/cookies.txt'))
+        self.assertEqual(problem('ERROR: Video unavailable'), 'ERROR: Video unavailable')   # others: as before
+
+    def test_never_committed(self):
+        from fnmatch import fnmatch
+        root = Path(__file__).resolve().parent.parent
+        rules = [ln.strip() for ln in (root / '.gitignore').read_text(encoding='utf-8').splitlines()
+                 if ln.strip() and not ln.startswith(('#', '!'))]
+        for name in ('cookies.txt', 'www.youtube.com_cookies.txt', 'youtube_cookies.txt'):
+            self.assertTrue(any(fnmatch(name, r) for r in rules), name)
+
+
 class LiveClipping(unittest.TestCase):
     """v2.6: clips while the stream runs (OBS pieces, Twitch chat and viewer clips as hints)."""
 

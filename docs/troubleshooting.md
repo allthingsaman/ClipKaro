@@ -40,11 +40,42 @@ Test it any time: `python run.py gpu large-v3-turbo`.
 
 | Problem | What to do |
 |---|---|
-| `Sign in to confirm you're not a bot` | Tell Claude "use my Chrome cookies" (or Firefox / Edge: the browser where you're logged in to YouTube). By hand: `python run.py fetch <link> --cookies-from-browser chrome`. |
+| `Sign in to confirm you're not a bot` | YouTube wants your login. Put a **cookies file** in the ClipKaro folder (see [below](#youtube-asks-you-to-sign-in)) and run the same command again. On Mac and Linux, "use my Chrome cookies" (or Firefox / Edge) also works: `--cookies-from-browser chrome`. |
+| Windows: `Failed to decrypt with DPAPI` | Chrome, Edge and Brave on Windows lock their saved logins, so no other program can read them, even with the browser closed. Use a cookies file instead (see [below](#youtube-asks-you-to-sign-in)), or Firefox: `--cookies-from-browser firefox`. |
+| `Could not copy Chrome cookie database` | The browser is still running, perhaps in the background (its icon next to the clock). Close it completely. On Windows, a cookies file is the easier way (see [below](#youtube-asks-you-to-sign-in)). |
+| `YouTube did not accept the login in cookies.txt` | The cookies are old: YouTube changes them now and then, and logging out ends them. Export them again and replace the file. |
 | `yt-dlp failed` after YouTube changed something | Run `python install.py`: it updates the downloader. Installing Node.js 20+ also helps. |
 | `file not found` for a video on your computer | Put the path in quotes and check it (drag the file into the window to paste its exact path). |
 | `has no video track` | ClipKaro needs a video, not a sound-only file. |
 | `the original video file is gone` | The video was moved or deleted after the first step. Put it back, or start again with its new path. |
+
+### YouTube asks you to sign in
+
+Sometimes YouTube asks a download to prove it isn't a robot ("Sign in to confirm you're not a bot").
+It depends on the video and the moment: one video downloads fine, the next one asks. ClipKaro then
+needs your YouTube login, as a **cookies file**. You make it once (about 2 minutes):
+
+1. In the browser where you're logged in to YouTube (Chrome, Brave, Edge ...), add the extension
+   **"Get cookies.txt LOCALLY"** from the browser's extension store.
+2. Open youtube.com, click the extension and press **Export**. It saves `www.youtube.com_cookies.txt`
+   to your Downloads folder.
+3. Move that file into the ClipKaro folder (next to `run.py`). Keep its name or call it
+   `cookies.txt`: both are found by themselves.
+4. Run the same command again (or tell Claude "try again").
+
+- ClipKaro uses the file **only when YouTube asks**. Most videos download without your login, as before.
+- The file is never uploaded or committed (git ignores it). Treat it like a password: anyone who has it
+  is logged in to your YouTube account.
+- It stops working after a while (YouTube changes the login now and then, and logging out ends it).
+  Then export it again and replace the file. It lasts longer if you export it from a private window
+  (allow the extension there first): log in to YouTube in the private window, export, then close it.
+- The file can live somewhere else too: `"cookies_file": "C:/Users/you/yt-cookies.txt"` in
+  `settings.json`, or `python run.py fetch <link> --cookies <file>` for one video.
+- Why not the browser itself (`--cookies-from-browser`)? On Windows, Chrome, Edge and Brave lock their
+  saved logins, so no other program can read them. On Mac and Linux, and with Firefox anywhere, that
+  still works.
+- YouTube can block an account that downloads a lot. ClipKaro asks only a few times per video, but if
+  you clip many videos a day, a second YouTube account for this is safer.
 
 ## The written words and the language
 

@@ -1,5 +1,13 @@
 # What's new
 
+## Since v2.6 (not released yet)
+
+- **YouTube's "confirm you're not a bot" on Windows.** Chrome, Edge and Brave on Windows lock their
+  saved logins, so "use my Chrome cookies" failed there ("Failed to decrypt with DPAPI"). Now you save your
+  YouTube login once as a cookies file with a browser extension and put it in the ClipKaro folder
+  ([how](docs/troubleshooting.md#youtube-asks-you-to-sign-in)). ClipKaro uses it by itself, only when
+  YouTube asks; most videos still download without it. The error messages now say what to do.
+
 ## v2.6 (November 2026): live clipping
 
 v2.6 clips your stream while it is still running, for game launches like GTA 6. Normal clipping is
