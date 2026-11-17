@@ -681,12 +681,39 @@ class BrandKit(unittest.TestCase):
             self.assertEqual(kit['credit']['corner'], 'bottom-left')
             self.assertEqual(len(notes), 1)
 
+    def test_plain_logo_background_made_see_through(self):
+        import cv2
+        import numpy as np
+        from clipper import brandkit
+        img = np.zeros((200, 200, 3), np.uint8)                   # a logo on a black square:
+        cv2.circle(img, (100, 100), 60, (255, 200, 0), 14)        # a ring, black inside it
+        self.assertEqual(brandkit.plain_background(img), (0, 0, 0))
+        out = brandkit.see_through(img, (0, 0, 0))
+        self.assertEqual(out[2, 2, 3], 0)                         # the background: see-through
+        self.assertEqual(out[100, 40, 3], 255)                    # the ring: solid
+        self.assertEqual(out[100, 100, 3], 255)                   # black inside the logo stays
+        noisy = np.random.default_rng(1).integers(0, 255, (200, 200, 3), dtype=np.uint8)
+        self.assertIsNone(brandkit.plain_background(noisy))       # a photo: left alone
+        clear = np.dstack([img, np.full((200, 200), 255, np.uint8)])
+        clear[:5] = 0
+        self.assertIsNone(brandkit.plain_background(clear))       # already see-through: left alone
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / 'logo.png'
+            cv2.imwrite(str(f), img)
+            use, note, size = brandkit.clean_logo(f, d)
+            self.assertNotEqual(use, f)
+            self.assertIn('black background', note)
+            self.assertEqual(cv2.imread(str(use), cv2.IMREAD_UNCHANGED).shape[2], 4)
+            self.assertLess(size[0], 200)                         # the empty margin trimmed: right in the corner
+            self.assertEqual(brandkit.clean_logo(f, d, keep=True), (f, None, (200, 200)))   # "keep"
+
     def test_way_back(self):
         from clipper import edit
         from clipper.common import DEFAULT_SETTINGS
         self.assertTrue(DEFAULT_SETTINGS['source_credit'] and DEFAULT_SETTINGS['logo'] and DEFAULT_SETTINGS['outro'])
         self.assertEqual((DEFAULT_SETTINGS['logo_corner'], DEFAULT_SETTINGS['credit_corner']),
                          ('bottom-right', 'bottom-left'))
+        self.assertEqual(DEFAULT_SETTINGS['logo_background'], 'remove')
         # no logo, no outro: the encoder gets exactly the picture arguments it got before v2.4
         self.assertEqual(edit.finish_args({'fps': 30}, 'null'), ([], ['-vf', 'null', '-map', '0:v']))
 

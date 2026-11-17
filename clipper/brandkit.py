@@ -95,17 +95,100 @@ def logo_box(w, h, where=LOGO_CORNER):
     return lw, lh, x, y
 
 
-def logo(on=True, where=None, place=LOGO_CORNER):
+BG_EDGE = 0.03       # the outer 3 % of the logo is its border
+BG_SHARE = 0.9       # a plain background: 90 % of the border within BG_NEAR of one colour
+BG_NEAR = 24         # colour distance (0-255, the largest of B, G, R) counted as "the same colour"
+BG_LO, BG_HI = 12, 72  # near the background: see-through below BG_LO, solid from BG_HI, a soft ramp between
+BG_FRINGE = 0.015    # the soft ramp reaches this far (share of the logo's size) past the background: a glow's edge
+
+
+def plain_background(img):
+    """The logo's background colour (B, G, R) when its border is one plain colour and it has nothing
+    see-through yet, else None."""
+    import numpy as np
+    if img.ndim == 3 and img.shape[2] == 4 and img[:, :, 3].min() < 250:
+        return None                                   # already see-through somewhere: leave it alone
+    bgr = img[:, :, :3] if img.ndim == 3 else np.dstack([img] * 3)
+    h, w = bgr.shape[:2]
+    e = max(1, int(round(min(h, w) * BG_EDGE)))
+    ring = np.concatenate([bgr[:e].reshape(-1, 3), bgr[-e:].reshape(-1, 3),
+                           bgr[:, :e].reshape(-1, 3), bgr[:, -e:].reshape(-1, 3)]).astype(np.int16)
+    colour = np.median(ring, axis=0)
+    near = np.abs(ring - colour).max(axis=1) <= BG_NEAR
+    return tuple(int(c) for c in colour) if near.mean() >= BG_SHARE else None
+
+
+def see_through(img, colour):
+    """The logo with its plain background removed (BGRA): only the background that touches the edge (the
+    same colour inside the logo stays: a dark shield, the hole of a letter), plus a thin soft fringe around
+    it so a glow fades out instead of ending in a hard line, with the background colour taken out of the
+    half see-through pixels."""
+    import cv2
+    import numpy as np
+    bgr = (img[:, :, :3] if img.ndim == 3 else np.dstack([img] * 3)).astype(np.float32)
+    dist = np.abs(bgr - np.array(colour, np.float32)).max(axis=2)
+    _, labels = cv2.connectedComponents((dist <= BG_NEAR).astype(np.uint8), connectivity=4)
+    edge = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]]))) - {0}
+    bg = np.isin(labels, list(edge)) & (dist <= BG_NEAR)
+    r = max(1, int(round(min(dist.shape) * BG_FRINGE)))
+    near = cv2.dilate(bg.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))) > 0
+    outside = (bg | near) & (dist < BG_HI)
+    a = np.ones(dist.shape, np.float32)
+    a[outside] = np.clip((dist[outside] - BG_LO) / (BG_HI - BG_LO), 0, 1)
+    k = np.maximum(a, 1e-3)[:, :, None]
+    fg = np.clip((bgr - np.array(colour, np.float32) * (1 - k)) / k, 0, 255)
+    return np.dstack([fg, a * 255]).astype(np.uint8)
+
+
+def clean_logo(p, work, keep=False):
+    """(the file to use, message or None, (width, height)): the logo without a plain background and
+    without empty see-through margins, so the logo itself sits right in the corner (made once, in the
+    project's .work folder); or the file itself ("logo_background": "keep", or nothing to do)."""
+    import cv2
+    import numpy as np
+    img = cv2.imread(str(p), cv2.IMREAD_UNCHANGED)
+    size = (img.shape[1], img.shape[0])
+    if keep or work is None:
+        return p, None, size
+    colour = plain_background(img)
+    note = None
+    if colour is not None:
+        rgba = see_through(img, colour)
+        name = {(0, 0, 0): 'black', (255, 255, 255): 'white'}.get(
+            tuple(round(c / 255) * 255 for c in colour), 'plain')
+        note = f'-> your logo has a {name} background: made see-through (settings.json "logo_background": "keep" leaves it)'
+    elif img.ndim == 3 and img.shape[2] == 4:
+        rgba = img
+    else:
+        return p, None, size
+    ys, xs = np.nonzero(rgba[:, :, 3] > 8)
+    if not len(xs):
+        return p, None, size
+    x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+    if colour is None and (x1 - x0, y1 - y0) == size:
+        return p, None, size                       # see-through already, no empty margin: as it is
+    st = p.stat()
+    out = Path(work) / f'logo-ready-{int(st.st_mtime)}-{st.st_size}.png'
+    if not out.exists():
+        tmp = out.with_name(out.stem + f'.{os.getpid()}.part.png')
+        cv2.imwrite(str(tmp), rgba[y0:y1, x0:x1])
+        os.replace(tmp, out)
+    return out, note, (int(x1 - x0), int(y1 - y0))
+
+
+def logo(on=True, where=None, place=LOGO_CORNER, work=None, keep_background=False):
     """({file, w, h, x, y, alpha, corner} or None, messages)."""
     p = find('logo', IMAGE_EXT, where)
     if not on or not p:
         return None, []
     import cv2
-    img = cv2.imread(str(p), cv2.IMREAD_UNCHANGED)
-    if img is None:
+    if cv2.imread(str(p), cv2.IMREAD_UNCHANGED) is None:
         return None, [f'! {p.name}: not a picture ClipKaro can read (use PNG or JPG): left out']
-    lw, lh, x, y = logo_box(img.shape[1], img.shape[0], place)
-    return {'file': str(p.resolve()), 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': OPACITY, 'corner': place}, []
+    use, note, (w, h) = clean_logo(p, work, keep_background)
+    lw, lh, x, y = logo_box(w, h, place)
+    return ({'file': str(Path(use).resolve()), 'name': p.name, 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': OPACITY,
+             'corner': place},
+            [note] if note else [])
 
 
 def share_corner(cr, lg):
@@ -174,12 +257,12 @@ def outro_audio(p, duration, work):
 
 
 def resolve(project, work, credit_on=True, logo_on=True, outro_on=True, where=None,
-            logo_corner=LOGO_CORNER, credit_corner=CREDIT_CORNER):
+            logo_corner=LOGO_CORNER, credit_corner=CREDIT_CORNER, logo_background='remove'):
     """Everything the edit adds, once per run: ({credit, logo, outro}, messages). The corners come from
     settings.json ("logo_corner", "credit_corner"); a wrong one falls back to the default, with a note."""
     lc, n1 = corner(logo_corner, LOGO_CORNER)
     cc, n2 = corner(credit_corner, CREDIT_CORNER)
-    lg, m1 = logo(logo_on, where, lc)
+    lg, m1 = logo(logo_on, where, lc, work, str(logo_background).lower() == 'keep')
     ou, m2 = outro(work, outro_on, where)
     cr = share_corner(credit(project, credit_on, cc), lg)
     return {'credit': cr, 'logo': lg, 'outro': ou}, [m for m in (n1, n2) if m] + m1 + m2
@@ -189,7 +272,8 @@ def summary(kit):
     """One line for the edit's output, or ''."""
     parts = []
     if kit.get('logo'):
-        parts.append(f"logo {Path(kit['logo']['file']).name} ({kit['logo']['corner'].replace('-', ' ')})")
+        parts.append(f"logo {kit['logo'].get('name') or Path(kit['logo']['file']).name} "
+                     f"({kit['logo']['corner'].replace('-', ' ')})")
     if kit.get('outro'):
         parts.append(f"outro {Path(kit['outro']['file']).name} ({kit['outro']['duration']:.1f} s, after every clip)")
     if kit.get('credit'):

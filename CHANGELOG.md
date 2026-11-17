@@ -17,6 +17,7 @@ reviewed the brand kit on a real gameplay clip before release.
   opens on its hook. An outro longer than 10 s is left out, so it is never longer than the clip.
 - **Credit to the source.** Clips made from a YouTube link get a small "© Channel name" in the
   bottom-left corner (never your own video files). `"source_credit": false` in settings.json turns it off.
+  A logo on a plain black or white square gets the square removed by itself.
   Both sit right in their corners at 70 % opacity; `"logo_corner"` and `"credit_corner"` choose another
   corner (top-left, top-right, bottom-left, bottom-right).
 - **The caption check knows more** (standard and deep mode): names of games, characters, people and

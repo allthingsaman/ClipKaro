@@ -22,6 +22,7 @@
   "outro": true,
   "logo_corner": "bottom-right",
   "credit_corner": "bottom-left",
+  "logo_background": "remove",
   "encoder": "auto",
   "render_workers": "auto"
 }

@@ -641,7 +641,8 @@ def main():
     kit, notes = brandkit.resolve(project, work, on(a.credit, 'source_credit'), on(a.logo, 'logo'),
                                   on(a.outro, 'outro'),
                                   logo_corner=a.logo_corner or cfg.get('logo_corner', brandkit.LOGO_CORNER),
-                                  credit_corner=a.credit_corner or cfg.get('credit_corner', brandkit.CREDIT_CORNER))
+                                  credit_corner=a.credit_corner or cfg.get('credit_corner', brandkit.CREDIT_CORNER),
+                                  logo_background=cfg.get('logo_background', 'remove'))
     for m in notes:
         print('   ' + m)
     if brandkit.summary(kit):

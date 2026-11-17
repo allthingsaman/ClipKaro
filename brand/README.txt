@@ -5,7 +5,9 @@ Put up to two files in this folder. ClipKaro adds them to every clip it edits fr
 
 logo.png     Your logo. It goes right in the bottom-right corner (no gap), small and 70% visible
              (a little see-through), for the whole clip.
-             - A PNG with a see-through background looks best (JPG and WebP work too).
+             - A PNG with a see-through background looks best (JPG and WebP work too). A logo on a
+               plain square (black, white, one colour) gets that background removed by itself, so
+               only the logo shows; "logo_background": "keep" in settings.json leaves it as it is.
              - Any size: ClipKaro makes it about 120 px tall (up to 220 px wide for a wide logo).
 
 outro.mp4    Your outro: a short video added after the end of every clip.

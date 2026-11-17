@@ -181,6 +181,8 @@ changed. Only new ones were added.
   folder: the logo goes in the bottom-right corner of every edited clip (`logo_corner`), the outro after it. Nothing
   changes until a file is there. An outro over 10 s is left out (never longer than the clip). *(v2.4)*
   - Way back: take the file out, `"logo": false` / `"outro": false`, or "no logo" / "no outro".
+  - A logo on a plain square (black, white, one colour) gets the square removed by itself; the logo's own
+    dark or light parts stay. `"logo_background": "keep"` uses the file exactly as it is.
 - ↔ **"© Channel name" in the bottom-left corner** of clips made from a YouTube link (never your own
   video files): a small credit to the source, right in the corner at 70 % opacity on purpose (a
   formality, not something to read; `credit_corner` picks another corner). v1.1 had none. The owner asked for it (2026-11-17). *(v2.4)*

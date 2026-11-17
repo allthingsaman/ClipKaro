@@ -46,6 +46,8 @@ DEFAULT_SETTINGS = {
     'outro': True,                 # your outro (brand/outro.mp4, ideally 3-5 s) after every clip, when it's there
     'logo_corner': 'bottom-right', # where the logo goes: top-left | top-right | bottom-left | bottom-right
     'credit_corner': 'bottom-left',# where the credit goes: the same four (right in the corner, no gap)
+    'logo_background': 'remove',   # remove: a plain background around the logo (a black or white square) is
+                                   # made see-through by itself; keep: the logo exactly as it is
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

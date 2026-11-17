@@ -144,6 +144,7 @@ captions". To have one every time, add it to your preferences.
 Put two files in the `brand` folder inside ClipKaro (it has a short note on what to put there):
 - **`logo.png`**: your logo, right in the bottom-right corner of every clip (no gap),
   small and 70 % visible (like the credit: a formality, not something to read). A PNG with a see-through background looks best; JPG works too.
+  A logo on a plain square (black, white or one colour) gets that background removed by itself.
 - **`outro.mp4`**: your own outro, added after every clip. Make it **standing (9:16)** and **3-5
   seconds** long. Longer than 5 s: ClipKaro warns you; longer than 10 s: it is left out, so an outro is
   never longer than the clip. Its sound is evened out to the clip's volume.
@@ -373,6 +374,7 @@ Claude to change them.
   "outro": true,
   "logo_corner": "bottom-right",
   "credit_corner": "bottom-left",
+  "logo_background": "remove",
   "encoder": "auto",
   "render_workers": "auto"
 }
@@ -399,6 +401,7 @@ Claude to change them.
 | `outro` | `true` | your outro from `brand/` after every clip, when the file is there; `false`: never |
 | `logo_corner` | `bottom-right` | where your logo goes, right in the corner: `top-left`, `top-right`, `bottom-left`, `bottom-right` |
 | `credit_corner` | `bottom-left` | where the "© Channel name" credit goes: the same four corners |
+| `logo_background` | `remove` | a plain background around your logo (a black or white square) is made see-through, so only the logo shows; `keep`: the logo exactly as it is |
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |

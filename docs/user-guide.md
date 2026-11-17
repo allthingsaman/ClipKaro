@@ -271,7 +271,8 @@ More examples: [usage.md](usage.md).
 
 Want your own logo on every clip, and your own short ending? Open the **`brand`** folder inside the
 ClipKaro folder and put in:
-- **`logo.png`**: your logo. It appears small, right in the bottom-right corner of every clip.
+- **`logo.png`**: your logo. It appears small, right in the bottom-right corner of every clip. If it
+  sits on a plain black or white square, ClipKaro removes the square by itself.
 - **`outro.mp4`**: a short standing (9:16) video, **3 to 5 seconds**, that plays after every clip
   ("thanks for watching", your channel name...). Longer than 10 seconds is left out, so the outro is
   never longer than the clip itself.
