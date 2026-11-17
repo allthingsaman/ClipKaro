@@ -1,6 +1,11 @@
 # What's new
 
-## Not released yet (v2.4, on the branch v2.4-dev)
+## v2.4 (November 2026): your brand on every clip
+
+v2.4 puts your logo, your outro and a credit to the source on every clip, notes gameplay action
+even when nobody is talking, and makes the caption check spell names and numbers right. The README
+now says which AI helper you need and how ClipKaro compares with Opus Clip inside Claude. The owner
+reviewed the brand kit on a real gameplay clip before release.
 
 - **Action without talking isn't missed anymore.** A game explosion or big action on screen was noted
   only on a line someone was speaking; in a stretch of pure gameplay the note was lost (37 of 58 in

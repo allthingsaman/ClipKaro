@@ -1,6 +1,6 @@
-# ClipKaro after v2.3: what's next, in order
+# ClipKaro after v2.4: what's next, in order
 
-ClipKaro v2.3 is the newest version (November 2026; v2.2 came on 2026-11-14). This page lists what is
+ClipKaro v2.4 is the newest version (2026-11-17; v2.3 came on 2026-11-16). This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
 by one. When one is done, it moves to **Done** with the date.
 
@@ -18,6 +18,10 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
   again, hints from the sound and picture, game characters told apart from the streamer (and no
   captions for them), Claude's caption check, no flash at a clip's end, and a README that shows it all.
   The owner reviewed every part on the test videos before it went in.
+- v2.4 (2026-11-17): your brand on every clip (your logo, your outro, "© Channel" credit to the source,
+  any corner), action without talking noted in gameplay, a caption check that spells names and numbers
+  right, and a README that says which AI helper you need and how ClipKaro compares with Opus Clip inside
+  Claude.
 
 ---
 
@@ -33,16 +37,14 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 ## Ideas
 | # | What | Status |
 |---|---|---|
-| P2 | **Action without talking gets its own line** ("(no talking) [big action on screen ~6 s] [explosion]"), so silent gameplay moments aren't missed. | **Done on v2.4-dev** (2026-11-17) |
-| P3 | **More caption-check rules**: names spelled right, numbers as digits where they are amounts, years or scores. | **Done on v2.4-dev** (2026-11-17) |
+| P2 | **Action without talking gets its own line** ("(no talking) [big action on screen ~6 s] [explosion]"), so silent gameplay moments aren't missed. | **Done** (v2.4, 2026-11-17) |
+| P3 | **More caption-check rules**: names spelled right, numbers as digits where they are amounts, years or scores. | **Done** (v2.4, 2026-11-17) |
 | P4 | **YouTube's own captions as a second opinion.** | **On hold, for the owner to decide** (research, 2026-11-17): a study of 8,740 hours of Indian speakers found YouTube's captions worse than even a small Whisper model, with errors in the same places (so it would mostly repeat our mistakes), no published test exists for Hinglish (guides say it garbles fast Hindi-English switching), and a wrong second opinion could lead the caption check astray. |
 
-## Next phase (v2.4)
+## Next phase
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 20 | **Your brand on every clip**: your logo in a corner and your own outro (9:16, ideally 3-5 s) at the end, from a `brand` folder. No intro: a clip must open on its hook. | A logo and an outro make the clips yours (Opus Clip has brand templates). | about 1 day, with item 21 | put your logo and outro in the folder, watch the review clip | **Built on v2.4-dev** (2026-11-17), waiting for the owner's review |
-| 21 | **Credit to the source**: "© Channel name" on clips made from a YouTube link, never on your own video files. On in every mode; `"source_credit": false` in settings.json turns it off. | Fair to the creator whose video it is. | (with item 20) | watch the review clip | **Built on v2.4-dev** (2026-11-17), waiting for the owner's review |
 | 16 | **Install check for Windows and macOS**: read the install steps and `install.py` once more and fix what's wrong or unclear. The AI helper that installs ClipKaro sorts out most surprises on the user's own computer, so this is a polish, not a full test. | So far ClipKaro has only run on this Fedora laptop. | 1-2 h | none now (a real run on a Windows or Mac computer when one is at hand) | Next |
 
 ## Major update (v3.0), later
@@ -88,6 +90,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 ## Done
 | What | Done |
 |---|---|
+| **v2.4**: your brand on every clip (items 20 and 21): your logo and a 3-5 s outro from the `brand` folder, and "© Channel name" on clips from a YouTube link, right in the corners at 70 % opacity, any corner by setting; action without talking gets its own line (P2); the caption check spells names and numbers right (P3). | 2026-11-17 |
 | **v2.3**: no captions for game characters (gameplay, Hindi/Hinglish streamer) and Claude's caption check (standard and deep), on top of everything below. | 2026-11-16 |
 | **The hints' first blind test** (item 12): on a GTA stream, picks with and without hints matched 6 of 8; of the 2 that differed, the owner preferred the hints version both times. | 2026-11-16 |
 | **A Hinglish speech model** (item 9b): Whisper-Hindi2Hinglish-Prime for Hindi and Hinglish videos with an NVIDIA card. On public test sets 21 % of Hinglish conversation wrong against turbo's 50 %, 19 % of everyday Hindi against 34 %; about 40 % fewer tokens for Claude; about 1.3x the transcription time. English stays on turbo. | 2026-11-15 |
@@ -110,8 +113,8 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ---
 
-**Waiting on you: items 3b, 4b, 13b and 19. Next phase (v2.4: items 20, 21 and 16): about 1-2 days of
-building. The major update (v3.0) comes later.**
+**Waiting on you: items 3b, 4b, 13b and 19. Next: the install check for Windows and macOS (item 16),
+1-2 h. The major update (v3.0) comes later.**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).
