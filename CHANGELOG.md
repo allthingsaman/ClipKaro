@@ -12,6 +12,8 @@
   opens on its hook. An outro longer than 10 s is left out, so it is never longer than the clip.
 - **Credit to the source.** Clips made from a YouTube link get a small "© Channel name" in the
   bottom-left corner (never your own video files). `"source_credit": false` in settings.json turns it off.
+  Both sit right in their corners at 70 % opacity; `"logo_corner"` and `"credit_corner"` choose another
+  corner (top-left, top-right, bottom-left, bottom-right).
 - **The caption check knows more** (standard and deep mode): names of games, characters, people and
   brands spelled right, and numbers said in words written as digits where they are amounts, years or
   scores ("do hazaar tera" -> 2013, "paanch lakh" -> 5 lakh), never where they aren't ("ek din" stays).

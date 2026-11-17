@@ -1103,8 +1103,8 @@ Zooms stay in Python (ffmpeg would save about 2 s a clip, at the risk of a diffe
 
 **Your brand and the source credit (v2.4, `brandkit.py`).** `edit` looks in `brand/` (or the folder in
 `CLIPKARO_BRAND`) once per run: `logo.png|jpg|webp` and `outro.mp4|mov|mkv|webm`. The credit,
-"© Channel" in the caption font at 34 px, goes into the same `.ass` file as the captions (bottom-left
-anchored, 40 px in). The logo (fit into 220x120 px, 70 % opaque, like the credit, 40 px in from the bottom-right corner)
+"© Channel" in the caption font at 34 px, goes into the same `.ass` file as the captions, anchored
+right at its corner (`\an1/3/7/9`, no gap). The logo (fit into 220x120 px, 70 % opaque like the credit, right in its corner)
 and the outro go into the encoder's `-filter_complex`: `[0:v]ass,...[main]`, the logo overlaid, then
 `concat` with the outro (fitted to 1080x1920 over a blurred copy of itself, at the clip's frame rate),
 so neither the logo nor the credit shows on the outro and the whole clip is encoded once. The outro's
@@ -1113,7 +1113,9 @@ clip's mix before the peak limiter. Without a logo and an outro the encoder gets
 it got before (`-vf`). The Remotion engine adds them in its final ffmpeg step instead of copying the
 picture. Outros over 5 s get a warning, over 10 s are left out. The credit only shows when
 `project.json` says `kind: youtube` and names a channel (local files have none); settings
-`source_credit`, `logo`, `outro`; `edit --no-credit / --no-logo / --no-outro`.
+`source_credit`, `logo`, `outro`, `logo_corner` (bottom-right) and `credit_corner` (bottom-left), each one of
+the four corners (in the same corner the credit sits next to the logo); `edit --no-credit / --no-logo /
+--no-outro / --logo-corner / --credit-corner`.
 
 ### 5.13 Posting: the hand-off to PostKaro (`post.py`)
 PostKaro is a separate app (its own repo) that posts clips to YouTube Shorts, Instagram Reels and a

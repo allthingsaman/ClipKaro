@@ -1,16 +1,19 @@
 """Your brand on every clip, and credit to the source (v2.4). Used by the edit step.
 
-    brand/logo.png     your logo: the bottom-right corner, a little in from the edges, the whole clip
+    brand/logo.png     your logo: the bottom-right corner, right in the corner, the whole clip
     brand/outro.mp4    your own outro (9:16, ideally 3-5 s), added after every clip
     (C) Channel name   the bottom-left corner, on clips made from a YouTube link (never your own files)
 
-Both go in the very bottom corners on purpose (the owner's choice, 2026-11-17): a formality, not
-something to read. On phones the apps' own text and buttons cover that strip, which is why captions,
-emojis and hook titles never go there, so nothing of the clip collides with them. Neither shows during
-the outro. No intro: a clip must open on its hook.
+Both sit right in the corners, with no gap, at 70 % opacity, on purpose (the owner's choice,
+2026-11-17): a formality, not something to read. On phones the apps' own text, buttons and top bar
+cover the corners, which is why captions, emojis and hook titles never go there, so nothing of the clip
+collides with them. Neither shows during the outro. No intro: a clip must open on its hook.
 
 settings.json: "source_credit", "logo" and "outro" (all true; the logo and outro are used only when
-their files are in the brand folder). One run: edit --no-credit / --no-logo / --no-outro.
+their files are in the brand folder), "logo_corner" (bottom-right) and "credit_corner" (bottom-left):
+top-left, top-right, bottom-left or bottom-right. One run: edit --no-credit / --no-logo / --no-outro,
+--logo-corner / --credit-corner. In the same corner, the credit sits next to the logo (above it at the
+bottom, below it at the top).
 The folder can be moved with the CLIPKARO_BRAND environment variable (tests, reviews with sample files).
 """
 import os
@@ -20,7 +23,10 @@ from pathlib import Path
 from .common import H, ROOT, W, ffmpeg, has_devanagari, probe
 from .plan import HINDI_FONT, LATIN_FONT
 
-PAD = 40                          # px in from the frame's edges (1080x1920), for the logo and the credit
+PAD = 0                           # px in from the frame's edges: none, right in the corner (the owner's choice)
+CORNERS = ('top-left', 'top-right', 'bottom-left', 'bottom-right')
+LOGO_CORNER, CREDIT_CORNER = 'bottom-right', 'bottom-left'
+ALIGN = {'bottom-left': 1, 'bottom-right': 3, 'top-left': 7, 'top-right': 9}   # ASS \an: the text's anchor
 LOGO_MAX_W, LOGO_MAX_H = 220, 120 # the logo fits this box: a square logo 120x120, a wide one up to 220 px
 OPACITY = 0.7                     # the logo and the credit: 70 % visible, a formality (the owner, 2026-11-17)
 CREDIT_SIZE = 34                  # CSS px: small
@@ -57,24 +63,40 @@ def credit_text(project, on=True):
     return f'© {name}'
 
 
-def credit(project, on=True):
+def corner(value, default):
+    """(one of CORNERS, message or None): "bottom-right", "bottom right", "bot_right", "BR" ... all work."""
+    v = str(value or '').strip().lower().replace('_', '-').replace(' ', '-')
+    v = {'bl': 'bottom-left', 'br': 'bottom-right', 'tl': 'top-left', 'tr': 'top-right'}.get(v, v)
+    v = v.replace('bot-', 'bottom-').replace('btm-', 'bottom-')
+    if v in CORNERS:
+        return v, None
+    return default, (f'! "{value}" is not a corner (top-left, top-right, bottom-left or bottom-right): '
+                     f'{default} instead')
+
+
+def credit(project, on=True, where=CREDIT_CORNER):
     text = credit_text(project, on)
     if not text:
         return None
     font, font_file = HINDI_FONT if has_devanagari(text) else LATIN_FONT
-    # bottom-left anchored: x is the left edge, y the bottom of the text
-    return {'text': text, 'x': PAD, 'y': H - PAD, 'size': CREDIT_SIZE, 'font': font, 'font_file': font_file}
+    # anchored at the corner itself: x and y are the corner's point, \an says which corner of the text
+    x = PAD if where.endswith('left') else W - PAD
+    y = PAD if where.startswith('top') else H - PAD
+    return {'text': text, 'x': x, 'y': y, 'an': ALIGN[where], 'corner': where, 'size': CREDIT_SIZE,
+            'font': font, 'font_file': font_file}
 
 
-def logo_box(w, h):
-    """(width, height, x, y) of a w x h logo in the bottom-right corner, PAD in from the edges."""
+def logo_box(w, h, where=LOGO_CORNER):
+    """(width, height, x, y) of a w x h logo in that corner, PAD in from the edges."""
     k = min(LOGO_MAX_W / w, LOGO_MAX_H / h)
     lw, lh = max(2, int(round(w * k / 2)) * 2), max(2, int(round(h * k / 2)) * 2)
-    return lw, lh, W - PAD - lw, H - PAD - lh
+    x = PAD if where.endswith('left') else W - PAD - lw
+    y = PAD if where.startswith('top') else H - PAD - lh
+    return lw, lh, x, y
 
 
-def logo(on=True, where=None):
-    """({file, w, h, x, y, alpha} or None, messages)."""
+def logo(on=True, where=None, place=LOGO_CORNER):
+    """({file, w, h, x, y, alpha, corner} or None, messages)."""
     p = find('logo', IMAGE_EXT, where)
     if not on or not p:
         return None, []
@@ -82,8 +104,16 @@ def logo(on=True, where=None):
     img = cv2.imread(str(p), cv2.IMREAD_UNCHANGED)
     if img is None:
         return None, [f'! {p.name}: not a picture ClipKaro can read (use PNG or JPG): left out']
-    lw, lh, x, y = logo_box(img.shape[1], img.shape[0])
-    return {'file': str(p.resolve()), 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': OPACITY}, []
+    lw, lh, x, y = logo_box(img.shape[1], img.shape[0], place)
+    return {'file': str(p.resolve()), 'w': lw, 'h': lh, 'x': x, 'y': y, 'alpha': OPACITY, 'corner': place}, []
+
+
+def share_corner(cr, lg):
+    """The credit and the logo in the same corner: the credit moves next to the logo, above it at the
+    bottom, below it at the top, so neither covers the other."""
+    if cr and lg and cr['corner'] == lg['corner']:
+        cr['y'] = lg['y'] if cr['corner'].startswith('bottom') else lg['y'] + lg['h']
+    return cr
 
 
 def outro_check(duration, width, height):
@@ -143,22 +173,27 @@ def outro_audio(p, duration, work):
     return out
 
 
-def resolve(project, work, credit_on=True, logo_on=True, outro_on=True, where=None):
-    """Everything the edit adds, once per run: ({credit, logo, outro}, messages)."""
-    lg, m1 = logo(logo_on, where)
+def resolve(project, work, credit_on=True, logo_on=True, outro_on=True, where=None,
+            logo_corner=LOGO_CORNER, credit_corner=CREDIT_CORNER):
+    """Everything the edit adds, once per run: ({credit, logo, outro}, messages). The corners come from
+    settings.json ("logo_corner", "credit_corner"); a wrong one falls back to the default, with a note."""
+    lc, n1 = corner(logo_corner, LOGO_CORNER)
+    cc, n2 = corner(credit_corner, CREDIT_CORNER)
+    lg, m1 = logo(logo_on, where, lc)
     ou, m2 = outro(work, outro_on, where)
-    return {'credit': credit(project, credit_on), 'logo': lg, 'outro': ou}, m1 + m2
+    cr = share_corner(credit(project, credit_on, cc), lg)
+    return {'credit': cr, 'logo': lg, 'outro': ou}, [m for m in (n1, n2) if m] + m1 + m2
 
 
 def summary(kit):
     """One line for the edit's output, or ''."""
     parts = []
     if kit.get('logo'):
-        parts.append(f"logo {Path(kit['logo']['file']).name} (bottom right)")
+        parts.append(f"logo {Path(kit['logo']['file']).name} ({kit['logo']['corner'].replace('-', ' ')})")
     if kit.get('outro'):
         parts.append(f"outro {Path(kit['outro']['file']).name} ({kit['outro']['duration']:.1f} s, after every clip)")
     if kit.get('credit'):
-        parts.append(f"credit \"{kit['credit']['text']}\" (bottom left)")
+        parts.append(f"credit \"{kit['credit']['text']}\" ({kit['credit']['corner'].replace('-', ' ')})")
     return ('-> your brand: ' + ', '.join(parts)) if parts else ''
 
 

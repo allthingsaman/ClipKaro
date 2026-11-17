@@ -298,10 +298,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
                       f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
     cr = plan.get('credit')
-    if cr:                                   # "(C) Channel": the bottom-left corner, the whole clip (not the outro)
+    if cr:                                   # "(C) Channel": in its corner, the whole clip (not the outro)
         text = cr['text'].replace('\\', '/').replace('{', '(').replace('}', ')')
         events.append(f"Dialogue: 3,{t(0)},{t(plan['duration'])},Credit,,0,0,0,,"
-                      f"{{\\an1\\pos({cr['x']},{cr['y']})}}{text}")
+                      f"{{\\an{cr.get('an', 1)}\\pos({cr['x']},{cr['y']})}}{text}")
     Path(path).write_text(head + '\n'.join(events) + '\n', encoding='utf-8')
 
 
@@ -606,6 +606,10 @@ def main():
     ap.add_argument('--outro', action=argparse.BooleanOptionalAction, default=None,
                     help='your outro (brand/outro.mp4, 3-5 s) after every clip (default: settings.json "outro", on '
                          'when the file is there)')
+    ap.add_argument('--logo-corner', default=None, choices=brandkit.CORNERS,
+                    help='where the logo goes (default: settings.json "logo_corner", bottom-right)')
+    ap.add_argument('--credit-corner', default=None, choices=brandkit.CORNERS,
+                    help='where the credit goes (default: settings.json "credit_corner", bottom-left)')
     a = ap.parse_args()
 
     pdir = project_dir(a.project)
@@ -635,7 +639,9 @@ def main():
             'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
     on = lambda flag, key: cfg.get(key, True) if flag is None else flag      # noqa: E731
     kit, notes = brandkit.resolve(project, work, on(a.credit, 'source_credit'), on(a.logo, 'logo'),
-                                  on(a.outro, 'outro'))
+                                  on(a.outro, 'outro'),
+                                  logo_corner=a.logo_corner or cfg.get('logo_corner', brandkit.LOGO_CORNER),
+                                  credit_corner=a.credit_corner or cfg.get('credit_corner', brandkit.CREDIT_CORNER))
     for m in notes:
         print('   ' + m)
     if brandkit.summary(kit):

@@ -418,7 +418,9 @@ Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentenc
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
 or `"jump_label": true` in settings.json), `--hook-title` (only when the user said "hook title", or
 `"hook_title": true`; clips.json `hook_text`, else the clip's title), `--no-credit`, `--no-logo`,
-`--no-outro` (only when the user says "no credit", "no logo", "no outro").
+`--no-outro` (only when the user says "no credit", "no logo", "no outro"), `--logo-corner`,
+`--credit-corner` (`top-left|top-right|bottom-left|bottom-right`, when the user names a corner for one
+video; for good: `"logo_corner"` / `"credit_corner"` in settings.json).
 Read `references/editing.md` if the user wants a different look.
 
 ## 5a. Quality check (every time, before showing anything)

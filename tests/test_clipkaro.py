@@ -657,12 +657,36 @@ class BrandKit(unittest.TestCase):
         self.assertIn('Style: Credit,', text)
         self.assertIn(',&H4DFFFFFF,', text)                     # 70 % visible, like the logo
         self.assertEqual(brandkit.logo_box(400, 400)[:2], (120, 120))
-        self.assertIn('{\\an1\\pos(40,1880)}© Raj Shamani', text)
+        self.assertIn('{\\an1\\pos(0,1920)}© Raj Shamani', text)          # right in the corner
+
+    def test_corners_from_settings(self):
+        from clipper import brandkit
+        self.assertEqual(brandkit.corner('bot right', 'x'), ('bottom-right', None))
+        self.assertEqual(brandkit.corner('Top_Left', 'x'), ('top-left', None))
+        self.assertEqual(brandkit.corner('TR', 'x'), ('top-right', None))
+        c, note = brandkit.corner('middle', 'bottom-left')
+        self.assertEqual(c, 'bottom-left')                     # only the four corners
+        self.assertTrue(note)
+        self.assertEqual(brandkit.logo_box(400, 400, 'top-left'), (120, 120, 0, 0))   # no gap
+        self.assertEqual(brandkit.logo_box(400, 400, 'bottom-right'), (120, 120, 960, 1800))
+        cr = brandkit.credit({'kind': 'youtube', 'channel': 'X'}, where='top-right')
+        self.assertEqual((cr['an'], cr['x'], cr['y']), (9, 1080, 0))
+        # both in one corner: the credit goes next to the logo (above it at the bottom), never under it
+        lg = {'x': 960, 'y': 1800, 'w': 120, 'h': 120, 'corner': 'bottom-right'}
+        cr = brandkit.share_corner(brandkit.credit({'kind': 'youtube', 'channel': 'X'}, where='bottom-right'), lg)
+        self.assertEqual(cr['y'], 1800)
+        with tempfile.TemporaryDirectory() as d:
+            kit, notes = brandkit.resolve({'kind': 'youtube', 'channel': 'X'}, d, where=d,
+                                          logo_corner='top-left', credit_corner='nowhere')
+            self.assertEqual(kit['credit']['corner'], 'bottom-left')
+            self.assertEqual(len(notes), 1)
 
     def test_way_back(self):
         from clipper import edit
         from clipper.common import DEFAULT_SETTINGS
         self.assertTrue(DEFAULT_SETTINGS['source_credit'] and DEFAULT_SETTINGS['logo'] and DEFAULT_SETTINGS['outro'])
+        self.assertEqual((DEFAULT_SETTINGS['logo_corner'], DEFAULT_SETTINGS['credit_corner']),
+                         ('bottom-right', 'bottom-left'))
         # no logo, no outro: the encoder gets exactly the picture arguments it got before v2.4
         self.assertEqual(edit.finish_args({'fps': 30}, 'null'), ([], ['-vf', 'null', '-map', '0:v']))
 

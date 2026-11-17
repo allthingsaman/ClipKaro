@@ -44,6 +44,8 @@ DEFAULT_SETTINGS = {
                                    # (never your own files); false: no credit (as before v2.4)
     'logo': True,                  # your logo (brand/logo.png) in the bottom-right corner, when the file is there
     'outro': True,                 # your outro (brand/outro.mp4, ideally 3-5 s) after every clip, when it's there
+    'logo_corner': 'bottom-right', # where the logo goes: top-left | top-right | bottom-left | bottom-right
+    'credit_corner': 'bottom-left',# where the credit goes: the same four (right in the corner, no gap)
     'encoder': 'auto',             # auto (the NVIDIA encoder if it works, else the processor) | nvenc | x264
     'render_workers': 'auto',      # clips edited at once: auto (2 with 4+ cores and 4+ GB free) | 1 | 2 ...
 }

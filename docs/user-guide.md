@@ -271,7 +271,7 @@ More examples: [usage.md](usage.md).
 
 Want your own logo on every clip, and your own short ending? Open the **`brand`** folder inside the
 ClipKaro folder and put in:
-- **`logo.png`**: your logo. It appears small in the bottom-right corner of every clip.
+- **`logo.png`**: your logo. It appears small, right in the bottom-right corner of every clip.
 - **`outro.mp4`**: a short standing (9:16) video, **3 to 5 seconds**, that plays after every clip
   ("thanks for watching", your channel name...). Longer than 10 seconds is left out, so the outro is
   never longer than the clip itself.
@@ -282,6 +282,9 @@ with its best line.
 Clips made from a **YouTube link** also get a small **"© Channel name"** in the bottom-left corner, a
 credit to the person whose video it is. Your own video files never get one. Don't want it? Tell
 Claude "no credit", or ask Claude to turn off `source_credit` in your settings.
+
+Want them in another corner? Ask Claude ("put my logo top right"), or change `logo_corner` and
+`credit_corner` in `settings.json` to `top-left`, `top-right`, `bottom-left` or `bottom-right`.
 
 ---
 
