@@ -25,7 +25,7 @@
     python run.py qa <project>                           check every finished clip (captions, cuts, loudness, black frames ...)
     python run.py test                                   ClipKaro's own tests (fast; protect v1.1's behaviour)
     python run.py asr-bench make|run [model]|report      test speech-to-text models on your own videos
-    python run.py live start|next|done|status|stop <name> live clipping: clips posted while you stream (docs/live.md)
+    python run.py live start|next|done|status|stop <name> live clipping: clips posted while you stream (docs/live-clipping.md)
 
 Run `python run.py <command> -h` for the options of each step. Defaults live in settings.json.
 """

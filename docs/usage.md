@@ -377,6 +377,11 @@ Claude to change them.
   "logo_corner": "bottom-right",
   "credit_corner": "bottom-left",
   "logo_background": "remove",
+  "live_folder": "<your OBS recording folder>",
+  "twitch_channel": "<your Twitch channel>",
+  "twitch_delay": 10,
+  "live_post": "now",
+  "live_vram_mb": 2800,
   "encoder": "auto",
   "render_workers": "auto",
   "cookies_file": null
@@ -408,6 +413,11 @@ Claude to change them.
 | `encoder` | `auto` | `auto` (the NVIDIA card's video encoder when it works: 3x faster, same picture, files about 1.3x bigger), `nvenc`, `x264` (the processor, as before) |
 | `render_workers` | `auto` | clips edited at the same time: `auto` (2 with 4+ processor cores and 4+ GB of free memory, else 1), or a number |
 | `cookies_file` | `null` | a cookies file with your YouTube login, for when YouTube asks "confirm you're not a bot" (used only then). Without it, `cookies.txt` (or the extension's `www.youtube.com_cookies.txt`) in the ClipKaro folder is found by itself. How to make one: [troubleshooting.md](troubleshooting.md#youtube-asks-you-to-sign-in) |
+| `live_folder` | `"<your OBS recording folder>"` | live clipping: the folder OBS records into, e.g. `"D:/OBS_Recording"`. A `"<...>"` placeholder counts as not set: the first time you start live clipping, Claude asks and writes your answer here ([live-clipping.md](live-clipping.md#3-your-obs-folder-and-twitch-channel-in-settingsjson)) |
+| `twitch_channel` | `"<your Twitch channel>"` | live clipping: your Twitch channel name, for the chat and viewer-clip hints. A placeholder too: Claude asks the first time (answer "none" if you don't stream on Twitch) |
+| `twitch_delay` | `10` | live clipping: seconds your Twitch viewers are behind you (their reactions are moved this much earlier) |
+| `live_post` | `now` | live clipping: `now` posts every clip at once; `dry` is for a test stream: PostKaro only shows what it would post ("turn on test mode" / "turn off test mode") |
+| `live_vram_mb` | `2800` | live clipping: the words are written down on the graphics card only when OBS leaves at least this much of its memory free (MB); otherwise on the processor |
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (only as a way back: they may cover a chin or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
@@ -457,7 +467,7 @@ python run.py edit <project>                    # 5. the edit → output/<projec
 | `run.py asr-bench make` / `run [model]` / `report` | a small speech-to-text test on your own videos (Hindi, Hinglish, English): `make` cuts four ~3-minute snippets and draft texts into `output/_asrbench/`; correct the texts by ear once; `run` scores a model (the share of words wrong, compared by sound so Devanagari and Roman Hinglish count the same); `report` lists every model tried, best first, per test set. `public` also downloads two public test sets with checked texts (Hinglish conversation, everyday Hindi). A model can be one folder of a repo: `owner/repo:int8`. Switch models only when one clearly wins |
 | `run.py relisten <project>` | listens again to unclear speech (game voices, film clips) in videos transcribed before Nov 2026: clear English replaces nonsense, the rest gets no captions; then re-cut the clips it names. `--stretched`: hears again the words Whisper skipped (one "word" stretched over several), for videos transcribed before v2.3. `--current`: starts from the words as they are now (caption fixes stay, hidden words stay hidden) |
 | `run.py frames <project>` | `--clips 1,3`, `--every 1.5`: picture sheets showing what the crop keeps, before or after cutting |
-| `run.py live start\|next\|done\|status\|stop <name>` | live clipping while you stream ([live.md](live.md)): `start <name> --folder "<OBS folder>" --twitch <channel>` (keeps running), `keys --client-id ID --client-secret SECRET` (Twitch viewer clips) |
+| `run.py live start\|next\|done\|status\|stop <name>` | live clipping while you stream ([live-clipping.md](live-clipping.md)): `start <name> --folder "<OBS folder>" --twitch <channel>` (keeps running), `keys --client-id ID --client-secret SECRET` (Twitch viewer clips) |
 | `run.py post <project>` | `--open` (open the PostKaro link in the browser), `--now` (live clipping: post every clip everywhere at once through PostKaro; `--dry` or `"live_post": "dry"` only shows it). Writes `post.json`; prints the PostKaro link when PostKaro is installed |
 | `run.py gpu [model]` | tests the NVIDIA graphics card (default model `tiny`; try `large-v3-turbo`) |
 

@@ -65,11 +65,16 @@ PostKaro posts each clip at once on every connected platform
 - **Start and stop.** In Claude Code, inside the ClipKaro folder, say **"start live clipping gta6"**.
   When you end the stream, say **"the stream is over"**.
 
-**Set it up:** **[docs/live.md](docs/live.md)**, step by step:
+**Set it up:** **[docs/live-clipping.md](docs/live-clipping.md)**, step by step:
 - the OBS settings (10-minute pieces, recording while streaming, your mic on its own track);
+- your OBS folder and Twitch channel (Claude asks for them the first time);
 - the Twitch keys;
-- multistream bitrates for YouTube, Twitch and Kick;
-- a test stream before the real one.
+- a test stream before the real one;
+- going live, from "Start Streaming" to "the stream is over".
+
+Streaming to YouTube, Twitch and Kick at once: **[docs/streaming-setup.md](docs/streaming-setup.md)**
+(the encoder settings for each, stream keys, checking you're really live). Posting:
+**[docs/postkaro.md](docs/postkaro.md)**.
 
 ## The best of ClipKaro
 
@@ -274,6 +279,21 @@ cd ClipKaro
 python install.py
 ```
 
+> [!IMPORTANT]
+> **Windows: one more step for YouTube links, a cookies file (2 minutes, once).**
+> YouTube sometimes stops a download with **"Sign in to confirm you're not a bot"**. On Windows,
+> ClipKaro can't read your YouTube login from Chrome, Edge or Brave (Windows locks it, so
+> `--cookies-from-browser` fails there with "Failed to decrypt with DPAPI"). Give ClipKaro your login as
+> a **cookies file** instead:
+> 1. In the browser where you're logged in to YouTube, add the extension **"Get cookies.txt LOCALLY"**.
+> 2. Open youtube.com, click the extension and press **Export**. It saves `www.youtube.com_cookies.txt`
+>    to your Downloads folder.
+> 3. Move that file into the **ClipKaro folder** (next to `run.py`). Keep its name, or call it `cookies.txt`.
+>
+> That's all: ClipKaro uses it by itself, **only when YouTube asks**. Treat the file like a password:
+> git never uploads it. When YouTube stops accepting it after a while, export it again and replace the
+> file. More: [docs/troubleshooting.md](docs/troubleshooting.md#youtube-asks-you-to-sign-in).
+
 **Mac** (with [Homebrew](https://brew.sh)):
 ```bash
 brew install python@3.13 ffmpeg-full node git
@@ -311,6 +331,9 @@ or, for a file on your computer (put the path in quotes):
 Claude does the rest by itself and shows you a table of finished clips, each with a caption you can
 copy when you post.
 
+**On Windows, with a YouTube link?** Make the YouTube cookies file first ([the Windows note
+above](#2-install-once)), or a video YouTube asks about can't be downloaded.
+
 Using a different AI helper (Google Antigravity, Codex, Cursor, Copilot, Gemini CLI, ...)? Open the
 ClipKaro folder in it and type the same sentence; it follows [AGENTS.md](AGENTS.md).
 
@@ -343,11 +366,17 @@ If a user asked you to install this repo, follow these steps (details per system
 5. NVIDIA only: `python run.py gpu large-v3-turbo` must print `[ok] GPU ...`.
 6. Report what was installed, then tell the user to **start Claude Code inside the ClipKaro folder**
    and type `clip this video: <link or file>`. A session started in another folder doesn't load
-   ClipKaro's clipping skill (`.claude/skills/clip-video/`).
+   ClipKaro's clipping skill (`.claude/skills/clip-video/`). **On Windows, also tell them to make the
+   YouTube cookies file once** (the Windows note under "Install"): without it, a YouTube link can stop
+   with "Sign in to confirm you're not a bot", and `--cookies-from-browser` can't read Chrome, Edge or
+   Brave on Windows.
 7. **PostKaro too?** (only if the user wants their clips posted for them): clone
    `https://github.com/allthingsaman/PostKaro.git` next to ClipKaro (not inside it) and run its
    `install.py` with the same Python. It sets PostKaro to start at login. Connecting the YouTube,
-   Instagram and Facebook accounts is done by the user, once, with its `docs/connect-accounts.md`.
+   Instagram and Facebook accounts is done by the user, once, with its `docs/connect-accounts.md`
+   ([docs/postkaro.md](docs/postkaro.md) explains it all simply). Tell the user that PostKaro only
+   opens with its own link (`python run.py open` in the PostKaro folder): the bare
+   `http://127.0.0.1:8765` shows "Open PostKaro with its link".
 
 ## What you can ask for
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
@@ -446,7 +475,9 @@ Or simply paste the error into Claude Code and ask it to fix it. More help: [doc
 | [Troubleshooting](docs/troubleshooting.md) | common problems and questions |
 | [Architecture](docs/architecture.md) | how it works inside, and how it picks moments (for developers) |
 | [Adding a language](docs/adding-a-language.md) | step by step, for developers |
-| [Live clipping](docs/live.md) | clips posted while you stream: setup, stream settings, cost |
+| [Posting with PostKaro](docs/postkaro.md) | install, open, connect your accounts, default accounts, posting every day |
+| [Live clipping](docs/live-clipping.md) | clips posted while you stream: how it works, the OBS setup, going live, cost |
+| [Streaming setup](docs/streaming-setup.md) | multistream on OBS: YouTube, Twitch and Kick at once, encoder settings, checking you're live |
 | [Roadmap](docs/roadmap-v3.md) | what's next, in order |
 | [Compared with Opus Clip](docs/roadmap-v2.md) | how ClipKaro compares with Opus Clip today |
 | [Changelog](CHANGELOG.md) | what's new in each version |

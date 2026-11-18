@@ -96,6 +96,14 @@ Python: ClipKaro uses its own.
 [NVIDIA App](https://www.nvidia.com/en-us/software/nvidia-app/) (or from nvidia.com). `install.py`
 then finds the card and sets it up by itself.
 
+> [!IMPORTANT]
+> **Windows: make a YouTube cookies file once.** YouTube sometimes stops a download with "Sign in to
+> confirm you're not a bot", and on Windows ClipKaro can't read your login from Chrome, Edge or Brave
+> (`--cookies-from-browser` fails with "Failed to decrypt with DPAPI"). So, once: add the browser
+> extension **"Get cookies.txt LOCALLY"**, open youtube.com while logged in, press **Export**, and move
+> the saved `www.youtube.com_cookies.txt` into the ClipKaro folder. ClipKaro uses it only when YouTube
+> asks. Step by step: [troubleshooting.md](troubleshooting.md#youtube-asks-you-to-sign-in).
+
 ---
 
 ## Mac
@@ -296,7 +304,8 @@ Mac: a login item, and macOS shows "Background Items Added"; Linux: a systemd us
 Credential Manager, the Mac Keychain, or the Linux keyring). On a Mac, if it asks whether Python may
 use the "postkaro" Keychain item, choose **Always Allow**. Then connect your accounts once with
 PostKaro's guide: `docs/connect-accounts.md` (about 30-45 minutes). From then on, ClipKaro ends every
-video with a "Post them" link.
+video with a "Post them" link. Everything about PostKaro in simple steps (opening it with its link,
+default accounts, posting every day, fixes): [postkaro.md](postkaro.md).
 
 ## Updating
 Ask Claude Code (inside the ClipKaro folder): **update ClipKaro**. Or by hand:

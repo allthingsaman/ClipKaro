@@ -49,8 +49,9 @@ DEFAULT_SETTINGS = {
     'credit_corner': 'bottom-left',# where the credit goes: the same four (right in the corner, no gap)
     'logo_background': 'remove',   # remove: a plain background around the logo (a black or white square) is
                                    # made see-through by itself; keep: the logo exactly as it is
-    'live_folder': None,           # live clipping: the folder OBS records into (pieces of 10 minutes)
-    'twitch_channel': None,        # live clipping: your Twitch channel (chat and viewer clips as hints)
+    'live_folder': None,           # live clipping: the folder OBS records into (pieces of 10 minutes);
+                                   # settings.json ships a "<...>" placeholder: Claude asks and fills it in
+    'twitch_channel': None,        # live clipping: your Twitch channel (chat and viewer clips as hints); placeholder too
     'twitch_delay': 10,            # seconds the Twitch audience is behind you (their reactions come later)
     'live_post': 'now',            # live clipping: now (post everywhere at once) | dry (a test stream: post nothing)
     'live_vram_mb': 2800,          # live: write down the words on the graphics card only with this much free memory
@@ -70,13 +71,19 @@ def die(msg):
     sys.exit(1)
 
 
+def is_placeholder(value):
+    """A setting still waiting for the user's answer: a "<...>" text in settings.json, such as
+    "<your OBS recording folder>". It counts as not set (None), so it is never used as a real path."""
+    return isinstance(value, str) and value.strip().startswith('<') and value.strip().endswith('>')
+
+
 def settings():
     s = dict(DEFAULT_SETTINGS)
     try:
         s.update(load_json(ROOT / 'settings.json', {}) or {})
     except (ValueError, OSError) as e:
         print(f'   ! settings.json ignored ({e})')
-    return s
+    return {k: (None if is_placeholder(v) else v) for k, v in s.items()}
 
 
 def is_sentence_end(word):

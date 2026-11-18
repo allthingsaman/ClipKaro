@@ -238,6 +238,17 @@ changed. Only new ones were added.
   is tried by itself, **only when YouTube asks**, and the rest of that video's downloads use it too. The
   error messages now say what to do in plain words. Without such a file every download is exactly as
   before, and `--cookies-from-browser` works as before. Git ignores any `*cookies*.txt`.
+- ⬆ **Live settings as placeholders** *(2026-11-18)*: settings.json now ships `live_folder` and
+  `twitch_channel` as `"<your OBS recording folder>"` / `"<your Twitch channel>"` instead of `null`, so it
+  shows what goes there. Any `"<...>"` value counts as not set, exactly like `null` before (never used as a
+  path), and Claude asks for the two the first time live clipping starts and writes the answers in. A
+  settings.json with `null` or with real values works unchanged; `live_post` stays `now`. No Claude usage
+  beyond one question, once. Test: LiveSettings (2).
+- ⬆ **Docs** *(2026-11-18)*: the live clipping guide is now `docs/live-clipping.md` (was `docs/live.md`), with
+  the whole setup and going live step by step, and the right place of OBS's "Automatically record when
+  streaming" (Settings → General → Output in newer OBS). New: `docs/streaming-setup.md` (multistream on
+  OBS: YouTube, Twitch and Kick at once, the encoder settings, checking you're live) and `docs/postkaro.md`
+  (posting with PostKaro). The README highlights the YouTube cookies file Windows needs.
 
 ## Cost
 

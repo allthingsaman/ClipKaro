@@ -7,6 +7,22 @@
   YouTube login once as a cookies file with a browser extension and put it in the ClipKaro folder
   ([how](docs/troubleshooting.md#youtube-asks-you-to-sign-in)). ClipKaro uses it by itself, only when
   YouTube asks; most videos still download without it. The error messages now say what to do.
+  The README now shows this as an **important note for Windows** right under the install steps.
+- **Live clipping: Claude asks for your OBS folder and Twitch channel.** settings.json now ships them as
+  placeholders (`"<your OBS recording folder>"`, `"<your Twitch channel>"`). The first time you say
+  "start live clipping", Claude asks for both and writes your answers in. A placeholder is never used as a
+  real folder.
+- **New and renamed guides:**
+  - [docs/live-clipping.md](docs/live-clipping.md) (was `docs/live.md`): the whole setup and going live, step
+    by step. Now in newer OBS's real places ("Automatically record when streaming" is under Settings →
+    General → Output), with the settings that keep pieces clean (no remux copies, the vertical canvas and
+    backtrack in a subfolder, the stream on audio track 1) and a table of fixes.
+  - [docs/streaming-setup.md](docs/streaming-setup.md), new: streaming to YouTube (horizontal and
+    vertical), Twitch and Kick at once from OBS with stream keys. The encoder settings for each (H.264:
+    Twitch and Kick refuse HEVC), upload speed, and how to check you're really live.
+  - [docs/postkaro.md](docs/postkaro.md), new: PostKaro for ClipKaro users. Install, opening it with its
+    link, connecting your accounts, default accounts with several Pages or channels, posting every day,
+    live clipping, fixes.
 
 ## v2.6 (November 2026): live clipping
 
@@ -21,8 +37,8 @@ real stream is the owner's GTA 6 launch stream.
   edits and posts them at once to YouTube Shorts, Instagram Reels and your Facebook Page through
   PostKaro (no review step: your choice for live streams; a clip that fails the quality check is never
   posted). While it runs, ClipKaro's heavy steps give way to OBS. `"live_post": "dry"` makes a test
-  stream post nothing. How to set it up: [docs/live.md](docs/live.md). Normal clipping is unchanged.
-- **The live clipping guide** ([docs/live.md](docs/live.md)) has the whole flow as a chart and explains
+  stream post nothing. How to set it up: [docs/live-clipping.md](docs/live-clipping.md). Normal clipping is unchanged.
+- **The live clipping guide** ([docs/live-clipping.md](docs/live-clipping.md)) has the whole flow as a chart and explains
   where the video comes from: your own OBS recording, never a download (Twitch only adds hints).
   The OBS setup now includes "Automatically record when streaming" (streaming alone records nothing).
 - **README:** live clipping is explained at the top, with a link to the guide.

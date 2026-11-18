@@ -579,6 +579,28 @@ class MoreClips(unittest.TestCase):
             self.assertEqual(left, ['p1-c2', 'p2-c1'])     # C overlaps the better B
 
 
+class LiveSettings(unittest.TestCase):
+    """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
+    channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""
+
+    def test_placeholder(self):
+        from clipper import common
+        self.assertTrue(common.is_placeholder('<your OBS recording folder>'))
+        self.assertTrue(common.is_placeholder(' <your Twitch channel> '))
+        for real in ('D:/OBS_Recording', 'allthingsaman', None, 10, '', 'a <b> c'):
+            self.assertFalse(common.is_placeholder(real))
+
+    def test_settings_turn_placeholders_into_none(self):
+        from unittest import mock
+        from clipper import common
+        fake = {'live_folder': '<your OBS recording folder>', 'twitch_channel': 'allthingsaman', 'live_post': 'now'}
+        with mock.patch.object(common, 'load_json', return_value=fake):
+            s = common.settings()
+        self.assertIsNone(s['live_folder'])
+        self.assertEqual(s['twitch_channel'], 'allthingsaman')
+        self.assertEqual(s['live_post'], 'now')
+
+
 class Posting(unittest.TestCase):
     def test_honesty_note(self):
         from clipper.post import honesty_note

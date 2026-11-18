@@ -30,9 +30,12 @@ fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user 
   README.md: clone it next to this folder and run its `install.py` with the same Python.
 - Run everything through `python run.py <command>` from the repo root.
 - **Asked to update ClipKaro?** `git pull`, then `python install.py`, and report what changed.
-- **Live clipping** ("live clip my stream", "start live clipping"): skill section 8 and `docs/live.md`:
-  a watcher on OBS's 10-minute recording pieces, `/loop 10m live clip <name>`, one `clipkaro-live`
-  helper per piece, clips auto-posted everywhere through PostKaro (the owner's choice for live streams).
+- **Live clipping** ("live clip my stream", "start live clipping"): skill section 8 and
+  `docs/live-clipping.md` (OBS multistream settings: `docs/streaming-setup.md`): a watcher on OBS's
+  10-minute recording pieces, `/loop 10m live clip <name>`, one `clipkaro-live` helper per piece, clips
+  auto-posted everywhere through PostKaro (the owner's choice for live streams). settings.json ships
+  `"live_folder"` and `"twitch_channel"` as `"<...>"` placeholders: when one is still a placeholder,
+  ask the user for it first and write the answer into settings.json yourself.
 - Results go to `output/<project>/` (gitignored). Never commit or upload user videos.
 - Long steps (transcription, rendering) should run in the background, with a progress update to the user.
 - The user's defaults are in `settings.json`.

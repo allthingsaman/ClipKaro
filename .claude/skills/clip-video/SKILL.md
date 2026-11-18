@@ -480,10 +480,20 @@ nothing is left, say so: a fresh read ("find more clips in this video") is the o
 ## 8. Live clipping (only when the user asks: "live clip my stream", "start live clipping")
 Clips posted **while the stream is still running**: OBS records in pieces of ~10 minutes, a watcher
 writes down each finished piece, and every 10 minutes a helper clips the new pieces and posts them at
-once (the owner chose auto-posting for live streams). Setup and what the user does: `docs/live.md`.
+once (the owner chose auto-posting for live streams). Setup and what the user does:
+`docs/live-clipping.md`; the OBS multistream settings: `docs/streaming-setup.md`.
+0. **The user's own settings first.** settings.json ships `"live_folder"` and `"twitch_channel"` as
+   `"<...>"` placeholders (ClipKaro treats a placeholder as not set). If either is still a placeholder
+   or `null`, ask the user before anything else (one AskUserQuestion, or plainly if you can't):
+   - the folder OBS records into (OBS: Settings > Output > Recording > Recording Path);
+   - their Twitch channel name, or "none" (no Twitch: the clips then come from the words alone).
+   Write the answers into settings.json yourself (edit only those two values; "none" stays a
+   placeholder), confirm in one line, and go on. Don't ask again once they are filled in.
 1. **Check once:** OBS splits its recording every 10 minutes (Settings > Output > Recording >
-   "Automatically split file") and records while streaming (Settings > Advanced > Recording >
-   "Automatically record when streaming"), its recording folder, PostKaro installed with its accounts connected,
+   "Automatically split file") and records while streaming (Settings > **General** > Output >
+   "Automatically record when streaming"; older OBS versions had it under Advanced > Recording), its
+   recording folder, PostKaro installed with its accounts connected (`python run.py status` in the
+   PostKaro folder; live clips go to each platform's **default** account),
    and, for Twitch hints, the channel name (`"twitch_channel"`) and the developer app keys
    (`python run.py live keys --client-id ... --client-secret ...`). Missing keys only turn off the
    viewer-clip notes; chat is read anyway.
