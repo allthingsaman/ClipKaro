@@ -30,6 +30,8 @@ DEFAULT_SETTINGS = {
                                    # with feeling) count extra when picking and judging (the owner's choice,
                                    # 2026-11-19); neutral: judged like any other moment, as before. Nothing is
                                    # ever censored in either mode (bold_mode, bold_note)
+    'star_words': True,            # abusive and taboo words written with stars in captions and posting texts
+                                   # ("F******"); the sound is never bleeped (stars.py); false: every word in full
     'hook_title': False,           # true: a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text);
                                    # off unless asked ("hook title"): the owner didn't want it on every clip
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
@@ -90,7 +92,9 @@ def settings():
     return {k: (None if is_placeholder(v) else v) for k, v in s.items()}
 
 
-BOLD_TAKES = 'an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said with real feeling'
+BOLD_TAKES = ('an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said with real '
+              'feeling, taboo talk most people are uncomfortable with (sex, cheating, adult jokes), an '
+              'A-rated moment')
 BOLD_NOTES = {
     # the first lines of a critic packet: the critic is blind, so the owner's choice travels in its packet
     'critic': f'Bold takes: BOOST (the owner\'s choice). A bold, honest take ({BOLD_TAKES}) earns credit in '

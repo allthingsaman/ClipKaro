@@ -28,6 +28,7 @@ from . import music as musiclib
 from . import layout as layoutlib
 from . import plan as planlib
 from . import romanize
+from . import stars as starlib
 from .common import ASSETS, H, ROOT, W, die, ffmpeg, has_devanagari, imread, load_json, need, project_dir, save_json, settings
 from .sfx import path_of
 
@@ -505,6 +506,8 @@ def edit_one(job):
     picked = next((c for c in (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
                    if int(c.get('id', 0)) == meta['id']), {})
     meta['clarify'] = picked.get('clarify', [])
+    stars_on = starlib.on(cfg) if a.stars is None else a.stars
+    meta.update(star_words=stars_on, stars=picked.get('stars', []))
     _, missing = planlib.add_clarify(meta["words"], meta["clarify"])
     for m in missing:
         say(f'   ! clarify: "{m}" is not said in this clip (check the words, as in the transcript)')
@@ -515,8 +518,10 @@ def edit_one(job):
     clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
     emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
     clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
-    clip_opts.update(safe=safe, hook=hook_on and opts['captions'],
-                     hook_text=picked.get('hook_text') or picked.get('title'))
+    hook_text = picked.get('hook_text') or picked.get('title')
+    if stars_on:
+        hook_text = starlib.star_text(hook_text, starlib.marks(meta['stars']))
+    clip_opts.update(safe=safe, hook=hook_on and opts['captions'], hook_text=hook_text)
     if safe or clip_opts['hook']:
         clip_opts['faces'] = layoutlib.face_boxes(clip_mp4, meta.get('shots', []))
     if meta.get('layout') == 'facecam':
@@ -598,6 +603,9 @@ def main():
     ap.add_argument('--out', default=None, help='output folder (default <project>/edited)')
     ap.add_argument('--emoji', action=argparse.BooleanOptionalAction, default=None,
                     help='emojis on the words clips.json names (default: settings.json "emoji", on)')
+    ap.add_argument('--stars', action=argparse.BooleanOptionalAction, default=None,
+                    help='abusive and taboo words written with stars in the captions, "F******" (default: '
+                         'settings.json "star_words", on; the sound is never bleeped). --no-stars: every word in full')
     ap.add_argument('--encoder', default=None, choices=['auto', 'nvenc', 'x264'],
                     help='video encoder (default: settings.json "encoder", auto: the NVIDIA one if it works)')
     ap.add_argument('--workers', type=int, default=None, help='clips edited at once (default: auto)')

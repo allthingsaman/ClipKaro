@@ -677,7 +677,7 @@ about twice the clips wanted that the AI editor writes for a short video.
   dark joke, gaali, abuse or a view the critic disagrees with gets no fewer points, no failed gate
   and no trim for that. With `"bold_clips": "boost"` (the owner's choice since 2026-11-19, the
   default) a bold, honest take (an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke,
-  gaali said with real feeling) earns credit in the scores that already fit it: hook 4-5, share 3+
+  gaali said with real feeling, taboo talk about sex or cheating, an A-rated moment) earns credit in the scores that already fit it: hook 4-5, share 3+
   ("worth arguing about") and quote ("a line people would argue about"). A racial or caste slur on
   its own stays neutral: the clip is scored as if the word weren't there. The critic is blind, so
   the choice travels as one line in its packet (`common.bold_note`, written by `critic.prepare` next
@@ -685,8 +685,16 @@ about twice the clips wanted that the AI editor writes for a short video.
   craft only, no points for outrage either, exactly as before. The part files (`parts`, focus reads)
   and `live next` carry the same choice for the readers and the live helper. Topics only get a
   `sensitive` tag from the part readers, so the owner sees it when reviewing, and a clip with a slur
-  gets a "platform risk" line in the final report. The owner watches every clip and decides what to
-  post (live streams post at once, by the owner's choice).
+  gets a "platform risk" line in the final report (so does a sexual scene or nudity on screen). The
+  owner watches every clip and decides what to post (live streams post at once, by the owner's choice).
+- **Rude words with stars, in the text only** (`stars.py`): the critic and Claude read the real words,
+  and the sound is never touched. At `edit`, `plan.caption_groups` writes abusive and taboo words with
+  stars ("F******": the first letter, then one star per letter) in the captions, the `.srt` and the
+  hook title; `run.py post` does the same in post.json's titles and captions. Which words: a short
+  built-in list (English swear words, Hindi gaali in Roman and Devanagari, matched on the word's
+  plain form: whole words for short ones, the start of the word for long roots) plus clips.json
+  `"stars"` for slurs, sexual words and other spellings. `"star_words": false` (or `edit --no-stars`)
+  shows every word in full.
 - **Merging (code):** clip score = the weighted mean, shown out of 10 (9+ Standout, 7+ Strong, 6+
   Good, 5+ OK, below that Weak), and it **ranks the clips of one video**. A gate failed in 2 of 3
   runs becomes a `fix?` note and a split gate a `check` note: they feed the repair round and

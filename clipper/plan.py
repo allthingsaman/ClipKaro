@@ -20,6 +20,7 @@ from pathlib import Path
 from .common import FPS, H, JUMP_FLASH, W, has_devanagari, is_sentence_end, norm_token
 from . import layout
 from . import sfx as sfxlib
+from . import stars as starlib
 
 # caption fonts (assets/fonts): Montserrat has no Hindi letters, so captions that contain Devanagari
 # switch to Poppins, which has both Devanagari and Latin in the same bold geometric style
@@ -370,6 +371,9 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, sty
     seams = [s['t0'] for p, s in zip(shots, shots[1:]) if (p.get('mode') == 'split') != (s.get('mode') == 'split')]
     # emphasis words may be given as spoken (Devanagari) or as captioned (Roman Hinglish)
     emph = {norm_token(e) for e in meta.get('emphasis', [])} - {''}
+    # abusive and taboo words written with stars ("F******"): the built-in list plus clips.json "stars";
+    # the sound is never touched (edit sets "star_words" from settings.json; a bare plan has none)
+    starred = starlib.marks(meta.get('stars')) if meta.get('star_words') else None
     groups, cur = [], []
 
     def flush():
@@ -380,6 +384,8 @@ def caption_groups(meta, upper=True, max_words=3, max_chars=15, max_dur=1.6, sty
         text = display(w['w'], upper)
         if not text:
             continue
+        if starred is not None and (starlib.is_rude(w['w'], starred) or starlib.is_rude(w.get('orig', ''), starred)):
+            text = starlib.star(text)
         if w.get('unsure') or w.get('game'):    # the recogniser was guessing, or a game character: no caption
             flush()
             continue

@@ -244,8 +244,9 @@ Do this every time you stream.
   or open PostKaro's **Queue** page (the links of posted clips are under **Posted**).
 - **No review means trust.** Watch the first few clips on your phone, and delete one on the platform if
   you don't like it.
-- **Nothing is censored, live too.** A clip with gaali or a slur posts like every other clip, and bold
-  takes (a rant, a roast, a blunt verdict) count extra. For a clip with a slur, Claude's report says
+- **Nothing is censored, live too.** A clip with gaali, a slur or taboo talk posts like every other
+  clip, and bold takes (a rant, a roast, a blunt verdict) count extra. You hear every word; captions and
+  titles write rude words with stars ("F******"). For a clip with a slur, Claude's report says
   "platform risk" (YouTube may remove it and give a strike; Instagram may stop recommending it), so you
   know which one to check. Only a failed quality check stops a post.
 

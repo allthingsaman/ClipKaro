@@ -30,14 +30,23 @@ No flashy transitions, emojis or motion graphics.
 - **"Different font"**: put the .ttf in `assets/fonts/`, then pass its family name and file name
   through the `opts` in `edit.py` (`font`, `font_file`).
 
-## Captions: every word as it was said
-Captions never censor. Gaali, abuse and slurs show exactly as they were said: never `***`, never a
-bleep, never a mute, in the captions, the `.srt` or the sound. This is how the code works already
-(nothing masks or drops a word because of what it means); keep it that way.
-- Roman Hinglish: in `romanize.json`, spell gaali as it was said, like any other word. Never soften it.
+## Captions: every word kept, rude words with stars
+Nothing is censored: no word is ever cut, bleeped or muted, and the viewer hears every word. Abusive
+and taboo words are only **written** with stars, the first letter kept: "F******", "c******", "चू**"
+(the owner's choice, 2026-11-19; the apps read text first).
+- Where: the captions on screen, the `.srt`, the hook title (`edit`), and the posting texts
+  (`run.py post`). The transcript, `words.json`, the critic and Claude always keep the real word.
+- Which words: `clipper/stars.py` knows the common English swear words and Hindi gaali (Roman and
+  Devanagari); clips.json `"stars"` adds slurs, sexual words and other spellings for that clip.
+- Way back: settings.json `"star_words": false`, or `edit --no-stars` for one run ("no stars"):
+  every word in full.
+- Roman Hinglish: in `romanize.json`, spell gaali as it was said, like any other word. Never soften
+  it: the stars come later, by themselves.
 - If the speech-to-text wrote a starred word ("f***"), the caption check treats it like any mishearing
-  and fixes it to the word that was said (`fixword --at`).
-- The posting texts follow `picking-moments.md` (`post`): gaali may go in titles, slurs never.
+  and fixes it to the word that was said (`fixword --at`); the stars are then added the same way as
+  for every other word.
+- The posting texts follow `picking-moments.md` (`post`): gaali may go in titles (with stars), slurs
+  never.
 
 ## Two engines, one plan
 `plan.py` computes the camera for every frame, the caption timings and the sound cues.

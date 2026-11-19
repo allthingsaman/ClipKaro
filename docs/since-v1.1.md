@@ -78,16 +78,23 @@ changed. Only new ones were added.
   - Since 2026-11-12 it judges only how a clip is made, never its topic.
   - Short videos get it too. *(v2.0)*
 - ↔ **Nothing censored, and bold takes count extra.** The owner asked for this on 2026-11-19.
-  - Gaali, abuse, dark jokes and offensive opinions are never cut, bleeped, starred or scored down:
-    not when picking, not by the critic, not in the captions. Gaali may go in posting titles too.
+  - Gaali, abuse, dark jokes, offensive opinions, taboo talk (sex, cheating) and A-rated moments are
+    never cut, bleeped or scored down: not when picking, not by the critic. Gaali may go in posting
+    titles too.
   - A bold, honest take (an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said
-    with real feeling) now ranks higher: the critic gives it credit in hook, share and quote, and the
+    with real feeling, taboo talk, an A-rated moment) now ranks higher: the critic gives it credit in hook, share and quote, and the
     readers, the live helper and Claude treat it as a strong hook. Before, the critic was neutral both
     ways.
   - A racial or caste slur on its own stays neutral (no points either way), never goes in a title, and
     gets a "platform risk" line in the report. It never stops a clip, live streams included.
   - Way back: `"bold_clips": "neutral"` in settings.json: bold takes are judged like any other moment,
     as before. *(2026-11-19)*
+- ↔ **Rude words with stars in the text.** The owner asked for this on 2026-11-19: abusive and taboo
+  words are written like "F******" in the captions, the `.srt`, the hook title and the posting texts.
+  The sound keeps every word (never bleeped or muted), and Claude and the critic read the real words.
+  v1.1 wrote every word in full.
+  - Way back: `"star_words": false` in settings.json, or say "no stars" (`edit --no-stars`).
+    *(2026-11-19)*
 - ⬆ **More clips later, without reading the video again.** The good ideas that weren't cut stay
   saved; "3 more clips from that video" turns the next ones into clips in a few minutes. v1.1 had to
   read the whole video again for that. *(2026-11-13)*

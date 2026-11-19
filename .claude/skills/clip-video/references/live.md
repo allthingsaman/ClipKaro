@@ -26,9 +26,9 @@ still matter.
    - **Bold takes:** the same picking rule as for any video (`picking-moments.md`, "Bold takes rank
      higher"). When `live next` prints "bold takes count extra" (the owner's choice, the default), a
      bold, honest take (an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said
-     with real feeling) is a strong clip. A racial or caste slur on its own adds nothing: the take does.
-     Never leave out or shorten a moment because of gaali, abuse, slurs, dark humour or an offensive
-     opinion.
+     with real feeling, taboo talk, an A-rated moment) is a strong clip. A racial or caste slur on its own
+     adds nothing: the take does. Never leave out or shorten a moment because of gaali, abuse, slurs,
+     dark humour, an offensive opinion or taboo content.
    - Don't repeat a moment already clipped this stream (`live next` lists the titles).
    - Launch day: a story reveal is what people search for, so it's fine, but put "(spoiler)" in the
      YouTube title when a clip shows a story moment.
@@ -44,8 +44,9 @@ still matter.
    Hindi Gameplay" or the game's name | 2-3 matching hashtags ending in `#Shorts`; description 1-2
    lines), instagram (hook + question + at most 5 hashtags) and facebook (1-2 lines, 0-3 hashtags).
    Roman Hinglish for Hinglish speech. Use the game's real names (GTA 6 / GTA VI: Jason, Lucia, Vice City,
-   Leonida). Gaali may go in titles and captions when it's catchy and said in the clip; racial and caste
-   slurs never go in a title (`picking-moments.md`, `post`).
+   Leonida). Gaali may go in titles and captions when it's catchy and said in the clip, written with
+   stars ("F******"); racial and caste slurs never go in a title (`picking-moments.md`, `post`). List
+   slurs and sexual words the built-in list may not know in the clip's `stars`.
 6. **Captions:** `python run.py romanize <project>`, then straight away
    `python run.py romanize <project> --checked` (live: don't review its word list; the house respellings
    are applied by themselves, and the caption check below catches what matters).
@@ -72,7 +73,7 @@ give a strike; Instagram may stop recommending it). No long explanations: the ow
 
 ## Never
 - Never post a clip that failed qa.
-- Never hold back or skip a clip because of gaali, abuse, a slur or an offensive opinion, and never bleep,
-  star or mute a word.
+- Never hold back or skip a clip because of gaali, abuse, a slur, an offensive opinion or taboo content,
+  and never bleep or mute a word (captions and texts star them by themselves).
 - Never invent words, change what was meant, or caption the game characters.
 - Never run two pieces at once, or re-run `fetch` (the watcher already did it), or change settings.

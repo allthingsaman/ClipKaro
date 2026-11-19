@@ -41,7 +41,9 @@ how many clips, what kind of video it is, and (for long videos) one question abo
 faces and the apps' buttons, the sound-peak limit, emojis (unless "no emojis": `edit --no-emoji`),
 the "© Channel" credit bottom left on clips from a YouTube link (unless "no credit": `edit --no-credit`),
 and the user's logo (bottom right) and outro from `brand/` when the files are there (unless "no logo" /
-"no outro": `edit --no-logo` / `--no-outro`).
+"no outro": `edit --no-logo` / `--no-outro`). Nothing censored: bold, taboo and A-rated moments are kept
+and rank higher, every word is heard, and abusive and taboo words are written with stars in captions
+and posting texts, "F******" (unless "no stars": `edit --no-stars`; `references/editing.md`).
 **Only when named** (in any message, or in "My preferences"): **"hook title"** (write `hook_text` for
 each clip, then `edit --hook-title`) and a caption look. Without "hook title": no `hook_text`.
 
@@ -423,7 +425,8 @@ Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentenc
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,
 or `"jump_label": true` in settings.json), `--hook-title` (only when the user said "hook title", or
 `"hook_title": true`; clips.json `hook_text`, else the clip's title), `--no-credit`, `--no-logo`,
-`--no-outro` (only when the user says "no credit", "no logo", "no outro"), `--logo-corner`,
+`--no-outro` (only when the user says "no credit", "no logo", "no outro"), `--no-stars` (only for "no
+stars": rude words in full in the captions), `--logo-corner`,
 `--credit-corner` (`top-left|top-right|bottom-left|bottom-right`, when the user names a corner for one
 video; for good: `"logo_corner"` / `"credit_corner"` in settings.json).
 Read `references/editing.md` if the user wants a different look.
@@ -452,10 +455,10 @@ If `post` printed "N more good ideas not cut yet", add one line: "N more good id
 two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
 from clips.json. Repeat the line that clip scores are not a prediction of views.
-**Flags** (one line each, under the table): a clip with a racial or caste slur, or a hateful line,
-gets a **platform risk** line, e.g. "Clip 3, platform risk: YouTube may remove it and give a strike;
-Instagram may stop recommending it." It is a note only: it never stops, changes or drops the clip
-(nothing is censored; the owner decides what to post). If `post` printed
+**Flags** (one line each, under the table): a clip with a racial or caste slur, a hateful line, or a
+sexual scene or nudity on screen gets a **platform risk** line, e.g. "Clip 3, platform risk: YouTube
+may remove it and give a strike; Instagram may stop recommending it." It is a note only: it never
+stops, changes or drops the clip (nothing is censored; the owner decides what to post). If `post` printed
 a link, end with it: "Post them: <link>" (it opens PostKaro with every clip filled in; it only works
 on this computer). Otherwise mention that the files are ready to upload to Shorts, Reels and TikTok.
 

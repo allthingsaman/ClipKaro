@@ -15,8 +15,10 @@ captions off faces and clear of the apps' buttons, the sound-peak limit, no capt
 characters in gameplay (the game shows its own); emojis too, unless the user says "no emojis";
 the "© Channel" credit on clips from a YouTube link (`edit --no-credit` for "no credit"), the
 user's logo and outro when they are in `brand/` (`--no-logo` / `--no-outro` when asked), and no
-censoring: gaali, abuse and slurs stay in clips, captions and titles (racial and caste slurs never in
-a title), and bold, honest takes count extra (way back: settings.json `"bold_clips": "neutral"`).
+censoring: gaali, abuse, slurs, taboo talk (sex, cheating) and A-rated moments stay in the clips, heard
+in full, and bold, honest takes count extra (way back: settings.json `"bold_clips": "neutral"`);
+abusive and taboo words are written with stars in captions and posting texts, "F******" (way back:
+`"star_words": false`, or `edit --no-stars` for "no stars"); racial and caste slurs never in a title.
 **Standard and deep only** (quick mode skips it to save usage): the caption check (`run.py captions`,
 fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
 --hook-title`) and a caption look ("box captions" ...). Background music is on hold: no `music` mood.

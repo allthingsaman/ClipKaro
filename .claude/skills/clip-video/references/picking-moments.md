@@ -15,7 +15,8 @@ It **opens on a hook**, every line after it continues that story, and it **ends 
 ## Hook types (the first line must be one of these)
 1. **Contrarian or negative claim**: "Most advice about X is wrong." / "Stop doing X."
    **Bold, honest takes** belong here: an unpopular opinion, a roast, a rant, a blunt verdict, a dark
-   joke, gaali said with real feeling. The things most people are afraid to say out loud make strong
+   joke, gaali said with real feeling, taboo talk most people are uncomfortable with (sex, cheating,
+   adult jokes), an A-rated moment. The things most people are afraid to say out loud make strong
    hooks.
 2. **A question the viewer already asks themselves**: "Why do some people get rich and others don't?"
 3. **A surprising fact or number**: a concrete figure, an unexpected result.
@@ -45,8 +46,12 @@ punchline, a rule or a call to action. Never end mid-thought, on "and…", or on
 - Tangents, even good ones. Jump to the line that sums up the lesson.
 - Retakes and false starts. With repeated takes, use the best (usually the last) complete one.
 
-**Never censor.** Never leave out or shorten a moment because of gaali, abuse, slurs, dark humour or an
-offensive opinion. The captions show every word as it was said, and the owner decides what to post.
+**Never censor; go all in.** Never leave out or shorten a moment because of gaali, abuse, slurs, dark
+humour, an offensive opinion or taboo and A-rated content (sex, cheating, adult jokes). The owner's
+reasoning: the full video is already on YouTube, so it passed YouTube's checks, and these are the
+moments that go viral. Every word stays in the sound; captions and posting texts write abusive and
+taboo words with stars ("F******", see `stars` below). The owner decides what to post. The one line
+never crossed: nothing sexual involving anyone under 18.
 
 ## Continuous first, splice only when it clearly wins
 - **Default: one continuous range.** It always sounds natural.
@@ -110,8 +115,8 @@ Rank by: hook strength (curiosity + relevance) > a clear payoff > emotional ener
 humour, surprise) > quotability (a line someone would screenshot) > visual clarity (the speaker
 on camera, not a slide). Put the best clip first.
 
-**Bold takes rank higher** (settings.json `"bold_clips": "boost"`, the default). A bold, honest take is a
-chance to go viral: it counts as a strong hook (`"hook_type": "contrarian"`) and adds to the energy and
+**Bold takes rank higher** (settings.json `"bold_clips": "boost"`, the default). A bold, honest take,
+taboo talk or an A-rated moment is a chance to go viral: it counts as a strong hook (`"hook_type": "contrarian"`) and adds to the energy and
 the quotability. A racial or caste slur on its own adds nothing: score the clip as if the word weren't
 there; the boldness of the take earns the points. With `"bold_clips": "neutral"`, bold takes rank like
 any other moment (never lower either).
@@ -187,11 +192,19 @@ Write `output/<project>/clips.json`:
     full video: 0:08 · 22:53"), so viewers know it is joined. The one exception is the YouTube
     title: end it with "(2 moments joined)" instead, so the title stays a title.
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
-  - **Gaali may go in titles and captions** when it's catchy and actually said in the clip.
-  - **Keep racial and caste slurs out of every title** (`title`, `youtube.title`, a `hook_text`): a
-    title is where YouTube removes a video fastest. In the clip itself they stay.
+  - **Gaali and taboo words may go in titles and captions** when they're catchy and actually said in
+    the clip, **written with stars**: the first letter, then one star per letter ("F******",
+    "c******"). `run.py post` stars the words it knows by itself, as a safety net. With
+    `"star_words": false` in settings.json, write them in full.
+  - **Keep racial and caste slurs out of every title** (`title`, `youtube.title`, a `hook_text`), even
+    with stars: a title is where YouTube removes a video fastest. In the clip itself they stay.
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
+- `stars` (optional): abusive or taboo words in this clip that ClipKaro's own list may not know: slurs,
+  sexual words, another spelling of a gaali. `["word as said or as captioned", ...]`. They show with
+  stars in the captions and the posting texts ("F******"); the sound keeps them. Common English swear
+  words and Hindi gaali (fuck, shit, chutiya, bhenchod, madarchod, bhosdike, gaandu, lauda ...) are
+  starred without being listed.
 - `sfx` (optional): 0-2 **mood sounds** for the clip's strongest moments, `[[source seconds, "mood"]]`:
   a shocking line or reveal (`shock`), a punchline or awkward moment (`funny`), something tense
   (`fear`), a new point worth hearing (`attention`), a sad moment (`sad`), a win (`hype`), an answer

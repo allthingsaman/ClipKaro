@@ -1025,5 +1025,73 @@ class BoldClips(unittest.TestCase):
             common.settings = saved
 
 
+class StarredWords(unittest.TestCase):
+    """Rude words with stars in the text only (the owner's choice, 2026-11-19): "F******" in the captions and
+    posting texts; the sound and the transcript keep every word; "star_words": false shows them in full."""
+
+    def caption_text(self, **meta_extra):
+        meta = meta_for(sentence('what the fuck is this chutiya plan yaar.', 0.0))
+        meta.update(meta_extra)
+        return ' '.join(w['text'] for g in plan.caption_groups(meta) for w in g['words'])
+
+    def test_captions_get_stars(self):
+        self.assertEqual(self.caption_text(star_words=True), 'WHAT THE F*** IS THIS C****** PLAN YAAR')
+        self.assertIn('P***', self.caption_text(star_words=True, stars=['plan']))       # a word Claude marked
+        self.assertEqual(self.caption_text(), 'WHAT THE FUCK IS THIS CHUTIYA PLAN YAAR')  # a bare plan: in full
+        self.assertEqual(self.caption_text(star_words=False), 'WHAT THE FUCK IS THIS CHUTIYA PLAN YAAR')
+
+    def test_hinglish_caption_and_devanagari(self):
+        from clipper import stars
+        w = sentence('ye banda', 0.0) + [W('chutiya', 0.8, 1.2, orig='चूतिया')]
+        meta = meta_for(w)
+        meta['star_words'] = True
+        caps = ' '.join(x['text'] for g in plan.caption_groups(meta) for x in g['words'])
+        self.assertEqual(caps, 'YE BANDA C******')
+        self.assertEqual(stars.star('चूतिया'), 'चू**')
+        self.assertEqual(stars.star('fucking!'), 'f******!')
+
+    def test_harmless_words_stay(self):
+        from clipper import stars
+        for word in ('chodo', 'chhodo', 'गाड़ी', 'लड़ाई', 'ganda', 'Dickens', 'cocktail', 'Gandhi', 'class',
+                     'assessment', 'saala', 'sex'):
+            self.assertFalse(stars.is_rude(word), word)
+
+    def test_posting_texts(self):
+        from clipper import stars
+        self.assertEqual(stars.star_text('Ye banda poora chutiya hai, what the fuck | GTA 6 Hindi #Shorts'),
+                         'Ye banda poora c****** hai, what the f*** | GTA 6 Hindi #Shorts')
+        self.assertEqual(stars.star_text('Already F****** starred'), 'Already F****** starred')
+        self.assertTrue(stars.on({}) and not stars.on({'star_words': False}))
+
+    def test_post_json_gets_stars(self):
+        import contextlib
+        import io
+        from clipper import common, post
+        clip = {'id': 1, 'title': 'Chutiya plan', 'ranges': [[0.0, 20.0]], 'caption': 'what the fuck #gta6',
+                'stars': ['cheater'],
+                'post': {'youtube': {'title': 'Ye cheater nikla, what the fuck | GTA 6 #Shorts', 'description': 'x'},
+                         'instagram': {'caption': 'Bhenchod kya scene hai'}}}
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'edited').mkdir()
+            (pdir / 'edited' / '01-chutiya-plan.mp4').write_bytes(b'')
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [clip]}))
+            (pdir / 'project.json').write_text('{}')
+            saved = common.settings
+            try:
+                for on, want in ((None, 'Ye c****** nikla, what the f*** | GTA 6 #Shorts'),
+                                 (False, 'Ye cheater nikla, what the fuck | GTA 6 #Shorts')):
+                    common.settings = lambda: dict(common.DEFAULT_SETTINGS, **({} if on is None else {'star_words': on}))
+                    with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                        kit, _ = post.build(pdir)
+                    c = kit['clips'][0]
+                    self.assertEqual(c['text']['youtube']['title'], want)
+                    if on is None:
+                        self.assertEqual((c['title'], c['caption'], c['text']['instagram']['caption']),
+                                         ('C****** plan', 'what the f*** #gta6', 'B******* kya scene hai'))
+            finally:
+                common.settings = saved
+
+
 if __name__ == '__main__':
     unittest.main()

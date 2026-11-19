@@ -66,13 +66,18 @@ In every mode (quick, standard, deep), with nothing to say:
 - **Credit to the source**: a small "© Channel name" in the bottom-left corner of clips made from a
   YouTube link (never your own video files). Say "no credit" to leave it out.
 - **Your logo and outro**, when you have put them in the `brand` folder (below).
-- **Nothing censored**: gaali, abuse and slurs stay in the clips and the captions, exactly as said (no
-  `***`, no bleep). Gaali may go in the posting titles too; racial and caste slurs never go in a title,
-  because that is where YouTube removes videos fastest. A clip with a slur gets a "platform risk" note
-  in Claude's report, and you decide.
-- **Bold takes count extra**: an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke or
-  gaali said with real feeling, the things most people are afraid to say out loud, is a chance to go
-  viral, so it ranks higher. A slur on its own adds nothing: the take does. Don't want that? Set
+- **Nothing censored**: gaali, abuse, slurs, taboo talk (sex, cheating, adult jokes) and A-rated
+  moments stay in the clips, and every word is heard: no bleep, no mute. If the full video is on
+  YouTube, it already passed YouTube's checks, and these are the moments that go viral. Racial and
+  caste slurs never go in a title, because that is where YouTube removes videos fastest. A clip with a
+  slur, or with a sexual scene or nudity on screen, gets a "platform risk" note in Claude's report, and
+  you decide.
+- **Rude words with stars in the text**: the captions on screen and the posting texts write abusive and
+  taboo words like "F******" or "c******" (the first letter, then stars), because the apps read text
+  first. The sound keeps them. Say "no stars" for one video, or set `"star_words": false` (below).
+- **Bold takes count extra**: an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali
+  said with real feeling or taboo talk, the things most people are afraid to say out loud, is a chance
+  to go viral, so it ranks higher. A slur on its own adds nothing: the take does. Don't want that? Set
   `"bold_clips": "neutral"` (below).
 
 ### Extras you switch on by name
@@ -130,6 +135,7 @@ captions". To have one every time, add it to your preferences.
 | "captions lower" / "captions higher" | moves the captions down or up (on that exact line: they don't move off faces then) |
 | "box captions" / "karaoke captions" / "minimal captions" / "bold captions" / "comic captions" | another **caption look**: on a dark box; each word filling with colour as it's said; smaller in normal case; big Anton letters; tilted comic letters (`--look box`, or `"caption_look"` in settings.json to keep it). Normally the classic look |
 | (nothing) | **emojis** on up to 3 strong words ("paisa" 💰, "shocking" 😱): they pop in above or beside the caption when the word is said, never on a face. Claude picks them; "no emojis" turns them off for that clip or that video |
+| "no stars" | rude words in full in the captions (normally "F******": the first letter, then stars). The sound is the same either way: nothing is ever bleeped |
 | "bigger captions" / "smaller captions" | changes the caption size |
 | "captions not in capital letters" | normal upper and lower case |
 | "use #00E5FF as the caption colour" / "yellow captions" | the highlight colour of the captions |
@@ -371,6 +377,7 @@ Claude to change them.
   "deep_clips": "ask",
   "max_clips": 20,
   "bold_clips": "boost",
+  "star_words": true,
   "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
@@ -406,7 +413,8 @@ Claude to change them.
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
-| `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |
+| `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling, taboo talk, an A-rated moment) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |
+| `star_words` | `true` | abusive and taboo words written with stars in the captions and the posting texts ("F******"); the sound keeps every word. `false`: every word in full ("no stars" does it for one video) |
 | `hook_title` | `false` | `true`: a 3-6 word title on screen for the first seconds of every clip ("hook title") |
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |

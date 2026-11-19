@@ -16,6 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from . import stars as starlib
 from .common import load_json, probe, project_dir, save_json, settings
 
 KIT_VERSION = 1
@@ -64,6 +65,7 @@ def build(pdir):
     proj = load_json(pdir / 'project.json', {})
     files = clip_files(pdir)
     out, notes = [], []
+    stars_on = starlib.on()
     for c in clips:
         f = files.get(c.get('id'))
         if not f:
@@ -74,14 +76,21 @@ def build(pdir):
         except SystemExit:
             dur = round(sum(e - s for s, e in c.get('ranges', [])), 2)
         text = c.get('post') or {}
+        caption, title = c.get('caption'), c.get('title')
+        if stars_on:                   # abusive and taboo words with stars, as in the captions ("F******")
+            marked = starlib.marks(c.get('stars'))
+            title = starlib.star_text(title, marked)
+            text = {p: ({k: starlib.star_text(v, marked) if isinstance(v, str) else v for k, v in t.items()}
+                        if isinstance(t, dict) else t) for p, t in text.items()}
+            caption = starlib.star_text(caption, marked)
         if not c.get('caption') and not text:
             notes.append(f"clip {c['id']}: no posting caption (PostKaro will start from the title)")
         elif text and set(PLATFORMS) - set(text):
             notes.append(f"clip {c['id']}: no text for {', '.join(sorted(set(PLATFORMS) - set(text)))} "
                          '(PostKaro will use the caption)')
         out.append({'id': c['id'], 'file': str(f.relative_to(pdir)), 'duration': dur,
-                    'clip_score': c.get('clip_score', c.get('score')), 'title': c.get('title'),
-                    'caption': c.get('caption'), 'note': honesty_note(c), 'deep': bool(c.get('deep')),
+                    'clip_score': c.get('clip_score', c.get('score')), 'title': title,
+                    'caption': caption, 'note': honesty_note(c), 'deep': bool(c.get('deep')),
                     'text': {p: text[p] for p in PLATFORMS if p in text}})
     kit = {'postkit': KIT_VERSION, 'made_by': 'ClipKaro', 'project': pdir.name, 'title': proj.get('title'),
            'source': {'channel': proj.get('channel'), 'channel_url': proj.get('channel_url'),

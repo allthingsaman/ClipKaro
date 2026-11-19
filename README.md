@@ -155,6 +155,10 @@ captions". "Hook title" adds a big title for the first seconds.
 - 🏷️ **Your brand, and credit to the source.** Put your logo and a 3-5 s outro in the `brand` folder:
   the logo goes in the bottom-right corner of every clip, the outro at the end. Clips from a YouTube
   link get a small "© Channel name" in the bottom-left corner (`"source_credit": false` turns it off).
+- 🔥 **Nothing held back.** The moments people are afraid to say out loud go viral, so ClipKaro keeps
+  them and ranks them higher: a rant, a roast, a blunt verdict, gaali said with real feeling, taboo talk,
+  an A-rated moment. Nothing is bleeped; captions and titles write rude words with stars ("F******").
+  `"bold_clips": "neutral"` and `"star_words": false` turn that off.
 - 🔴 **Live clipping** for game launches: clips posted while you stream ([see above](#-new-in-v26-live-clipping-clips-posted-while-you-stream)).
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
@@ -438,7 +442,8 @@ Your defaults are in `settings.json`: the language (`auto`), the speech model (`
 use the graphics card (`auto`), how Hindi captions are written (`roman` = English letters, or
 `devanagari` = Hindi letters), the gameplay layout (`auto`), whether to ask about deep clips (`ask`)
 the most clips to make when you don't give a number (`20`), whether bold, honest takes count extra
-(`bold_clips`, `boost`; nothing is ever censored), and the "© Channel" credit on clips from a
+(`bold_clips`, `boost`; nothing is ever censored), rude words written with stars in captions and
+titles (`star_words`, on), and the "© Channel" credit on clips from a
 YouTube link (`source_credit`, on). You can also just ask Claude to change them. Details: [docs/usage.md](docs/usage.md#5-your-defaults-settingsjson).
 
 ## Running it by hand (optional)

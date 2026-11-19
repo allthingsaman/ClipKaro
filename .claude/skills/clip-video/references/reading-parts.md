@@ -59,8 +59,8 @@ those. Topics follow each other with no gaps: a topic ends where the next one st
   English or correct form, e.g. `["कफ्तान", "captain", "पाकिस्तान", "Pakistan"]`.
 - `energy`: `low`, `medium` or `high`, judged from the words; `energy_tags` (any of `humour`,
   `conflict`, `strong-claim`, `surprise`, `emotion`, `story-peak`). A bold, honest take (an unpopular
-  opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said with real feeling) gets
-  `strong-claim`.
+  opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said with real feeling, taboo talk
+  about sex or cheating, an A-rated moment) gets `strong-claim`.
 - `sensitive` (any of `politics`, `religion`, `caste-communal`, `accusation`, `crime`, `health`,
   `money`, `legal`), else `[]`.
 - `self_contained`: `true` if a stranger understands it alone; else `false` and `needs`: in words,
@@ -87,10 +87,12 @@ every decent one up to that number; never pad with weak ones.
 
 - **Bold takes are candidates.** When the header has a `# BOLD TAKES COUNT EXTRA` line (the owner's
   choice, the default), bring them and score them higher: an unpopular opinion, a roast, a rant, a
-  blunt verdict, a dark joke, gaali said with real feeling. A racial or caste slur on its own adds
+  blunt verdict, a dark joke, gaali said with real feeling, taboo talk most people are uncomfortable
+  with (sex, cheating, adult jokes), an A-rated moment. A racial or caste slur on its own adds
   nothing: the take does. Without that line, score them like any other moment.
-- **Never censor.** Never leave out or shorten a candidate because of gaali, abuse, slurs, dark humour
-  or an offensive opinion, with or without that line.
+- **Never censor.** Never leave out or shorten a candidate because of gaali, abuse, slurs, dark humour,
+  an offensive opinion or taboo and A-rated content, with or without that line. (Nothing sexual
+  involving anyone under 18, ever.)
 
 - **Live streams and gameplay** (the header has a `# VIDEO KIND` line): follow its rules, and the
   section "Live streams and gameplay" in `references/picking-moments.md`. Lines marked
