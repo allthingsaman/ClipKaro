@@ -26,6 +26,10 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
+    'bold_clips': 'boost',         # boost: bold, honest takes (an unpopular opinion, a roast, a rant, gaali said
+                                   # with feeling) count extra when picking and judging (the owner's choice,
+                                   # 2026-11-19); neutral: judged like any other moment, as before. Nothing is
+                                   # ever censored in either mode (bold_mode, bold_note)
     'hook_title': False,           # true: a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text);
                                    # off unless asked ("hook title"): the owner didn't want it on every clip
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
@@ -84,6 +88,36 @@ def settings():
     except (ValueError, OSError) as e:
         print(f'   ! settings.json ignored ({e})')
     return {k: (None if is_placeholder(v) else v) for k, v in s.items()}
+
+
+BOLD_TAKES = 'an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke, gaali said with real feeling'
+BOLD_NOTES = {
+    # the first lines of a critic packet: the critic is blind, so the owner's choice travels in its packet
+    'critic': f'Bold takes: BOOST (the owner\'s choice). A bold, honest take ({BOLD_TAKES}) earns credit in '
+              'hook, share and quote, as your instructions say. A racial or caste slur on its own earns nothing '
+              'either way: score the clip as if the word weren\'t there.',
+    # the header of a part file (run.py parts) and of a focus read (run.py topics)
+    'reader': f'BOLD TAKES COUNT EXTRA (the owner\'s choice): {BOLD_TAKES}. Bring them as candidates, score them '
+              'higher and tag their topic "strong-claim". A racial or caste slur on its own adds nothing: the '
+              'take does.',
+    # what `run.py live next` prints for the live helper
+    'live': f'bold takes count extra (the owner\'s choice): {BOLD_TAKES} make strong clips. A racial or caste '
+            'slur on its own adds nothing: the take does.',
+}
+
+
+def bold_mode():
+    """settings.json "bold_clips": "boost" (the default: bold, honest takes count extra) or "neutral" (judged like
+    any other moment, as before 2026-11-19). Gaali, abuse, slurs and offensive opinions are never cut, bleeped or
+    scored down in either mode."""
+    v = settings().get('bold_clips', 'boost')
+    return 'neutral' if v is False or str(v).strip().lower() == 'neutral' else 'boost'
+
+
+def bold_note(who):
+    """The owner's choice about bold takes for a helper that only sees its own file ('critic', 'reader',
+    'live'), or '' with "bold_clips": "neutral": then each helper's own rule applies (no extra points)."""
+    return BOLD_NOTES[who] if bold_mode() == 'boost' else ''
 
 
 def is_sentence_end(word):

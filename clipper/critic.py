@@ -43,7 +43,7 @@ import time
 
 from . import sound
 from .cut import boundary_warnings
-from .common import OUTPUT, die, fmt_ts, load_json, norm_token, project_dir, save_json
+from .common import OUTPUT, bold_note, die, fmt_ts, load_json, norm_token, project_dir, save_json
 from .parts import est_tokens
 
 RUNS = 3
@@ -217,6 +217,7 @@ def prepare(pdir, source, runs):
     from .fetch import writes_roman
     if lang.startswith('hi') and writes_roman(project.get('asr_model')):
         note = LANG_NOTE['hinglish-roman']
+    bold = bold_note('critic')            # settings.json "bold_clips": the blind critic learns it from its packet
     key, files = {}, {}
     for r in range(1, runs + 1):
         rng = random.Random(f'{pdir.name}-{sig}-run{r}')
@@ -244,6 +245,8 @@ def prepare(pdir, source, runs):
                         '# Times like [0:12] count from the start of the clip.']
                 if note:
                     head.append(f'# Language: {note}')
+                if bold:
+                    head.append(f'# {bold}')
                 if cues:
                     head.append('# Markers like [laughter ~2 s], [both talk at once], [voice raised], [explosion] or '
                                 '[big action on screen], and "(other voice)" before a line (in gameplay: a game '

@@ -967,5 +967,63 @@ class LiveClipping(unittest.TestCase):
         self.assertNotIn('live', run.HEAVY)
 
 
+class BoldClips(unittest.TestCase):
+    """Nothing censored, bold takes count extra (the owner's choice, 2026-11-19): the blind critic learns the
+    choice from one line in its packet, and "bold_clips": "neutral" leaves it out (the critic's old rule)."""
+
+    def packet(self, setting):
+        import contextlib
+        import io
+        from unittest import mock
+        from clipper import common, critic, sound
+        words = (sentence('honestly most fitness advice on youtube is complete garbage and you know it.', 0.0)
+                 + sentence('bhai sach bolun toh ye log sirf paise ke liye bolte hain yaar.', 5.0))
+        lines = [{'s': words[0]['s'], 'e': words[12]['e'], 'text': ' '.join(w['w'] for w in words[:13])},
+                 {'s': words[13]['s'], 'e': words[-1]['e'], 'text': ' '.join(w['w'] for w in words[13:])}]
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d) / 'output' / 'bold-test'
+            (pdir / 'transcript').mkdir(parents=True)
+            (pdir / 'transcript' / 'words.json').write_text(json.dumps(words))
+            (pdir / 'transcript' / 'sentences.json').write_text(json.dumps(lines))
+            (pdir / 'project.json').write_text(json.dumps({'language': 'en', 'duration': 12.0}))
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [
+                {'title': 'Fitness advice is garbage', 'ranges': [[0.0, words[12]['e']]]},
+                {'title': 'Sirf paise ke liye', 'ranges': [[words[13]['s'], words[-1]['e']]]}]}))
+            saved = common.settings
+            common.settings = lambda: dict(common.DEFAULT_SETTINGS, **setting)
+            try:
+                with mock.patch.object(sound, 'ensure', return_value=None), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    critic.prepare(pdir, 'clips', 1)
+            finally:
+                common.settings = saved
+            return (pdir / 'critic' / 'run-1.txt').read_text(encoding='utf-8')
+
+    def test_boost_note_in_the_critic_packet_by_default(self):
+        from clipper import common
+        self.assertEqual(common.DEFAULT_SETTINGS['bold_clips'], 'boost')
+        text = self.packet({})
+        self.assertIn('# Bold takes: BOOST', text)
+        self.assertIn('caste slur on its own earns nothing', text)
+        self.assertIn('fitness advice', text)                  # the clips are still there, word for word
+
+    def test_neutral_leaves_the_critic_packet_as_before(self):
+        self.assertNotIn('Bold takes', self.packet({'bold_clips': 'neutral'}))
+        self.assertNotIn('Bold takes', self.packet({'bold_clips': False}))
+
+    def test_readers_and_the_live_helper_get_the_same_choice(self):
+        from clipper import common
+        saved = common.settings
+        try:
+            common.settings = lambda: dict(common.DEFAULT_SETTINGS)
+            self.assertIn('strong-claim', common.bold_note('reader'))
+            self.assertIn('bold takes count extra', common.bold_note('live'))
+            common.settings = lambda: dict(common.DEFAULT_SETTINGS, bold_clips='neutral')
+            self.assertEqual(common.bold_note('reader'), '')
+            self.assertEqual(common.bold_note('live'), '')
+        finally:
+            common.settings = saved
+
+
 if __name__ == '__main__':
     unittest.main()

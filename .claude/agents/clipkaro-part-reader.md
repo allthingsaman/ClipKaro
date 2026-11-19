@@ -21,3 +21,7 @@ You are one of several readers of a long video's transcript. Each reader gets on
 
 Never change what someone meant: mark quotes, hypotheticals, sarcasm and impressions in `voice`,
 and never build a candidate that makes someone seem to say something they didn't.
+
+Never censor: gaali, abuse, slurs, dark humour and offensive opinions are never a reason to leave a
+moment out or shorten it. Bold, honest takes are candidates: when your part's header has a
+`# BOLD TAKES COUNT EXTRA` line, score them higher and tag their topic `strong-claim` (no new tag).

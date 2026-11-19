@@ -8,6 +8,7 @@
   "jump_label": false,
   "deep_clips": "ask",
   "max_clips": 20,
+  "bold_clips": "boost",
   "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,

@@ -451,7 +451,11 @@ If `post` printed "N more good ideas not cut yet", add one line: "N more good id
 'more clips' to get them" (section 7). Under each clip, give
 two or three of the critic's reasons that quote the clip (from `critic.txt`). Point to
 `output/<project>/edited/` (or `clips/` if not edited) and include each clip's posting caption
-from clips.json. Repeat the line that clip scores are not a prediction of views. If `post` printed
+from clips.json. Repeat the line that clip scores are not a prediction of views.
+**Flags** (one line each, under the table): a clip with a racial or caste slur, or a hateful line,
+gets a **platform risk** line, e.g. "Clip 3, platform risk: YouTube may remove it and give a strike;
+Instagram may stop recommending it." It is a note only: it never stops, changes or drops the clip
+(nothing is censored; the owner decides what to post). If `post` printed
 a link, end with it: "Post them: <link>" (it opens PostKaro with every clip filled in; it only works
 on this computer). Otherwise mention that the files are ready to upload to Shorts, Reels and TikTok.
 

@@ -672,11 +672,21 @@ about twice the clips wanted that the AI editor writes for a short video.
   inside, not in the words after the cut). Then five scores from 0 to 5, each level described in
   words: hook (weight 3), payoff (3), emotion (2), "who would a viewer send this to?" (2), a line
   worth quoting (1).
-- **Craft, not subject:** the critic judges how a clip is made, never what it is about. A clip on
-  politics, religion, caste or crime, a rude joke or a view the critic disagrees with gets the same
-  gates and scores as any other; outrage earns no extra points either. Topics only get a
-  `sensitive` tag from the part readers, so the owner sees it when reviewing. The owner watches
-  every clip and decides what to post.
+- **Never censored, bold takes count:** the critic judges how a clip is made and never marks it down
+  for what it is about or the words used. A clip on politics, religion, caste or crime, a rude or
+  dark joke, gaali, abuse or a view the critic disagrees with gets no fewer points, no failed gate
+  and no trim for that. With `"bold_clips": "boost"` (the owner's choice since 2026-11-19, the
+  default) a bold, honest take (an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke,
+  gaali said with real feeling) earns credit in the scores that already fit it: hook 4-5, share 3+
+  ("worth arguing about") and quote ("a line people would argue about"). A racial or caste slur on
+  its own stays neutral: the clip is scored as if the word weren't there. The critic is blind, so
+  the choice travels as one line in its packet (`common.bold_note`, written by `critic.prepare` next
+  to the language note); with `"neutral"` the line is left out and the critic's own rule applies:
+  craft only, no points for outrage either, exactly as before. The part files (`parts`, focus reads)
+  and `live next` carry the same choice for the readers and the live helper. Topics only get a
+  `sensitive` tag from the part readers, so the owner sees it when reviewing, and a clip with a slur
+  gets a "platform risk" line in the final report. The owner watches every clip and decides what to
+  post (live streams post at once, by the owner's choice).
 - **Merging (code):** clip score = the weighted mean, shown out of 10 (9+ Standout, 7+ Strong, 6+
   Good, 5+ OK, below that Weak), and it **ranks the clips of one video**. A gate failed in 2 of 3
   runs becomes a `fix?` note and a split gate a `check` note: they feed the repair round and

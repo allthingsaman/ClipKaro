@@ -24,7 +24,7 @@ import statistics
 import sys
 from difflib import SequenceMatcher
 
-from .common import die, fmt_ts, load_json, norm_token, project_dir, save_json
+from .common import bold_note, die, fmt_ts, load_json, norm_token, project_dir, save_json
 from .parts import est_tokens
 
 TOPIC_ROLES = {'story', 'explanation', 'argument', 'advice', 'debate', 'banter', 'reaction', 'digression',
@@ -455,6 +455,7 @@ def write_focus(pdir, out, hints, lines):
     """One small file per uncovered hint, for a part reader: 90 s before to 60 s after it."""
     from .parts import line_text
     plan = []
+    bold = bold_note('reader')        # settings.json "bold_clips", as in the part files
     for k, h in enumerate(hints, 1):
         a, b = max(lines[0]['s'], h['t'] - FOCUS_BEFORE), min(lines[-1]['e'], h['end'] + FOCUS_AFTER)
         ctx = [ln for ln in lines if ln['e'] > a - FOCUS_CONTEXT and ln['s'] < b + FOCUS_CONTEXT]
@@ -463,7 +464,8 @@ def write_focus(pdir, out, hints, lines):
         body = [f'# ClipKaro FOCUS READ {k} of {len(hints)}: a second, careful look at one stretch.',
                 f'# Why: {h["why"]}, at {fmt_ts(h["t"]).split(".")[0]}. No clip idea covers it yet.',
                 f'# YOUR STRETCH: {fmt_ts(a).split(".")[0]}-{fmt_ts(b).split(".")[0]} ({a:.2f}-{b:.2f} s). '
-                f'Lines outside it are context only.', '# format: [start_seconds-end_seconds] text', '']
+                f'Lines outside it are context only.'] + (['# ' + bold] if bold else [])
+        body += ['# format: [start_seconds-end_seconds] text', '']
         state = 'before'
         for ln in ctx:
             if state == 'before' and ln['s'] >= a - 0.01:

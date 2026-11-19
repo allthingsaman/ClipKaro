@@ -139,8 +139,11 @@ Keep the video file where it is until the clips are finished.
 **Now wait.** Claude tells you what it's doing. Before anything is cut, a second AI editor checks
 every clip idea, like a fair friend who didn't pick them, ranks them, and points out what to
 fix (for example a clip that needs earlier context); Claude then fixes those. It judges only how
-the clip is made (its start, its end, whether it makes sense alone), never the topic: a clip about
-politics or religion is judged like any other, and what to post is always your choice. Then Claude shows a table of the moments it picked, each with a **clip score**
+the clip is made (its start, its end, whether it makes sense alone), and it never marks a clip down for
+its topic or its words: a clip about politics or religion, or one full of gaali, is judged like any
+other. A bold, honest take (an unpopular opinion, a roast, a rant) even counts extra, because those
+clips get shared; set `"bold_clips": "neutral"` in settings.json if you'd rather not. What to post is
+always your choice. Then Claude shows a table of the moments it picked, each with a **clip score**
 out of 10 (for example "8/10 Strong") and the reasons. The score says how well-made the clip looks,
 not how many views it will get. At the end it shows your finished clips, each with a caption you
 can copy when you post.

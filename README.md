@@ -437,7 +437,8 @@ it's slow and not recommended for long videos.
 Your defaults are in `settings.json`: the language (`auto`), the speech model (`auto`), whether to
 use the graphics card (`auto`), how Hindi captions are written (`roman` = English letters, or
 `devanagari` = Hindi letters), the gameplay layout (`auto`), whether to ask about deep clips (`ask`)
-the most clips to make when you don't give a number (`20`), and the "© Channel" credit on clips from a
+the most clips to make when you don't give a number (`20`), whether bold, honest takes count extra
+(`bold_clips`, `boost`; nothing is ever censored), and the "© Channel" credit on clips from a
 YouTube link (`source_credit`, on). You can also just ask Claude to change them. Details: [docs/usage.md](docs/usage.md#5-your-defaults-settingsjson).
 
 ## Running it by hand (optional)

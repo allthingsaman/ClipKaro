@@ -66,6 +66,14 @@ In every mode (quick, standard, deep), with nothing to say:
 - **Credit to the source**: a small "© Channel name" in the bottom-left corner of clips made from a
   YouTube link (never your own video files). Say "no credit" to leave it out.
 - **Your logo and outro**, when you have put them in the `brand` folder (below).
+- **Nothing censored**: gaali, abuse and slurs stay in the clips and the captions, exactly as said (no
+  `***`, no bleep). Gaali may go in the posting titles too; racial and caste slurs never go in a title,
+  because that is where YouTube removes videos fastest. A clip with a slur gets a "platform risk" note
+  in Claude's report, and you decide.
+- **Bold takes count extra**: an unpopular opinion, a roast, a rant, a blunt verdict, a dark joke or
+  gaali said with real feeling, the things most people are afraid to say out loud, is a chance to go
+  viral, so it ranks higher. A slur on its own adds nothing: the take does. Don't want that? Set
+  `"bold_clips": "neutral"` (below).
 
 ### Extras you switch on by name
 Put the name in your message, as many as you like:
@@ -362,6 +370,7 @@ Claude to change them.
   "jump_label": false,
   "deep_clips": "ask",
   "max_clips": 20,
+  "bold_clips": "boost",
   "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
@@ -397,6 +406,7 @@ Claude to change them.
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
+| `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |
 | `hook_title` | `false` | `true`: a 3-6 word title on screen for the first seconds of every clip ("hook title") |
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |
 | `emoji` | `true` | `false`: no emojis on the words |

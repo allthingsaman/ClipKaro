@@ -30,6 +30,15 @@ No flashy transitions, emojis or motion graphics.
 - **"Different font"**: put the .ttf in `assets/fonts/`, then pass its family name and file name
   through the `opts` in `edit.py` (`font`, `font_file`).
 
+## Captions: every word as it was said
+Captions never censor. Gaali, abuse and slurs show exactly as they were said: never `***`, never a
+bleep, never a mute, in the captions, the `.srt` or the sound. This is how the code works already
+(nothing masks or drops a word because of what it means); keep it that way.
+- Roman Hinglish: in `romanize.json`, spell gaali as it was said, like any other word. Never soften it.
+- If the speech-to-text wrote a starred word ("f***"), the caption check treats it like any mishearing
+  and fixes it to the word that was said (`fixword --at`).
+- The posting texts follow `picking-moments.md` (`post`): gaali may go in titles, slurs never.
+
 ## Two engines, one plan
 `plan.py` computes the camera for every frame, the caption timings and the sound cues.
 - `--engine python` (default) draws it with OpenCV + ffmpeg/libass. It needs no extra installs

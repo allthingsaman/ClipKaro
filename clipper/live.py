@@ -29,7 +29,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from .common import OUTPUT, ROOT, die, load_json, probe, save_json, settings, slugify
+from .common import OUTPUT, ROOT, bold_note, die, load_json, probe, save_json, settings, slugify
 
 VIDEO_EXT = ('.mkv', '.mp4', '.mov', '.flv', '.ts')
 IDLE_S = 120          # the newest file counts as finished when it hasn't grown for this long (the stream ended)
@@ -266,6 +266,8 @@ def next_piece(name):
     print(f"NEXT: piece {p['n']}  project {p['project']}  ({p['duration'] / 60:.1f} min, recorded "
           f"{datetime.fromtimestamp(p['start']).strftime('%H:%M')})")
     print(f"transcript: output/{p['project']}/transcript/transcript.txt")
+    if bold_note('live'):                  # settings.json "bold_clips": "boost" (the default)
+        print(bold_note('live'))
     if p.get('twitch_notes'):
         print(f"Twitch notes in it: {p['twitch_notes']} ([chat exploded ...] / [viewers clipped this])")
     if prev:

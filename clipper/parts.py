@@ -44,7 +44,7 @@ import time
 import unicodedata
 
 from . import kind, sound
-from .common import ROOT, die, fmt_ts, load_json, project_dir, save_json, settings
+from .common import ROOT, bold_note, die, fmt_ts, load_json, project_dir, save_json, settings
 
 TOKEN_CAP = 20000          # estimated tokens per part file: one default Read (25k) with room to spare
 BYTE_CAP = 240_000         # the Read tool refuses whole files over 256 KB
@@ -188,6 +188,7 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
         nt = hints.notes(pdir, project)
     except Exception:
         nt = {}
+    bold = bold_note('reader')        # settings.json "bold_clips" (boost: one line; neutral: none)
     about = clean_about(project.get('description'))
     head_video = (f"# video: {project.get('title') or pdir.name} | {project.get('channel') or '-'} | "
                   f"{fmt_ts(project.get('duration') or lines[-1]['e'])} | {project.get('language') or '-'}")
@@ -234,6 +235,8 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
                         'their words are left out. Never take a topic, best moment or clip from them.')
         if nt:
             head.append('# ' + hints.READER_NOTE)
+        if bold:
+            head.append('# ' + bold)
         if spots:
             head.append('# LIVELY SPOTS from the sound (laughs, both talking at once; the detector can be wrong): '
                         'look at the words there, and judge them only by the words: ' + sound.spots_line(spots))

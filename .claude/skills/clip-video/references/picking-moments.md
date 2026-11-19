@@ -14,6 +14,9 @@ It **opens on a hook**, every line after it continues that story, and it **ends 
 
 ## Hook types (the first line must be one of these)
 1. **Contrarian or negative claim**: "Most advice about X is wrong." / "Stop doing X."
+   **Bold, honest takes** belong here: an unpopular opinion, a roast, a rant, a blunt verdict, a dark
+   joke, gaali said with real feeling. The things most people are afraid to say out loud make strong
+   hooks.
 2. **A question the viewer already asks themselves**: "Why do some people get rich and others don't?"
 3. **A surprising fact or number**: a concrete figure, an unexpected result.
 4. **A story opener**: "When I was 23, I had $1,000 to my name…"
@@ -41,6 +44,9 @@ punchline, a rule or a call to action. Never end mid-thought, on "and…", or on
 - Ads, sponsor reads, "like and subscribe", housekeeping, inside jokes, cross-talk.
 - Tangents, even good ones. Jump to the line that sums up the lesson.
 - Retakes and false starts. With repeated takes, use the best (usually the last) complete one.
+
+**Never censor.** Never leave out or shorten a moment because of gaali, abuse, slurs, dark humour or an
+offensive opinion. The captions show every word as it was said, and the owner decides what to post.
 
 ## Continuous first, splice only when it clearly wins
 - **Default: one continuous range.** It always sounds natural.
@@ -103,6 +109,12 @@ facecam`). Then these rules apply too:
 Rank by: hook strength (curiosity + relevance) > a clear payoff > emotional energy (conviction,
 humour, surprise) > quotability (a line someone would screenshot) > visual clarity (the speaker
 on camera, not a slide). Put the best clip first.
+
+**Bold takes rank higher** (settings.json `"bold_clips": "boost"`, the default). A bold, honest take is a
+chance to go viral: it counts as a strong hook (`"hook_type": "contrarian"`) and adds to the energy and
+the quotability. A racial or caste slur on its own adds nothing: score the clip as if the word weren't
+there; the boldness of the take earns the points. With `"bold_clips": "neutral"`, bold takes rank like
+any other moment (never lower either).
 
 ## Timestamps
 - Use the `[start-end]` seconds from `transcript.txt`. Start at the **start** of the hook line and
@@ -175,6 +187,9 @@ Write `output/<project>/clips.json`:
     full video: 0:08 · 22:53"), so viewers know it is joined. The one exception is the YouTube
     title: end it with "(2 moments joined)" instead, so the title stays a title.
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
+  - **Gaali may go in titles and captions** when it's catchy and actually said in the clip.
+  - **Keep racial and caste slurs out of every title** (`title`, `youtube.title`, a `hook_text`): a
+    title is where YouTube removes a video fastest. In the clip itself they stay.
 
 - `title`: 3–7 words, a curiosity-driven name (used for the file name and as a posting title).
 - `sfx` (optional): 0-2 **mood sounds** for the clip's strongest moments, `[[source seconds, "mood"]]`:
