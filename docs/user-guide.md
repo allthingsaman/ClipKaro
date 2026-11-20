@@ -234,6 +234,7 @@ notes a laugh, a raised voice or a shout, an explosion or gunfire in a game, and
 screen, and in gameplay which lines are the game's characters rather than you. Claude sees these notes
 next to the words, so a great reaction isn't missed, and your own commentary is what the clips are
 built on. In gameplay, the game characters' lines get no captions (the game shows its own subtitles),
+while you and your friends on voice chat keep yours,
 and before cutting Claude reads every clip's captions and fixes words the speech model clearly misheard
 ("sorry" written as "saari", a wrong name). Quick mode skips that check to save your Claude plan. Recording with OBS? Put your microphone on its own audio track: ClipKaro then writes down
 your words from the microphone alone.

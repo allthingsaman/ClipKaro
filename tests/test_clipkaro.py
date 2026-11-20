@@ -377,6 +377,38 @@ class GameVoiceCaptions(unittest.TestCase):
             pdir, project, words = self.project(d, lang='en')
             self.assertEqual(voices.game_words(pdir, project, words), set())
 
+    class FakeVocab:
+        """A speech model's word pieces: these English words are one piece each, anything else three."""
+        ENGLISH = set('hands up this is a stick i think that called stream rate map stay with me you know him so '
+                      'good sound broke it he but'.split())
+
+        def encode(self, text, add_special_tokens=False):
+            from types import SimpleNamespace
+            return SimpleNamespace(ids=[1] if text.strip() in self.ENGLISH else [1, 2, 3])
+
+    def test_friends_hinglish_lines_are_not_english(self):
+        # v2.7: on a 3-friends GTA stream these lost their captions (less common Hindi words looked English)
+        from clipper import voices
+        tok = self.FakeVocab()
+        for line in ('Kisko khaoon?', 'Main kama loon', 'Vaah, vaah.', 'Stream par stream par rate bata',
+                     'Mumbai map?', 'chale gae vaapas.'):
+            self.assertFalse(voices.mostly_english(line.split(), tok), line)
+        for line in ('Hands up, this is a stick up', "I think that's called stalking Mandy.", 'Stay with me.',
+                     'You know him so.'):
+            self.assertTrue(voices.mostly_english(line.split(), tok), line)     # game lines stay hidden
+
+    def test_friend_unlike_the_streamer_keeps_captions(self):
+        from unittest import mock
+        from clipper import voices
+        with tempfile.TemporaryDirectory() as d:
+            pdir, project, words = self.project(d)
+            words[5:9] = [W('Kisko', 3.0, 3.3), W('khaoon', 3.4, 3.7), W('bata', 3.8, 4.1), W('yaar.', 4.2, 4.6)]
+            (pdir / 'transcript' / 'words.json').write_text(json.dumps(words, ensure_ascii=False), encoding='utf-8')
+            with mock.patch.object(voices, 'english_tokenizer', return_value=self.FakeVocab()):
+                game = voices.game_words(pdir, project, words)
+            self.assertFalse(any(k in game for k in range(5, 9)))               # the friend's line keeps its captions
+            self.assertTrue({9, 10, 11} <= game)                                # "Stay with me." is the game's
+
     def test_captions_skip_game_words(self):
         groups = plan.caption_groups(meta_for([W('Franklin', 0.0, 0.4), dict(W('Stay', 0.5, 0.8), game=True),
                                                W('sorry', 0.9, 1.2)]))
@@ -393,7 +425,15 @@ class CaptionCheck(unittest.TestCase):
                  {'s': 13.0, 'e': 13.3, 'i0': 5, 'i1': 5}]
         table = {'फ्रैंक्लिन': 'Franklin', 'को': 'ko', 'सारी': 'saari', 'भाई': 'bhai'}
         rows = captions.clip_lines(None, {}, {'ranges': [[9.0, 12.9]]}, words, lines, table, {4}, True)
-        self.assertEqual(rows, [(10.0, 'Franklin ko saari.', 'फ्रैंक्लिन को सारी।')])   # no made-up word, no game line
+        self.assertEqual(rows, [(10.0, 'Franklin ko saari.', 'फ्रैंक्लिन को सारी।'),   # no made-up word
+                                (12.0, captions.GAME_MARK + 'Stay', 'Stay')])          # v2.7: hidden, but listed
+        # v2.7: a friend speaking English, brought back by hand
+        rows = captions.clip_lines(None, {}, {'ranges': [[9.0, 12.9]], 'show_captions': [[11.9, 12.5]]},
+                                   words, lines, table, {4}, True)
+        self.assertEqual(rows[1], (12.0, 'Stay', 'Stay'))
+        rows = captions.clip_lines(None, {}, {'ranges': [[9.0, 13.5]], 'hide_captions': [[12.9, 13.4]]},
+                                   words, lines, table, set(), True)
+        self.assertEqual(rows[-1], (13.0, captions.GAME_MARK + 'भाई', 'भाई'))      # a game line the rule let through
 
 
 class CaptionCheckRules(unittest.TestCase):

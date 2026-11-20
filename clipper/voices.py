@@ -226,6 +226,79 @@ def is_hindi_word(word):
     return has_devanagari(word) or norm_token(word) in HINDI_COMMON
 
 
+# v2.7: a friend's Hinglish line with less common Hindi words ("Kisko khaoon?", "Main kama loon", "Vaah,
+# vaah") looked English to the list above, so on a 3-friends GTA stream about 30 of their lines lost their
+# captions. Now a word counts as English only when the speech model's own vocabulary holds it as one whole
+# piece (" stick", " choose", " map"); Roman Hindi breaks into pieces (" kh"+"ao"+"on"). Tested on that
+# stream's 70 hidden lines: every Hindi line from the friends shows again, every game line stays hidden.
+GAME_ALL_ENGLISH = 0.8     # a line with a Hindi-looking word is a game line only when this English
+BOTH_LANGUAGES = {'the', 'to', 'do', 'me', 'main', 'are', 'log', 'lag', 'ya', 'par', 'mat'}   # counted as neither
+_TOKENIZER = {}
+
+
+def english_tokenizer(project=None):
+    """The word pieces of a speech model already on this computer (never downloads), or None."""
+    if 'tok' in _TOKENIZER:
+        return _TOKENIZER['tok']
+    tok = None
+    try:
+        import glob
+        import huggingface_hub
+        from tokenizers import Tokenizer
+        from .models import repo_id
+        names = [n for n in ((project or {}).get('asr_model'), 'Hub84/faster-whisper-hinglish-prime',
+                             'mobiuslabsgmbh/faster-whisper-large-v3-turbo', 'large-v3', 'small') if n]
+        paths = []
+        for n in names:
+            try:
+                paths.append(huggingface_hub.snapshot_download(repo_id(n), allow_patterns=['tokenizer.json'],
+                                                               local_files_only=True))
+            except Exception:
+                continue
+        from huggingface_hub import constants
+        paths += sorted(glob.glob(os.path.join(constants.HF_HUB_CACHE, 'models--*whisper*', 'snapshots', '*')))
+        for p in paths:
+            f = os.path.join(p, 'tokenizer.json')
+            if os.path.isfile(f):
+                cand = Tokenizer.from_file(f)
+                if len(cand.encode(' because', add_special_tokens=False).ids) == 1:   # a multilingual Whisper vocab
+                    tok = cand
+                    break
+    except Exception:
+        tok = None
+    _TOKENIZER['tok'] = tok
+    return tok
+
+
+def word_language(word, first=False, tok=None):
+    """'en', 'hi', or None (a number, a name inside a line, a word both languages use)."""
+    import re
+    from .common import has_devanagari, norm_token
+    if has_devanagari(word):
+        return 'hi'
+    n = norm_token(word)
+    if not n or not re.search('[a-z]', n):
+        return None
+    if n in HINDI_COMMON:
+        return 'hi'
+    if n in BOTH_LANGUAGES or (word[:1].isupper() and not first):
+        return None
+    if tok is None:
+        return 'en'
+    stem = re.sub(r"(n't|'s|'re|'m|'d|'ll|'ve)$", '', n)
+    return 'en' if len(tok.encode(' ' + stem, add_special_tokens=False).ids) == 1 else 'hi'
+
+
+def mostly_english(texts, tok):
+    """A game character's line: mostly English words, and almost all of them when a Hindi word is in it."""
+    kinds = [word_language(w, k == 0, tok) for k, w in enumerate(texts)]
+    kinds = [k for k in kinds if k]
+    if not kinds:
+        return False
+    share = kinds.count('en') / len(kinds)
+    return share >= GAME_ENGLISH and ('hi' not in kinds or share >= GAME_ALL_ENGLISH)
+
+
 def game_words(pdir, project, words, lines=None, v=None):
     """Indexes (in words.json) of the words a game character says in a gameplay video with a Hindi /
     Hinglish streamer: their captions are left out. Empty for every other video, or without voices."""
@@ -239,9 +312,12 @@ def game_words(pdir, project, words, lines=None, v=None):
     if not v or not lines:
         return set()
     rows = rows_for(v, lines)
+    tok = english_tokenizer(project)
 
     def english(ln):
         ws = [w for w in words[ln['i0']:ln['i1'] + 1] if norm_token(w['w']) and not w.get('unsure')]   # shown words
+        if tok is not None:
+            return mostly_english([w['w'] for w in ws], tok)
         return bool(ws) and sum(not is_hindi_word(w['w']) for w in ws) >= GAME_ENGLISH * len(ws)
 
     real = [i for i, ln in enumerate(lines) if 'i0' in ln]

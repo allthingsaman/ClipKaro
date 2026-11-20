@@ -2,6 +2,10 @@
 
 ## Since v2.6 (not released yet)
 
+- **Your friends' Hinglish keeps its captions in gameplay.** Lines like "Kisko khaoon?" or "Main kama loon"
+  were taken for a game character and lost their captions. Now only real English counts as the game's, so
+  you and your friends on voice chat are captioned and the game characters still aren't. Claude's caption
+  check also lists the hidden lines, so a friend's English line can be brought back.
 - **Twitch credit and webcams with friends in them.** Clips from a Twitch video now say "© twitch.tv/name"
   (Kick: "© kick.com/name"), so nobody takes it for a YouTube channel; `credit_text` in settings.json
   writes your own words. A webcam with two or three people in it is now found by itself, so those

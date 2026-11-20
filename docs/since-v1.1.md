@@ -223,6 +223,16 @@ changed. Only new ones were added.
   and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in
   the transcript (Claude can still pick a game scene). The owner asked for it (2026-11-16). *(v2.3)*
   - Way back: `"game_voice_captions": true` in settings.json.
+- ⬆ **Your friends' Hinglish keeps its captions.** The game-voice rule knew only common Hindi words, so a
+  friend's line with less common ones ("Kisko khaoon?", "Main kama loon", "Vaah, vaah") looked English and
+  lost its captions (about 30 lines on a 3-friends GTA stream). Now a word counts as English only when the
+  speech model's own vocabulary holds it whole; Roman Hindi breaks into pieces there. On that stream: 841
+  words captioned again, no line newly hidden, every game line still hidden. A friend speaking English still
+  sounds like the game, so the caption check can bring a line back (`"show_captions"` in clips.json) or drop a
+  game line the rule let through (`"hide_captions"`); it now lists the hidden lines for that. *(v2.7,
+  2026-11-20)*
+  - Way back: none needed (it only brings back captions that were wrongly hidden); `"game_voice_captions": true`
+    still captions everything.
 - ⬆ ⚠ **Claude checks the captions** before cutting (standard and deep mode): it reads every clip's
   captions like a viewer and fixes clear mishearings ("sorry" heard as सारी, a wrong name) with
   `fixword`. A little more Claude usage per video; quick mode skips it, as before. *(v2.3)*

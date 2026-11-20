@@ -240,6 +240,11 @@ Write `output/<project>/clips.json`:
   the whole frame (`full`), or an exact spot (0 = left edge, 1 = right edge). Usually written after
   looking at the `run.py frames` sheets, to fix the automatic choice or to show a reaction the
   sound can't catch (a silent laugh: `split`). It always wins over the automatic framing.
+- `show_captions` / `hide_captions` (optional, gameplay): `[[a, b]]` source-time stretches whose
+  captions are shown / left out whatever the game-voice rule says. `show_captions` brings back a
+  player's line the rule took for a game character (a friend speaking English: "Thank you", "Ok ok
+  look"); `hide_captions` drops a game character's line it let through. The sound never changes.
+  Written during the caption check (2c), where such lines show as "(hidden: game voice)".
 
 ## Quality checklist (run it before you write the file)
 - [ ] Would a stranger understand it with zero context?

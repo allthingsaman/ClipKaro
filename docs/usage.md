@@ -281,9 +281,11 @@ a corner of the picture). Then:
 - **Game characters are told apart from you.** Lines in another voice than yours are marked
   "(other voice)" in what Claude reads, so clips are built around your words, not the cutscenes.
 - **No captions for game characters.** The game already shows its own subtitles, so ClipKaro's
-  captions show only you (their sound stays, and a great game scene can still be in a clip). This works
-  when you speak Hindi or Hinglish and the game speaks English. `"game_voice_captions": true` captions
-  them too.
+  captions show only you and your friends (their sound stays, and a great game scene can still be in a
+  clip). This works when you speak Hindi or Hinglish and the game speaks English: a line counts as the
+  game's only when it is real English words, so your friends' Hinglish ("Kisko khaoon?", "Main kama
+  loon") keeps its captions. A friend speaking English sounds like the game to ClipKaro, so Claude's
+  caption check brings those lines back by hand. `"game_voice_captions": true` captions everything.
 - **Your microphone on its own track?** If you record with OBS and keep the microphone on its own audio
   track, give ClipKaro that file: it writes down your words from the microphone alone (no game sound,
   no game characters) and keeps the full sound in the clips.

@@ -583,8 +583,11 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
         labels.append(f'[v{n}][a{n}]')
         for k, w in enumerate(words[i0:i1 + 1], i0):
             cw = {**w, 's': round(w['s'] - start + timeline, 3), 'e': round(w['e'] - start + timeline, 3)}
-            if k in game:
-                cw['game'] = True               # a game character: no caption (the game shows its own)
+            # a game character: no caption (the game shows its own); clips.json "show_captions" /
+            # "hide_captions" ([[start, end], ...] in the video) overrule the rule (v2.7)
+            if any(a <= w['s'] < b for a, b in clip.get('hide_captions') or []) or (
+                    k in game and not any(a <= w['s'] < b for a, b in clip.get('show_captions') or [])):
+                cw['game'] = True
             clip_words.append(cw)
         offset = (math.ceil((start - st0) * fps - 1e-6) / fps + st0 - start) if exact else 0.0
         for sh in shots:

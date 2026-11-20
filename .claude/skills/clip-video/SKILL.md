@@ -323,6 +323,11 @@ python run.py fixword <project> "सारी" "sorry" --at 898.6
   Never when it isn't a number in meaning: "एक दिन" (one day, a day), "ek baar", "do-teen log" (a few
   people) stay as they are;
 - a word bent by the accent where the meaning is certain.
+- in gameplay, a line marked **"(hidden: game voice)"** gets no caption. When it is clearly one of the
+  players (a friend speaking English, a reply in the conversation: "Thank you", "Ok ok look"), add
+  `"show_captions": [[start, end]]` to that clip in clips.json; when a shown line is clearly a game
+  character's English (cutscene dialogue), add `"hide_captions"` the same way. Leave it when unsure.
+
 Use the word exactly as the transcript writes it (in the brackets, when shown), and `--at` the line's
 time. Write the right word in English letters for Roman captions. Never rewrite what was really said,
 never fix grammar or slang, and leave a word alone when you aren't sure. Quick mode skips this step

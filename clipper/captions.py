@@ -19,6 +19,7 @@ import argparse
 from .common import die, load_json, project_dir, settings
 
 
+GAME_MARK = '(hidden: game voice) '
 RULES = ('Fix: an English word heard as a Hindi look-alike ("sorry" written सारी); names of games, characters, '
          'people, places and brands spelled right (the title helps); numbers said in words that are amounts, '
          'counts, years, prices, scores or percentages, as digits ("दो हजार तेरा" -> 2013, "पांच लाख" -> 5 lakh, '
@@ -27,15 +28,23 @@ RULES = ('Fix: an English word heard as a Hindi look-alike ("sorry" written स�
 
 
 def clip_lines(pdir, project, clip, words, lines, table, game, roman):
-    """[(start, shown text, transcript text)] for one clip, one row per transcript line."""
+    """[(start, shown text, transcript text)] for one clip, one row per transcript line. A line hidden as a
+    game character's is listed too, its text starting with GAME_MARK (v2.7: so a friend's English line can be
+    brought back with "show_captions")."""
     from .romanize import apply
+    forced, dropped = clip.get('show_captions') or [], clip.get('hide_captions') or []
     out = []
     for ln in lines:
         if 's' not in ln or 'i0' not in ln:
             continue
-        idx = [k for k in range(ln['i0'], ln['i1'] + 1)
-               if any(a <= words[k]['s'] < b for a, b in clip['ranges'])
-               and not words[k].get('unsure') and k not in game]
+        inside = [k for k in range(ln['i0'], ln['i1'] + 1)
+                  if any(a <= words[k]['s'] < b for a, b in clip['ranges']) and not words[k].get('unsure')]
+        hidden = [k for k in inside if any(a <= words[k]['s'] < b for a, b in dropped)
+                  or (k in game and not any(a <= words[k]['s'] < b for a, b in forced))]
+        idx = [k for k in inside if k not in hidden]
+        if hidden and len(hidden) == len(inside):
+            out.append((words[hidden[0]]['s'], GAME_MARK + ' '.join(words[k]['w'] for k in hidden),
+                        ' '.join(words[k]['w'] for k in hidden)))
         if not idx:
             continue
         raw = [dict(words[k]) for k in idx]
@@ -67,7 +76,11 @@ def main():
     print(f'# Captions as they will show. Read them like a viewer of "{project.get("title") or pdir.name}" and fix only '
           f'what is clearly wrong, never what was really said: python run.py fixword {pdir.name} '
           f'"<word or phrase as in the transcript>" "<right word>" --at <seconds>')
-    print('# ' + RULES + '\n')
+    print('# ' + RULES)
+    print(f'# A line starting "{GAME_MARK.strip()}" gets no caption: a game character speaking. When it is clearly '
+          f'one of the players (a friend speaking English, a reply in the conversation), bring it back: add '
+          f'"show_captions": [[<start>, <end>]] (seconds in the video) to that clip in clips.json. A shown line that is '
+          f'clearly a game character (English from the game, not a player): "hide_captions" the same way.\n')
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
