@@ -1,6 +1,17 @@
 # Plan for v2.7: "just paste the link"
 
-**Status:** second draft (2026-11-20), with the owner's first answers. It waits for the owner's yes. Nothing on this page has been built yet.
+**Status (2026-11-20):**
+- Items 2-9 are built on the `v2.7-dev` branch, each with tests and a commit:
+  - 2: careful listening;
+  - 3: friends' captions;
+  - 4: friends count;
+  - 5: lots of clips and overlaps;
+  - 6: starter sounds;
+  - 7: the Twitch credit and the two-person webcam;
+  - 8: private details;
+  - 9: the sound spike.
+- Item 1 (watching the gameplay with frame sheets) is still being discussed.
+- Item 10 (the release) comes after item 1.
 
 ## Why this plan
 
