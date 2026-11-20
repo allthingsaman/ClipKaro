@@ -4,6 +4,7 @@
     python run.py sfx add "C:/Downloads/boom.mp3" shock     # add a sound (or several files) to a mood
     python run.py sfx add "C:/Downloads/my sounds" funny    # every sound in that folder
     python run.py sfx remove boom.mp3            # take one of your sounds out again
+    python run.py sfx starter                    # the free starter set (Mixkit) into the empty mood folders
 
 Your own sounds live in the `sounds` folder inside the ClipKaro folder, one folder per mood:
 sounds/shock/, sounds/funny/, sounds/fear/ ... (`python run.py sfx` creates them). Any file name
@@ -50,6 +51,30 @@ MOODS = {
     'fail': (('fail', 'wrong', 'buzzer', 'trombone', 'error'), 'a mistake or a fail: a wrong buzzer, a sad trombone'),
     'money': (('money', 'cash', 'coin', 'ching', 'register'), 'money talk: a cash register, coins'),
 }
+# The starter set (v2.7): free sounds from Mixkit (Sound Effects Free License: videos, commercial use too, no
+# credit needed), picked by Claude for a GTA 6 stream on 2026-11-20 and kept by the owner ("it enhances the
+# video in the background"). `install.py` / `run.py sfx starter` put them only in mood folders that are still
+# empty, so your own sounds are never touched. [(Mixkit id, name)]
+STARTER = {
+    'shock': [(2299, 'short-bass-hit'), (2303, 'futuristic-bass-hit'), (2300, 'knocking-sub-bass'),
+              (549, 'deep-cinematic-drum-impact'), (2908, 'movie-trailer-epic-impact')],
+    'funny': [(2894, 'boing-hit'), (2895, 'metallic-boing'), (702, 'vinyl-record-scratch'), (579, 'drum-joke-accent'),
+              (2893, 'bad-joke-drums'), (2886, 'clown-horn'), (2813, 'squeaky-toy-hits'), (746, 'cartoon-dazzle-birds')],
+    'fail': [(948, 'wrong-answer-bass-buzzer'), (950, 'game-show-wrong-buzz'), (744, 'trombone-disappoint'),
+             (473, 'cartoon-failure-piano')],
+    'reveal': [(961, 'musical-reveal'), (722, 'horns-fanfare-tada'), (871, 'fairy-magic-sparkle'), (960, 'tile-game-reveal')],
+    'attention': [(586, 'attention-bell-ding'), (931, 'service-bell-ding'), (2354, 'message-pop-alert')],
+    'hype': [(459, 'male-crowd-cheering'), (531, 'party-crowd-cheer')],
+    'money': [(1993, 'clinking-coins'), (1989, 'money-bag-drop'), (1992, 'coin-win')],
+    'sad': [(472, 'slow-sad-trombone'), (529, 'sad-party-horn')],
+    'fear': [(773, 'horror-impact'), (677, 'cinematic-glass-hit-suspense')],
+}
+STARTER_URL = 'https://assets.mixkit.co/active_storage/sfx/{id}/{id}-preview.mp3'
+STARTER_NOTE = '''Sound effects from Mixkit (https://mixkit.co/free-sound-effects/), under the Mixkit Sound Effects Free
+License: free for personal and commercial videos, no credit needed. ClipKaro's starter set (v2.7); each file
+name ends with its Mixkit id and came from https://assets.mixkit.co/active_storage/sfx/<id>/<id>-preview.mp3
+Delete any you don't like, or add your own next to them.
+'''
 GAIN = {'shock': -11, 'funny': -12, 'fail': -12, 'money': -12, 'hype': -13, 'attention': -14, 'reveal': -14,
         'fear': -15, 'sad': -16}
 MAX_LEN = 2.5                            # a mood sound plays at most this long (it fades out)
@@ -180,6 +205,48 @@ similar sites give permission; a sound taken from someone else's video usually i
 """
 
 
+def starter(quiet=False):
+    """Download the starter set into the mood folders that have no sounds yet. Returns the number added."""
+    import urllib.request
+    make_folders()
+    added, failed = 0, 0
+    for mood, items in STARTER.items():
+        d = MINE / mood
+        if any(p.suffix.lower() in EXTS for p in d.iterdir()):
+            continue                                   # the user's own sounds (or the set already): left alone
+        for sid, name in items:
+            dest = d / f'mixkit-{name}-{sid}.mp3'
+            try:
+                req = urllib.request.Request(STARTER_URL.format(id=sid), headers={'User-Agent': 'Mozilla/5.0 (ClipKaro)'})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    data = r.read()
+                if len(data) < 2000:
+                    raise ValueError('too small')
+                dest.write_bytes(data)
+                added += 1
+            except Exception as e:
+                failed += 1
+                if not quiet:
+                    print(f'   ! {mood}/{dest.name}: {type(e).__name__}')
+    if added:
+        (MINE / 'SOURCES.txt').write_text(STARTER_NOTE + ''.join(
+            f"{m + '/':<11} " + ', '.join(f'{n} {i}' for i, n in v) + '\n' for m, v in STARTER.items()), encoding='utf-8')
+    if not quiet:
+        print(f'-> starter sounds: {added} downloaded' + (f', {failed} failed (run `python run.py sfx starter` again later)'
+                                                          if failed else ''))
+    return added
+
+
+def needed(clips):
+    """{mood: number of cues} the clips ask for, and the moods among them with no sound yet."""
+    want = {}
+    for c in clips:
+        for _, mood in c.get('sfx') or []:
+            want[mood] = want.get(mood, 0) + 1
+    have = moods_available()
+    return want, sorted(m for m in want if not have.get(m))
+
+
 def make_folders():
     MINE.mkdir(exist_ok=True)
     for m in MOODS:
@@ -195,8 +262,11 @@ def main():
     ad.add_argument('paths', nargs='+', help='sound files or folders, then the mood as the last word')
     rm = sub.add_parser('remove', help='take one of your sounds out')
     rm.add_argument('name', help='its file name, as `python run.py sfx` lists it')
+    sub.add_parser('starter', help='download the free starter sounds (Mixkit) into the mood folders that are empty')
     a = ap.parse_args()
     make_folders()
+    if a.cmd == 'starter':
+        starter()
 
     if a.cmd == 'add':
         if len(a.paths) < 2:

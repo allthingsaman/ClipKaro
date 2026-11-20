@@ -220,10 +220,12 @@ captions", "minimal captions", "bold captions" or "comic captions" for another o
 with ClipKaro). Emojis pop in on a few strong words (💰 on "paisa"), never on a face; say "no emojis"
 if you don't want them. (Background music is on hold for now.)
 
-**Your own sound effects.** Put sounds in the `sounds` folder inside the ClipKaro folder, one folder
-per mood: `shock`, `funny`, `fear`, `attention`, `sad`, `hype`, `reveal`, `fail`, `money` (any file
-name). Or tell Claude "add this sound as shock: (path to the file)". Claude then adds one where a
-clip calls for it, like a boom on a shocking line.
+**Sound effects.** ClipKaro comes with a free set of sound effects (a boom, a boing, a record
+scratch, a wrong-answer buzzer, a ta-da, coins ...), sorted by mood in the `sounds` folder inside the
+ClipKaro folder: `shock`, `funny`, `fear`, `attention`, `sad`, `hype`, `reveal`, `fail`, `money`.
+Claude adds one where a clip calls for it, like a boom on a shocking line. Want your own? Put them in
+the mood's folder (any file name, and delete the ones you don't like), or tell Claude "add this sound
+as shock: (path to the file)".
 
 **In every clip, by itself.** Pauses inside a clip are shortened and "um" / "uh" are cut out, so it
 feels quick (laughs are never cut, and in gameplay a long quiet stretch stays). Words Whisper made up

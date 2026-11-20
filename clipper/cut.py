@@ -763,6 +763,16 @@ def main():
         print('check: all clip boundaries look clean' if not flagged else
               f'check: {flagged} clip(s) need a look. Fix the ranges with `run.py find`, '
               'unless the cut is intentional')
+        from . import sfx as sfxlib                  # v2.7: which sound moods the clips ask for
+        wanted, missing = sfxlib.needed([c for i, c in enumerate(picks['clips'], 1)
+                                         if not want or int(c.get('id', i)) in want])
+        if wanted:
+            have = sfxlib.moods_available()
+            print('sounds: ' + ', '.join(f'{m} {n} cue(s) ({have.get(m, 0)} sound(s))'
+                                         for m, n in sorted(wanted.items(), key=lambda x: -x[1])))
+            if missing:
+                print(f"sounds: no sound yet for {', '.join(missing)}: those cues stay silent. "
+                      f"`python run.py sfx starter` downloads free ones, or add your own to sounds/<mood>/")
         return
 
     video = ensure_video(pdir, project)

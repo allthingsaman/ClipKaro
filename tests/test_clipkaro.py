@@ -703,6 +703,35 @@ class ManyClips(unittest.TestCase):
         self.assertEqual(parts.update_wish({'wish': {'no_limit': True}}, a), {})                # forgotten again
 
 
+class StarterSounds(unittest.TestCase):
+    """v2.7: a free starter set of mood sounds (Mixkit), only for mood folders that are still empty."""
+
+    def test_starter_set_covers_every_mood(self):
+        from clipper import sfx
+        self.assertEqual(set(sfx.STARTER), set(sfx.MOODS))
+        for mood, items in sfx.STARTER.items():
+            self.assertGreaterEqual(len(items), 2, mood)                     # so clips don't all sound alike
+        self.assertIn('{id}', sfx.STARTER_URL)
+
+    def test_own_sounds_are_never_touched_and_moods_needed(self):
+        from unittest import mock
+        from clipper import sfx
+        with tempfile.TemporaryDirectory() as d:
+            mine = Path(d)
+            with mock.patch.object(sfx, 'MINE', mine), mock.patch.object(sfx, 'CATALOG', mine / '.catalog.json'):
+                sfx.make_folders()
+                for m in sfx.MOODS:                                          # every mood already has a sound
+                    (mine / m / 'mine.mp3').write_bytes(b'x' * 10)
+                with mock.patch('urllib.request.urlopen') as net:
+                    self.assertEqual(sfx.starter(quiet=True), 0)
+                    net.assert_not_called()
+                self.assertEqual(sorted(p.name for p in (mine / 'funny').iterdir()), ['mine.mp3'])
+            with mock.patch.object(sfx, 'moods_available', return_value={'funny': 3}):
+                want, missing = sfx.needed([{'sfx': [[5.0, 'funny'], [9.0, 'shock']]}, {'sfx': [[2.0, 'funny']]}, {}])
+            self.assertEqual(want, {'funny': 2, 'shock': 1})
+            self.assertEqual(missing, ['shock'])
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

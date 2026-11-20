@@ -6,6 +6,7 @@
     python install.py --gpu      # the same as the default, but explain clearly when no GPU can be used
     python install.py --models   # also download the speech models ahead of time (without a GPU)
     python install.py --remotion # also install the optional Remotion edit engine (needs Node.js)
+    python install.py --no-sounds # skip the free starter sound effects (Mixkit) for the mood folders
 
 Safe to run again at any time.
 """
@@ -212,6 +213,11 @@ def main():
             print('[ok] sherpa-onnx (two-person framing for podcasts)')
         else:
             print('[!] sherpa-onnx could not be installed: podcasts with two people keep the classic framing')
+
+    # sound effects by mood: a free starter set (Mixkit), only into mood folders that are still empty
+    if PY.exists() and '--no-sounds' not in sys.argv:
+        print('-> sound effects: the free starter set (Mixkit, no credit needed; --no-sounds skips it) ...')
+        subprocess.run([str(PY), '-m', 'clipper.sfx', 'starter'], cwd=ROOT, check=False)
 
     # NVIDIA GPU: set up automatically when a card with a working driver is found (--cpu skips it)
     gpu_found = False

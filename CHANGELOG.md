@@ -2,6 +2,9 @@
 
 ## Since v2.6 (not released yet)
 
+- **Sound effects included.** Setup now downloads a free starter set of 33 sound effects (Mixkit, no credit
+  needed) into the mood folders, so clips get a boom, a boing or a buzzer from the very first video. Your
+  own sounds are never replaced; `python install.py --no-sounds` skips it.
 - **"No limit", and clips that share a moment.** Say "no limit" or "as many as possible" and every good
   moment becomes a clip, however many. A funny moment can now come as a short and a longer version (or
   inside a joined clip), so you choose which to post; two clips are never almost the same.

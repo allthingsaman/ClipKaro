@@ -220,6 +220,7 @@ python install.py             # everything (an NVIDIA graphics card is found and
 python install.py --cpu       # skip the NVIDIA part
 python install.py --models    # also download the speech models now (useful without an NVIDIA card)
 python install.py --remotion  # also install the optional Remotion editor (needs Node.js)
+python install.py --no-sounds # skip the free starter sound effects (2.5 MB from Mixkit)
 ```
 
 1. **Checks your tools**: Python, ffmpeg (and that it has libx264 and libass) and Node.js. If

@@ -263,6 +263,12 @@ changed. Only new ones were added.
   of a GTA stream: -0.7 dB at 12 ms, the limit is -1). Now the sound fades in over 30 ms at the very
   start, too short to hear. Nothing else moves: same length, same timing. *(v2.7, 2026-11-20)*
   - Way back: none needed (the spike was a fault).
+- ⬆ **Sound effects from the first clip.** The mood folders (`sounds/shock`, `funny` ...) started empty,
+  so no clip got a mood sound until someone found and added files. `install.py` now downloads a free
+  starter set (33 sounds from Mixkit: free for videos, commercial use too, no credit needed; the owner
+  approved them on a GTA stream), only into folders that are still empty. `cut --check` names the moods
+  the clips ask for and any without a sound. *(v2.7, 2026-11-20)*
+  - Way back: `python install.py --no-sounds`, or delete the files (an empty mood plays nothing, as before).
 
 ## Posting
 

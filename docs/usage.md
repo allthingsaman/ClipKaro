@@ -171,9 +171,11 @@ plain cuts in `clips/` stay without them. Another corner: `"logo_corner"` and `"
 settings.json (below), each `top-left`, `top-right`, `bottom-left` or `bottom-right`. In the same corner,
 the credit sits right next to the logo.
 
-### Sound effects by mood (your own sounds)
-ClipKaro plays two soft whooshes on its own. For more (a boom on a shocking line, a "boing" on a
-punchline), add your own sounds, sorted by mood, in the **`sounds` folder** inside the ClipKaro folder:
+### Sound effects by mood
+ClipKaro plays two soft whooshes on its own, and a boom on a shocking line, a "boing" on a punchline
+and so on from the **`sounds` folder** inside the ClipKaro folder, one folder per mood. `install.py`
+fills it with a free starter set (33 sounds from Mixkit: free for videos, no credit needed; the list is
+in `sounds/SOURCES.txt`). Delete any you don't like and add your own:
 
 | Folder | For | Example sounds |
 |---|---|---|
@@ -191,7 +193,9 @@ punchline), add your own sounds, sorted by mood, in the **`sounds` folder** insi
   sound (under 2.5 s) works best. A new folder (`sounds/romantic/`) becomes a new mood.
 - **Without opening folders:** `python run.py sfx add "C:\Downloads\boom.mp3" shock`, or tell Claude
   "add this sound as shock: C:\Downloads\boom.mp3". A folder of sounds works too.
-  `python run.py sfx` shows every mood and how many sounds it has.
+  `python run.py sfx` shows every mood and how many sounds it has; `python run.py sfx starter` downloads
+  the starter set again into the folders that are empty (your own sounds are never touched).
+- `run.py cut <project> --check` lists which moods the clips ask for and says when one has no sound.
 - Claude then marks 0-2 moments per clip that call for one, only for moods that have sounds. Say
   "no sound effects" for none, or "a boom when he says the number" for a specific one.
 - Use only sounds you may use in videos: Pixabay, Mixkit and the YouTube Audio Library give
