@@ -147,6 +147,8 @@ clipper/                     the toolbox (Python)
     edit.py       renders the plan (python or Remotion engine) and mixes the audio
     brandkit.py   your logo and outro (the brand/ folder) and the "© Channel" credit to the source
     private.py    an email address or phone number said out loud: hidden from the readers, cut out of clips
+    watch.py      gameplay and streams: frame sheets for the readers, close-ups (zoom.py), events into clips (events.py)
+    hearing.py    noisy Hindi / Hinglish streams: two more speech models and the word check (hear, rehear, wordcheck)
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog
     find.py       word-accurate phrase search in the transcript
     parts.py      splits a long transcript into parts for careful reading

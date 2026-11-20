@@ -228,6 +228,12 @@ Claude adds one where a clip calls for it, like a boom on a shocking line. Want 
 the mood's folder (any file name, and delete the ones you don't like), or tell Claude "add this sound
 as shock: (path to the file)".
 
+**ClipKaro watches your gameplay.** In a game, the best moment is often seen first and talked about
+after: the bike catches fire, the chair breaks, the car flips. For gameplay and live streams, Claude's
+helpers look at the video too (a frame every 10 seconds, with the loud moments marked), take a closer look
+where something happens, and the clip then starts at the moment itself, not when the talking starts.
+Podcasts and talks are not affected.
+
 **Careful listening on noisy streams.** When you and your friends talk over game sound in Hindi or
 Hinglish, one speech model gets many words wrong. With an NVIDIA graphics card, ClipKaro has two more
 models listen too, and Claude's helpers compare all three for every clip: words they agree on are fixed,

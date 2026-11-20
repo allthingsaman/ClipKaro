@@ -2,6 +2,10 @@
 
 ## Since v2.6 (not released yet)
 
+- **ClipKaro watches your gameplay.** In gameplay and live streams Claude's helpers now see the video too: a
+  frame every 10 seconds with the loud moments marked, and a closer look where something happens. A clip of
+  a crash, a fire or a friend falling off a chair starts at the moment itself, not when the talking about it
+  starts. Podcasts and talks are not affected (`"watch_gameplay": false` turns it off).
 - **Sound effects start on time.** A slow sound (a trombone, a crowd cheer) used to start up to a few
   seconds before the moment it was for. Now every sound effect starts on its moment, never before it.
 - **Careful listening for noisy streams.** Hindi / Hinglish streams and gameplay where several people talk

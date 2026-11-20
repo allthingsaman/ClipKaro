@@ -1507,3 +1507,99 @@ class SoundTiming(unittest.TestCase):
     def test_quick_sound_lands_as_before(self):
         self.assertAlmostEqual(self.cues(0.02, 'moment'), 4.98, places=3)
         self.assertAlmostEqual(self.cues(0.02, 'peak'), 4.98, places=3)
+
+
+class FrameSheets(unittest.TestCase):
+    """v2.7, gameplay and streams only: frame sheets, close-ups where the readers point, clips from the event."""
+
+    def test_only_for_gameplay_and_streams(self):
+        from clipper import watch
+        self.assertFalse(watch.wanted({'title': 'Figuring Out with Khan Sir', 'video_kind': {}}, {})[0])
+        self.assertTrue(watch.wanted({'title': 'x', 'video_kind': {'live': True}}, {})[0])
+        self.assertTrue(watch.wanted({'title': 'GTA 6 day one gameplay', 'video_kind': {}}, {})[0])
+        self.assertFalse(watch.wanted({'video_kind': {'live': True}}, {'watch_gameplay': False})[0])   # way back
+
+    def test_sheet_of_21_frames_with_marks(self):
+        import cv2
+        import numpy as np
+        from clipper import watch
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            tiles = []
+            for k in range(21):
+                f = d / f'f{k:02d}.jpg'
+                cv2.imwrite(str(f), np.full((180, 320, 3), 90, np.uint8))
+                tiles.append((f, f'0:00:{k * 10:02d}', k == 4, 'bhaag' if k == 5 else '', False))
+            out = watch.compose(tiles, d / 'sheet.jpg')
+            img = cv2.imread(str(out))
+            self.assertEqual(img.shape[:2], (3 * watch.TILE_H, 7 * watch.TILE_W))      # 7 across, 3 down
+            b, g, r = img[watch.TILE_H // 2, 4 * watch.TILE_W + 2]                        # frame 5's left border
+            self.assertGreater(int(r), 150)
+            self.assertLess(int(b), 100)                                                  # red: the sound jumps
+
+    def test_red_border_only_on_the_loudest(self):
+        # a stream with friends is loud everywhere: at a fixed 6 dB, 53 % of the GTA stream's frames were red
+        import numpy as np
+        from clipper import watch
+        rng = np.random.default_rng(3)
+        loud_stream = rng.uniform(4, 14, 3600).astype(np.float32)
+        level = watch.loud_level(loud_stream)
+        slots = [loud_stream[t:t + 10].max() for t in range(0, 3600, 10)]
+        self.assertAlmostEqual(np.mean(np.array(slots) >= level), watch.LOUD_SHARE, delta=0.03)
+        self.assertEqual(watch.loud_level(np.zeros(600, np.float32)), watch.LOUD_DB)      # a calm video: the floor
+
+    def test_spots_merged_and_events_collected(self):
+        from clipper import watch
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'parts').mkdir()
+            (pdir / 'frames').mkdir()
+            (pdir / 'parts' / 'part-01.json').write_text(json.dumps({'look_closer': [
+                {'at': 100, 'where': 'game', 'why': 'fire'}, {'at': 108, 'where': 'game', 'why': 'running'},
+                {'at': 300, 'where': 'webcam', 'why': 'someone falls'}]}))
+            spots = watch.requests(pdir)
+            self.assertEqual([(s['at'], s['where']) for s in spots], [(100.0, 'game'), (300.0, 'webcam')])
+            (pdir / 'frames' / 'spots.json').write_text(json.dumps(spots))
+            (pdir / 'frames' / 'zoom-batch-01.json').write_text(json.dumps([
+                {'spot': 1, 'verdict': 'clip', 'event_at': 98, 'end': 130, 'title': 'Aag', 'why': 'bike fire'},
+                {'spot': 2, 'verdict': 'no', 'event_at': None, 'end': None}]))
+            events = watch.collect(pdir)
+            self.assertEqual([(e['event_at'], e['end'], e['where']) for e in events], [(98.0, 130.0, 'game')])
+
+    def test_clips_start_at_their_event(self):
+        from unittest import mock
+        from clipper import watch
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'frames').mkdir()
+            (pdir / 'project.json').write_text('{}')
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [
+                {'id': 1, 'ranges': [[110.0, 140.0]]},                       # starts on the reaction
+                {'id': 2, 'ranges': [[500.0, 540.0]]}]}))                    # shows its event already
+            (pdir / 'frames' / 'events.json').write_text(json.dumps([
+                {'spot': 1, 'event_at': 100.0, 'end': 140.0, 'where': 'game', 'title': 'A', 'why': ''},
+                {'spot': 2, 'event_at': 510.0, 'end': 530.0, 'where': 'game', 'title': 'B', 'why': ''},
+                {'spot': 3, 'event_at': 900.0, 'end': 925.0, 'where': 'webcam', 'title': 'C', 'why': 'chair'}]))
+            with mock.patch.object(watch, '_video', return_value=Path('v.mp4')), \
+                    mock.patch.object(watch, 'exact_sheet') as sheet:
+                done = watch.apply_events(pdir)
+            self.assertEqual([w for w, _, _ in done], ['starts at its event', 'already shows it', 'new clip'])
+            clips = json.loads((pdir / 'clips.json').read_text())['clips']
+            self.assertEqual((clips[0]['ranges'][0][0], clips[0]['event_at']), (98.5, 100.0))
+            self.assertEqual((clips[2]['id'], clips[2]['ranges'], clips[2]['event_where']), (3, [[898.5, 925.0]], 'webcam'))
+            self.assertEqual(sheet.call_count, 2)                            # an exact-frame sheet for each
+            done = watch.apply_events(pdir, dry=True)                         # run again: nothing moves twice
+            self.assertEqual([w for w, _, _ in done], ['already shows it'] * 3)
+
+    def test_the_event_plays_whole(self):
+        # pause cutting leaves the event's first seconds alone; the talk after it is tightened as usual
+        words = [W('Are', 105.0, 105.3), W('bhaag', 107.5, 107.9), W('bhaag', 109.5, 109.9),
+                 W('phir', 115.0, 115.3), W('bike', 116.5, 116.8), W('phat', 118.0, 118.3), W('gayi', 118.4, 118.7)]
+        clip = {'ranges': [[98.5, 119.0]], 'event_at': 100.0}
+        out = cut.with_jump_cuts(clip, words, {}, True)
+        self.assertTrue(out['ranges'][0][0] == 98.5 and out['ranges'][0][1] > 109.9)      # 98.5 to past "bhaag bhaag"
+        self.assertGreater(len(out['ranges']), 1)                                          # later pauses still cut
+        plain = cut.with_jump_cuts({'ranges': [[98.5, 119.0]]}, words, {}, True)
+        self.assertLess(plain['ranges'][0][1], 109.0)                                     # without an event: cut
+        r = cut.snap_piece(clip, 98.5, out['ranges'][0][1], words)
+        self.assertEqual(r[0], 98.5)                                                       # starts on the event

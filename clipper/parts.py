@@ -208,6 +208,8 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
     """The part files' text for n stretches: [(header-free info, text)]."""
     idx = plan_stretches(lines, n, shift)
     total = len(idx) - 1
+    from . import watch
+    watch_on = watch.wanted(project)[0] and (pdir / 'frames' / 'overview' / 'meta.json').exists()
     from . import hints
     try:
         nt = hints.notes(pdir, project)
@@ -259,6 +261,11 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
             head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) and PRIVATE DETAILS (an email '
                         'or phone number said out loud) are marked with ===== lines: their words are left out. Never '
                         'take a topic, best moment or clip from them.')
+        if watch_on:                            # gameplay and streams: the frame sheets of this stretch (v2.7)
+            sheets = watch.part_sheets(pdir, k + 1, (a, b))
+            if sheets:
+                head.append(watch.SHEET_NOTE.format(files=', '.join(
+                    f'{p} ({fmt_ts(t0).split(".")[0]}-{fmt_ts(t1).split(".")[0]})' for p, t0, t1 in sheets)))
         sh = hearing_text(pdir, k + 1, total, (a, b), (before[0] if before else own[0])['s'],
                           (after[-1] if after else own[-1])['e'])
         if sh:
@@ -323,6 +330,13 @@ def main():
     if a.margin < 45:
         die('--margin must be at least 45 s, so a 90 s clip always fits inside one part')
 
+    from . import watch                         # gameplay and streams: the frame overview (fetch makes it since v2.7)
+    if watch.wanted(project)[0] and not (pdir / 'frames' / 'overview' / 'meta.json').exists():
+        try:
+            watch.overview(pdir, project)
+        except Exception as e:
+            print(f'   (frame overview skipped: {type(e).__name__}: {e})')
+
     wish = update_wish(project, a)
     if wish != (project.get('wish') or {}):
         project['wish'] = wish
@@ -379,6 +393,10 @@ def main():
         s, e = p['stretch']
         print(f"   {p['part']:>4}  {fmt_ts(s):>9}-{fmt_ts(e):<9}  {p['lines']:>5}  {p['tokens']:>6,}  {p['bytes'] / 1024:.0f} KB")
     print(f'\n-> video: {kind.describe(project)}')
+    sheets = len(list((pdir / 'frames').glob('part-*.jpg'))) if (pdir / 'frames').exists() else 0
+    if sheets and watch.wanted(project)[0]:
+        print(f'-> frame sheets: {sheets} (one frame every 10 s) go to the readers with their parts; after `topics`, '
+              f'run `python run.py zoom {pdir.name}` for close-ups of the spots they name')
     if breaks:
         gone = sum(b['end'] - b['start'] for b in breaks)
         print(f'-> break screens left out: {len(breaks)} ({gone / 60:.1f} min); {target["usable_min"]:.0f} min of real video')

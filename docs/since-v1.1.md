@@ -171,6 +171,16 @@ changed. Only new ones were added.
   leaves it out of what the reading helpers see, and `cut` takes those seconds out of any clip that touches
   them. *(v2.7, 2026-11-20)*
   - Way back: `"private_details": "keep"` in settings.json.
+- ⬆ ⚠ **ClipKaro watches gameplay, not just the words** (gameplay and live streams only). The best game
+  moment is often seen first and talked about after, so clips started when the talking started, after the
+  bike fire or the chair breaking. Now `fetch` makes a frame overview (one frame every 10 s, about a minute
+  per 4 hours, the webcam enlarged in each frame, a red border where the sound jumps, the reaction words
+  written on): the readers see their stretch of it and name spots to look at closer; `run.py zoom` makes
+  close-ups (one frame a second) for the new `clipkaro-eventfinder` helpers; `run.py events` makes the clip
+  start 1.5 s before its event (no pause cuts inside the event) or adds the event as a new clip, with an
+  exact-frame sheet to put the start and the sound on the right frame. Costs about 15-20 % more Claude
+  usage on a gameplay video (about 1,550 tokens per sheet). Podcasts and talks never get it. *(v2.7, 2026-11-20)*
+  - Way back: `"watch_gameplay": false`; `"event_lead_in": false` keeps clips starting at the first word.
 
 ## Cutting and editing
 

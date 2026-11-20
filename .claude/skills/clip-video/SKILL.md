@@ -147,6 +147,13 @@ let the critic judge them (section 2a).
    files** (a line from the creator's teaser, or a "most replayed" peak, that no candidate covers),
    start one `clipkaro-part-reader` per focus file, all at once, then run `topics` again. Videos
    without a teaser or a replay curve simply have none.
+3b. **Frame sheets (gameplay and live streams only; `parts` printed `-> frame sheets`).** The readers got a
+   sheet of frames (one every 10 s) with their part and named spots worth a closer look. Run
+   `python run.py zoom <project>`: it makes close-ups (one frame a second) and packets. Start one
+   **`clipkaro-eventfinder`** helper per packet, all at once (without that helper type, a general helper
+   told to follow `.claude/agents/clipkaro-eventfinder.md`), then `python run.py zoom <project>` again: it
+   lists the events worth a clip (frames/events.json). After the final clips.json comes `run.py events`
+   (section 2a-1).
 4. Read `topics.txt` (the topic map; look at its CHECK FIRST list). Then let the critic judge
    **all** candidates (section 2a) and pick from its list.
 
@@ -295,6 +302,19 @@ python run.py fixword <project> "bow" "boat" --at 2107.5    # only the place nea
 It keeps the times, rebuilds the sentences and transcript.txt, and names the clips to cut and edit
 again. The first fix saves `words-before-fixes.json`: the deep pass and the topic map match quotes
 against the words as first heard, so fixes never break them.
+
+## 2a-1. Events into the clips (gameplay and live streams with frame sheets; every mode)
+After the final clips.json, when `run.py zoom` found events:
+```
+python run.py events <project>
+```
+A picked clip that starts on a reaction now starts 1.5 s before its event (the event plays whole, with no
+pause cuts in it); an event no clip shows becomes a new clip. For each, look at `frames/exact-<id>.jpg`
+(4 frames a second around the event): set the clip's `"event_at"` to the frame where it starts and put its
+`"sfx"` cue on that second; write the posting text (title, hook, caption, post) of every new clip.
+In quick mode, read the sheets yourself with the parts, write `frames/look_closer.json` (a list of
+`{"at", "where", "why"}`), and look at the close-ups yourself: write each packet's answer in the
+eventfinder's format.
 
 ## 2a-2. Careful listening (noisy Hindi / Hinglish streams and gameplay; every mode; after the final clips.json, before 2b)
 When `fetch` printed `-> careful listening:` with a second hearing, three voices and game sound have

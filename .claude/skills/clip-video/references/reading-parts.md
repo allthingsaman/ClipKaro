@@ -143,8 +143,14 @@ UTF-8 JSON, no comments, exactly these keys:
  "candidates": [{"id": "c1", "pieces": [{"first": "<5+ exact words>", "first_line": 2501.20,
      "last": "<5+ exact words>", "last_line": 2541.60}], "title": "<title>",
    "hook_type": "question", "score": 8, "why": "<reason>", "needs_context": null}],
- "note": "<3-4 sentences on what this part covers>"}
+ "note": "<3-4 sentences on what this part covers>",
+ "look_closer": [{"at": 4815, "where": "webcam", "why": "red border, YAH KYA; a friend seems to fall in the webcam"}]}
 ```
+
+`look_closer` only when your part's header has FRAME SHEETS (gameplay and streams): the spots where
+something may happen on screen or in the webcam that a viewer would want to see (a crash, fire, a fall,
+a fight, a funny glitch, someone falling in the room). Red frames (the sound jumps) and yellow reaction
+words come first. ClipKaro then makes close-ups of them; your candidates stay about the words as usual.
 
 ## Focus reads
 Sometimes you get a small `focus-NN.txt` file instead of a part. It points at one line marked

@@ -1274,6 +1274,14 @@ def main():
     except Exception as e:
         print(f'   (hints skipped: {type(e).__name__}: {e})')
 
+    # frame sheets (v2.7): gameplay and streams get a frame overview, one frame every 10 s (about a minute per 4 h)
+    try:
+        from . import watch
+        if not a.no_video and watch.wanted(load_json(pdir / 'project.json', {}) or project)[0]:
+            watch.overview(pdir, load_json(pdir / 'project.json', {}) or project)
+    except Exception as e:
+        print(f'   (frame overview skipped: {type(e).__name__}: {e})')
+
     # careful listening (v2.7): a Hindi / Hinglish stream or gameplay on an NVIDIA card gets a second hearing
     try:
         from . import hearing

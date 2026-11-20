@@ -136,6 +136,7 @@ JUMP_PAUSE = 0.55
 JUMP_PAD_IN, JUMP_PAD_OUT = 0.08, 0.14
 JUMP_MIN_PIECE = 0.7       # a piece between two cuts never shorter than this (no flicker)
 GAME_PAUSE = 2.0
+EVENT_HOLD = 10.0          # an event clip (frame sheets, v2.7): no pause cut in the event's first seconds (5-9 s on a GTA stream)
 FILLERS = {'um', 'uh', 'umm', 'uhh', 'uhm', 'hmm', 'hm', 'mm', 'er', 'erm', 'ah',
            'उम्म', 'उम', 'अं', 'हम्म', 'उह', 'उंह'}
 
@@ -180,8 +181,12 @@ def with_jump_cuts(clip, words, cues, gameplay):
     def quiet_ok(a, b):
         return not any(x < b and a < y for x, y in noisy)
     ranges, edges, saved = [], set(), 0.0
-    for s, e in clip['ranges']:
+    for k, (s, e) in enumerate(clip['ranges']):
         pcs = jump_pieces(s, e, words, quiet_ok, GAME_PAUSE if gameplay else None)
+        if k == 0 and clip.get('event_at') is not None:    # the event plays whole: no pause cut in it (v2.7)
+            hold = float(clip['event_at']) + EVENT_HOLD
+            n = max(1, sum(1 for p in pcs if p[0] < hold))
+            pcs = [[pcs[0][0], pcs[n - 1][1]]] + pcs[n:]
         for x, y in zip(pcs, pcs[1:]):
             edges |= {round(x[1], 3), round(y[0], 3)}
             saved += y[0] - x[1]
@@ -197,6 +202,8 @@ def snap_piece(clip, s, e, words):
     edges = clip.get('jump_edges') or ()
     r = snap_range(s, e, words, JUMP_PAD_IN if round(s, 3) in edges else PAD_IN,
                    JUMP_PAD_OUT if round(e, 3) in edges else PAD_OUT)
+    if r and clip.get('event_at') is not None and clip.get('ranges') and abs(s - clip['ranges'][0][0]) < 1e-3:
+        r = (min(s, r[0]),) + tuple(r[1:])        # an event clip starts on its event, before anyone talks (v2.7)
     trim = (clip.get('edge_trims') or {}).get(f'{s:.3f}-{e:.3f}')
     return (trim['s'], trim['e'], r[2], r[3]) if r and trim else r
 

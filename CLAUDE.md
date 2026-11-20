@@ -58,6 +58,9 @@ fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user 
   `"facecam"` in settings.json if the cam is found in the wrong place. In gameplay videos the
   transcript also holds the game's own dialogue: build clips around the players' commentary and
   reactions (friends on voice chat count like the streamer), not the game characters' lines.
+  Gameplay and live streams also get **frame sheets** (never podcasts): the readers see a frame every
+  10 s, `run.py zoom` and `clipkaro-eventfinder` helpers look closer, and `run.py events` makes a clip
+  start at what happens on screen (skill steps 3b and 2a-1).
 - Live streams and gameplay are recognised automatically at the end of `fetch` (`run.py kind`):
   "Starting soon", "Be right back" and stream-ending screens are left out of the transcript, and the
   stream rules apply (quiet stretches are normal, no stream housekeeping in clips). The user never
