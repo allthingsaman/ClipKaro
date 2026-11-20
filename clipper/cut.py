@@ -19,7 +19,7 @@ from pathlib import Path
 
 from . import facecam as fclib
 from .common import (H, JUMP_FLASH, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
-                     open_video, settings, slugify)
+                     open_video, overlap_mode, overlap_problem, settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
 PAD_IN, PAD_OUT = 0.12, 0.30
@@ -713,6 +713,7 @@ def main():
     breaks = active_breaks(project)
     quiet_s = QUIET_GAP_S if is_irregular(project) else None
     taken = []                                   # (clip id, start, end) of every range so far
+    picked, overlap = [], overlap_mode()         # settings.json "overlap_clips" (v2.7)
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
@@ -744,11 +745,17 @@ def main():
                         msgs.append(f"{w1['s'] - w0['e']:.0f} s without talk at {fmt_ts(w0['e'])}: fine if the "
                                     f"gameplay there is the point (a chase, a crash), else end before it or "
                                     f"join the pieces around it")
-        for r0, r1 in clip['ranges']:
-            for other, x, y in taken:
-                if r0 < y - 1.0 and x < r1 - 1.0:
-                    msgs.append(f'overlaps clip {other} ({x:.1f}-{y:.1f}): the same words twice')
+        if overlap == 'avoid':
+            for r0, r1 in clip['ranges']:
+                for other, x, y in taken:
+                    if r0 < y - 1.0 and x < r1 - 1.0:
+                        msgs.append(f'overlaps clip {other} ({x:.1f}-{y:.1f}): the same words twice')
+        else:                                    # overlaps are fine; near-copies and a 4th clip of a moment aren't
+            why = overlap_problem(clip['ranges'], picked, 'allow')
+            if why:
+                msgs.append(why)
         taken += [(cid, r0, r1) for r0, r1 in clip['ranges']]
+        picked.append((f'clip {cid}', clip['ranges']))
         for m in msgs:
             print(f'   WARNING clip {cid} "{clip.get("title")}": {m}')
         flagged += bool(msgs)

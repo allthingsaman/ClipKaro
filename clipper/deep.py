@@ -29,7 +29,7 @@ import shutil
 import time
 from difflib import SequenceMatcher
 
-from .common import die, fmt_ts, load_json, norm_token, project_dir, save_json
+from .common import NEAR_SAME, die, fmt_ts, load_json, norm_token, overlap_mode, project_dir, save_json
 from .parts import est_tokens, line_text
 from . import topics as tp
 from .cut import boundary_warnings
@@ -290,8 +290,10 @@ def check_deep(c, doc, tr, regular, first_content, pb, where):
                     bad = f"uses the {t['role']} at {ts(t['start'])} after the start (only an opening line may come from it)"
                 elif montage(tr, a, b, first_content):
                     bad = "its opening comes from a montage teaser (the line comes again at a later time): use that later line"
-    if not bad and any(overlap_share(rs, r) > 0.5 for r in regular):
+    if not bad and overlap_mode() == 'avoid' and any(overlap_share(rs, r) > 0.5 for r in regular):
         bad = 'more than half of it is a regular clip already made'
+    elif not bad and any(overlap_share(rs, r) > NEAR_SAME for r in regular):
+        bad = 'it is almost all a regular clip already made'    # overlap_clips "allow": only near-copies (v2.7)
     if bad:
         pb.err(where, f"{c['id']}: {bad}")
         return False

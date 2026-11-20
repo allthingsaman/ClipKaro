@@ -53,7 +53,9 @@ Then build **up to 2 deep clips** and **the best continuous clip** around the pa
   or don't use that piece.
 - Never use ads, sponsor reads, outros or a montage teaser. The narrator's own spoken opening may
   be the first piece.
-- Don't reuse the core of a regular clip that is already made (listed in the file).
+- Don't reuse the core of a regular clip that is already made (listed in the file). With settings.json
+  `"overlap_clips": "allow"` (the default) a joined clip may share a regular clip's seconds when it adds
+  the other moments (it is checked to be no near-copy); with `"avoid"` more than half shared is refused.
 
 Each piece is `{"first": the first 5+ words exactly, "first_line": that line's start seconds,
 "last": the last 5+ words exactly, "last_line": that line's start seconds}`, copied from the file.

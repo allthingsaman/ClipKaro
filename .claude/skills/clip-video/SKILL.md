@@ -63,7 +63,9 @@ line. Then start `fetch` (below) in the background, and while it runs:
   (default), `"always"` or `"never"`.
 - **How many clips.** Read the user's message (and "My preferences" in CLAUDE.md) for a number: "at
   least 10" / "kam se kam 10" / "minimum 10" -> `--at-least 10`; "at most 5" / "max 5" / "only the 3
-  best" -> `--at-most 5` / `--at-most 3`; "give me 8 clips" / "8 clips" -> `--clips 8`. No number ->
+  best" -> `--at-most 5` / `--at-most 3`; "give me 8 clips" / "8 clips" -> `--clips 8`; "no limit" / "as many
+  as possible" / "jitne ho sake" / "100+" / "more than 100" -> `--no-limit` (with a number too:
+  `--no-limit --at-least 100`): every decent moment with no cap, and each reader brings up to 20 ideas. No number ->
   nothing: every decent moment, from 3 up to 8 (as v1.1) or, for long videos, about one per 7
   minutes, at most `"max_clips"` from settings.json. You pass these to `parts` in step 2.
 
@@ -182,8 +184,11 @@ sees your scores, titles, the replay curve or anything about the channel.
    the critic never throws a clip away (in the user's blind check, clips it would have dropped were
    ones they'd post). The score ranks clips **within this video**; calm, informative clips are fine.
 4. Pick the final clips from the top: every decent one within the range `parts` printed
-   (`-> clips: 3 to 13`), at least the lower number. Of clips that overlap at all, keep the better one; at
-   most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
+   (`-> clips: 3 to 13`), at least the lower number. **Overlaps** (settings.json `"overlap_clips"`, default
+   `"allow"`, the owner's choice): two clips may share seconds when they clearly differ (a short and a long
+   cut of one moment, a joined clip): keep both, the owner picks what to post; never near-copies (most of
+   the longer one the same) and at most 3 clips per moment (`cut --check` names both). With `"avoid"`: of
+   clips that overlap at all, keep the better one. At most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
    holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
    content: read close calls yourself.
 5. **Repair round (once, when it helps).** Like an editor after notes, fix the clips you'd pick (or

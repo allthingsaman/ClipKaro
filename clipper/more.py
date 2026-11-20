@@ -18,7 +18,7 @@ the "spare" ideas Claude lists in clips.json in quick mode (no critic there).
 """
 import argparse
 
-from .common import die, fmt_ts, load_json, project_dir, save_json
+from .common import die, fmt_ts, load_json, overlap_mode, overlap_problem, project_dir, save_json
 
 OVERLAP_S = 1.0
 
@@ -63,13 +63,22 @@ def ideas(pdir):
 
 
 def unused(pdir):
-    """The ideas not cut yet: none overlapping a clip in clips.json, none overlapping a better one."""
+    """The ideas not cut yet: none overlapping a clip in clips.json, none overlapping a better one. With
+    settings.json "overlap_clips": "allow" (the default since v2.7) an idea may share seconds with them, only
+    not be a near-copy or a fourth clip of the same moment."""
     clips = (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
     taken = [c['ranges'] for c in clips]
     used_ids = {c.get('from') for c in clips if c.get('from')}
+    allow = overlap_mode() == 'allow'
     out = []
     for x in ideas(pdir):
-        if x['id'] in used_ids or any(_overlaps(x['ranges'], r) for r in taken):
+        if x['id'] in used_ids:
+            continue
+        if allow:
+            if not overlap_problem(x['ranges'], [('', r) for r in taken] + [('', y['ranges']) for y in out]):
+                out.append(x)
+            continue
+        if any(_overlaps(x['ranges'], r) for r in taken):
             continue
         if any(_overlaps(x['ranges'], y['ranges']) for y in out):
             continue                                              # the better one of two is listed

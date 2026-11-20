@@ -26,6 +26,9 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
+    'overlap_clips': 'allow',      # allow: clips may share seconds when they clearly differ (a short and a long cut,
+                                   # a joined clip; the owner's choice, 2026-11-20); never near-copies, at most 3
+                                   # clips per moment (overlap_problem); avoid: one clip per moment, as before
     'bold_clips': 'boost',         # boost: bold, honest takes (an unpopular opinion, a roast, a rant, gaali said
                                    # with feeling) count extra when picking and judging (the owner's choice,
                                    # 2026-11-19); neutral: judged like any other moment, as before. Nothing is
@@ -81,6 +84,44 @@ def is_placeholder(value):
     """A setting still waiting for the user's answer: a "<...>" text in settings.json, such as
     "<your OBS recording folder>". It counts as not set (None), so it is never used as a real path."""
     return isinstance(value, str) and value.strip().startswith('<') and value.strip().endswith('>')
+
+
+NEAR_SAME = 0.8         # overlap_clips "allow": two clips sharing more than this share of the longer one are near-copies
+MAX_PER_MOMENT = 3      # ... and no second of the video is in more than this many clips
+
+
+def shared_seconds(r1, r2):
+    """Seconds two clips' ranges have in common."""
+    return sum(max(0.0, min(b, d) - max(a, c)) for a, b in r1 for c, d in r2)
+
+
+def overlap_problem(ranges, others, mode='allow'):
+    """Why a clip can't share seconds with clips already picked ([(name, ranges)]), or None when it may.
+    "avoid": any shared second (more than 1 s) is a problem. "allow": only a near-copy (most of the longer
+    of the two is the same) or a moment already in MAX_PER_MOMENT clips."""
+    length = sum(b - a for a, b in ranges)
+    if mode == 'avoid':
+        for name, rs in others:
+            if shared_seconds(ranges, rs) > 1.0:
+                return f'overlaps {name}'
+        return None
+    for name, rs in others:
+        both = shared_seconds(ranges, rs)
+        if both > NEAR_SAME * max(length, sum(b - a for a, b in rs), 1e-6):
+            return f'almost the same clip as {name} ({both:.0f} s shared): keep one'
+    for a, b in ranges:                            # how many picked clips hold each second of this one
+        t = a
+        while t < b:
+            n = sum(any(c <= t < d for c, d in rs) for _, rs in others)
+            if n >= MAX_PER_MOMENT:
+                return f'the moment at {fmt_ts(t)} is already in {n} clips'
+            t += 1.0
+    return None
+
+
+def overlap_mode():
+    """settings.json "overlap_clips": allow (default) or avoid."""
+    return 'avoid' if str(settings().get('overlap_clips', 'allow')).lower() == 'avoid' else 'allow'
 
 
 def settings():

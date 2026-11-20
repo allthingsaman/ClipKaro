@@ -2,6 +2,10 @@
 
 ## Since v2.6 (not released yet)
 
+- **"No limit", and clips that share a moment.** Say "no limit" or "as many as possible" and every good
+  moment becomes a clip, however many. A funny moment can now come as a short and a longer version (or
+  inside a joined clip), so you choose which to post; two clips are never almost the same.
+  `"overlap_clips": "avoid"` in settings.json brings back one clip per moment.
 - **Streams with friends.** Friends playing along on voice chat now count exactly like you when the
   helpers look for clips: their banter, roasts and stories become clips too.
 - **Your friends' Hinglish keeps its captions in gameplay.** Lines like "Kisko khaoon?" or "Main kama loon"

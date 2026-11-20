@@ -55,6 +55,9 @@ MINUTES_PER_CLIP = 7.0     # long videos: up to about one clip per 7 minutes of 
 MIN_CLIPS = 3
 V11_MAX = 8                # v1.1 made 3-8 clips; the default never offers fewer than that
 IDEAS_PER_CLIP = 2.5       # clip ideas the readers bring per clip wanted (the critic ranks them all)
+PER_PART, PER_PART_MANY = 10, 20   # the most ideas one reader brings; "no limit" or 30+ clips asked: more
+MANY_CLIPS = 30            # "at least 30" or more counts as asking for many
+NO_LIMIT = 999             # "no limit": every decent moment, however many
 DEEP_ASK_MIN = 21.0        # longer than one part's stretch: worth asking about deep clips
 
 
@@ -106,12 +109,22 @@ def clip_target(project, first, last, wish, max_clips):
     hi = max(min(V11_MAX, int(max_clips)), min(int(max_clips), round(usable_min / MINUTES_PER_CLIP)))
     lo = MIN_CLIPS
     want_lo, want_hi = wish.get('at_least'), wish.get('at_most')
+    if wish.get('no_limit'):                 # "no limit", "as many as possible", "100+" (v2.7): no cap at all
+        lo, hi = max(lo, min(hi, round(usable_min / MINUTES_PER_CLIP))), NO_LIMIT
     if want_lo:
         lo, hi = want_lo, max(hi, want_lo)
     if want_hi:
         hi, lo = want_hi, min(lo, want_hi)
-    return {'lo': lo, 'hi': hi, 'aim': hi, 'at_least': want_lo, 'at_most': want_hi,
+    return {'lo': lo, 'hi': hi, 'aim': hi, 'at_least': want_lo, 'at_most': want_hi, 'no_limit': bool(wish.get('no_limit')),
             'usable_min': round(usable_min, 1)}
+
+
+def ideas_per_part(target, n):
+    """How many clip ideas each of n readers brings: 2.5 per clip wanted, 5-10 each; up to 20 when the user
+    asked for many ("no limit", or at least 30 clips: a 4-hour stream asked for 100+ got 144 ideas that way)."""
+    if target.get('no_limit') or target['lo'] >= MANY_CLIPS:
+        return PER_PART_MANY
+    return max(5, min(PER_PART, math.ceil(IDEAS_PER_CLIP * target['hi'] / n)))
 
 
 def update_wish(project, a):
@@ -119,6 +132,10 @@ def update_wish(project, a):
     wish = dict(project.get('wish') or {})
     if a.any_count:
         wish.pop('at_least', None)
+        wish.pop('at_most', None)
+        wish.pop('no_limit', None)
+    if getattr(a, 'no_limit', False):
+        wish['no_limit'] = True
         wish.pop('at_most', None)
     if a.clips:
         wish['at_least'] = wish['at_most'] = a.clips
@@ -274,6 +291,8 @@ def main():
     ap.add_argument('--at-most', type=int, default=None, help='the user wants at most N clips (0 forgets it)')
     ap.add_argument('--clips', type=int, default=None, help='the user wants exactly N clips')
     ap.add_argument('--any-count', action='store_true', help='forget a number asked for earlier')
+    ap.add_argument('--no-limit', action='store_true',
+                    help='"no limit" / "as many as possible": every decent moment, no cap (readers bring up to 20 ideas)')
     ap.add_argument('--deep', choices=['yes', 'no'], default=None, help="the user's answer about deep clips")
     ap.add_argument('--mode', choices=['standard', 'quick'], default=None,
                     help='standard (default) or quick (only when the user asks: one read by Claude, no critic)')
@@ -304,7 +323,7 @@ def main():
     span_min = (lines[-1]['e'] - lines[0]['s']) / 60
     n = 1 if whole_tokens <= TOKEN_CAP and not a.shift else max(1, math.ceil(span_min / a.minutes))
     while True:
-        per_part = max(5, min(10, math.ceil(IDEAS_PER_CLIP * target['hi'] / n)))
+        per_part = ideas_per_part(target, n)
         parts = build(pdir, project, lines, n, a.margin, a.shift, not a.no_chapters, a.dir, cues, per_part)
         if all(p['tokens'] <= TOKEN_CAP and p['bytes'] <= BYTE_CAP for p in parts) or n >= 80:
             break
@@ -349,13 +368,19 @@ def main():
     if asked and target['at_least'] == target['at_most']:
         asked = f"exactly {target['at_least']}"
     span = str(target['lo']) if target['lo'] == target['hi'] else f"{target['lo']} to {target['hi']}"
+    if target['no_limit']:
+        span = f"{target['lo']} or more, no limit"
+        asked = (asked + ', ' if asked else '') + 'no limit: every decent moment'
     how = (f"the user asked for {asked}" if asked else
            f"by default: up to {V11_MAX} as in v1.1, or about one per {MINUTES_PER_CLIP:.0f} min of real video "
            f"for long videos, at most {settings().get('max_clips', 20)} (settings.json max_clips)")
     print(f"-> clips: {span} ({how}). Deep clips count too.")
-    print(f"   every decent moment, best first: at least {target['lo']}, and more up to {target['hi']} "
-          'when the video has them. Never pad with weak ones' if target['lo'] != target['hi'] else
-          f"   exactly {target['lo']}, best first")
+    if target['no_limit']:
+        print(f"   every decent moment, best first, however many: at least {target['lo']}. Never pad with weak ones")
+    else:
+        print(f"   every decent moment, best first: at least {target['lo']}, and more up to {target['hi']} "
+              'when the video has them. Never pad with weak ones' if target['lo'] != target['hi'] else
+              f"   exactly {target['lo']}, best first")
     quick = wish.get('mode') == 'quick' and not wish.get('deep')
     print('-> mode: ' + ('quick (the user asked): read it yourself and pick straight into clips.json; no helpers, '
                          'no critic, no repair round' if quick else

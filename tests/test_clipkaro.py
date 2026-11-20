@@ -658,8 +658,49 @@ class MoreClips(unittest.TestCase):
                      {'id': 'p2-c1', 'ranges': [[300, 330]], 'title': 'D', 'clip_score': 4.0, 'rank_score': 4.0}]
             (p / 'critic' / 'critic.json').write_text(json.dumps({'clips': ideas}))
             (p / 'clips.json').write_text(json.dumps({'clips': [{'id': 1, 'from': 'p1-c1', 'ranges': [[10, 40]]}]}))
-            left = [x['id'] for x in more.unused(p)]
-            self.assertEqual(left, ['p1-c2', 'p2-c1'])     # C overlaps the better B
+            from unittest import mock
+            with mock.patch.object(more, 'overlap_mode', return_value='avoid'):
+                left = [x['id'] for x in more.unused(p)]
+            self.assertEqual(left, ['p1-c2', 'p2-c1'])     # "avoid": C overlaps the better B
+            left = [x['id'] for x in more.unused(p)]       # v2.7 default "allow": C shares only 10 of its 30 s
+            self.assertEqual(left, ['p1-c2', 'p1-c3', 'p2-c1'])
+            ideas.append({'id': 'p2-c2', 'ranges': [[303, 333]], 'title': 'E', 'clip_score': 3.0, 'rank_score': 3.0})
+            (p / 'critic' / 'critic.json').write_text(json.dumps({'clips': ideas}))
+            self.assertNotIn('p2-c2', [x['id'] for x in more.unused(p)])       # a near-copy of D: never
+
+    def test_overlap_rule(self):
+        # v2.7, overlap_clips "allow": a short and a long cut of one moment, a joined clip: fine; near-copies and
+        # a fourth clip of the same seconds: not
+        from clipper.common import overlap_problem
+        short, long_ = [[100, 125]], [[100, 170]]
+        self.assertIsNone(overlap_problem(long_, [('clip 1', short)]))
+        self.assertIn('almost the same', overlap_problem([[101, 126]], [('clip 1', short)]))
+        three = [('clip 1', short), ('clip 2', long_), ('clip 3', [[90, 130], [400, 420]])]
+        self.assertIn('already in 3 clips', overlap_problem([[110, 200]], three))
+        self.assertIn('overlaps clip 1', overlap_problem(long_, [('clip 1', short)], 'avoid'))
+
+
+class ManyClips(unittest.TestCase):
+    """v2.7: "no limit" / "as many as possible" / "100+": no cap, and each reader brings up to 20 ideas."""
+
+    def test_no_limit(self):
+        from types import SimpleNamespace
+        from clipper import parts
+        project = {'duration': 14650, 'breaks': [], 'video_kind': {}}
+        t = parts.clip_target(project, 0, 14650, {}, 20)
+        self.assertEqual((t['lo'], t['hi']), (3, 20))                         # the default, as before
+        self.assertEqual(parts.ideas_per_part(t, 12), 5)
+        t = parts.clip_target(project, 0, 14650, {'no_limit': True}, 20)
+        self.assertEqual(t['hi'], parts.NO_LIMIT)                              # no cap
+        self.assertGreaterEqual(t['lo'], 20)                                   # at least the usual number
+        self.assertEqual(parts.ideas_per_part(t, 12), 20)
+        t = parts.clip_target(project, 0, 14650, {'at_least': 100}, 20)        # "at least 100": many as well
+        self.assertEqual(parts.ideas_per_part(t, 12), 20)
+        a = SimpleNamespace(any_count=False, clips=None, at_least=None, at_most=None, deep=None, mode=None,
+                            no_limit=True)
+        self.assertEqual(parts.update_wish({'wish': {'at_most': 5}}, a), {'no_limit': True})   # no limit wins
+        a = SimpleNamespace(any_count=True, clips=None, at_least=None, at_most=None, deep=None, mode=None)
+        self.assertEqual(parts.update_wish({'wish': {'no_limit': True}}, a), {})                # forgotten again
 
 
 class LiveSettings(unittest.TestCase):

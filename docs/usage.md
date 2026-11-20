@@ -101,6 +101,7 @@ captions". To have one every time, add it to your preferences.
 |---|---|
 | (nothing) | ClipKaro decides: every good moment, from 3 up to 8 (as in v1.1), and for long videos up to about one per 7 minutes (at most 20, `max_clips` in settings.json). Break screens don't count |
 | "at least 10 clips" / "kam se kam 10" | 10 or more, never fewer (if the video is thin, Claude says which ones are weaker) |
+| "no limit" / "as many as possible" / "jitne ho sake" / "100+" | every decent moment, however many: a 4-hour stream can give 100 or more |
 | "at most 5 clips" / "only the 3 best" | no more than that |
 | "give me 8 clips" | exactly 8 |
 | "clips under 30 seconds" / "around 45-60 seconds" | that length (normally 25-60 seconds, never under 15 or over 90) |
@@ -415,7 +416,8 @@ Claude to change them.
 | `hinglish_captions` | `roman` | `roman` (English letters: "aaj hum baat karenge"), `devanagari` (Hindi letters: "आज हम बात करेंगे") |
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
-| `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for always wins) |
+| `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for, or "no limit", always wins) |
+| `overlap_clips` | `allow` | two clips may share some seconds when they clearly differ (a short and a long cut of one moment, a joined clip), so you choose which to post; never near-copies, at most 3 clips per moment. `avoid`: one clip per moment, as before v2.7 |
 | `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling, taboo talk, an A-rated moment) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |
 | `star_words` | `true` | abusive and taboo words written with stars in the captions and the posting texts ("F******"); the sound keeps every word. `false`: every word in full ("no stars" does it for one video) |
 | `hook_title` | `false` | `true`: a 3-6 word title on screen for the first seconds of every clip ("hook title") |

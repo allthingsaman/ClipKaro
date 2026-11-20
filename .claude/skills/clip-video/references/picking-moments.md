@@ -59,7 +59,9 @@ never crossed: nothing sexual involving anyone under 18.
   usual case is a strong hook line from later in the video placed first, followed by the
   explanation. Each joined piece must be whole sentences, and together they must read naturally.
   Never build a sentence the speaker didn't say.
-- Ranges of different clips must not overlap.
+- Different clips may share seconds only as settings.json `"overlap_clips"` allows: by default
+  (`"allow"`) when they clearly differ (a short and a long cut of a moment, a joined clip), never
+  near-copies, at most 3 clips per moment; with `"avoid"`, never.
 
 ## Never change what someone meant (joins and cold opens)
 A clip made of pieces must stay true to the full video. Check every join:
@@ -255,4 +257,4 @@ Write `output/<project>/clips.json`:
 - [ ] Is it 15–90 s (ideally 25–60 s)?
 - [ ] One idea only, with nothing that refers outside the clip?
 - [ ] No ads, housekeeping or retakes?
-- [ ] No overlap with another clip?
+- [ ] Not a near-copy of another clip (and no overlap at all with `"overlap_clips": "avoid"`)?
