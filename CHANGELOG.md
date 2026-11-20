@@ -22,8 +22,8 @@
   check also lists the hidden lines, so a friend's English line can be brought back.
 - **Twitch credit and webcams with friends in them.** Clips from a Twitch video now say "© twitch.tv/name"
   (Kick: "© kick.com/name"), so nobody takes it for a YouTube channel; `credit_text` in settings.json
-  writes your own words. A webcam with two or three people in it is now found by itself, so those
-  streams get the gameplay-on-top, webcam-below layout too.
+  writes your own words. In gameplay and streams, a webcam with two or three people in it is now found
+  by itself, so those streams get the gameplay-on-top, webcam-below layout too (podcasts are left alone).
 - **No sound spike at a clip's first moment.** A clip that opened on a loud sound could fail the quality
   check (the sound encoder overshot in the first milliseconds). The sound now fades in over 30 ms at the
   very start; you can't hear it.

@@ -249,8 +249,9 @@ changed. Only new ones were added.
 - ⬆ **A webcam with two or three people in it is found.** The finder looked for one face in the same spot,
   so a cam where two friends sit side by side, lean and look down was missed and the clips lost the
   gameplay-on-top layout. Now the faces near one side are counted together and the webcam's fixed border
-  gives the exact box (on a GTA 6 stream: 454x260 found, the hand-set box was 462x260). A video without
-  such a fixed box is never taken for one. *(v2.7, 2026-11-20)*
+  gives the exact box (on a GTA 6 stream: 454x260 found, the hand-set box was 462x260). It only runs for a
+  video already known as gameplay or a stream (live, YouTube's Gaming category, a Twitch or Kick link, a game
+  in the title), so a podcast recorded in boxes is never taken for one. *(v2.7, 2026-11-20)*
   - Way back: `"facecam"` in settings.json sets the box by hand; `--layout crop` turns the layout off.
 - ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
   every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles

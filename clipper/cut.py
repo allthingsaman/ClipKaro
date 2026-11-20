@@ -660,7 +660,9 @@ def facecam_layout(pdir, project, video, info, layout):
     else:
         if 'facecam' not in project:
             print('-> looking for a webcam overlay (facecam) ...', flush=True)
-            project['facecam'] = fclib.detect(video, info['duration'], src_w, src_h) or False
+            from .kind import stream_hint      # the two-person finder: only for gameplay and streams (v2.7)
+            project['facecam'] = fclib.detect(video, info['duration'], src_w, src_h,
+                                              framed=bool(stream_hint(project))) or False
             save_json(pdir / 'project.json', project)
         cam, how = project['facecam'], 'auto-detected'
     if not cam:

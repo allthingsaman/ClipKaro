@@ -1448,6 +1448,26 @@ class FacecamFinder(unittest.TestCase):
         self.assertAlmostEqual(box['y'], 140, delta=3)
         self.assertAlmostEqual(box['y'] + box['h'], 230, delta=3)
 
+    def test_two_person_finder_only_for_gameplay_and_streams(self):
+        # v2.7: a podcast recorded in boxes must never be taken for a webcam (it would then count as gameplay)
+        import numpy as np
+        from unittest import mock
+        from clipper import facecam, kind
+        rng = np.random.default_rng(5)                 # people moving about the whole box, as on the GTA stream
+        frames = self.frames()
+        faces = [[(float(rng.uniform(500, 625)), float(170 + rng.uniform(-6, 6)), 26.0)] if i % 3 else []
+                 for i in range(24)]
+        with mock.patch.object(facecam, '_sample', return_value=frames), \
+                mock.patch.object(facecam, '_faces_px', side_effect=faces):
+            self.assertIsNone(facecam.detect('v.mp4', 600, 640, 360))                 # a normal video: no
+        with mock.patch.object(facecam, '_sample', return_value=frames), \
+                mock.patch.object(facecam, '_faces_px', side_effect=faces):
+            self.assertIsNotNone(facecam.detect('v.mp4', 600, 640, 360, framed=True))  # gameplay / a stream: yes
+        self.assertEqual(kind.stream_hint({'title': 'Figuring Out with Khan Sir', 'source': 'https://youtu.be/x'}), [])
+        self.assertTrue(kind.stream_hint({'title': 'GTA 6 day one', 'source': 'https://youtu.be/x'}))
+        self.assertTrue(kind.stream_hint({'title': 'Chill evening', 'source': 'https://www.twitch.tv/videos/1'}))
+        self.assertTrue(kind.stream_hint({'title': 'x', 'categories': ['Gaming']}))
+
     def test_no_box_no_cam(self):
         # people near a side but no fixed box around them (a normal video): never taken for a cam
         from clipper import facecam

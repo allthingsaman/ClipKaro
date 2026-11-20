@@ -62,8 +62,10 @@ def _circle(frames, cx, cy, fh, src_w, src_h):
     return [float(v) for v in np.median(np.array(found), axis=0)]
 
 
-def detect(video, duration, src_w, src_h):
-    """{'x','y','w','h' (px), 'shape': 'circle'|'rect'} for a webcam overlay, or None."""
+def detect(video, duration, src_w, src_h, framed=False):
+    """{'x','y','w','h' (px), 'shape': 'circle'|'rect'} for a webcam overlay, or None. `framed`: also look for a
+    rectangular cam with two or three people in it (framed_box), only for a video already known as gameplay or a
+    stream (kind.stream_hint): a podcast recorded in boxes is never taken for one."""
     frames = _sample(video, duration)
     if len(frames) < 6:
         return None
@@ -80,11 +82,11 @@ def detect(video, duration, src_w, src_h):
             if len(hits) > len(best_hits):
                 best, best_hits = c, hits
     if not best or len(best_hits) < max(4, 0.5 * len(frames)):
-        return framed_box(frames, per_frame, src_w, src_h)
+        return framed_box(frames, per_frame, src_w, src_h) if framed else None
     cx, cy, fh = (float(v) for v in np.median(np.array([h[1] for h in best_hits]), axis=0))
     # a cam overlay is small and sits towards a side; a presenter's face in a normal video isn't both
     if fh > 0.2 * src_h or 0.28 * src_w < cx < 0.72 * src_w:
-        return framed_box(frames, per_frame, src_w, src_h)
+        return framed_box(frames, per_frame, src_w, src_h) if framed else None
     circle = _circle([frames[i] for i, _ in best_hits], cx, cy, fh, src_w, src_h)
     if circle:
         x, y, r = circle

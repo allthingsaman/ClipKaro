@@ -51,6 +51,34 @@ def live_info(project):
     return False, None
 
 
+# v2.7: what tells a gameplay video or a stream apart before the picture is looked at. Features made only for
+# gameplay and streams (the two-person webcam finder, overlapping clips, frame sheets) wait for one of these, so a
+# podcast never pays for them (the owner's wish, 2026-11-20).
+GAME_WORDS = re.compile(
+    r"\b(gameplay|walkthrough|playthrough|let'?s play|speedrun|gaming|livestream|live stream|stream highlights|"
+    r"gta|minecraft|valorant|bgmi|pubg|free ?fire|fortnite|call of duty|warzone|apex legends|elden ring|red dead|"
+    r"rdr2|god of war|cyberpunk|roblox|among us|counter.?strike|cs2|dota|league of legends|wukong|assassin'?s creed|"
+    r"resident evil|hogwarts legacy|last of us|ghost of tsushima|ps5|xbox)\b", re.I)
+PLATFORMS = re.compile(r'twitch\.tv/|kick\.com/', re.I)
+
+
+def stream_hint(project):
+    """Why this is gameplay or a stream, from what is known without the picture: [reasons] (empty: a normal
+    video, as far as we know). The webcam found in the picture is a reason of its own, in run()."""
+    project = project or {}
+    why = []
+    live, why_live = live_info(project)
+    if live:
+        why.append(why_live)
+    if 'Gaming' in (project.get('categories') or []):
+        why.append("YouTube's category is Gaming")
+    if PLATFORMS.search(str(project.get('source') or '')):
+        why.append('a Twitch or Kick video')
+    if GAME_WORDS.search(str(project.get('title') or '')):
+        why.append('the title names a game or gameplay')
+    return why
+
+
 def refresh_metadata(project):
     """Older projects have no live/category data: ask YouTube once (a few seconds). Never fatal."""
     if project.get('kind') != 'youtube' or 'live_status' in project:
@@ -161,7 +189,7 @@ def find_breaks(pdir, project, video, words):
         cam = fclib.from_settings(box, src_w, src_h)
     else:
         if 'facecam' not in project:
-            project['facecam'] = fclib.detect(video, dur, src_w, src_h) or False
+            project['facecam'] = fclib.detect(video, dur, src_w, src_h, framed=bool(stream_hint(project))) or False
         cam = project['facecam'] or None
     times, frames = keyframe_strip(video)
     runs = still_runs(times, frames)
