@@ -53,11 +53,28 @@ NVIDIA: `install.py` puts the extra NVIDIA files inside ClipKaro's own folder.
 
 ## How long it takes
 
-**With an NVIDIA graphics card** (measured on a laptop with an RTX 3050, 4 GB):
+**With an NVIDIA graphics card** (measured on a laptop with an RTX 3050, 4 GB, November 2026):
 
-| Video | Writing down the words | Cutting 4 clips | Editing 4 clips (2.5 minutes of shorts) |
-|---|---|---|---|
-| 7.7-minute Hinglish review | 72 seconds | about 2 minutes (incl. downloading the video) | about 2 minutes |
+| Video | Writing down the words | Choosing the clips | Cutting | Editing | Start to finish |
+|---|---|---|---|---|---|
+| 7.7-minute Hinglish review | 72 seconds | | about 2 minutes for 4 clips (incl. downloading the video) | about 2 minutes | |
+| 37-minute Hindi gameplay stream, deep clips, 8 clips | about 14 minutes, download included | about 20 minutes (deep clips are 8 of them) | about 4 minutes | about 2 minutes | **42 minutes** |
+| 4-hour Hinglish GTA stream with 3 friends, 160 clips | about 40 minutes (6 times faster than the video plays), plus 22 minutes for the second hearing | | about 35 seconds a clip (32-second clips, webcam layout and the picture check included) | about 14 seconds a clip | |
+
+**Gameplay and streams take a little longer** than a podcast of the same length, because ClipKaro also
+listens a second time (about 11 times faster than the video plays, with an NVIDIA card), checks the
+picked clips' words with helpers, and looks at the picture (one frame every 10 seconds: under a minute
+for 4 hours of video). About 10-15 minutes more for a 30-minute stream.
+
+**Rough times for a whole video** (with an NVIDIA card, standard mode, after the download):
+
+| Video length | Podcast or talk | Gameplay or live stream |
+|---|---|---|
+| 20 minutes | about 20 minutes | about 30 minutes |
+| 30 minutes | about 25 minutes | about 35-40 minutes |
+| 1 hour | about 35-45 minutes | about 50-60 minutes |
+
+Deep clips add about 8-15 minutes. Quick mode saves about 5-10 minutes (no critic, no helpers).
 
 **Without one, on the processor (not recommended)** (English measured on a mid-range Windows laptop):
 
@@ -87,8 +104,14 @@ The speech models are the "ears" of ClipKaro. They download once and are kept in
 | `small.en` | 486 MB | English without a graphics card | 1.5 GB |
 | `small` | 486 MB | other languages without a graphics card | 1.5 GB |
 | `medium` | 1.5 GB | optional (`--model medium`) | 2.5 GB, or 2 GB on the card |
-| `large-v3-turbo` | 1.6 GB | Hindi/Hinglish always, and every language with an NVIDIA card | 3 GB, or 2.3 GB on the card |
+| `large-v3-turbo` | 1.6 GB | Hindi/Hinglish without an NVIDIA card, and every other language with one | 3 GB, or 2.3 GB on the card |
 | `large-v3` | 3.1 GB | optional: the most accurate and the slowest (`--model large-v3`) | 5 GB, or 4.5 GB on the card |
+| Hinglish model (`Hub84/faster-whisper-hinglish-prime`) | 1.5 GB | Hindi/Hinglish with an NVIDIA card (writes Hinglish in English letters) | about 2 GB on the card |
+| Second hearing (`nikh360pro/capsbro-hinglish-ct2`) | 1.5 GB | careful listening: Hindi/Hinglish gameplay and streams, NVIDIA only | about 2 GB on the card |
+| Third hearing (`MSpider3/whisper-hindi2hinglish-swift-ct2`) | 78 MB | careful listening: each picked clip once more | very little |
+
+The last two download the first time a Hindi/Hinglish gameplay video or stream is clipped on a computer
+with an NVIDIA card. Podcasts, English videos and computers without one never download them.
 
 For **podcasts with two people on screen**, three small models are downloaded the first time they're
 needed (about 50 MB in total, kept in `~/.cache/clipkaro/models`): one finds who is talking, one
@@ -100,11 +123,67 @@ clip. Video work uses a lot of memory: with 8 GB of RAM, close other big program
 | What | Size |
 |---|---|
 | ClipKaro's own parts (the `.venv` folder) | about 1 GB, or about 3 GB with an NVIDIA card |
-| Speech models | 0.6 GB (English only, no graphics card) up to about 1.9 GB |
+| Speech models | 0.6 GB (English only, no graphics card) up to about 1.9 GB; about 5 GB with the Hinglish model and careful listening (Hindi/Hinglish gameplay on an NVIDIA card) |
+| Starter sound effects | about 3 MB |
 | Voice and laughter models (podcasts) | about 50 MB |
 | Each video you clip | the downloaded video (roughly 0.5-1 GB per hour at 1080p) + the clips (20-40 MB each) |
 
 When you're done with a video, delete its folder in `output/` to get the space back.
+
+## How much Claude usage
+
+ClipKaro's own programs (writing down the words, cutting, editing) run on your computer and use none of
+your Claude plan. Claude is the editor: it reads the video's words and picks the clips, and its helpers
+read long videos in parts, judge every idea and check the words. That part uses your plan.
+
+Claude plans don't charge per video; they have usage limits that reset every few hours and every week.
+To compare videos fairly, the tables show the **tokens** (the pieces of text Claude reads and writes,
+its thinking included; text it reads again from its short-term memory is left out, because it counts
+very little) and **what the same work would cost on Claude's pay-per-use API** (Claude Opus 5.5,
+November 2026 prices). You don't pay that on a plan: it only shows how big the job is.
+
+**Measured on real runs** (added up from Claude Code's own record of every request):
+
+| Video | Mode | Tokens | Same work on the API |
+|---|---|---|---|
+| 7-minute talk, picked in one read (like quick mode today) | quick | 0.2 million | about $3 |
+| 37-minute Hindi gameplay stream, 8 clips | standard | about 0.6 million | about $7-8 |
+| the same video, with deep clips | deep | 1.1 million | about $13 |
+| 4-hour Hinglish GTA stream, 160 clips ("no limit"), deep clips, careful listening | deep | 8.2 million for the helpers, plus the main editor | $79 for the helpers, plus about $10-20 |
+
+**Worked out from those measurements, per video length** (Hindi/Hinglish or English; the usual number
+of clips, about one per 7 minutes):
+
+| Video length | Quick | Standard (the default) | Deep (standard + deep clips) |
+|---|---|---|---|
+| 20 minutes | about 0.25-0.3 million ($3-4) | about 0.45-0.6 million ($5-8) | (asked only for videos over 21 minutes) |
+| 30 minutes | about 0.3-0.35 million ($4-5) | about 0.5-0.7 million ($6-8) | about 1-1.2 million ($11-14) |
+| 1 hour | about 0.4-0.55 million ($5-7) | about 0.9-1.1 million ($11-13) | about 1.5-1.8 million ($18-22) |
+
+**Gameplay and live streams** (Hindi/Hinglish with an NVIDIA card) add the word check of every picked
+clip (about $0.19 a clip), the frame sheets (about 1,550 tokens a sheet, one sheet per 3.5 minutes) and
+the close-ups (about $0.70 for a packet of up to 24 spots), in every mode:
+
+| Video length | Extra for gameplay or a stream |
+|---|---|
+| 20 minutes | about 0.12 million ($1.50) |
+| 30 minutes | about 0.15 million ($2) |
+| 1 hour | about 0.25 million ($3) |
+
+**More clips cost more.** Every extra clip idea is judged three times by the critic (about $0.08 an
+idea), every picked clip gets its posting texts, and in gameplay its word check. "No limit" on a
+4-hour stream (160 clips) is about the work of 8-10 standard videos.
+
+**Is it affordable for a small creator?**
+- **The computer part is free**, and an NVIDIA card makes it fast. Gameplay needs no extra hardware
+  (careful listening simply switches off without an NVIDIA card).
+- **Claude Code needs a paid Claude plan** (Pro or higher). **Quick mode** is the everyday choice on
+  Pro: it uses about half of standard. Use standard for the videos that matter, and deep for long
+  podcasts with stories spread across them.
+- **Find out what your plan holds:** type `/usage` in Claude Code before and after your first
+  video. The difference tells you how many videos fit in your limits.
+- **Big jobs** (a 4-hour stream, "no limit", 100+ clips) are better on a larger plan, or split over
+  a few days.
 
 ## Check your computer
 

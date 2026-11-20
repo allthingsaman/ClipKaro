@@ -576,6 +576,56 @@ class JumpCuts(unittest.TestCase):
         self.assertEqual(len(cut.jump_pieces(0.0, words[-1]['e'], words, lambda a, b: True, cut.GAME_PAUSE)), 1)
         self.assertEqual(len(cut.jump_pieces(0.0, words[-1]['e'], words, lambda a, b: True)), 2)
 
+    def test_never_inside_a_word_still_being_said(self):
+        # clip 21 of the GTA stream: a short mark lay inside a stretched word ("kaun," held 1.5 s); the pause
+        # was measured from the mark's end and the cut fell inside "kaun". Now it counts from the word's end.
+        words = [W('Through', 0.0, 0.4), W('kaun,', 0.4, 2.0), W('…', 1.0, 1.2), W('chaahe', 2.4, 2.8),
+                 W('kaun', 2.8, 3.0), W('kaun', 3.1, 3.6)]
+        pieces = cut.jump_pieces(0.0, 3.8, words, lambda a, b: True, cut.GAME_PAUSE)
+        self.assertEqual(len(pieces), 1)                      # 0.4 s after "kaun," ends: no pause to cut
+        words[1]['e'] = 1.1                                   # the same with a normal "kaun,": cut as before
+        self.assertEqual(len(cut.jump_pieces(0.0, 3.8, words, lambda a, b: True, cut.GAME_PAUSE)), 2)
+
+    def test_gameplay_keeps_a_pause_with_action_on_screen(self):
+        # v2.7.1, clip 143 of the GTA stream: a takedown happened in a quiet second and pause cutting took it
+        # out. A pause where the picture changes a lot stays; the same pause on a still picture is cut, and
+        # motion only inside the webcam box doesn't count.
+        import shutil
+        import subprocess
+        from clipper.common import DEFAULT_SETTINGS
+        if not shutil.which('ffmpeg'):
+            self.skipTest('no ffmpeg')
+        words = sentence('so this is the first', 0.0) + sentence('abey yaar ye kya ho gaya', 3.1)
+        self.assertTrue(cut.JUMP_PAUSE < words[5]['s'] - words[4]['e'] < cut.GAME_PAUSE)    # a 1.3 s pause
+        clip = {'ranges': [[0.0, words[-1]['e'] + 0.2]]}
+        with tempfile.TemporaryDirectory() as d:
+            still, action, cam_only = (Path(d) / f'{n}.mp4' for n in ('still', 'action', 'cam'))
+            gray = 'color=gray:s=320x180:r=30:d=6'
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', gray, '-pix_fmt', 'yuv420p', str(still)], check=True)
+            # a white box swinging back and forth from 2 s to 3 s: in the game area, or only inside the cam box
+            for out, x, y in ((action, '120+100*sin(t*20)', 50), (cam_only, '200+40*sin(t*20)', 100)):
+                subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', gray, '-f', 'lavfi', '-i',
+                                'color=white:s=70x70:r=30:d=6', '-filter_complex',
+                                f"[0][1]overlay=x='{x}':y={y}:enable='between(t,2,3)'", '-pix_fmt', 'yuv420p',
+                                str(out)], check=True)
+            cam = {'x': 160, 'y': 90, 'w': 160, 'h': 90}
+            n = lambda video, box=None: len(cut.with_jump_cuts(clip, words, {}, True,
+                                                               cut.action_check(clip, video, box, (320, 180)))['ranges'])
+            self.assertEqual(n(still), 2)                       # nothing happens: the pause is cut as before
+            self.assertEqual(n(action), 1)                      # something happens: the pause stays
+            self.assertEqual(n(cam_only, cam), 2)               # only the webcam moved: cut as before
+            self.assertEqual(n(cam_only), 1)                    # (the same picture without the cam box left out)
+            out = cut.with_jump_cuts(clip, words, {}, True, cut.action_check(clip, action, None, (320, 180)))
+            self.assertEqual(out.get('action_kept'), 1)
+        self.assertEqual(len(cut.with_jump_cuts(clip, words, {}, True)['ranges']), 2)       # no check: as before
+        self.assertEqual(DEFAULT_SETTINGS['action_pauses'], 'keep')
+        from unittest import mock                                # one flicker (a quarter second) is not action
+        calm = [(i / 4, (i + 1) / 4, 10.0) for i in range(24)]
+        for spikes, expect in (({9}, False), ({9, 10}, True)):
+            rows = [(a, b, 40.0 if i in spikes else c) for i, (a, b, c) in enumerate(calm)]
+            with mock.patch.object(cut, 'picture_change', return_value=rows):
+                self.assertEqual(cut.action_check({'ranges': [[0, 6]]}, 'v.mp4')(2.1, 3.0), expect)
+
 
 class EdgeFlash(unittest.TestCase):
     """A camera cut in a piece's last frames must not show a flash of the next shot (roadmap item 17)."""

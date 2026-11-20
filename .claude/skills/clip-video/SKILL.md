@@ -395,7 +395,8 @@ This downloads the video (max 1080p) the first time, snaps every range to whole 
 each camera shot around the speaker's face (9:16, 1080x1920), and writes `clips/NN-title.mp4`.
 Shots with no detectable face (slides, b-roll) get a blurred-background "fit" layout.
 Inside each piece, pauses of 0.55 s+ are shortened and "um" / "uh" cut out (always; never across a
-laugh, in gameplay only pauses up to 2 s; it prints `jump cuts: N`).
+laugh, in gameplay only pauses up to 2 s and never one where the picture moves a lot, like a takedown
+or a crash; it prints `jump cuts: N` and `N pause(s) kept: something happens on screen there`).
 **Gameplay with a webcam overlay** is detected automatically and stacked instead: gameplay on top,
 the cam enlarged below, captions on the seam (`-> layout: facecam` in the output). `--layout crop`
 turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (see README). In gameplay

@@ -43,6 +43,9 @@ A long stream where you and your friends play and talk on voice chat now needs n
 - **Sound effects included** (a free set from Mixkit), and they start on their moment, never before it.
 - **Lots of clips** ("no limit"), a short and a long version of the same funny moment, a "© twitch.tv/name"
   credit, and an email address or phone number said on stream cut out of every clip.
+- **The action stays in** *(v2.7.1)*. Pause cutting goes by the sound, so a quiet second where something
+  happens on screen (a takedown, a crash) could be cut out, leaving the shout without its cause. Now a
+  pause where the picture suddenly changes a lot stays in.
 
 Podcasts and talks are not touched by any of the gameplay work. Details: [CHANGELOG.md](CHANGELOG.md).
 
@@ -196,7 +199,9 @@ depend on it: any agent that can work on your computer can drive it.
 | Codex, Cursor, Gemini CLI, GitHub Copilot and other agents that read [AGENTS.md](AGENTS.md) | their own plans | ✅ they follow the same steps (helpers may run one after another) |
 | **Claude's free plan** (the chat on claude.ai or the Claude app) | free | ❌ the chat can't reach your computer, so it can't run ClipKaro's programs |
 
-Short on usage? Say **"quick clip this"** (basic mode): it uses the least.
+Short on usage? Say **"quick clip this"** (basic mode): it uses about half of the default.
+How much a video uses, measured on real runs, and whether it fits a small creator's plan:
+[How much Claude usage](docs/requirements.md#how-much-claude-usage).
 
 ## ClipKaro or Opus Clip inside Claude?
 Opus Clip, the best-known AI clipper, can also be used from inside Claude (a "connector"). It looks
@@ -239,9 +244,13 @@ the same in every mode: the framing, the captions, the edit, Hinglish, gameplay 
 | **A second opinion** (a blind AI critic scores every idea 3 times; weak starts and endings are repaired) | no | yes | yes |
 | **Caption check** (Claude fixes misheard words, like "sorry" written as "saari") | no | yes | yes |
 | **Deep clips** (two moments far apart joined into one story, checked by 3 honesty judges) | no | no | yes |
-| **How much of your Claude plan** (rough) | least | more | most (about twice Standard on a long podcast) |
+| **How much of your Claude plan** (measured, for a 30-minute video) | about 0.3 million tokens | about 0.6 million | about 1.1 million |
 | **How long it takes** | fastest | a few minutes more | the longest |
 | **Best for** | short videos, many videos a day, saving your plan, a quick first look | most videos: the best clips without thinking about it | long podcasts and interviews (40 minutes or more) where a question and its answer are far apart |
+
+Gameplay and live streams add about 0.15 million tokens for 30 minutes (the word check and the frame
+sheets), in every mode. Times, usage per video length and plan advice:
+[What computer you need](docs/requirements.md#how-long-it-takes).
 
 **Which one is for you?**
 - **Not sure? Use Standard.** Just say "clip this". It's the default for a reason.

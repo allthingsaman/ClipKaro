@@ -1,5 +1,22 @@
 # What's new
 
+## v2.7.1 (November 2026): the action stays in, and real usage numbers
+
+- **No pause cut where something happens on screen** (gameplay and streams). Pause cutting goes by the
+  sound, so a quiet second with action in it (a takedown, a crash) could be cut out, leaving the shout
+  without its cause. Now a pause where the picture changes a lot, for at least half a second, stays in.
+  On a 4-hour GTA stream that brought back 107 seconds in 76 of 160 clips (1.4 s a clip on average);
+  calm stretches and talk are cut as before, and podcasts are not affected (`"action_pauses": "cut"`
+  turns it off).
+- **Never a cut inside a word still being said.** A pause is now measured from the end of every word
+  before it, so a long, stretched word that runs past a short one is never cut off (clip 21 of the GTA
+  stream; normal transcripts are cut exactly as before).
+- **Real numbers for time and Claude usage.** [What computer you need](docs/requirements.md) now shows
+  times and Claude usage measured on real runs (from Claude Code's own record of every request) and
+  worked out per video length for podcasts and gameplay, with advice for small creators. Quick mode
+  uses about half of standard; a 30-minute podcast in standard is about 0.6 million tokens.
+- The speech model and disk tables list the Hinglish model and the two careful-listening models.
+
 ## v2.7 (November 2026): gameplay with friends, watched and heard carefully
 
 v2.7 brings everything a long gameplay stream with friends on voice chat needed by hand on a 4-hour GTA 6

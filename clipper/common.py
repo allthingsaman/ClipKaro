@@ -52,6 +52,8 @@ DEFAULT_SETTINGS = {
     'safe_zones': True,            # captions clear of faces and of the apps' buttons (narrower lines)
     'jump_cuts': True,             # cut long pauses (0.55 s+) and filler sounds out of every clip (the owner's
                                    # choice, 2026-11-14); false only as the way back to v1.1
+    'action_pauses': 'keep',       # gameplay and streams: a pause where the picture changes a lot (a takedown, a
+                                   # crash) is not cut (v2.7.1); "cut" cuts it by the sound alone, as before
     'caption_look': 'classic',     # classic | box | karaoke | minimal | bold | comic
     'emoji': True,                 # emojis on the strong words Claude marks (clips.json emoji)
     'music': False,                # background music where a clip names a mood (your own tracks): on hold

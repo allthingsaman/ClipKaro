@@ -152,12 +152,14 @@ def jump_pieces(s, e, words, quiet_ok, max_pause=None):
     if len(keep) < 2:
         return [[s, e]]
     pieces = [[s, None]]
-    for a, b in zip(keep, keep[1:]):
+    said = keep[0]['e']                          # the latest end of any word so far: a stretched word that
+    for a, b in zip(keep, keep[1:]):             # runs past the next one is never cut while still being said
+        said = max(said, a['e'])
         fill = [w for w in seg if a['s'] < w['s'] < b['s'] and norm_token(w['w']) in FILLERS]
-        gap = b['s'] - a['e']
+        gap = b['s'] - said
         if not fill and (gap < JUMP_PAUSE or (max_pause and gap > max_pause)):
             continue
-        c0 = max(a['e'] + 0.02, min(a['e'] + JUMP_PAD_OUT, fill[0]['s'] - 0.02 if fill else 1e9))
+        c0 = max(said + 0.02, min(said + JUMP_PAD_OUT, fill[0]['s'] - 0.02 if fill else 1e9))
         c1 = min(b['s'] - 0.02, max(b['s'] - JUMP_PAD_IN, fill[-1]['e'] + 0.02 if fill else -1e9))
         if c1 - c0 < 0.2 or not quiet_ok(c0, c1):
             continue
@@ -173,12 +175,73 @@ def jump_pieces(s, e, words, quiet_ok, max_pause=None):
     return out
 
 
-def with_jump_cuts(clip, words, cues, gameplay):
+# ---------- gameplay: a quiet second where something happens on screen stays ----------
+# Pause cutting goes by the sound. In gameplay the cause of a reaction often happens in a quiet second
+# (a takedown, a crash, a fall) and the shout comes after: clip 143 of the GTA stream lost a police
+# takedown that way (the picture changed about twice as much as usual in that second, the sound stayed
+# low). So the picture change is measured MOTION_FPS times a second on a small grey copy, the webcam box
+# left out, and a pause whose picture changes MOTION_RATIO times the clip's usual change (its median) or
+# more, and at least MOTION_MIN, for at least half a second (MOTION_LASTS readings), is not cut. From the
+# pixels a takedown and a fast camera swing look alike (cancelling the camera's movement didn't separate
+# them on the GTA stream); both stay, and a jump in the middle of a camera swing looks like a glitch
+# anyway. On that stream: 117 of 575 pauses stay (107 of 459 s), 76 of 160 clips 1.4 s longer on average.
+# Calm stretches, menus and talking stay cut as before.
+MOTION_FPS = 4
+MOTION_SIZE = (160, 90)
+MOTION_RATIO = 1.5
+MOTION_MIN = 8.0           # grey levels (0-255): a near-still scene never counts as action
+MOTION_LASTS = 2           # readings (1/MOTION_FPS s each): a single flicker is not action
+
+
+def picture_change(video, s, e, cam=None, src=(1920, 1080)):
+    """[(t0, t1, change)] for [s, e] in source seconds: the mean grey-level change between frames
+    1/MOTION_FPS s apart, the webcam box (source pixels {'x','y','w','h'}) left out."""
+    import numpy as np
+    w, h = MOTION_SIZE
+    r = subprocess.run(['ffmpeg', '-v', 'error', '-ss', f'{s:.3f}', '-t', f'{e - s:.3f}', '-i', str(video),
+                        '-vf', f'fps={MOTION_FPS},scale={w}:{h},format=gray', '-an', '-f', 'rawvideo', '-'],
+                       capture_output=True)
+    f = np.frombuffer(r.stdout, np.uint8)
+    if f.size < 2 * w * h:
+        return []
+    f = f[:f.size // (w * h) * w * h].reshape(-1, h, w).astype(np.float32)
+    keep = np.ones((h, w), bool)
+    if cam:
+        sx, sy = w / src[0], h / src[1]
+        keep[max(0, int(cam['y'] * sy) - 1):int((cam['y'] + cam['h']) * sy) + 2,
+             max(0, int(cam['x'] * sx) - 1):int((cam['x'] + cam['w']) * sx) + 2] = False
+    step = 1.0 / MOTION_FPS
+    return [(round(s + i * step, 3), round(s + (i + 1) * step, 3), float(np.abs(f[i + 1] - f[i])[keep].mean()))
+            for i in range(len(f) - 1)]
+
+
+def action_check(clip, video, cam=None, src=(1920, 1080)):
+    """A function (a, b) -> True when the picture changes a lot in [a, b] (gameplay: that pause stays)."""
+    import statistics
+    rows = [r for s, e in clip['ranges'] for r in picture_change(video, s, e, cam, src)]
+    if len(rows) < 8:
+        return lambda a, b: False
+    usual = statistics.median(r[2] for r in rows)
+    level = max(MOTION_MIN, usual * MOTION_RATIO)
+
+    def moving(a, b):
+        inside = [c for t0, t1, c in rows if t0 < b and a < t1]
+        return bool(inside) and sum(c >= level for c in inside) >= min(MOTION_LASTS, len(inside))
+    moving.level, moving.usual = level, usual
+    return moving
+
+
+def with_jump_cuts(clip, words, cues, gameplay, moving=None):
     """The clip with each range split at its long pauses (clips.json keeps the ranges as picked).
-    Adds 'jump_edges' (piece edges made by a jump cut: they get small handles) and 'jump_saved'."""
+    Adds 'jump_edges' (piece edges made by a jump cut: they get small handles) and 'jump_saved'.
+    moving(a, b): True when something happens on screen in that pause (gameplay): it stays."""
     noisy = [(a, b) for kind in ('laughter', 'applause') for a, b, *_ in (cues or {}).get(kind, [])]
+    kept = []
 
     def quiet_ok(a, b):
+        if moving and moving(a, b):
+            kept.append((a, b))
+            return False
         return not any(x < b and a < y for x, y in noisy)
     ranges, edges, saved = [], set(), 0.0
     for k, (s, e) in enumerate(clip['ranges']):
@@ -191,9 +254,10 @@ def with_jump_cuts(clip, words, cues, gameplay):
             edges |= {round(x[1], 3), round(y[0], 3)}
             saved += y[0] - x[1]
         ranges += pcs
+    extra = {'action_kept': len(kept)} if kept else {}
     if not edges:
-        return clip
-    return dict(clip, ranges=ranges, jump_edges=edges, jump_saved=round(saved, 1))
+        return dict(clip, **extra) if extra else clip
+    return dict(clip, ranges=ranges, jump_edges=edges, jump_saved=round(saved, 1), **extra)
 
 
 def snap_piece(clip, s, e, words):
@@ -805,6 +869,8 @@ def main():
         from . import sound
         from .kind import is_irregular
         cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
+        act_on = settings().get('action_pauses', 'keep') != 'cut'
+        cam_box = fc['cam'] if fc else (project.get('facecam') or None)
     from . import private                        # an email or phone number said out loud never ends up in a clip
     secret = private.spans(words) if private.enabled(settings()) else []
     for i, clip in enumerate(picks['clips'], 1):
@@ -815,7 +881,10 @@ def main():
             if not want or cid in want:
                 for s, e, what in dict.fromkeys(hits):
                     print(f'   clip {cid}: {fmt_ts(s)}-{fmt_ts(e)} left out ({what} said out loud)')
-        prepared[cid] = with_jump_cuts(clip, words, cues, game) if jc_on else clip
+        moving = None                            # gameplay: a quiet second with action on screen stays (v2.7.1)
+        if jc_on and game and act_on and (not want or cid in want):
+            moving = action_check(clip, video, cam_box, (info['width'], info['height']))
+        prepared[cid] = with_jump_cuts(clip, words, cues, game, moving) if jc_on else clip
         if not want or cid in want:     # no flash of another shot at a piece's edge
             prepared[cid] = with_edge_trims(prepared[cid], video, words, info.get('fps', 30))
 
@@ -845,6 +914,8 @@ def main():
         pc = prepared[cid]
         if pc.get('jump_edges'):
             print(f"   jump cuts: {len(pc['ranges']) - len(clip['ranges'])}, {pc['jump_saved']} s of pauses taken out")
+        if pc.get('action_kept'):
+            print(f"   {pc['action_kept']} pause(s) kept: something happens on screen there")
         meta = build_clip(video, info, pc, words, out, a.horizontal, fc,
                           plans.get(cid, (None, None))[1], auto.get(cid), game)
         n_game = sum(1 for w in meta['words'] if w.get('game')) if meta else 0

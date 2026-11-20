@@ -840,7 +840,8 @@ answer to a question from the host's intro). "No deep clip" is a normal answer.
 Before a clip is analysed and cut, each of its ranges is split at long pauses and filler sounds
 (clips.json keeps the ranges as picked). Silence-cutting tools keep about 0.1-0.2 s around a cut and
 leave gaps under ~0.25 s alone, or word endings get clipped, so: a pause of 0.55 s or more between
-two words keeps 0.14 s after the first and 0.08 s before the next (~0.22 s of quiet); a filler
+two words (counted from the latest end of any word before it, so a stretched word that runs past a
+shorter one is never cut while still being said) keeps 0.14 s after the first and 0.08 s before the next (~0.22 s of quiet); a filler
 (um, uh, hmm, उम्म, अं ...) is cut with its pause. Never across a laugh or applause (the sound pass),
 never leaving a piece under 0.7 s; in live streams and gameplay (or a facecam layout) only pauses up
 to 2 s. The pieces then go through the normal multi-piece path (fades in the quiet, words remapped);
@@ -849,6 +850,16 @@ jump-cut edges get those small handles instead of the usual 0.12 / 0.30 s (`snap
 the framing only follows. Measured on 106 clips: 267 cuts, 6.4 % of the time (up to 13 s in a slow
 interview clip). On in every clip (the owner's choice, 2026-11-14); `"jump_cuts": false` /
 `cut --no-jump-cuts` is only the way back to v1.1.
+
+**Action pauses stay** (v2.7.1, `cut.action_check`, `cut.picture_change`; gameplay and streams only):
+for every clip that is cut, ffmpeg reads the clip's ranges at 4 fps as a 160x90 grey picture
+(`MOTION_FPS`, `MOTION_SIZE`), the webcam box left out, and the mean grey-level change between
+neighbouring frames is the picture change. A candidate pause is not cut when at least `MOTION_LASTS`
+(2) readings inside it reach `MOTION_RATIO` (1.5) times the clip's median change, and at least
+`MOTION_MIN` (8 grey levels). `with_jump_cuts(..., moving)` asks it through `quiet_ok` and counts the
+kept pauses (`action_kept`, printed by `cut`). Cancelling the camera's movement (phase correlation)
+didn't separate a takedown from a camera swing on the GTA stream, so both stay. Cost: about 1-3 s of
+decoding per clip. `"action_pauses": "cut"` turns it off.
 
 **No flash at a piece's edge** (v2.3, `cut.edge_trims`): the shot detector ignores a camera cut within
 0.8 s of a piece's edge (a shot that short can't be framed), so a cut in the last frames showed a few

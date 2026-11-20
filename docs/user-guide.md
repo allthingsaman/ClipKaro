@@ -346,9 +346,24 @@ Save the file. The next time you start Claude Code in the ClipKaro folder, it fo
 | | With an NVIDIA graphics card | Without one (not recommended) |
 |---|---|---|
 | Writing down the words of a 10-minute video | 1-2 minutes | English: a few minutes. Hindi/Hinglish: 10-40 minutes |
-| A whole video, from link to finished clips | usually 15-30 minutes (the second opinion on every clip idea adds 5-15 of them) | can take **a couple of hours** |
+| A 30-minute podcast, from link to finished clips | about 25 minutes | can take **a couple of hours** |
+| A 30-minute gameplay stream, from link to finished clips | about 35-40 minutes (ClipKaro also listens twice and looks at the picture) | can take **a couple of hours** |
 
-The very first time also includes downloading (once).
+The very first time also includes downloading (once). Measured: a 37-minute Hindi gameplay stream with
+deep clips took 42 minutes on a laptop with an RTX 3050.
+
+**How much of your Claude plan a video uses** (measured on real videos; "tokens" are the pieces of
+text Claude reads and writes):
+
+| | 30-minute podcast | 30-minute gameplay stream |
+|---|---|---|
+| Quick ("quick clip this") | about 0.3 million tokens | about 0.45 million |
+| Standard (the default) | about 0.6 million | about 0.75 million |
+| Deep ("deep clip this") | about 1.1 million | about 1.25 million |
+
+To see what that means for your own plan, type `/usage` in Claude Code before and after your first
+video. On Claude's Pro plan, quick mode is the everyday choice. More numbers:
+[What computer you need](requirements.md#how-much-claude-usage).
 
 ---
 

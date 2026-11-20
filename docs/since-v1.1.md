@@ -22,6 +22,9 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.7.1 on 2026-11-20: nothing removed; the one change to clips (action pauses stay)
+only touches gameplay and streams, and `"action_pauses": "cut"` brings v2.7's cutting back.
+
 Checked again for v2.7 on 2026-11-20: no v1.1 command, option or setting has been removed. Everything new for
 gameplay and streams (frame sheets, careful listening, overlapping clips, the two-person webcam finder) stays
 off for a normal video, and a test (`NormalVideosUntouched`) keeps it that way.
@@ -199,6 +202,22 @@ changed. Only new ones were added.
   and in gameplay only pauses up to 2 s. About 6 % of a clip on average. *(v2.2, 2026-11-13; the owner
   watched it on all 106 test clips and chose it for every clip, 2026-11-14)*
   - Way back: `"jump_cuts": false` in settings.json (or `cut --no-jump-cuts`).
+- ⬆ **The action stays in: no pause cut where the picture moves a lot** (gameplay and streams). Pause
+  cutting goes by the sound, so a quiet second where something happens on screen could be cut, leaving
+  the shout without its cause: clip 143 of a GTA stream lost the takedown of a police officer right
+  before "ye kya ho gaya". Now ClipKaro measures how much the picture changes in each pause (4 times a
+  second, the webcam left out); a pause where it changes at least 1.5 times as much as usual in that clip,
+  for at least half a second, stays in. A fast camera swing counts too (the pixels can't tell it from a
+  takedown, and a jump in the middle of a swing looks like a glitch anyway). On that stream: 117 of 575
+  pauses stay, 76 of 160 clips got 1.4 s longer on average; calm stretches and talk are cut as before.
+  Podcasts and talks are not affected. *(v2.7.1, 2026-11-20)*
+  - Way back: `"action_pauses": "cut"` in settings.json.
+- ⬆ **No pause cut inside a word still being said.** A pause was measured from the end of the word just
+  before it; when a stretched word ran past a shorter one (clip 21 of the GTA stream: "kaun," held 1.5 s
+  around a short mark), the cut fell inside it, and the quality check failed the clip. Now a pause starts
+  only after every word before it has ended. Transcripts without overlapping words are cut exactly as
+  before (on that stream only clip 21 changed). *(v2.7.1, 2026-11-21)*
+  - Way back: none needed (a cut inside a word was a fault).
 - ↔ **Captions clear of faces and the apps' buttons.** v1.1 put captions on one line, up to 940 px
   wide, whatever was under them. Now they keep out of TikTok's button column and the apps' top and
   bottom bars (at most 800 px wide), and a shot whose caption line would cover a face moves them to
@@ -358,16 +377,24 @@ changed. Only new ones were added.
 ## Cost
 
 - ⚠ **Claude usage** (standard and deep). Reading in parts, the critic and deep clips use more of your Claude plan than
-  v1.1's single read. Estimates for a long podcast (not measured yet):
-  - v1.1: about 0.1-0.2 million tokens;
-  - now: about 1 million;
-  - with deep clips: about 2 million.
+  v1.1's single read. **Measured on real runs** *(2026-11-20, from Claude Code's record of every request;
+  tokens without the cheap re-reads, and what the same work costs on the pay-per-use API, Opus 5.5)*:
+  - v1.1's single read, a 7-minute talk: 0.2 million tokens (about $3);
+  - standard, a 37-minute Hindi gameplay stream: about 0.6 million (about $7-8);
+  - the same with deep clips: 1.1 million (about $13);
+  - a 4-hour stream with 160 clips, deep clips and careful listening: 8.2 million for the helpers alone
+    ($79).
+
+  Worked out from these for a 1-hour video: quick about 0.4-0.55 million, standard about 0.9-1.1
+  million, deep about 1.5-1.8 million; gameplay and streams add about 0.25 million. The earlier
+  guesses (about 1 million standard, 2 million deep for a long podcast) were close.
+  All numbers: [requirements.md](requirements.md#how-much-claude-usage).
 
   Choosing the clips also takes a few minutes longer. On Claude's Pro plan that can mean fewer
   videos per day than with v1.1.
   - **Way back: quick mode** *(2026-11-13)*. Say "quick clip this" or "use fewer tokens", and
-    Claude picks like v1.1 (one read, no helpers, no critic), with every other upgrade kept. Its real
-    usage is still to be measured with `/usage` (roadmap item 3b).
+    Claude picks like v1.1 (one read, no helpers, no critic), with every other upgrade kept. It uses
+    about half of standard.
 
 ---
 
