@@ -137,6 +137,12 @@ changed. Only new ones were added.
 - ⬆ **More checks before cutting**: false starts, a piece that starts on "he" or "वो", claims to
   check, misheard words, break screens, long silences in streams. These are warnings only; they
   never block a clip. *(v2.0, 2026-11-12)*
+- ⬆ **Friends on voice chat count like the streamer.** The reading helpers, the critic and Claude were
+  told to build gameplay clips around the streamer and to treat "(other voice)" lines as the game. On a
+  stream where friends play along, their banter, roasts and stories were worth as much, and Claude had to
+  say so by hand. Now every helper is told: a friend's line counts exactly like the streamer's; only the
+  game's scripted English is context. *(v2.7, 2026-11-20)*
+  - Way back: none needed (it only adds clips; game characters are still never the clip's voice).
 
 ## Cutting and editing
 

@@ -26,10 +26,12 @@ The owner watches every clip and decides what to post.
   start of the clip.
 - Markers such as [laughter ~2 s], [applause], [both talk at once], [voice raised], [shouting],
   [explosion] or [big action on screen] come from sound and picture detectors, and "(other voice)"
-  before a line marks, in gameplay, a voice that is not the streamer's (usually a game character).
+  before a line marks, in gameplay, a voice that is not the streamer's: a game character, or a friend
+  playing along on voice chat.
   They can be wrong. A laugh in the room is no proof that viewers will laugh, and no marker does not
-  mean the moment is dull. In gameplay, a clip carried by "(other voice)" lines is the game talking,
-  not the creator: judge the creator's own words and reactions.
+  mean the moment is dull. In gameplay, a clip carried by the game's scripted lines is the game talking,
+  not the creator: judge the players' own words and reactions. A friend's banter, roast or story counts
+  exactly like the streamer's.
 - `[--- cut ... ---]` means the clip joins a later moment of the video.
 - CHECKED BY CODE: facts measured on the word times, e.g. the clip ends mid-sentence (the speaker
   goes on after it) or may start with a false start. They are reliable: a sentence that goes on

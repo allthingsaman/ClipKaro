@@ -88,9 +88,11 @@ facecam`). Then these rules apply too:
 - **Break screens are never clip material.** "Starting soon", "Be right back" and stream-ending
   screens are already left out (a `# ===== ... SCREEN =====` marker line shows where). Don't take a
   clip that runs into one; `cut --check` warns if one does.
-- **Build clips around the streamer's own talk and reactions.** The transcript also holds the game's
-  characters, cut-scenes and music; they are context, not the clip's voice. A game line may stay in
-  when the streamer's reaction needs it.
+- **Build clips around the players' own talk and reactions.** The streamer and any friends playing
+  along on voice chat count the same: a friend's banter, roast or story is as good as the streamer's.
+  The transcript also holds the game's characters, cut-scenes and music; they are context, not the
+  clip's voice. A game line may stay in when a player's reaction needs it. "(other voice)" marks a line
+  that isn't the streamer's: the game's scripted English, or a friend; the words tell which.
 - **Quiet stretches are normal.** The streamer plays without talking for a while; that is not a dead
   video. Inside a clip, though, a silence of more than ~8 s loses viewers unless the gameplay itself
   is the point (a chase, a crash, a boss fight): end before it, or join the pieces around it

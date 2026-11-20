@@ -638,6 +638,14 @@ class Streams(unittest.TestCase):
         runs = kind.still_runs(times, frames)
         self.assertEqual(runs, [(0, 9)])
 
+    def test_friends_on_voice_chat_count_like_the_streamer(self):
+        # v2.7: the helpers were told to build only on the streamer; a 3-friends stream needed it said by hand
+        self.assertIn('friends', kind.RULES)
+        self.assertIn('count the same', kind.RULES)
+        root = Path(__file__).resolve().parent.parent / '.claude' / 'agents'
+        for name in ('clipkaro-part-reader.md', 'clipkaro-critic.md'):
+            self.assertIn('friend', (root / name).read_text(encoding='utf-8'), name)
+
 
 class MoreClips(unittest.TestCase):
     def test_unused_ideas(self):

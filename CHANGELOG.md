@@ -2,6 +2,8 @@
 
 ## Since v2.6 (not released yet)
 
+- **Streams with friends.** Friends playing along on voice chat now count exactly like you when the
+  helpers look for clips: their banter, roasts and stories become clips too.
 - **Your friends' Hinglish keeps its captions in gameplay.** Lines like "Kisko khaoon?" or "Main kama loon"
   were taken for a game character and lost their captions. Now only real English counts as the game's, so
   you and your friends on voice chat are captioned and the game characters still aren't. Claude's caption

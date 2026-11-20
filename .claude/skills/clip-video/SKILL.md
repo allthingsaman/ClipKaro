@@ -122,9 +122,9 @@ least N" from the user, never fewer than N.
 full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
 the detector can be wrong, so judge them only by the words). Lines may carry **hints** from the sound
 and picture: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
-and in gameplay `(other voice)` before a line a game character says. They show where to look; the words
+and in gameplay `(other voice)` before a line that isn't the streamer's (a game character, or a friend on voice chat). They show where to look; the words
 decide; never quote them, and no hint is no reason to skip a moment. In gameplay, build clips around
-the streamer's own lines, not "(other voice)" ones. A video fetched before v2.3 gets them with
+the players' own lines (friends on voice chat count like the streamer), not the game's scripted ones. A video fetched before v2.3 gets them with
 `python run.py hints <project>` (skip it in quick mode). Write a **shortlist of about twice
 the clips you'll make** (`parts` prints the number) to clips.json, in the normal format, then
 let the critic judge them (section 2a).
@@ -353,7 +353,8 @@ laugh, in gameplay only pauses up to 2 s; it prints `jump cuts: N`).
 **Gameplay with a webcam overlay** is detected automatically and stacked instead: gameplay on top,
 the cam enlarged below, captions on the seam (`-> layout: facecam` in the output). `--layout crop`
 turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (see README). In gameplay
-videos, pick moments from the creator's commentary and reactions, not the game characters' dialogue.
+videos, pick moments from the players' commentary and reactions (the streamer and friends on voice chat
+alike), not the game characters' dialogue.
 Use `--horizontal` to keep 16:9, and `--clips 2,4` to redo only some.
 
 **Two people on screen (podcasts, interviews)** are framed automatically when they sit too far

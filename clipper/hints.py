@@ -5,7 +5,8 @@
 Some of the best moments live in a laugh, a shout or an explosion, not in the words. So the lines
 Claude reads (transcript.txt, the parts of a long video, the critic's clip texts) carry short notes:
 
-    [12.40-15.10] (other voice) You call it whatever you want to call it.      a game character, not the streamer
+    [12.40-15.10] (other voice) You call it whatever you want to call it.      not the streamer: a game character
+                                                                              (or a friend on voice chat)
     [15.20-18.00] bhai ye kya ho gaya [voice raised]                            higher and louder than usual
     [18.10-21.40] arre arre arre [shouting] [explosion]                          (gameplay)
     [30.00-33.00] tu bhi na yaar [laughter ~2 s]

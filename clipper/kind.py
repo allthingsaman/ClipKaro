@@ -308,8 +308,10 @@ def is_irregular(project):
     return bool(vk.get('live') or vk.get('gaming') or vk.get('facecam'))
 
 
-RULES = ('build clips around the streamer\'s own talk and reactions (game characters\' lines are not the '
-         'streamer); quiet gameplay between lines is normal, not a dead spot (end a clip before a long '
+RULES = ('build clips around the players\' own talk and reactions: the streamer and any friends playing along on '
+         'voice chat count the same (a friend\'s banter, roast or story is as good as the streamer\'s); an "(other '
+         'voice)" line is a game character or a friend: the game\'s scripted English is context, not the clip\'s '
+         'voice, while a friend\'s line is the clip\'s voice like the streamer\'s; quiet gameplay between lines is normal, not a dead spot (end a clip before a long '
          'silence rather than inside it); leave out stream housekeeping: hello chat, "is the audio OK", '
          'viewer counts, subscribe requests, "I\'m back", reading donations')
 

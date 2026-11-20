@@ -54,8 +54,8 @@ fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user 
 - Gameplay videos with a webcam overlay get the facecam layout automatically at `cut` (gameplay on
   top, cam below, captions between); `cut` prints it. Use `--layout crop` to turn it off, and set
   `"facecam"` in settings.json if the cam is found in the wrong place. In gameplay videos the
-  transcript also holds the game's own dialogue: build clips around the creator's commentary and
-  reactions, not the game characters' lines.
+  transcript also holds the game's own dialogue: build clips around the players' commentary and
+  reactions (friends on voice chat count like the streamer), not the game characters' lines.
 - Live streams and gameplay are recognised automatically at the end of `fetch` (`run.py kind`):
   "Starting soon", "Be right back" and stream-ending screens are left out of the transcript, and the
   stream rules apply (quiet stretches are normal, no stream housekeeping in clips). The user never
