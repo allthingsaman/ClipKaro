@@ -188,10 +188,11 @@ sees your scores, titles, the replay curve or anything about the channel.
    ones they'd post). The score ranks clips **within this video**; calm, informative clips are fine.
 4. Pick the final clips from the top: every decent one within the range `parts` printed
    (`-> clips: 3 to 13`), at least the lower number. **Overlaps** (settings.json `"overlap_clips"`, default
-   `"allow"`, the owner's choice): two clips may share seconds when they clearly differ (a short and a long
-   cut of one moment, a joined clip): keep both, the owner picks what to post; never near-copies (most of
-   the longer one the same) and at most 3 clips per moment (`cut --check` names both). With `"avoid"`: of
-   clips that overlap at all, keep the better one. At most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
+   `"streams"`, the owner's choice): in **gameplay and streams** two clips may share seconds when they clearly
+   differ (a short and a long cut of one moment, a joined clip): keep both, the owner picks what to post;
+   never near-copies (most of the longer one the same) and at most 3 clips per moment (`cut --check` names
+   both). In **every other video** (podcasts, talks), of clips that overlap at all, keep the better one.
+   `"allow"` / `"avoid"` make it the same everywhere. At most one per topic unless the ideas clearly differ; if a third of a long video has no pick but
    holds one ranked in the top quarter, swap it in for the weakest pick. A confident voice is not
    content: read close calls yourself.
 5. **Repair round (once, when it helps).** Like an editor after notes, fix the clips you'd pick (or

@@ -662,11 +662,24 @@ class MoreClips(unittest.TestCase):
             with mock.patch.object(more, 'overlap_mode', return_value='avoid'):
                 left = [x['id'] for x in more.unused(p)]
             self.assertEqual(left, ['p1-c2', 'p2-c1'])     # "avoid": C overlaps the better B
-            left = [x['id'] for x in more.unused(p)]       # v2.7 default "allow": C shares only 10 of its 30 s
+            self.assertEqual([x['id'] for x in more.unused(p)], ['p1-c2', 'p2-c1'])   # a normal video: as before
+            (p / 'project.json').write_text(json.dumps({'video_kind': {'live': True}}))  # a stream (v2.7 default)
+            left = [x['id'] for x in more.unused(p)]       # C shares only 10 of its 30 s with B: allowed
             self.assertEqual(left, ['p1-c2', 'p1-c3', 'p2-c1'])
             ideas.append({'id': 'p2-c2', 'ranges': [[303, 333]], 'title': 'E', 'clip_score': 3.0, 'rank_score': 3.0})
             (p / 'critic' / 'critic.json').write_text(json.dumps({'clips': ideas}))
             self.assertNotIn('p2-c2', [x['id'] for x in more.unused(p)])       # a near-copy of D: never
+
+    def test_overlaps_only_on_gameplay_and_streams(self):
+        from unittest import mock
+        from clipper import common
+        podcast, stream = {'title': 'Figuring Out', 'video_kind': {}}, {'video_kind': {'live': True}}
+        with mock.patch.object(common, 'settings', return_value={}):                  # the default: "streams"
+            self.assertEqual((common.overlap_mode(podcast), common.overlap_mode(stream)), ('avoid', 'allow'))
+        with mock.patch.object(common, 'settings', return_value={'overlap_clips': 'allow'}):
+            self.assertEqual(common.overlap_mode(podcast), 'allow')
+        with mock.patch.object(common, 'settings', return_value={'overlap_clips': 'avoid'}):
+            self.assertEqual(common.overlap_mode(stream), 'avoid')
 
     def test_overlap_rule(self):
         # v2.7, overlap_clips "allow": a short and a long cut of one moment, a joined clip: fine; near-copies and

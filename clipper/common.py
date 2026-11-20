@@ -32,9 +32,10 @@ DEFAULT_SETTINGS = {
                                    # word-check.json for you to correct by ear
     'private_details': 'hide',     # an email or phone number said out loud: left out of the part files and cut out of
                                    # every clip (private.py, v2.7); keep: treated like any other words
-    'overlap_clips': 'allow',      # allow: clips may share seconds when they clearly differ (a short and a long cut,
-                                   # a joined clip; the owner's choice, 2026-11-20); never near-copies, at most 3
-                                   # clips per moment (overlap_problem); avoid: one clip per moment, as before
+    'overlap_clips': 'streams',    # streams: on gameplay and streams clips may share seconds when they clearly differ
+                                   # (a short and a long cut, a joined clip), never near-copies, at most 3 per moment
+                                   # (overlap_problem); elsewhere one clip per moment (the owner's choice, 2026-11-20);
+                                   # allow: everywhere; avoid: nowhere, as before v2.7
     'bold_clips': 'boost',         # boost: bold, honest takes (an unpopular opinion, a roast, a rant, gaali said
                                    # with feeling) count extra when picking and judging (the owner's choice,
                                    # 2026-11-19); neutral: judged like any other moment, as before. Nothing is
@@ -125,9 +126,15 @@ def overlap_problem(ranges, others, mode='allow'):
     return None
 
 
-def overlap_mode():
-    """settings.json "overlap_clips": allow (default) or avoid."""
-    return 'avoid' if str(settings().get('overlap_clips', 'allow')).lower() == 'avoid' else 'allow'
+def overlap_mode(project=None):
+    """'allow' or 'avoid' for this video. settings.json "overlap_clips": streams (the default: allowed on gameplay
+    and streams, where a short, a long and a joined version of one funny moment all earn their place; one clip per
+    moment elsewhere, the owner's choice of 2026-11-20), allow (everywhere) or avoid (nowhere, as before v2.7)."""
+    mode = str(settings().get('overlap_clips', 'streams')).lower()
+    if mode in ('allow', 'avoid'):
+        return mode
+    from .kind import is_irregular, stream_hint
+    return 'allow' if project is not None and (is_irregular(project) or stream_hint(project)) else 'avoid'
 
 
 def settings():

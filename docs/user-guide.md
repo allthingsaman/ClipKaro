@@ -191,8 +191,9 @@ minutes more. Afterwards you can ask "show me the topic map" to see every topic 
 **How many clips?** If you don't say, ClipKaro makes every good moment into a clip: 3 to 8, like
 before, and more for long videos (up to about one for every 7 minutes: a 2-hour stream can give 17).
 Say "at least 10" or "at most 5" and it follows that, or "no limit" for every good moment, however
-many (a long stream with friends can give over 100). The same funny moment may come as a short and a
-longer version, so you can choose which one to post; two clips are never almost the same.
+many (a long stream with friends can give over 100). In gameplay and streams the same funny moment may
+come as a short and a longer version, so you can choose which one to post; two clips are never almost the
+same. Podcasts and talks keep one clip per moment.
 
 **Live streams and gameplay** need no special words. ClipKaro sees by itself when a video was a
 live stream or is gameplay with your webcam in a corner (also when two or three of you sit in the

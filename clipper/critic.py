@@ -592,7 +592,8 @@ def write_txt(pdir, doc, path):
             '# Pick from the top (the rank includes a tiny hint bonus that only reorders near-ties). "trim?" notes are dead',
             '# weight most runs would cut (lead-in, tail, detour): tighten in the repair round. A "fix?" note',
             '# (needs context, the payoff comes after the cut) is for the repair round, not a reason to drop a',
-            '# clip. Phase-1 rules still apply: ' + ('no overlap, one per topic, coverage.' if overlap_mode() == 'avoid' else
+            '# clip. Phase-1 rules still apply: ' + ('no overlap, one per topic, coverage.'
+                                                    if overlap_mode(load_json(pdir / 'project.json', {}) or {}) == 'avoid' else
             'clips may share seconds when they clearly differ (a short and a long cut, a joined clip), never '
             'near-copies, at most 3 per moment; coverage.'), '']
     for n, x in enumerate(cl, 1):

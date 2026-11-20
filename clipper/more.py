@@ -69,7 +69,7 @@ def unused(pdir):
     clips = (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
     taken = [c['ranges'] for c in clips]
     used_ids = {c.get('from') for c in clips if c.get('from')}
-    allow = overlap_mode() == 'allow'
+    allow = overlap_mode(load_json(pdir / 'project.json', {}) or {}) == 'allow'
     out = []
     for x in ideas(pdir):
         if x['id'] in used_ids:

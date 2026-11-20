@@ -215,6 +215,9 @@ def montage(tr, a, b, after):
     return False
 
 
+OVERLAP = {}               # this video's overlap_clips mode, set by main() (v2.7)
+
+
 def overlap_share(ranges, other):
     o = sum(max(0.0, min(b, y) - max(a, x)) for a, b in ranges for x, y in other)
     return o / max(1e-6, sum(b - a for a, b in ranges))
@@ -290,7 +293,7 @@ def check_deep(c, doc, tr, regular, first_content, pb, where):
                     bad = f"uses the {t['role']} at {ts(t['start'])} after the start (only an opening line may come from it)"
                 elif montage(tr, a, b, first_content):
                     bad = "its opening comes from a montage teaser (the line comes again at a later time): use that later line"
-    if not bad and overlap_mode() == 'avoid' and any(overlap_share(rs, r) > 0.5 for r in regular):
+    if not bad and OVERLAP.get('mode', 'avoid') == 'avoid' and any(overlap_share(rs, r) > 0.5 for r in regular):
         bad = 'more than half of it is a regular clip already made'
     elif not bad and any(overlap_share(rs, r) > NEAR_SAME for r in regular):
         bad = 'it is almost all a regular clip already made'    # overlap_clips "allow": only near-copies (v2.7)
@@ -448,6 +451,7 @@ def main():
     lines = load_json(pdir / 'transcript' / 'sentences.json')
     tr = tp.Transcript(words, lines)
     project = load_json(pdir / 'project.json', {}) or {}
+    OVERLAP['mode'] = overlap_mode(project)
     regular = regular_ranges(pdir)
     if a.fresh and ddir.exists():
         keep = ddir / 'old' / time.strftime('%Y%m%d-%H%M%S')

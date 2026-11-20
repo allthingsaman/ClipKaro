@@ -715,7 +715,7 @@ def main():
     breaks = active_breaks(project)
     quiet_s = QUIET_GAP_S if is_irregular(project) else None
     taken = []                                   # (clip id, start, end) of every range so far
-    picked, overlap = [], overlap_mode()         # settings.json "overlap_clips" (v2.7)
+    picked, overlap = [], overlap_mode(project)  # settings.json "overlap_clips" (v2.7)
     from . import private
     secret_spans = private.spans(words) if private.enabled(settings()) else []
     for i, clip in enumerate(picks['clips'], 1):

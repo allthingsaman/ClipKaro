@@ -158,12 +158,12 @@ changed. Only new ones were added.
   "no limit", "as many as possible", "jitne ho sake", "100+") drops the cap and lets each helper bring up
   to 20; "at least 30" or more does that too. *(v2.7, 2026-11-20)*
   - Way back: none needed; without those words the count is as before.
-- ↔ **Clips may share a moment.** v1.1 never let two clips share seconds: the better one was kept. The
-  owner posts almost every decent clip and likes a short and a long version of a moment, so by default
-  two clips may now share seconds when they clearly differ (a short and a long cut, a joined clip). Never
-  near-copies (most of the longer clip the same) and at most 3 clips per moment; `cut --check` names
-  those. A joined (deep) clip may share a regular clip's seconds too. *(v2.7, 2026-11-20)*
-  - Way back: `"overlap_clips": "avoid"` in settings.json.
+- ↔ **In gameplay and streams, clips may share a moment.** v1.1 never let two clips share seconds: the
+  better one was kept. On a stream with friends a funny moment earns a short, a long and a joined version,
+  so there two clips may now share seconds when they clearly differ. Never near-copies (most of the longer
+  clip the same) and at most 3 clips per moment; `cut --check` names those. Podcasts and every other video
+  keep one clip per moment, exactly as before. *(v2.7, 2026-11-20)*
+  - Way back: `"overlap_clips": "avoid"` in settings.json (`"allow"` puts overlaps on every video).
 - ⬆ **Private details said out loud stay out of clips.** On a GTA stream a viewer's email address was
   spelled out letter by letter, and Claude kept it out of every clip by hand. Now ClipKaro finds an email
   address, contact detail or phone number said out loud (a cue like "email ID" or "number" followed by
