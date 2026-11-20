@@ -421,6 +421,8 @@ Claude to change them.
 | `layout` | `auto` | `auto` (facecam layout when a webcam is found in a gameplay video), `facecam`, `crop` |
 | `deep_clips` | `ask` | `ask` (for a video longer than 21 minutes, Claude asks once whether you want deep clips too), `always`, `never` |
 | `max_clips` | `20` | the most clips a long video gets when you don't ask for a number (a number you ask for, or "no limit", always wins) |
+| `careful_listening` | `true` | Hindi/Hinglish gameplay and live streams on an NVIDIA card: a second speech model hears the whole video for Claude's readers, two more hear every picked clip, and helpers check every caption word (about 6 minutes of graphics card per hour of video, plus some Claude usage); `false`: off |
+| `unsure_words` | `hide` | careful listening: a word the hearings can't settle gets no caption (the sound stays); `ask`: listed in `word-check.json` for you to correct by ear |
 | `private_details` | `hide` | an email address or phone number said out loud (spelled out letter by letter, or 9+ digits) is left out of what Claude reads and cut out of every clip; `keep`: treated like any other words |
 | `overlap_clips` | `allow` | two clips may share some seconds when they clearly differ (a short and a long cut of one moment, a joined clip), so you choose which to post; never near-copies, at most 3 clips per moment. `avoid`: one clip per moment, as before v2.7 |
 | `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling, taboo talk, an A-rated moment) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |

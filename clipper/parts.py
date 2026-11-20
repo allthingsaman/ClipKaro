@@ -127,6 +127,14 @@ def ideas_per_part(target, n):
     return max(5, min(PER_PART, math.ceil(IDEAS_PER_CLIP * target['hi'] / n)))
 
 
+def hearing_text(pdir, k, total, stretch, lo, hi):
+    from . import hearing
+    try:
+        return hearing.part_text(pdir, k, total, stretch, (lo, hi))
+    except Exception:
+        return None
+
+
 def update_wish(project, a):
     """The user's own numbers (and deep-clip answer) from the flags, merged into project.json's "wish"."""
     wish = dict(project.get('wish') or {})
@@ -251,6 +259,14 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
             head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) and PRIVATE DETAILS (an email '
                         'or phone number said out loud) are marked with ===== lines: their words are left out. Never '
                         'take a topic, best moment or clip from them.')
+        sh = hearing_text(pdir, k + 1, total, (a, b), (before[0] if before else own[0])['s'],
+                          (after[-1] if after else own[-1])['e'])
+        if sh:
+            (pdir / 'second-hearing').mkdir(exist_ok=True)
+            (pdir / 'second-hearing' / f'part-{num}.txt').write_text(sh, encoding='utf-8')
+            head.append(f'# SECOND HEARING: second-hearing/part-{num}.txt is another speech model on the same audio '
+                        f'(clearer where voices and game sound mix). Read it too, to understand garbled lines; never '
+                        f'quote it: every time and quote comes from this file.')
         if nt:
             head.append('# ' + hints.READER_NOTE)
         if bold:

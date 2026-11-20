@@ -26,6 +26,10 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
+    'careful_listening': True,     # Hindi / Hinglish gameplay and streams on an NVIDIA card: a second hearing for the
+                                   # readers, two more hearings of every clip and a word check (hearing.py, v2.7)
+    'unsure_words': 'hide',        # careful listening: words the hearings can't settle get no caption; ask: listed in
+                                   # word-check.json for you to correct by ear
     'private_details': 'hide',     # an email or phone number said out loud: left out of the part files and cut out of
                                    # every clip (private.py, v2.7); keep: treated like any other words
     'overlap_clips': 'allow',      # allow: clips may share seconds when they clearly differ (a short and a long cut,

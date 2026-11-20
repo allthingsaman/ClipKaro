@@ -227,6 +227,11 @@ Claude adds one where a clip calls for it, like a boom on a shocking line. Want 
 the mood's folder (any file name, and delete the ones you don't like), or tell Claude "add this sound
 as shock: (path to the file)".
 
+**Careful listening on noisy streams.** When you and your friends talk over game sound in Hindi or
+Hinglish, one speech model gets many words wrong. With an NVIDIA graphics card, ClipKaro has two more
+models listen too, and Claude's helpers compare all three for every clip: words they agree on are fixed,
+and words nobody can make out get no caption (the sound stays). A wrong caption is worse than none.
+
 **Private details stay out.** When someone spells out an email address or says a phone number on
 stream, ClipKaro leaves those seconds out of every clip by itself and tells you where they were.
 

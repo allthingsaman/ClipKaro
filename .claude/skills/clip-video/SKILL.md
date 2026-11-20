@@ -295,6 +295,23 @@ It keeps the times, rebuilds the sentences and transcript.txt, and names the cli
 again. The first fix saves `words-before-fixes.json`: the deep pass and the topic map match quotes
 against the words as first heard, so fixes never break them.
 
+## 2a-2. Careful listening (noisy Hindi / Hinglish streams and gameplay; every mode; after the final clips.json, before 2b)
+When `fetch` printed `-> careful listening:` with a second hearing, three voices and game sound have
+garbled the transcript, so the words get checked properly before the caption check:
+```
+python run.py rehear <project>       # two more speech models hear every picked clip; writes wordcheck/batch-NN.txt
+```
+Start one **`clipkaro-wordcheck`** helper per packet, all at once (prompt: the packet's path; without that
+helper type, a general helper told to follow `.claude/agents/clipkaro-wordcheck.md`). Then:
+```
+python run.py wordcheck <project>    # fixes where the hearings agree; no captions on the doubts
+```
+It never writes a fix that adds or drops a "nahin" (those words get no caption instead), brings back
+the captions of players' English lines the game-voice rule hid, and drops game lines it let through.
+Report the counts it prints. `"careful_listening": false` in settings.json turns this off; with
+`"unsure_words": "ask"` the doubts go to `word-check.json` for the owner instead of losing their captions.
+Then romanize (2b) and do the caption check (2c) as usual.
+
 ## 2b. Roman Hinglish captions (Hindi/Hinglish projects only)
 Skip this for other languages, or if settings.json has `"hinglish_captions": "devanagari"`.
 ```

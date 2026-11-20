@@ -2,6 +2,9 @@
 
 ## Since v2.6 (not released yet)
 
+- **Careful listening for noisy streams.** Hindi / Hinglish streams and gameplay where several people talk
+  over game sound get two more speech models (with an NVIDIA card): Claude's helpers compare all three for
+  every clip, fix the words they agree on, and leave words nobody can make out without captions.
 - **Private details stay out of clips.** An email address spelled out or a phone number said on stream is
   found and left out of every clip by itself (`"private_details": "keep"` turns it off).
 - **Sound effects included.** Setup now downloads a free starter set of 33 sound effects (Mixkit, no credit

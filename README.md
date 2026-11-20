@@ -527,6 +527,11 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
   [3D-Speaker ERes2Net](https://github.com/modelscope/3D-Speaker) (Apache 2.0) and Google's
   [YAMNet](https://github.com/tensorflow/models/tree/master/research/audioset/yamnet) (Apache 2.0);
   the same voice model tells a streamer from the game's characters.
+- Careful listening on noisy Hindi / Hinglish streams: [Trelis Research](https://huggingface.co/Trelis)'s
+  Hinglish Whisper ([CTranslate2 build](https://huggingface.co/nikh360pro/capsbro-hinglish-ct2)) and
+  [Oriserve](https://huggingface.co/Oriserve)'s Whisper-Hindi2Hinglish-Swift
+  ([CTranslate2 build](https://huggingface.co/MSpider3/whisper-hindi2hinglish-swift-ct2)), both Apache 2.0.
+- Starter sound effects: [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License).
 - Demo footage in the README: *Figuring Out* with Raj Shamani (YouTube), credited under each picture;
   the gameplay is the owner's own stream.
 - Built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [faster-whisper](https://github.com/SYSTRAN/faster-whisper),

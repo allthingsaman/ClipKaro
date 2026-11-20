@@ -62,6 +62,16 @@ changed. Only new ones were added.
 - ⬆ **Your microphone on its own track.** A recording with the microphone on a separate audio track
   (OBS can do that) is written down from the microphone alone, without the game's sound and
   characters. The clips keep the full sound. A file with one track works exactly as before. *(v2.3)*
+- ⬆ ⚠ **Careful listening on noisy Hindi / Hinglish streams.** With three friends talking over game sound,
+  the transcript of a 4-hour GTA stream was badly garbled, and Claude fixed it by hand: a second speech model
+  for the readers, two more hearings of every clip, word-check helpers, 583 words fixed and 176 unsure spots
+  left without captions. Now it happens by itself for Hindi / Hinglish gameplay and live streams on an NVIDIA
+  card: `fetch` adds the second hearing, `parts` hands it to the readers, `run.py rehear` hears every picked
+  clip again, the `clipkaro-wordcheck` helpers compare, and `run.py wordcheck` applies the fixes (never one
+  that flips a "nahin") and hides the rest. Costs about 6 minutes of graphics card per hour of video, a few
+  seconds per clip, and the helpers' Claude usage. *(v2.7, 2026-11-20)*
+  - Way back: `"careful_listening": false` in settings.json; `"unsure_words": "ask"` lists the doubts in
+    word-check.json for the owner instead of hiding them.
 
 ## Choosing the moments
 

@@ -1274,6 +1274,17 @@ def main():
     except Exception as e:
         print(f'   (hints skipped: {type(e).__name__}: {e})')
 
+    # careful listening (v2.7): a Hindi / Hinglish stream or gameplay on an NVIDIA card gets a second hearing
+    try:
+        from . import hearing
+        ok, why = hearing.wanted(load_json(pdir / 'project.json', {}) or project)
+        if ok:
+            import subprocess
+            import sys
+            subprocess.run([sys.executable, '-m', 'clipper.hear', pdir.name], check=False)
+    except Exception as e:
+        print(f'   (second hearing skipped: {type(e).__name__}: {e})')
+
     print('\nDONE')
     print(f'project:    {pdir.name}')
     print(f"language:   {project.get('language')}")

@@ -10,7 +10,9 @@ You are one of several readers of a long video's transcript. Each reader gets on
 1. Read `.claude/skills/clip-video/references/reading-parts.md` (your full instructions) and
    `.claude/skills/clip-video/references/picking-moments.md` (what makes a good short).
 2. Read your whole part file. If the reader tool shows a PARTIAL view, keep reading with
-   offset/limit until you reach the TASK lines at the end.
+   offset/limit until you reach the TASK lines at the end. If its header names a SECOND HEARING file
+   (another speech model on the same audio, for noisy streams), read that too: it helps you
+   understand garbled lines. Never quote it; every time and quote comes from the part file.
 3. Work only on your stretch (between the `YOUR STRETCH` markers); the rest is context.
 4. Copy line times and quote words exactly as the file has them: same script, same spelling, no
    corrections, no times you worked out yourself. Notes like `[voice raised]`, `[explosion]` or

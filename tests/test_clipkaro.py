@@ -771,6 +771,112 @@ class PrivateDetails(unittest.TestCase):
         self.assertFalse(private.enabled({'private_details': 'keep'}))                  # the way back
 
 
+class CarefulListening(unittest.TestCase):
+    """v2.7: noisy Hindi / Hinglish streams: two more hearings, word-check packets, answers applied safely."""
+
+    def project(self, d):
+        pdir = Path(d)
+        (pdir / 'transcript').mkdir()
+        words = [W('Kisko', 10.0, 10.3), W('khaao', 10.4, 10.7), W('yaar', 10.8, 11.0),
+                 W('vah', 12.0, 12.2), W('bhaag', 12.3, 12.6), W('gaya', 12.7, 13.0),
+                 W('Thank', 14.0, 14.2), W('you.', 14.3, 14.5),
+                 W('main', 16.0, 16.2), W('aaunga', 16.3, 16.7)]
+        lines = [{'s': 10.0, 'e': 11.0, 'i0': 0, 'i1': 2}, {'s': 12.0, 'e': 13.0, 'i0': 3, 'i1': 5},
+                 {'s': 14.0, 'e': 14.5, 'i0': 6, 'i1': 7}, {'s': 16.0, 'e': 16.7, 'i0': 8, 'i1': 9}]
+        for name, data in (('words.json', words), ('sentences.json', lines)):
+            (pdir / 'transcript' / name).write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+        (pdir / 'project.json').write_text(json.dumps({'language': 'hinglish', 'title': 'GTA stream'}))
+        (pdir / 'clips.json').write_text(json.dumps({'clips': [{'id': 1, 'title': 'A', 'ranges': [[9.5, 17.0]]}]}))
+        return pdir
+
+    def test_only_for_hindi_streams_on_a_graphics_card(self):
+        from unittest import mock
+        from clipper import gpu, hearing
+        stream = {'language': 'hinglish', 'video_kind': {'live': True}}
+        with mock.patch.object(gpu, 'cuda_device_count', return_value=1):
+            self.assertTrue(hearing.wanted(stream, {})[0])
+            self.assertFalse(hearing.wanted(dict(stream, language='en'), {})[0])
+            self.assertFalse(hearing.wanted({'language': 'hinglish', 'video_kind': {}}, {})[0])    # a podcast
+            self.assertFalse(hearing.wanted(stream, {'careful_listening': False})[0])           # the way back
+        with mock.patch.object(gpu, 'cuda_device_count', return_value=0):
+            self.assertFalse(hearing.wanted(stream, {})[0])                                     # no card: no
+
+    def test_packets_show_three_hearings(self):
+        from unittest import mock
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = self.project(d)
+            (pdir / 'second-hearing' / 'clips').mkdir(parents=True)
+            heard = {'1': [{'range': [9.5, 17.0], 'words': [['किसको', 10.0, 10.3], ['खाऊं', 10.4, 10.7]]}]}
+            (pdir / 'second-hearing' / 'clips' / 'capsbro.json').write_text(json.dumps(heard, ensure_ascii=False))
+            with mock.patch('clipper.voices.game_words', return_value={6, 7}):
+                files = hearing.packets(pdir)
+            text = files[0].read_text(encoding='utf-8')
+            self.assertIn('CAPTIONS NOW', text)
+            self.assertIn('[10.00] किसको खाऊं', text)                              # hearing B
+            self.assertIn('(nothing heard)', text)                                 # hearing C missing
+            self.assertIn('GAME [14.00-14.50] Thank you.', text)                   # hidden by the game-voice rule
+
+    def test_answers_applied_safely(self):
+        from unittest import mock
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = self.project(d)
+            (pdir / 'wordcheck').mkdir()
+            answer = [{'id': 1,
+                       'fixes': [{'at': 10.4, 'wrong': 'khaao', 'right': 'khaaoon'},
+                                 {'at': 16.0, 'wrong': 'main aaunga', 'right': 'main nahin aaunga'}],   # meaning flip
+                       'doubts': [{'at': 12.3, 'heard': 'bhaag', 'maybe': ['bhaagh'], 'context': 'x'}],
+                       'friend_english': [14.0], 'game_english': [], 'problem': None}]
+            (pdir / 'wordcheck' / 'batch-01.json').write_text(json.dumps(answer))
+            with mock.patch.object(hearing, 'settings', return_value={}):
+                n = hearing.apply(pdir)
+            words = json.loads((pdir / 'transcript' / 'words.json').read_text(encoding='utf-8'))
+            self.assertEqual(words[1]['w'], 'khaaoon')                              # agreed fix written
+            self.assertTrue(words[4].get('unsure'))                                 # doubt: no caption
+            self.assertTrue(words[8].get('unsure') and words[9].get('unsure'))      # never a meaning flip
+            self.assertEqual([w['w'] for w in words[8:10]], ['main', 'aaunga'])
+            clips = json.loads((pdir / 'clips.json').read_text())['clips']
+            self.assertEqual(clips[0]['show_captions'], [[13.95, 14.55]])         # a friend's English shown
+            self.assertEqual((n['fixed'], n['meaning'], n['shown_lines']), (1, 1, 1))
+            self.assertTrue((pdir / 'transcript' / 'words-before-wordcheck.json').exists())
+
+    def test_ask_mode_lists_doubts_instead(self):
+        from unittest import mock
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = self.project(d)
+            (pdir / 'wordcheck').mkdir()
+            (pdir / 'wordcheck' / 'batch-01.json').write_text(json.dumps(
+                [{'id': 1, 'doubts': [{'at': 12.3, 'heard': 'bhaag', 'context': 'x'}]}]))
+            with mock.patch.object(hearing, 'settings', return_value={'unsure_words': 'ask'}):
+                hearing.apply(pdir)
+            words = json.loads((pdir / 'transcript' / 'words.json').read_text(encoding='utf-8'))
+            self.assertFalse(words[4].get('unsure'))                                # not hidden
+            doubts = json.loads((pdir / 'word-check.json').read_text())['doubts']
+            self.assertEqual((doubts[0]['heard'], doubts[0]['correct']), ('bhaag', ''))
+
+    def test_a_models_loop_is_cut(self):
+        from clipper import hearing
+        ws = [['Are', 1.0, 1.1]] + [['bhai,', 1.2 + k / 10, 1.25 + k / 10] for k in range(40)] + [['itna', 6.0, 6.2]]
+        out = hearing.no_loops(ws)
+        self.assertEqual([w[0] for w in out], ['Are', 'bhai,', 'bhai,', 'bhai,', 'itna'])
+
+    def test_readers_get_their_stretch_of_the_second_hearing(self):
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'second-hearing').mkdir()
+            (pdir / 'second-hearing' / 'full.json').write_text(json.dumps(
+                {'model': hearing.SECOND, 'complete': True,
+                 'segments': [{'s': 5.0, 'e': 9.0, 't': 'पहले'}, {'s': 100.0, 'e': 104.0, 't': 'बाद में'}]},
+                ensure_ascii=False), encoding='utf-8')
+            text = hearing.part_text(pdir, 1, 2, (0.0, 50.0), (0.0, 60.0))
+            self.assertIn('पहले', text)
+            self.assertNotIn('बाद में', text)                                           # outside this part
+            self.assertIn('Never quote it', text)
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

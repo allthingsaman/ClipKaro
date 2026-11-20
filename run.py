@@ -19,6 +19,9 @@
     python run.py gpu [model]                            check that transcription runs on the NVIDIA GPU
     python run.py post <project> [--open]                hand the clips to PostKaro (the posting app), if installed
     python run.py relisten <project>                     listen again to unclear speech (game voices): fix or drop its captions
+    python run.py hear <project>                         careful listening: a second hearing of a noisy stream (fetch runs it)
+    python run.py rehear <project>                       careful listening: every picked clip heard again + word-check packets
+    python run.py wordcheck <project>                    careful listening: apply the word-check helpers' answers
     python run.py tidy <project>                         no captions for words made up during laughter, noise or loops
     python run.py sfx [add <file> <mood>]                your sound effects by mood (shock, funny, fear ...)
     python run.py music [add <file> <mood>]              your background music by mood (chill, hype ...)
@@ -65,6 +68,9 @@ COMMANDS = {
     'frames': 'clipper.frames',
     'post': 'clipper.post',
     'relisten': 'clipper.relisten',
+    'hear': 'clipper.hear',
+    'rehear': 'clipper.rehear',
+    'wordcheck': 'clipper.wordcheck',
     'asr-bench': 'clipper.asrbench',
     'gpu': 'clipper.gpu',
     'live': 'clipper.live',
@@ -72,7 +78,7 @@ COMMANDS = {
 
 # heavy steps: while a live clipping session runs they get a low priority and the processor's video encoder,
 # so OBS keeps the graphics card's encoder and the stream never drops frames
-HEAVY = {'fetch', 'cut', 'edit', 'qa', 'frames', 'sound', 'hints', 'voices', 'relisten', 'kind'}
+HEAVY = {'fetch', 'cut', 'edit', 'qa', 'frames', 'sound', 'hints', 'voices', 'relisten', 'kind', 'hear', 'rehear'}
 
 
 def live_running():
