@@ -30,6 +30,8 @@ DEFAULT_SETTINGS = {
                                    # readers, two more hearings of every clip and a word check (hearing.py, v2.7)
     'unsure_words': 'hide',        # careful listening: words the hearings can't settle get no caption; ask: listed in
                                    # word-check.json for you to correct by ear
+    'sound_onset': 'moment',       # a mood sound starts on its moment, never more than 0.1 s before it (plan.sfx_cues,
+                                   # v2.7); peak: its loudest point on the moment, as before (slow sounds start early)
     'private_details': 'hide',     # an email or phone number said out loud: left out of the part files and cut out of
                                    # every clip (private.py, v2.7); keep: treated like any other words
     'overlap_clips': 'streams',    # streams: on gameplay and streams clips may share seconds when they clearly differ

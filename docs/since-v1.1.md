@@ -287,6 +287,12 @@ changed. Only new ones were added.
   approved them on a GTA stream), only into folders that are still empty. `cut --check` names the moods
   the clips ask for and any without a sound. *(v2.7, 2026-11-20)*
   - Way back: `python install.py --no-sounds`, or delete the files (an empty mood plays nothing, as before).
+- ⬆ **Sound effects start on their moment, never before it.** A mood sound's loudest point was lined up
+  with the moment, so a slow sound started early: on a GTA stream a trombone began a second before the crash
+  it was for, and a crowd cheer can start almost 3 seconds early. Now every mood sound starts at most 0.1 s
+  before its moment; a sound that hits at once (a boom, a boing, a buzzer) lands exactly as before.
+  *(v2.7, 2026-11-20)*
+  - Way back: `"sound_onset": "peak"` in settings.json.
 
 ## Posting
 

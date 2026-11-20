@@ -2,6 +2,8 @@
 
 ## Since v2.6 (not released yet)
 
+- **Sound effects start on time.** A slow sound (a trombone, a crowd cheer) used to start up to a few
+  seconds before the moment it was for. Now every sound effect starts on its moment, never before it.
 - **Careful listening for noisy streams.** Hindi / Hinglish streams and gameplay where several people talk
   over game sound get two more speech models (with an NVIDIA card): Claude's helpers compare all three for
   every clip, fix the words they agree on, and leave words nobody can make out without captions.

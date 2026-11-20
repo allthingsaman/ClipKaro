@@ -462,22 +462,30 @@ def cut_at_seams(caps, shots, fps=FPS):
 
 # ---------- sound effects ----------
 
-def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=(), moods=(), salt=''):
+ONSET_LEAD = 0.1           # a mood sound starts at most this long before its moment (v2.7)
+
+
+def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=(), moods=(), salt='', onset='moment'):
     """Sound cues: a whoosh on the opening zoom, and one on the emphasis zoom or, in a joined clip
     that jumps in time, a softer one at each jump (with the flash: a jump is heard, not hidden). Plus
     the mood sounds the AI editor marked (clips.json "sfx"), each with its loudest point on the moment;
-    the emphasis whoosh steps aside when a mood sound is near."""
+    the emphasis whoosh steps aside when a mood sound is near.
+
+    v2.7: a mood sound never starts before its moment (onset "moment", the default). Lining up its loudest
+    point with the moment made a slow sound start early: a trombone 1 s, a crowd cheer 2.8 s before a crash
+    on a GTA stream. Now it starts at most ONSET_LEAD before the moment; a sound that hits at once (a boom,
+    a boing) lands exactly as before. onset "peak" (settings.json "sound_onset") is the old timing."""
     if mode == 'none':
         return []
     cues, used = [], set()
 
-    def add(role, peak_at, gain_db, prefer_len=None, max_len=None):
+    def add(role, peak_at, gain_db, prefer_len=None, max_len=None, lead=None):
         it = sfxlib.pick(role, prefer_len, used, salt=f'{salt}:{peak_at:.1f}')
         if not it:
             return False
         used.add((it['file'], it['variant']))
         offset, length = it['start'], min(it['length'], max_len) if max_len else it['length']
-        at = peak_at - it['peak']
+        at = peak_at - (it['peak'] if lead is None else min(it['peak'], lead))
         if at < 0:
             offset, length, at = offset - at, length + at, 0.0
         length = min(length, duration - at)
@@ -494,7 +502,8 @@ def sfx_cues(transitions, beats, duration, mode='auto', fps=FPS, jumps=(), moods
     placed = []
     for t, mood in sorted(moods):       # the editor's mood marks, at least 1.5 s apart
         if 0.3 <= t < duration - 0.2 and all(abs(t - p) >= 1.5 for p in placed):
-            if add(mood, t, sfxlib.GAIN.get(mood, -14), max_len=sfxlib.MAX_LEN):
+            if add(mood, t, sfxlib.GAIN.get(mood, -14), max_len=sfxlib.MAX_LEN,
+                   lead=None if onset == 'peak' else ONSET_LEAD):
                 placed.append(t)
     for t in jumps:                                                      # a jump across time
         if t > 0.5:
@@ -729,7 +738,7 @@ def build(meta, brand, opts):
         'brand': brand,
         'sfx': sfx_cues(transitions, beats, meta['duration'], opts.get('sfx', 'auto'), fps,
                         jumps=[j['t'] for j in long_jumps(meta)], moods=opts.get('moods', ()),
-                        salt=meta.get('name', '')),
+                        salt=meta.get('name', ''), onset=opts.get('sound_onset', 'moment')),
         'labels': jump_labels(long_jumps(meta), meta['duration'], upper) if opts.get('jump_label') else [],
         'hook': hook, 'safe': safe,
         'emoji': emoji, 'emoji_missing': emoji_missing,

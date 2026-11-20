@@ -660,7 +660,8 @@ def main():
     opts = {'zoom': not a.no_zoom, 'captions': not a.no_captions, 'sfx': a.sfx,
             'uppercase': not a.no_upper, 'caption_y': a.caption_y, 'size': a.size,
             'look': a.look or cfg.get('caption_look', 'classic'),
-            'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False))}
+            'jump_label': a.jump_label if a.jump_label is not None else bool(cfg.get('jump_label', False)),
+            'sound_onset': 'peak' if str(cfg.get('sound_onset', 'moment')).lower() == 'peak' else 'moment'}
     on = lambda flag, key: cfg.get(key, True) if flag is None else flag      # noqa: E731
     kit, notes = brandkit.resolve(project, work, on(a.credit, 'source_credit'), on(a.logo, 'logo'),
                                   on(a.outro, 'outro'),

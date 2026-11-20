@@ -1485,3 +1485,25 @@ class FacecamFinder(unittest.TestCase):
         # people near a side but no fixed box around them (a normal video): never taken for a cam
         from clipper import facecam
         self.assertIsNone(facecam.framed_box(self.frames(with_box=False), self.faces(), 640, 360))
+
+
+class SoundTiming(unittest.TestCase):
+    """v2.7: a mood sound never starts before its moment (clip 159: a trombone started 1 s before the crash)."""
+
+    @staticmethod
+    def cues(peak, onset):
+        from unittest import mock
+        from clipper import plan
+        sound = {'file': 's.mp3', 'path': 'sounds/fail/s.mp3', 'variant': 0, 'start': 0.0, 'length': 2.6, 'peak': peak,
+                 'norm_db': 0.0}
+        with mock.patch.object(plan.sfxlib, 'pick', side_effect=lambda role, *a, **k: None if role == 'whoosh' else sound):
+            out = plan.sfx_cues([], [], 20.0, moods=[(5.0, 'fail')], onset=onset)
+        return [c for c in out if c['role'] == 'fail'][0]['at']
+
+    def test_slow_sound_starts_on_the_moment(self):
+        self.assertAlmostEqual(self.cues(1.06, 'moment'), 4.9, places=3)     # was 3.94: a second early
+        self.assertAlmostEqual(self.cues(1.06, 'peak'), 3.94, places=3)      # "sound_onset": "peak": as before
+
+    def test_quick_sound_lands_as_before(self):
+        self.assertAlmostEqual(self.cues(0.02, 'moment'), 4.98, places=3)
+        self.assertAlmostEqual(self.cues(0.02, 'peak'), 4.98, places=3)
