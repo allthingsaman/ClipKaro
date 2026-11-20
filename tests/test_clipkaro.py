@@ -661,6 +661,21 @@ class BrandKit(unittest.TestCase):
         self.assertEqual(brandkit.credit({'kind': 'youtube', 'channel': 'खान सर'})['font_file'],
                          'Poppins-ExtraBold.ttf')                                       # Hindi letters
 
+    def test_credit_names_twitch_and_kick(self):
+        # v2.7: a streamer's name alone read like their (different) YouTube channel
+        from unittest import mock
+        from clipper import brandkit
+        tw = {'kind': 'youtube', 'channel': 'allthingsaman', 'source': 'https://www.twitch.tv/videos/2933339699'}
+        self.assertEqual(brandkit.credit_text(tw), '© twitch.tv/allthingsaman')
+        self.assertEqual(brandkit.credit_text(dict(tw, channel='twitch.tv/allthingsaman')),
+                         '© twitch.tv/allthingsaman')                                   # never twice
+        self.assertEqual(brandkit.credit_text({'kind': 'youtube', 'channel': 'xqc', 'source': 'https://kick.com/xqc'}),
+                         '© kick.com/xqc')
+        self.assertEqual(brandkit.credit_text({'kind': 'youtube', 'channel': 'Raj Shamani',
+                                               'source': 'https://youtu.be/abc'}), '© Raj Shamani')
+        with mock.patch.object(brandkit, 'settings', return_value={'credit_text': 'clipped from {channel}'}):
+            self.assertEqual(brandkit.credit_text(tw), 'clipped from twitch.tv/allthingsaman')
+
     def test_logo_bottom_right_with_padding(self):
         from clipper import brandkit
         for w, h in ((400, 400), (800, 200), (300, 900)):
@@ -1130,3 +1145,47 @@ class StarredWords(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FacecamFinder(unittest.TestCase):
+    """v2.7: a rectangular cam with two people in it (they move and look down, so no single face stays put)."""
+
+    @staticmethod
+    def frames(with_box=True, n=24, seed=1):
+        import numpy as np
+        rng = np.random.default_rng(seed)
+        out = []
+        for _ in range(n):
+            f = rng.integers(0, 140, (360, 640, 3), dtype=np.uint8)            # the game: changes every frame
+            if with_box:
+                f[140:230, 486:640] = rng.integers(170, 230, (90, 154, 3), dtype=np.uint8)   # the cam: a bright room
+            out.append(f)
+        return out
+
+    @staticmethod
+    def faces(n=24, seed=2):
+        import numpy as np
+        rng = np.random.default_rng(seed)
+        per = []
+        for i in range(n):                    # two people side by side, leaning; often nobody is found
+            fs = []
+            if i % 3:
+                fs.append((520 + rng.uniform(-14, 14), 170 + rng.uniform(-6, 6), 26.0))
+            if i % 2:
+                fs.append((600 + rng.uniform(-14, 14), 172 + rng.uniform(-6, 6), 25.0))
+            per.append(fs)
+        return per
+
+    def test_two_people_cam_found_by_its_border(self):
+        from clipper import facecam
+        box = facecam.framed_box(self.frames(), self.faces(), 640, 360)
+        self.assertIsNotNone(box)
+        self.assertEqual(box['shape'], 'rect')
+        self.assertAlmostEqual(box['x'], 486, delta=3)
+        self.assertAlmostEqual(box['y'], 140, delta=3)
+        self.assertAlmostEqual(box['y'] + box['h'], 230, delta=3)
+
+    def test_no_box_no_cam(self):
+        # people near a side but no fixed box around them (a normal video): never taken for a cam
+        from clipper import facecam
+        self.assertIsNone(facecam.framed_box(self.frames(with_box=False), self.faces(), 640, 360))

@@ -207,6 +207,17 @@ changed. Only new ones were added.
   video files): a small credit to the source, right in the corner at 70 % opacity on purpose (a
   formality, not something to read; `credit_corner` picks another corner). v1.1 had none. The owner asked for it (2026-11-17). *(v2.4)*
   - Way back: `"source_credit": false` in settings.json, or "no credit" for one video.
+- ↔ **"© twitch.tv/name" on clips from Twitch** (and "© kick.com/name" from Kick). Before, they got
+  "© name", which reads like a YouTube channel (for the owner, a different, non-gaming channel). *(v2.7,
+  2026-11-20)*
+  - Way back: `"credit_text": "© {channel}"` in settings.json writes the bare name again; any other words
+    work too.
+- ⬆ **A webcam with two or three people in it is found.** The finder looked for one face in the same spot,
+  so a cam where two friends sit side by side, lean and look down was missed and the clips lost the
+  gameplay-on-top layout. Now the faces near one side are counted together and the webcam's fixed border
+  gives the exact box (on a GTA 6 stream: 454x260 found, the hand-set box was 462x260). A video without
+  such a fixed box is never taken for one. *(v2.7, 2026-11-20)*
+  - Way back: `"facecam"` in settings.json sets the box by hand; `--layout crop` turns the layout off.
 - ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
   every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles
   and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in

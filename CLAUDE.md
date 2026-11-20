@@ -13,7 +13,7 @@ goes to `parts`; without one, ClipKaro decides by the video's length.
 **Always on, in every mode** (not options to offer): pause cutting, no captions on made-up words,
 captions off faces and clear of the apps' buttons, the sound-peak limit, no captions for game
 characters in gameplay (the game shows its own); emojis too, unless the user says "no emojis";
-the "© Channel" credit on clips from a YouTube link (`edit --no-credit` for "no credit"), the
+the "© Channel" credit on clips from a link ("© twitch.tv/name" for Twitch; `edit --no-credit` for "no credit"), the
 user's logo and outro when they are in `brand/` (`--no-logo` / `--no-outro` when asked), and no
 censoring: gaali, abuse, slurs, taboo talk (sex, cheating) and A-rated moments stay in the clips, heard
 in full, and bold, honest takes count extra (way back: settings.json `"bold_clips": "neutral"`);

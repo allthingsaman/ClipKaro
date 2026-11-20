@@ -154,7 +154,8 @@ captions". "Hook title" adds a big title for the first seconds.
   "at most 5". 💾 The good moments that weren't cut stay saved: "3 more clips from that video" later.
 - 🏷️ **Your brand, and credit to the source.** Put your logo and a 3-5 s outro in the `brand` folder:
   the logo goes in the bottom-right corner of every clip, the outro at the end. Clips from a YouTube
-  link get a small "© Channel name" in the bottom-left corner (`"source_credit": false` turns it off).
+  link get a small "© Channel name" in the bottom-left corner, Twitch videos "© twitch.tv/name"
+  (`"source_credit": false` turns it off).
 - 🔥 **Nothing held back.** The moments people are afraid to say out loud go viral, so ClipKaro keeps
   them and ranks them higher: a rant, a roast, a blunt verdict, gaali said with real feeling, taboo talk,
   an A-rated moment. Nothing is bleeped; captions and titles write rude words with stars ("F******").

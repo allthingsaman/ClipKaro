@@ -193,7 +193,8 @@ before, and more for long videos (up to about one for every 7 minutes: a 2-hour 
 Say "at least 10" or "at most 5" and it follows that.
 
 **Live streams and gameplay** need no special words. ClipKaro sees by itself when a video was a
-live stream or is gameplay with your webcam in a corner. It then leaves out the "Starting soon",
+live stream or is gameplay with your webcam in a corner (also when two or three of you sit in the
+webcam). It then leaves out the "Starting soon",
 "Be right back" and stream-ending screens, builds clips around what *you* say (not the game's
 characters), and doesn't mind the quiet stretches where you just play.
 
@@ -286,8 +287,10 @@ That's all: every clip you make from then on gets them. There's no intro, so eve
 with its best line.
 
 Clips made from a **YouTube link** also get a small **"© Channel name"** in the bottom-left corner, a
-credit to the person whose video it is. Your own video files never get one. Don't want it? Tell
-Claude "no credit", or ask Claude to turn off `source_credit` in your settings.
+credit to the person whose video it is. A **Twitch** or **Kick** video gets "© twitch.tv/name" (or
+"© kick.com/name"), so nobody mistakes it for a YouTube channel. Your own video files never get one.
+Don't want it? Tell Claude "no credit", or ask Claude to turn off `source_credit` in your settings.
+Want different words? Ask Claude to set `credit_text`, for example "clipped from {channel}".
 
 Want them in another corner? Ask Claude ("put my logo top right"), or change `logo_corner` and
 `credit_corner` in `settings.json` to `top-left`, `top-right`, `bottom-left` or `bottom-right`.

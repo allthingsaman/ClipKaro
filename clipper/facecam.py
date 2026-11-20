@@ -19,6 +19,7 @@ from .reframe import _faces
 TOP_H = 1150                 # gameplay panel height (of 1920); the cam panel gets the rest
 CAP_GAP = 10                 # caption line sits just below the seam
 CAM_TOP_PAD, CAM_BOTTOM_PAD = 90, 30   # room for the captions above the cam
+EDGE_MIN, EDGE_RATIO = 4.0, 2.5         # a cam border: at least this mean brightness step, and this many times the area's median
 
 
 def _sample(video, duration, n=24):
@@ -79,11 +80,11 @@ def detect(video, duration, src_w, src_h):
             if len(hits) > len(best_hits):
                 best, best_hits = c, hits
     if not best or len(best_hits) < max(4, 0.5 * len(frames)):
-        return None
+        return framed_box(frames, per_frame, src_w, src_h)
     cx, cy, fh = (float(v) for v in np.median(np.array([h[1] for h in best_hits]), axis=0))
     # a cam overlay is small and sits towards a side; a presenter's face in a normal video isn't both
     if fh > 0.2 * src_h or 0.28 * src_w < cx < 0.72 * src_w:
-        return None
+        return framed_box(frames, per_frame, src_w, src_h)
     circle = _circle([frames[i] for i, _ in best_hits], cx, cy, fh, src_w, src_h)
     if circle:
         x, y, r = circle
@@ -92,6 +93,75 @@ def detect(video, duration, src_w, src_h):
     bh = min(src_h, 3.0 * fh)                       # a typical rectangular cam around the face
     bw = min(src_w, bh * 4 / 3)
     return {'x': cx - bw / 2, 'y': cy - bh * 0.45, 'w': bw, 'h': bh, 'shape': 'rect'}
+
+
+def _edge(profile, lo, hi):
+    """The strongest edge in profile[lo:hi] (an index), when it clearly stands out there, else None."""
+    lo, hi = max(0, int(lo)), min(len(profile), int(hi))
+    if hi - lo < 5:
+        return None
+    seg = profile[lo:hi]
+    k = int(np.argmax(seg))
+    if seg[k] < EDGE_MIN or seg[k] < EDGE_RATIO * float(np.median(seg)):
+        return None
+    return lo + k
+
+
+def framed_box(frames, per_frame, src_w, src_h):
+    """A rectangular cam with one or more people in it (two friends side by side, v2.7), or None.
+
+    The faces in such a cam move around and look down, so no single face sits in one spot often enough for
+    `detect`. Instead: the small faces near one side, counted together, show where the cam is; its fixed
+    border (an edge in the same place in every frame while the game around it changes) gives the exact box.
+    At least two of its borders must be found, so a normal video with people near a side is never taken for
+    a cam (tested on a GTA 6 Twitch stream: a 462x260 cam with two people, found to the pixel)."""
+    small = [(i, f) for i, fs in enumerate(per_frame) for f in fs
+             if f[2] < 0.2 * src_h and not 0.28 * src_w < f[0] < 0.72 * src_w]
+    best = None
+    for left in (True, False):
+        pts = [(i, f) for i, f in small if (f[0] < src_w / 2) == left]
+        if not pts:
+            continue
+        ymed = float(np.median([f[1] for _, f in pts]))
+        band = [(i, f) for i, f in pts if abs(f[1] - ymed) < 0.08 * src_h]
+        seen = {i for i, _ in band}
+        if best is None or len(seen) > len(best[1]):
+            best = (left, seen, band)
+    if not best or len(best[1]) < max(4, 0.35 * len(frames)):
+        return None
+    left, _, band = best
+    xs, ys = [f[0] for _, f in band], [f[1] for _, f in band]
+    fh = float(np.median([f[2] for _, f in band]))
+    rx0, rx1 = min(xs) - 1.6 * fh, max(xs) + 1.6 * fh            # a rough box around the faces
+    ry0, ry1 = min(ys) - 1.4 * fh, max(ys) + 2.2 * fh
+    gx = gy = None                                              # mean edge strength over the frames
+    for f in frames:
+        g = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        ex, ey = np.abs(np.diff(g, axis=1)), np.abs(np.diff(g, axis=0))
+        gx, gy = (ex, ey) if gx is None else (gx + ex, gy + ey)
+    gx, gy = gx / len(frames), gy / len(frames)
+    yb0, yb1 = int(max(0, ry0)), int(min(src_h, ry1))
+    cols = gx[yb0:yb1].mean(axis=0)                             # a vertical border: strong all along its height
+    if left:
+        inner = _edge(cols, max(xs) + 0.3 * fh, rx1 + fh)
+        outer = _edge(cols, rx0 - fh, min(xs) - 0.3 * fh)
+        x0, x1 = (outer + 1 if outer is not None else max(0.0, rx0)), (inner + 1 if inner is not None else rx1)
+    else:
+        inner = _edge(cols, rx0 - fh, min(xs) - 0.3 * fh)
+        outer = _edge(cols, max(xs) + 0.3 * fh, rx1 + fh)
+        x0, x1 = (inner + 1 if inner is not None else rx0), (outer + 1 if outer is not None else min(src_w, rx1))
+    xa, xb = int(max(0, x0)), int(min(src_w, x1))
+    rows = gy[:, xa:xb].mean(axis=1) if xb - xa > 10 else np.zeros(src_h - 1)
+    top = _edge(rows, ry0 - fh, min(ys) - 0.5 * fh)
+    bottom = _edge(rows, max(ys) + 0.8 * fh, ry1 + fh)
+    y0 = top + 1 if top is not None else max(0.0, ry0)
+    y1 = bottom + 1 if bottom is not None else min(src_h, ry1)
+    if sum(e is not None for e in (inner, top, bottom)) < 2:    # no fixed box: not a cam overlay
+        return None
+    w, h = x1 - x0, y1 - y0
+    if not (0.08 * src_w <= w <= 0.45 * src_w and 0.1 * src_h <= h <= 0.6 * src_h):
+        return None
+    return {'x': float(x0), 'y': float(y0), 'w': float(w), 'h': float(h), 'shape': 'rect'}
 
 
 def from_settings(box, src_w, src_h):

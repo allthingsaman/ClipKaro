@@ -2,7 +2,8 @@
 
     brand/logo.png     your logo: the bottom-right corner, right in the corner, the whole clip
     brand/outro.mp4    your own outro (9:16, ideally 3-5 s), added after every clip
-    (C) Channel name   the bottom-left corner, on clips made from a YouTube link (never your own files)
+    (C) Channel name   the bottom-left corner, on clips made from a link (never your own files);
+                       "© twitch.tv/name" for a Twitch or Kick video (v2.7)
 
 Both sit right in the corners, with no gap, at 70 % opacity, on purpose (the owner's choice,
 2026-11-17): a formality, not something to read. On phones the apps' own text, buttons and top bar
@@ -20,7 +21,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from .common import H, ROOT, W, ffmpeg, has_devanagari, imread, imwrite, probe
+from .common import H, ROOT, W, ffmpeg, has_devanagari, imread, imwrite, probe, settings
 from .plan import HINDI_FONT, LATIN_FONT
 
 PAD = 0                           # px in from the frame's edges: none, right in the corner (the owner's choice)
@@ -50,17 +51,30 @@ def find(stem, exts, where=None):
                  if p.is_file() and p.stem.lower() == stem and p.suffix.lower() in exts), None)
 
 
+STREAM_SITES = {'twitch.tv': 'twitch.tv', 'kick.com': 'kick.com'}   # credit names the site: "© twitch.tv/name"
+
+
 def credit_text(project, on=True):
-    """"(C) Channel name" for a video from a YouTube link, else None (your own files, no channel, off)."""
+    """"(C) Channel name" for a video from a link (never your own files, no channel, or off), else None.
+
+    A Twitch or Kick video gets "© twitch.tv/name" (v2.7): a streamer's name alone reads like a YouTube
+    channel, which may be someone else's or the streamer's other channel. settings.json "credit_text"
+    writes your own: "{channel}" in it becomes the channel's name ("clipped from {channel}")."""
     project = project or {}
     if not on or project.get('kind') != 'youtube':
         return None
     name = ' '.join(str(project.get('channel') or '').split())
     if not name:
         return None
-    if len(name) > CREDIT_MAX:
-        name = name[:CREDIT_MAX - 1].rstrip() + '…'
-    return f'© {name}'
+    src = str(project.get('source') or '').lower()
+    site = next((v for k, v in STREAM_SITES.items() if k in src), None)
+    if site and not name.lower().startswith(site):
+        name = f'{site}/{name}'
+    own = str(settings().get('credit_text') or '').strip()
+    text = own.replace('{channel}', name) if own else f'© {name}'
+    if len(text) > CREDIT_MAX + 2:
+        text = text[:CREDIT_MAX + 1].rstrip() + '…'
+    return text
 
 
 def corner(value, default):

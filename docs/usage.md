@@ -64,7 +64,8 @@ In every mode (quick, standard, deep), with nothing to say:
 - **No sound too loud**: the loudest moments stay under the apps' limit, so they don't crackle after
   upload.
 - **Credit to the source**: a small "© Channel name" in the bottom-left corner of clips made from a
-  YouTube link (never your own video files). Say "no credit" to leave it out.
+  YouTube link, "© twitch.tv/name" from a Twitch link (never your own video files). Say "no credit" to
+  leave it out.
 - **Your logo and outro**, when you have put them in the `brand` folder (below).
 - **Nothing censored**: gaali, abuse, slurs, taboo talk (sex, cheating, adult jokes) and A-rated
   moments stay in the clips, and every word is heard: no bleep, no mute. If the full video is on
@@ -422,7 +423,8 @@ Claude to change them.
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
 | `game_voice_captions` | `false` | gameplay with a Hindi/Hinglish streamer: game characters' lines get no captions, because the game shows its own subtitles (their sound stays); `true`: captioned too, as before v2.3 |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
-| `source_credit` | `true` | "© Channel name" in the bottom-left corner of clips made from a YouTube link (never your own files); `false`: no credit, as before v2.4 |
+| `source_credit` | `true` | "© Channel name" in the bottom-left corner of clips made from a YouTube link ("© twitch.tv/name" from Twitch, "© kick.com/name" from Kick; never your own files); `false`: no credit, as before v2.4 |
+| `credit_text` | `null` | your own words for the credit; `{channel}` becomes the channel's name, e.g. `"clipped from {channel}"` |
 | `logo` | `true` | your logo from `brand/` in the bottom-right corner, when the file is there; `false`: never |
 | `outro` | `true` | your outro from `brand/` after every clip, when the file is there; `false`: never |
 | `logo_corner` | `bottom-right` | where your logo goes, right in the corner: `top-left`, `top-right`, `bottom-left`, `bottom-right` |
@@ -439,7 +441,7 @@ Claude to change them.
 | `jump_cuts` | `true` | `false`: every pause kept, as in v1.1 (only as a way back; pause cutting is part of every clip) |
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (only as a way back: they may cover a chin or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
-| `facecam` | `null` | the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
+| `facecam` | `null` | only if the webcam is found in the wrong place (it is found by itself, also with two or three people in it): the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
 
 ## 6. Doing the steps by hand (optional)
 

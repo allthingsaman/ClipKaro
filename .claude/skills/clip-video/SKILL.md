@@ -39,7 +39,7 @@ The user only has to say "clip this: <link>". Everything else has a default: the
 how many clips, what kind of video it is, and (for long videos) one question about deep clips.
 **Always on** (every mode, nothing to ask): pause cutting, no captions on made-up words, captions off
 faces and the apps' buttons, the sound-peak limit, emojis (unless "no emojis": `edit --no-emoji`),
-the "© Channel" credit bottom left on clips from a YouTube link (unless "no credit": `edit --no-credit`),
+the "© Channel" credit bottom left on clips from a link ("© twitch.tv/name" for Twitch and Kick; unless "no credit": `edit --no-credit`),
 and the user's logo (bottom right) and outro from `brand/` when the files are there (unless "no logo" /
 "no outro": `edit --no-logo` / `--no-outro`). Nothing censored: bold, taboo and A-rated moments are kept
 and rank higher, every word is heard, and abusive and taboo words are written with stars in captions
