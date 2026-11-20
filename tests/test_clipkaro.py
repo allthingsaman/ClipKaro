@@ -732,6 +732,45 @@ class StarterSounds(unittest.TestCase):
             self.assertEqual(missing, ['shock'])
 
 
+class PrivateDetails(unittest.TestCase):
+    """v2.7: an email address or phone number said out loud never ends up in a clip."""
+
+    @staticmethod
+    def said(text, t0=100.0, step=0.4):
+        return [W(w, round(t0 + k * step, 2), round(t0 + k * step + 0.3, 2)) for k, w in enumerate(text.split())]
+
+    def test_spelled_email_and_phone_found(self):
+        from clipper import private
+        words = self.said('ab mera email ID hai r k 9 dot s h a r m a 2 1 at gmail dot com yaar')
+        sp = private.spans(words)
+        self.assertEqual(len(sp), 1)
+        self.assertLessEqual(sp[0][0], words[2]['s'])                         # from "email"
+        self.assertGreaterEqual(sp[0][1], words[-2]['e'])                     # to "com"
+        words = self.said('mera number hai nine eight seven six five four three two one zero theek hai')
+        self.assertEqual(private.spans(words)[0][2], 'a phone number')
+
+    def test_talk_about_email_counting_and_buttons_are_left_alone(self):
+        from clipper import private
+        for text in ('naam ke saath mail ID bhej do sab log jaldi bhejo bhai',          # talk about an email
+                     '1 2 3 4 5 6 7 8 9 10 11 12 13',                                   # counting
+                     'look at the package x dabao phir R 2 aur L 1 se aim',             # game buttons
+                     'tera number 1 .5 kauri meter 1 .5 kauri meter 1 .5 kauri meter'):  # a garbled loop
+            self.assertEqual(private.spans(self.said(text)), [], text)
+
+    def test_seconds_taken_out_and_lines_hidden(self):
+        from clipper import private
+        sp = [(110.0, 120.0, 'a phone number')]
+        self.assertEqual(private.subtract([[100.0, 130.0]], sp), [[100.0, 110.0], [120.0, 130.0]])
+        self.assertEqual(private.subtract([[112.0, 118.0]], sp), [])                    # all of it private
+        lines = [{'s': 100.0, 'e': 108.0, 'text': 'a'}, {'s': 109.0, 'e': 113.0, 'text': 'b'},
+                 {'s': 114.0, 'e': 119.0, 'text': 'c'}, {'s': 121.0, 'e': 125.0, 'text': 'd'}]
+        out = private.hide_lines(lines, sp)
+        self.assertEqual([ln.get('text') for ln in out], ['a', None, 'd'])
+        self.assertIn('PRIVATE DETAILS', out[1]['marker'])
+        self.assertIn('2 line(s)', out[1]['marker'])
+        self.assertFalse(private.enabled({'private_details': 'keep'}))                  # the way back
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

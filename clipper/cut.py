@@ -714,6 +714,8 @@ def main():
     quiet_s = QUIET_GAP_S if is_irregular(project) else None
     taken = []                                   # (clip id, start, end) of every range so far
     picked, overlap = [], overlap_mode()         # settings.json "overlap_clips" (v2.7)
+    from . import private
+    secret_spans = private.spans(words) if private.enabled(settings()) else []
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
@@ -737,6 +739,10 @@ def main():
                                 f"{fmt_ts(br['end']).split('.')[0]} (break {br['n']}): a still screen, nobody on "
                                 f"cam. Move the range off it (or `run.py kind <project> --keep {br['n']}` if it "
                                 f"is real video)")
+        for s, e, what in secret_spans:           # v2.7: cut takes these seconds out by itself
+            if any(r0 < e and s < r1 for r0, r1 in clip['ranges']):
+                msgs.append(f'takes in private details at {fmt_ts(s)}-{fmt_ts(e)} ({what} said out loud): cut '
+                            f'leaves those seconds out; better end the clip before them')
         if quiet_s:                              # gameplay: long quiet stretches inside a clip lose viewers
             for r0, r1 in clip['ranges']:
                 inside = [w for w in words if r0 <= w['s'] < r1 and not w.get('unsure')]
@@ -790,8 +796,16 @@ def main():
         from . import sound
         from .kind import is_irregular
         cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
+    from . import private                        # an email or phone number said out loud never ends up in a clip
+    secret = private.spans(words) if private.enabled(settings()) else []
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
+        hits = [sp for sp in secret for a, b in clip['ranges'] if a < sp[1] and sp[0] < b]
+        if hits:
+            clip = dict(clip, ranges=private.subtract(clip['ranges'], secret))
+            if not want or cid in want:
+                for s, e, what in dict.fromkeys(hits):
+                    print(f'   clip {cid}: {fmt_ts(s)}-{fmt_ts(e)} left out ({what} said out loud)')
         prepared[cid] = with_jump_cuts(clip, words, cues, game) if jc_on else clip
         if not want or cid in want:     # no flash of another shot at a piece's edge
             prepared[cid] = with_edge_trims(prepared[cid], video, words, info.get('fps', 30))

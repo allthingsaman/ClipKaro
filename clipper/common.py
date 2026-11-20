@@ -26,6 +26,8 @@ DEFAULT_SETTINGS = {
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)
+    'private_details': 'hide',     # an email or phone number said out loud: left out of the part files and cut out of
+                                   # every clip (private.py, v2.7); keep: treated like any other words
     'overlap_clips': 'allow',      # allow: clips may share seconds when they clearly differ (a short and a long cut,
                                    # a joined clip; the owner's choice, 2026-11-20); never near-copies, at most 3
                                    # clips per moment (overlap_problem); avoid: one clip per moment, as before

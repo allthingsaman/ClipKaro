@@ -154,6 +154,13 @@ changed. Only new ones were added.
   near-copies (most of the longer clip the same) and at most 3 clips per moment; `cut --check` names
   those. A joined (deep) clip may share a regular clip's seconds too. *(v2.7, 2026-11-20)*
   - Way back: `"overlap_clips": "avoid"` in settings.json.
+- ⬆ **Private details said out loud stay out of clips.** On a GTA stream a viewer's email address was
+  spelled out letter by letter, and Claude kept it out of every clip by hand. Now ClipKaro finds an email
+  address, contact detail or phone number said out loud (a cue like "email ID" or "number" followed by
+  spelled-out letters and digits, or 9+ digits in a row; counting, prices and game buttons are left alone),
+  leaves it out of what the reading helpers see, and `cut` takes those seconds out of any clip that touches
+  them. *(v2.7, 2026-11-20)*
+  - Way back: `"private_details": "keep"` in settings.json.
 
 ## Cutting and editing
 

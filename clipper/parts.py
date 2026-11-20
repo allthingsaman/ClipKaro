@@ -248,8 +248,9 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
         if kind.is_irregular(project):
             head.append(f'# VIDEO KIND: {kind.describe(project)}. Rules: {kind.RULES}.')
         if any('marker' in ln for ln in before + own + after):
-            head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) are marked with ===== lines: '
-                        'their words are left out. Never take a topic, best moment or clip from them.')
+            head.append('# BREAK SCREENS ("Starting soon", "Be right back", stream ending) and PRIVATE DETAILS (an email '
+                        'or phone number said out loud) are marked with ===== lines: their words are left out. Never '
+                        'take a topic, best moment or clip from them.')
         if nt:
             head.append('# ' + hints.READER_NOTE)
         if bold:
@@ -314,6 +315,9 @@ def main():
     target = clip_target(project, lines[0]['s'], lines[-1]['e'], wish, settings().get('max_clips', 20))
     from . import hints
     lines = hints.with_silent(kind.hide_breaks(lines, breaks), hints.silent_notes(pdir, project, lines), breaks)
+    from . import private                       # an email or phone number said out loud: never clip material (v2.7)
+    secret = private.spans(load_json(pdir / 'transcript' / 'words.json') or []) if private.enabled(settings()) else []
+    lines = private.hide_lines(lines, secret)
     cues = sound.load(pdir)
     if cues and breaks:                         # break music isn't a lively spot
         cues = dict(cues, lively=[sp for sp in cues.get('lively') or []

@@ -88,7 +88,10 @@ python run.py fetch "<youtube url or path to a video file>"
     nobody is on cam. Their lines (often song lyrics from the break music) are left out of
     transcript.txt and the parts, with one `# ===== BREAK SCREEN ... =====` marker line instead. A
     pause menu or map with the streamer talking in the cam is real video and stays.
-  When breaks were found, look at `output/<project>/breaks.jpg` once (one picture per break). If one
+  When breaks were found, look at `output/<project>/breaks.jpg` once (one picture per break).
+  **Private details** (an email address spelled out, a phone number said out loud) are left out the same
+  way (`# ===== PRIVATE DETAILS ... =====`), and `cut` takes those seconds out of any clip that touches
+  them; say where they were in your report, without repeating them. If one
   is real video after all, `python run.py kind <project> --keep 2` shows its lines again.
   Live streams and gameplay get the **stream rules** (section "Live streams and gameplay" in
   `references/picking-moments.md`); the part files carry them too.

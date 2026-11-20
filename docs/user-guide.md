@@ -227,6 +227,9 @@ Claude adds one where a clip calls for it, like a boom on a shocking line. Want 
 the mood's folder (any file name, and delete the ones you don't like), or tell Claude "add this sound
 as shock: (path to the file)".
 
+**Private details stay out.** When someone spells out an email address or says a phone number on
+stream, ClipKaro leaves those seconds out of every clip by itself and tells you where they were.
+
 **In every clip, by itself.** Pauses inside a clip are shortened and "um" / "uh" are cut out, so it
 feels quick (laughs are never cut, and in gameplay a long quiet stretch stays). Words Whisper made up
 during laughter or noise get no caption (the sound stays). The captions keep clear of faces and of the

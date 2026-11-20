@@ -2,6 +2,8 @@
 
 ## Since v2.6 (not released yet)
 
+- **Private details stay out of clips.** An email address spelled out or a phone number said on stream is
+  found and left out of every clip by itself (`"private_details": "keep"` turns it off).
 - **Sound effects included.** Setup now downloads a free starter set of 33 sound effects (Mixkit, no credit
   needed) into the mood folders, so clips get a boom, a boing or a buzzer from the very first video. Your
   own sounds are never replaced; `python install.py --no-sounds` skips it.
