@@ -22,6 +22,10 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.7 on 2026-11-20: no v1.1 command, option or setting has been removed. Everything new for
+gameplay and streams (frame sheets, careful listening, overlapping clips, the two-person webcam finder) stays
+off for a normal video, and a test (`NormalVideosUntouched`) keeps it that way.
+
 Checked again for v2.5 on 2026-11-17: no v1.1 command, option or setting has been removed or
 changed. Only new ones were added.
 

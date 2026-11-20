@@ -1,17 +1,6 @@
 # Plan for v2.7: "just paste the link"
 
-**Status (2026-11-20):**
-- Items 2-9 are built on the `v2.7-dev` branch, each with tests and a commit:
-  - 2: careful listening;
-  - 3: friends' captions;
-  - 4: friends count;
-  - 5: lots of clips and overlaps;
-  - 6: starter sounds;
-  - 7: the Twitch credit and the two-person webcam;
-  - 8: private details;
-  - 9: the sound spike.
-- Item 1 (watching the gameplay with frame sheets) is still being discussed.
-- Item 10 (the release) comes after item 1.
+**Status: built and released in v2.7 (2026-11-20).** The owner approved every item. Item 1 was discussed in three rounds and built as described below.
 
 ## Why this plan
 
@@ -60,73 +49,33 @@ At the end, Claude merges everything into main, tags v2.7 and gives you the push
 
 ---
 
-## 1. ClipKaro watches the gameplay, not just the words
+## 1. ClipKaro watches the gameplay, not just the words (frame sheets), as built
 
-**Today.**
-ClipKaro finds moments only from what is said.
-In a gameplay video the best moments are often seen, not said:
-- the bike catches fire and you burn while you run;
-- the chair breaks on camera;
-- you crash off a bicycle one second after saying "main technical gamer hoon".
+This item is only for gameplay and live streams. Podcasts and talks never get it.
 
-Today's clips started when the talking started, after the moment itself.
-The video was also not recognised as gameplay, because Twitch doesn't give YouTube's "Gaming" label.
+1. **Overview (`fetch`):** one frame every 10 seconds of the whole video, 21 frames per sheet (7 across, 3 down), each with its time.
+   - The webcam is shown enlarged in the bottom-left corner.
+   - A red border marks the loudest 15 % of the video; at a fixed level, half of a loud stream's frames were red.
+   - The reaction words ("BHAAG", "YAH KYA") are written on the frames.
+   - It takes about a minute for 4 hours.
+2. **The readers** get the sheets of their part with the transcript. They name spots worth a closer look, at most one per 4 minutes, only where something visible happens.
+3. **Close-ups (`run.py zoom`):** 21 frames, one per second, mostly before the spot, with the webcam inset. The `clipkaro-eventfinder` helpers decide: clip or not, when it starts, and when the reaction ends.
+4. **Events into the clips (`run.py events`):**
+   - a clip that starts on the reaction starts 1.5 s before its event, with no pause cuts in its first 10 s;
+   - an event no clip shows becomes a new clip;
+   - nothing moves when a clip already starts there;
+   - an exact-frame sheet (4 frames a second) puts the start and the sound on the right frame.
+5. **Sounds start on their moment, never before it.** This applies to every video; the way back is `"sound_onset": "peak"`.
 
-**Change.**
+**Tested on the 4-hour GTA stream:**
+- The helpers saw only the pictures, no words, and named 6 of the 7 events Claude had found by hand. The shark was missed; its words would have helped.
+- The eventfinder confirmed all 6, with start times within 0-4 s, found one new event, and said "no" to 9 of 10 random spots.
 
-1. **Is it a gaming video?** At the end of `fetch`, ClipKaro checks three things:
-   - **The title.** Game names, "gameplay", "walkthrough", "let's play", "stream".
-   - **The platform's game category.** A Twitch video names its game, here "Grand Theft Auto VI". YouTube has its Gaming category.
-   - **One sheet of 20 frames** taken from all over the video. The AI looks at it once: is this a game, a walkthrough or a game stream?
+**Cost, measured:**
+- about 90,000 tokens per helper that looked at 19 sheets;
+- about 64,000 for 16 close-ups.
 
-   Any one of them is enough. Normal videos (podcasts, talks, vlogs) are not affected at all.
-
-2. **A free first look on your laptop.** The graphics card scores every second of the video, at no Claude cost. It looks for:
-   - big movement or a flash (fire, explosions);
-   - a sudden jump in the game's sound;
-   - sudden movement in the webcam (someone falling off a chair);
-   - a small image model's score for words like "explosion", "car crash", "fire", "falling", "shark".
-
-   The image model is CLIP, about 0.5 GB, downloaded once. It needs no training.
-
-   This marks the most promising spots. It also always marks the seconds just before a line like "yah kya tha", "kya ho gaya", "vaah" or "bhaag".
-
-3. **Frame sheets for the AI helpers.** Each promising spot becomes one picture:
-   - 20 frames, one per second, with the time printed on each, like the sheets Claude used on this stream;
-   - plus the sheets just before and after it, so the helper sees the whole event.
-
-   The reading helpers get these pictures together with the transcript of their part. When a helper sees something amazing (an accident, a fail, a kill, a funny physics moment, something on the webcam), it suggests a clip around it, with the exact second it starts.
-
-4. **A clip starts where the action starts.**
-   - The clip starts 1-2 seconds before the event.
-   - The event plays whole, with no pause cuts inside it.
-   - Then come the reactions, tightened as usual.
-   - The event's sound effect lands on the exact frame.
-
-5. **Brand-new moments count too.** A moment with no transcript line about it at all, like a huge crash in silence, can still become a clip if the pictures show it.
-
-**How much Claude usage it adds** (estimates for a 4-hour stream; one sheet is about 1,500 tokens):
-
-| mode | which sheets the AI sees | sheets | extra tokens |
-|---|---|---|---|
-| quick | the seconds before each picked clip, plus the 10 best spots | about 15-25 | about 30,000 |
-| standard | the best spots, about one for every 2 minutes of video | about 120 | about 180,000 |
-| deep | about one for every minute of video | about 240 | about 350,000 |
-| (not planned) | every second of the video | about 720 | about 1.1 million |
-
-Shorter videos need fewer sheets. A 30-minute video in standard mode needs about 15.
-
-**Your choice.** When a clip is found that starts with an event, should ClipKaro make:
-- **A:** only that version? It is simply the better clip. This is Claude's suggestion.
-- **B:** also the old version that starts with the talk, as you got on this stream?
-
-**Way back.**
-- settings.json `"watch_gameplay": false` turns item 1 off.
-- `"event_lead_in": false` keeps clips starting at the first word.
-
-**Cost.** ⚠ It costs more: see the table above.
-
-**Build:** about 6-8 hours. This is the biggest item. It gets a blind test on this stream: do the frame sheets find the 11 moments Claude found by hand?
+**Way back:** `"watch_gameplay": false`, `"event_lead_in": false`.
 
 ## 2. Careful listening, and no captions on unsure words
 

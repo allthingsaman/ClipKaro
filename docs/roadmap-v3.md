@@ -24,6 +24,10 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
   Claude.
 - v2.5 (2026-11-17): ClipKaro and PostKaro checked for Windows and Mac (item 16). Everything planned
   before the major update (v3.0) is done.
+- v2.6 (2026-11-17): live clipping for the GTA 6 launch.
+- v2.7 (2026-11-20): gameplay with friends done by itself: frame sheets, careful listening, friends'
+  captions, starter sound effects on time, private details kept out, "no limit"; never censored, with stars
+  in written words. Planned with the owner in [plan-v2.7-just-paste-a-link.md](plan-v2.7-just-paste-a-link.md).
 
 ---
 
@@ -32,7 +36,6 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
 | 3b | **Measure the three modes** with `/usage` (one long and one short video each), and try cheaper models (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. | Quick mode's real saving isn't measured yet. Cheaper helpers would make standard lighter too. | 2-3 h | run `/usage` before and after each run, 30 min of blind pairs | Waiting for your `/usage` runs |
-| 4b | **Try sound effects by mood with real sounds.** The feature is built, but the `sounds` folders are empty, so no clip has used it yet. You add 2-3 free sounds (a boom, a ding, a "fail" sound); Claude makes 2-3 example clips with them. | So you decide to keep the feature, or remove it, from clips you have watched. | 30 min | add the sounds, watch 3 clips, 20 min | Waiting for your sounds |
 | 13b | **Your microphone on its own track.** Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
 | 22 | **A first real install on a Windows PC or a Mac.** v2.5 checked both by reading the code and the steps and by tests on this laptop; nobody has run it on one yet. | The AI helper sorts out most surprises, but a real run finds what reading can't. | none | 1 h on a Windows or Mac computer (yours or a friend's): "install this repo", then one short video | When one is at hand |
 | 19 | **The first full "clip this video" run with everything new** (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
@@ -90,6 +93,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 ## Done
 | What | Done |
 |---|---|
+| **Gameplay with friends, done by itself** (v2.7): frame sheets (the readers see a frame every 10 s, close-ups where they point, clips that start at the event), careful listening for noisy Hindi / Hinglish streams, friends' captions and friends counted like the streamer, overlapping clips and "no limit" for streams, starter sound effects that start on their moment (item 4b), private details kept out, the Twitch credit and two-person webcams. Tested on a 4-hour GTA 6 stream with three friends. | 2026-11-20 (v2.7) |
 | **Live clipping** (v2.6, for the GTA 6 launch): clips posted while you stream, from OBS's 10-minute pieces, with Twitch chat and viewer clips as hints and auto-posting through PostKaro. First real use: the GTA 6 launch stream. | 2026-11-17 (v2.6) |
 | **Install check for Windows and macOS** (item 16), for ClipKaro and PostKaro: the Mac steps fixed (Homebrew's Python 3.15 and its caption-less ffmpeg), Hindi folder names on Windows, a Python check in setup, PostKaro's setup for every system. Checked by reading and tests; a real run is item 22. | 2026-11-17 (v2.5) |
 | **v2.4**: your brand on every clip (items 20 and 21): your logo and a 3-5 s outro from the `brand` folder, and "© Channel name" on clips from a YouTube link, right in the corners at 70 % opacity, any corner by setting; action without talking gets its own line (P2); the caption check spells names and numbers right (P3). | 2026-11-17 |

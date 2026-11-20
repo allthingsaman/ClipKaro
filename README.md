@@ -30,6 +30,22 @@ you:  clip this video: https://youtu.be/...
 > **New to all this?** Start with the **[user guide](docs/user-guide.md)**: simple steps, no coding
 > needed.
 
+## 🎮 New in v2.7: gameplay with friends, done by itself
+
+A long stream where you and your friends play and talk on voice chat now needs nothing but the link:
+- **ClipKaro watches the game, not just the words.** The best moment is often seen first and talked about
+  after (the bike catches fire, a chair breaks on camera). Claude's helpers now look at the video too, and
+  the clip starts at the moment itself.
+- **Careful listening.** Three voices over game sound garble the words, so two more speech models listen
+  (with an NVIDIA card); words they can't agree on get no caption. A wrong caption is worse than none.
+- **Your friends count like you**, and their Hinglish keeps its captions (the game characters still don't
+  get any).
+- **Sound effects included** (a free set from Mixkit), and they start on their moment, never before it.
+- **Lots of clips** ("no limit"), a short and a long version of the same funny moment, a "© twitch.tv/name"
+  credit, and an email address or phone number said on stream cut out of every clip.
+
+Podcasts and talks are not touched by any of the gameplay work. Details: [CHANGELOG.md](CHANGELOG.md).
+
 ## 🔴 New in v2.6: live clipping, clips posted while you stream
 
 Made for game launches like GTA 6, where the first clips get the views. You stream as usual, and

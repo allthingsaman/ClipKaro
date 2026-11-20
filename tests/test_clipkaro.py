@@ -1603,3 +1603,25 @@ class FrameSheets(unittest.TestCase):
         self.assertLess(plain['ranges'][0][1], 109.0)                                     # without an event: cut
         r = cut.snap_piece(clip, 98.5, out['ranges'][0][1], words)
         self.assertEqual(r[0], 98.5)                                                       # starts on the event
+
+
+class NormalVideosUntouched(unittest.TestCase):
+    """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
+    so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""
+
+    PODCAST = {'title': 'Figuring Out with Khan Sir | Episode 12', 'source': 'https://youtu.be/abc',
+               'categories': ['People & Blogs'], 'live_status': 'not_live', 'language': 'hinglish',
+               'video_kind': {'live': False, 'gaming': False, 'facecam': False}}
+
+    def test_no_gameplay_work_on_a_podcast(self):
+        from unittest import mock
+        from clipper import common, gpu, hearing, kind, voices, watch
+        p = self.PODCAST
+        self.assertEqual(kind.stream_hint(p), [])                                   # not taken for a stream
+        self.assertFalse(watch.wanted(p, {})[0])                                    # no frame sheets
+        with mock.patch.object(gpu, 'cuda_device_count', return_value=1):
+            self.assertFalse(hearing.wanted(p, {})[0])                              # no careful listening
+        with mock.patch.object(common, 'settings', return_value={}):
+            self.assertEqual(common.overlap_mode(p), 'avoid')                       # one clip per moment, as in v2.6
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(voices.game_words(Path(d), p, [W('hello', 0.0, 0.4)]), set())   # no game-voice rule

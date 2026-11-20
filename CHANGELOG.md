@@ -1,6 +1,17 @@
 # What's new
 
-## Since v2.6 (not released yet)
+## v2.7 (November 2026): gameplay with friends, watched and heard carefully
+
+v2.7 brings everything a long gameplay stream with friends on voice chat needed by hand on a 4-hour GTA 6
+stream, so "clip this: <link>" now does it by itself. All of the heavier work happens only for gameplay
+and live streams; podcasts and talks get the fixes and nothing else (a test checks that).
+
+- **Never censored, bold takes count extra.** Gaali, abuse, dark jokes and offensive opinions are never cut,
+  bleeped or scored down; bold, honest takes (an unpopular opinion, a roast, taboo or A-rated talk) earn extra
+  with the critic and the readers (`"bold_clips": "neutral"` is the way back). Slurs stay neutral and out of
+  titles, with a note when a platform might restrict a clip.
+- **Abusive and taboo words written with stars** ("F******") in captions, the .srt and posting texts, while the
+  sound keeps every word (`"star_words": false`, or "no stars", writes them in full).
 
 - **ClipKaro watches your gameplay.** In gameplay and live streams Claude's helpers now see the video too: a
   frame every 10 seconds with the loud moments marked, and a closer look where something happens. A clip of
