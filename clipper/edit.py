@@ -35,6 +35,7 @@ from .sfx import path_of
 FONTS = ASSETS / 'fonts'
 AAC_RATE = '192k'
 LIMIT_DB, MAX_PEAK_DB = -2.0, -1.2    # the limiter's ceiling; the highest true peak allowed after AAC
+START_FADE = 0.03                 # seconds: the sound fades in this fast at a clip's very start (not heard)
 JUMP_SIZE, JUMP_Y = 50, 250       # the optional "27 MIN LATER" label: size (CSS px) and centre line
 
 
@@ -71,7 +72,10 @@ def mix_audio(clip_mp4, cues, out_wav, duration, music=None, limit_db=LIMIT_DB):
                   # one-pass loudnorm can overshoot its peak target on sharp sounds (game hits, a slammed
                   # table): a limiter at -2 dB keeps every clip under the apps' -1 dB, loudness unchanged
                   f'alimiter=limit={10 ** (limit_db / 20):.4f}:attack=5:release=50:level=false:latency=true,'
-                  f'atrim=0:{duration:.3f}[out]')
+                  # a loud sound in the first milliseconds makes the AAC encoder overshoot, whatever the
+                  # limiter does (clip 149 of a GTA stream: -0.7 dB at 12 ms with the limit at -4 dB); a 30 ms
+                  # fade-in at the very start stops that and is too short to hear
+                  f'atrim=0:{duration:.3f},afade=t=in:d={START_FADE}[out]')
     ffmpeg(*inputs, '-filter_complex', ';'.join(chains), '-map', '[out]', '-c:a', 'pcm_s16le', out_wav)
 
 

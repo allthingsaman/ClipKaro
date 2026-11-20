@@ -2,6 +2,9 @@
 
 ## Since v2.6 (not released yet)
 
+- **No sound spike at a clip's first moment.** A clip that opened on a loud sound could fail the quality
+  check (the sound encoder overshot in the first milliseconds). The sound now fades in over 30 ms at the
+  very start; you can't hear it.
 - **YouTube's "confirm you're not a bot" on Windows.** Chrome, Edge and Brave on Windows lock their
   saved logins, so "use my Chrome cookies" failed there ("Failed to decrypt with DPAPI"). Now you save your
   YouTube login once as a cookies file with a browser extension and put it in the ClipKaro folder

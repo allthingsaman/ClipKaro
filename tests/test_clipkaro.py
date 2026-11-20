@@ -494,6 +494,41 @@ class JumpCuts(unittest.TestCase):
             self.assertLessEqual(edit.true_peak(out), edit.MAX_PEAK_DB + 0.05)
             self.assertFalse(out.with_suffix('.wav').exists())
 
+    def test_loud_first_syllable_fades_in_and_timing_kept(self):
+        # v2.7: a loud sound in a clip's first milliseconds made the AAC encoder overshoot whatever the limiter
+        # did (clip 149 of a GTA stream: -0.7 dB at 12 ms, with the limit tried down to -4 dB); the mix now fades
+        # in over START_FADE (30 ms, not heard). Nothing else moves: same length, no shift in time, with or
+        # without sound effects mixed in, and the encoded peak stays under the apps' limit
+        import shutil
+        import subprocess
+        import numpy as np
+        if not shutil.which('ffmpeg'):
+            self.skipTest('no ffmpeg')
+        from clipper import edit
+        with tempfile.TemporaryDirectory() as d:
+            src, cue, out = Path(d) / 'clip.wav', Path(d) / 'cue.wav', Path(d) / 'mix.wav'
+            # loud from the very first sample; a short click at exactly 2.0 s to measure the timing by
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i',
+                            "aevalsrc='0.9*sin(2*PI*300*t)*lt(t\\,0.3)+0.02*sin(2*PI*200*t)+0.9*between(t\\,2\\,2.002)'"
+                            ':s=48000:d=3', '-ac', '2', str(src)], check=True)
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'sine=f=900:d=0.5:sample_rate=44100',
+                            str(cue)], check=True)
+            cues = [{'file': 'cue.wav', 'path': str(cue), 'offset': 0.0, 'length': 0.5, 'at': 0.0, 'gain_db': -6,
+                     'norm_db': 0}]
+            for cc in ([], cues):
+                edit.mix_audio(src, cc, out, 3.0)
+                r = subprocess.run(['ffmpeg', '-v', 'error', '-i', str(out), '-f', 'f32le', '-'], capture_output=True)
+                x = np.abs(np.frombuffer(r.stdout, dtype=np.float32)).reshape(-1, 2).max(axis=1)   # both channels
+                self.assertAlmostEqual(len(x) / 48000, 3.0, delta=0.002)                 # nothing lost or added
+                first_ms, later = x[:48].max(), x[int(0.04 * 48000):int(0.1 * 48000)].max()
+                self.assertLess(first_ms, later / 10)                                    # faded in at the start
+                self.assertGreater(later, 10 ** (-6 / 20))                               # then at full level
+                click = 1.95 * 48000 + int(np.argmax(x[int(1.95 * 48000):int(2.05 * 48000)]))
+                self.assertAlmostEqual(click / 48000, 2.0, delta=0.001)                  # no shift in time
+            m4a = Path(d) / 'mix.m4a'
+            edit.encode_audio(src, cues, m4a, 3.0)
+            self.assertLessEqual(edit.true_peak(m4a), edit.MAX_PEAK_DB + 0.05)
+
     def test_gameplay_keeps_long_quiet(self):
         words = sentence('so this is the first point', 0.0) + sentence('and here is the second one', 5.0)
         quiet = words[6]['s'] - words[5]['e']                                  # 2.8 s of gameplay

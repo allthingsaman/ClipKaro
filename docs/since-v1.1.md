@@ -220,6 +220,11 @@ changed. Only new ones were added.
   the last word is still being said, the picture holds the last frame for a moment while the word ends;
   a split screen never switches for less than 0.6 s at an edge. No word is cut. *(v2.3, 2026-11-14)*
   - Way back: none needed (a flash was a fault); clips without such a cut are cut exactly as before.
+- ⬆ **No sound spike at a clip's very first moment.** A loud sound in a clip's first milliseconds made
+  the sound encoder overshoot, whatever the limiter did, so the quality check failed the clip (clip 149
+  of a GTA stream: -0.7 dB at 12 ms, the limit is -1). Now the sound fades in over 30 ms at the very
+  start, too short to hear. Nothing else moves: same length, same timing. *(v2.7, 2026-11-20)*
+  - Way back: none needed (the spike was a fault).
 
 ## Posting
 
