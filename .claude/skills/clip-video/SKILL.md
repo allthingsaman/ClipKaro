@@ -267,10 +267,11 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
    again, then `critic --from deep --fresh` with 3 critics, `honesty` (judges for the new packets
    only) and `deep` once more. Never repair a repair; skip clips the judges call twisted at heart.
 7. Add the kept deep clips to
-   clips.json as extra clips, each with `"deep": {"moments": [...]}`, a real `caption` that starts
-   with its `source_line` ("From 2 moments of the full video: 0:08 · 22:53") and ends with "Full
-   video: <link>", and a `post` block whose texts also start with the source line (the YouTube
-   title ends with "(2 moments joined)" instead). `cut` shows each jump across time with a short flash. When a kept clip has an
+   clips.json as extra clips, each with `"deep": {"moments": [...], "source_line": "From 2 moments of
+   the full video: 0:08 · 22:53"}`, a real `caption` that ends with "Full video: <link>", and a
+   `post` block written like any other clip's. The source line is for the owner (say it in your
+   report); it never goes in a title, caption or description (`"joined_note": true` puts it back).
+   `cut` shows each jump across time with a short flash. When a kept clip has an
    `honesty_note` (one judge objected), tell the user that judge's reason in your final message.
 New helper types appear after Claude Code restarts; until then start general helpers and tell
 them to read `.claude/agents/<name>.md` (everything after its front matter is their instructions).

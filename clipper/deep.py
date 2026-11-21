@@ -540,8 +540,9 @@ def main():
     kept, rows = res
     print('\n'.join(rows))
     if kept:
-        print(f'\nnext: add the kept deep clips to clips.json with "deep": {{"moments": [...]}} and their "source_line" '
-              f'in the caption (see deep/kept.json), then cut and edit as usual')
+        print(f'\nnext: add the kept deep clips to clips.json with "deep": {{"moments": [...], "source_line": ...}} '
+              f'(see deep/kept.json; the source line is for your report, never in the posting texts), then cut and '
+              f'edit as usual')
 
 
 if __name__ == '__main__':

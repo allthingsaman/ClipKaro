@@ -192,9 +192,11 @@ Write `output/<project>/clips.json`:
   - `instagram.caption`: a hook line, then a question or call to comment, then **at most 5
     hashtags** (Instagram allows no more). No `#shorts`.
   - `facebook.caption`: 1–2 lines, 0–3 hashtags, no `#shorts`.
-  - Deep clips: start every platform's text with the clip's `source_line` ("From 2 moments of the
-    full video: 0:08 · 22:53"), so viewers know it is joined. The one exception is the YouTube
-    title: end it with "(2 moments joined)" instead, so the title stays a title.
+  - Deep clips: write their texts like any other clip's. Where the moments are in the video
+    ("From 2 moments of the full video: 0:08 · 22:53", "(2 moments joined)") is for the owner, not
+    for viewers: it stays in the clip's `deep` block and in your report, never in a title, caption
+    or description (the owner, 2026-11-21). `run.py post` takes it out by itself too; settings.json
+    `"joined_note": true` puts it back.
   - Never put `<` or `>` in YouTube text (YouTube refuses them).
   - **Gaali and taboo words may go in titles and captions** when they're catchy and actually said in
     the clip, **written with stars**: the first letter, then one star per letter ("F******",

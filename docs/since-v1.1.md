@@ -187,6 +187,12 @@ changed. Only new ones were added.
     another piece, and it runs on gameplay and streams only, where viewers and friends read things out.
     The stream's real email address and in-game number are still found. *(v2.7.1, 2026-11-21)*
   - Way back: `"private_details": "keep"` turns it off; `"all"` also checks podcasts and talks.
+- ↔ **Joined clips don't say so in their posting texts.** Deep clips (v2.0) started every caption and
+  description with "From 2 moments of the full video: 0:08 · 22:53" and ended the YouTube title with
+  "(2 moments joined)". The owner, 2026-11-21: that is information for us, not for viewers. Now it stays
+  in clips.json and in Claude's report, and `run.py post` takes it out of older clips.json files too. The
+  short white flash at each jump in the video is unchanged. v1.1 had no deep clips. *(v2.7.1, 2026-11-21)*
+  - Way back: `"joined_note": true` in settings.json.
 - ⬆ **Checked before release** (the v2.7.1 review, 2026-11-21). Found by reading the code and fixed:
   - Careful listening crashed on every clip longer than about 25 s (the speech engine hears at most 30 s at
     once without its speech detector): longer clips are now heard in windows of under 30 s, split in a

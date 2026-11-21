@@ -314,9 +314,10 @@ a doubt, the clip is kept and Claude tells you that judge's reason, so you can c
 posting. A clip the judges reject for something a few seconds would fix (a "but..." cut off right
 after a piece, or an answer without its question) gets one repair: Claude keeps those seconds, and
 the clip is scored and judged again from scratch. Often no deep clip passes: that's
-normal, and Claude says so. A kept clip shows a short white flash where it jumps in time, and its
-posting caption starts with a line like "From 2 moments of the full video: 35:30 · 1:03:01" and the
-full video link. A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for
+normal, and Claude says so. A kept clip shows a short white flash where it jumps in time. Where its
+moments are in the full video ("From 2 moments of the full video: 35:30 · 1:03:01") is in Claude's
+report for you, not in the posting texts; the caption ends with the full video link.
+(`"joined_note": true` in settings.json puts that line back at the top of the posting texts.) A deep pass takes extra time: about 10-15 more minutes (measured: 10 minutes for
 a 68-minute interview, 13 for a 2-hour podcast).
 
 ### Can I write anything else?
@@ -386,6 +387,7 @@ Claude to change them.
   "max_clips": 20,
   "bold_clips": "boost",
   "star_words": true,
+  "joined_note": false,
   "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
@@ -431,6 +433,7 @@ Claude to change them.
 | `private_details` | `hide` | gameplay and streams: an email address or phone number said out loud (letters and digits said one after another, or 9+ digits) is left out of what Claude reads and cut out of every clip; `all`: checked on every video, podcasts too; `keep`: treated like any other words |
 | `overlap_clips` | `streams` | in gameplay and streams, two clips may share some seconds when they clearly differ (a short and a long cut of one moment, a joined clip), so you choose which to post; never near-copies, at most 3 clips per moment. Other videos keep one clip per moment. `allow`: overlaps everywhere; `avoid`: nowhere, as before v2.7 |
 | `bold_clips` | `boost` | `boost`: bold, honest takes (an unpopular opinion, a roast, a rant, a dark joke, gaali said with feeling, taboo talk, an A-rated moment) rank higher when Claude picks and when the second editor judges; `neutral`: they rank like any other moment, as before. Either way nothing is cut, bleeped or scored down because of the words |
+| `joined_note` | `false` | a clip joined from moments far apart (deep clips): its titles and captions say nothing about it; where the moments are stays in clips.json and Claude's report. `true`: "From 2 moments of the full video: ..." first and "(2 moments joined)" in the YouTube title, as before |
 | `star_words` | `true` | abusive and taboo words written with stars in the captions and the posting texts ("F******"); the sound keeps every word. `false`: every word in full ("no stars" does it for one video) |
 | `hook_title` | `false` | `true`: a 3-6 word title on screen for the first seconds of every clip ("hook title") |
 | `caption_look` | `classic` | `classic`, `box`, `karaoke`, `minimal`, `bold`, `comic` |

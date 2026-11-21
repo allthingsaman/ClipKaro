@@ -16,6 +16,9 @@
   worked out per video length for podcasts and gameplay, with advice for small creators. Quick mode
   uses about half of standard; a 30-minute podcast in standard is about 0.6 million tokens.
 - The speech model and disk tables list the Hinglish model and the two careful-listening models.
+- **Joined clips don't announce it.** A clip made from moments far apart (deep clips) no longer starts its
+  caption with "From 3 moments of the full video: ..." or ends its YouTube title with "(3 moments joined)":
+  that is for you, not your viewers, so it stays in Claude's report (`"joined_note": true` brings it back).
 - **Checked before release.** A review of everything since v2.6 found these, all fixed (none was ever
   published):
   - **Private details:** everyday talk ("the number of people who quit at 25 ... one in two", "मुझे नहीं

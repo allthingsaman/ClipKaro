@@ -11,6 +11,7 @@ caption). Format: PostKaro's docs/post-kit.md. ClipKaro works the same without P
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,16 @@ from . import stars as starlib
 from .common import load_json, probe, project_dir, save_json, settings
 
 KIT_VERSION = 1
+# how a joined clip (deep clips) used to be marked in its posting texts: for us, not for viewers (2026-11-21)
+JOINED_LINE = re.compile(r'^[ \t]*From \d+ moments of the full video:[^\n]*(\n|$)', re.I | re.M)
+JOINED_TITLE = re.compile(r'[ \t]*\(\d+ moments joined\)', re.I)
+
+
+def without_joined_note(text):
+    """A posting text without "From 2 moments of the full video: 0:08 · 22:53" and "(2 moments joined)"."""
+    if not isinstance(text, str):
+        return text
+    return JOINED_TITLE.sub('', JOINED_LINE.sub('', text)).strip()
 PLATFORMS = ('youtube', 'instagram', 'facebook')
 
 
@@ -66,6 +77,7 @@ def build(pdir):
     files = clip_files(pdir)
     out, notes = [], []
     stars_on = starlib.on()
+    joined_on = settings().get('joined_note', False) is True
     for c in clips:
         f = files.get(c.get('id'))
         if not f:
@@ -77,6 +89,10 @@ def build(pdir):
             dur = round(sum(e - s for s, e in c.get('ranges', [])), 2)
         text = c.get('post') or {}
         caption, title = c.get('caption'), c.get('title')
+        if not joined_on:              # where a joined clip's moments are in the video: never in what viewers read
+            text = {p: ({k: without_joined_note(v) for k, v in t.items()} if isinstance(t, dict) else t)
+                    for p, t in text.items()}
+            caption = without_joined_note(caption)
         if stars_on:                   # abusive and taboo words with stars, as in the captions ("F******")
             marked = starlib.marks(c.get('stars'))
             title = starlib.star_text(title, marked)

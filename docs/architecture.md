@@ -800,8 +800,10 @@ and does the next stage by itself:
    it like any composed clip and adds it as `<id>r` with the same thread and twin; then the critic
    scores all deep clips again (`--fresh`) and three new honesty judges read only the new packet. A
    repair is never repaired again, and a clip whose link itself was wrong is not repaired. Tested
-   on the Khan Sir podcast: the farmers clip that two judges had rejected (it opened on a line from the host's intro list and stopped before Khan Sir called his plan coaching classes for farmers) was repaired to open on the host's real question and keep that line; it scored 5.5 against 3.9 for its single stretch, and two new judges passed it, the third left a note (it ends 2 s before "but for that a big area is needed"). So the video now has one deep clip instead of none. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the posting
-   caption: "From 2 moments of the full video: 0:08 · 22:53", plus the full video link.
+   on the Khan Sir podcast: the farmers clip that two judges had rejected (it opened on a line from the host's intro list and stopped before Khan Sir called his plan coaching classes for farmers) was repaired to open on the host's real question and keep that line; it scored 5.5 against 3.9 for its single stretch, and two new judges passed it, the third left a note (it ends 2 s before "but for that a big area is needed"). So the video now has one deep clip instead of none. It goes into `clips.json` as an extra clip with `"deep"` and a source line for the owner's
+   report ("From 2 moments of the full video: 0:08 · 22:53"); since 2026-11-21 the posting texts leave
+   it out (`post.without_joined_note`; `"joined_note": true` keeps it), and the caption ends with the
+   full video link.
 
 **Joins are shown, not hidden, and sound smooth.** At a join that skips more than 20 s, `cut` adds
 a short white flash (about a fifth of a second) and `edit` a soft whoosh (-19 dB), so a viewer can

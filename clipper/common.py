@@ -45,6 +45,10 @@ DEFAULT_SETTINGS = {
                                    # with feeling) count extra when picking and judging (the owner's choice,
                                    # 2026-11-19); neutral: judged like any other moment, as before. Nothing is
                                    # ever censored in either mode (bold_mode, bold_note)
+    'joined_note': False,          # a clip joined from far-apart moments (deep clips): its posting texts say nothing
+                                   # about it (the owner, 2026-11-21: "information for us, not viewers"); the moments
+                                   # stay in clips.json. true: "From 2 moments of the full video: ..." first and
+                                   # "(2 moments joined)" in the YouTube title, as before (post.py strips them)
     'star_words': True,            # abusive and taboo words written with stars in captions and posting texts
                                    # ("F******"); the sound is never bleeped (stars.py); false: every word in full
     'hook_title': False,           # true: a 3-6 word title on screen for the first 2-3 seconds (clips.json hook_text);

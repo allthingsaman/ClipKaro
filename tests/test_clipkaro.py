@@ -1103,6 +1103,43 @@ class ReleaseReviewFixes(unittest.TestCase):
         self.assertEqual(done, [('new clip', 1)])                                 # past the end: nothing
         self.assertEqual(clips[0]['ranges'], [[298.5, 388.5]])                    # at most 90 s
 
+    def test_joined_clips_dont_say_so_in_posts(self):
+        import contextlib
+        import io
+        from unittest import mock
+        from clipper import common, post
+        line = 'From 3 moments of the full video: 2:30:20 · 2:52:29 · 2:53:36'
+        clip = {'id': 1, 'title': 'Club Ki Talash', 'ranges': [[0.0, 20.0]], 'deep': {'moments': ['2:30:20']},
+                'caption': f'{line}\nClub dhoondha, jannat mil gayi #GTA6\nFull video: https://www.twitch.tv/videos/1',
+                'post': {'youtube': {'title': 'Club Dhoondha, Jannat Mili | GTA 6 Hindi #Shorts (3 moments joined)',
+                                     'description': f'{line}\nStory missions skip karke club pahunch gaye.'},
+                         'instagram': {'caption': f'{line}\nYah to jannat aa gaya 😍 #GTA6'}}}
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'edited').mkdir()
+            (pdir / 'edited' / '01-club.mp4').write_bytes(b'')
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [clip]}, ensure_ascii=False), encoding='utf-8')
+            (pdir / 'project.json').write_text('{}')
+            saved = common.settings
+            try:
+                for joined in (None, True):
+                    common.settings = lambda: dict(common.DEFAULT_SETTINGS, **({} if joined is None else
+                                                                               {'joined_note': joined}))
+                    with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()), \
+                            mock.patch.object(post, 'settings', common.settings):
+                        c = post.build(pdir)[0]['clips'][0]
+                    texts = [c['caption'], c['text']['youtube']['title'], c['text']['youtube']['description'],
+                             c['text']['instagram']['caption']]
+                    if joined is None:                    # the default: for us, not for viewers
+                        self.assertFalse(any('moments' in t for t in texts), texts)
+                        self.assertEqual(c['text']['youtube']['title'], 'Club Dhoondha, Jannat Mili | GTA 6 Hindi #Shorts')
+                        self.assertEqual(c['caption'], 'Club dhoondha, jannat mil gayi #GTA6\n'
+                                                       'Full video: https://www.twitch.tv/videos/1')
+                    else:                                 # the way back
+                        self.assertTrue(all('moments' in t for t in texts))
+            finally:
+                common.settings = saved
+
     def test_frame_sheets_safe_on_windows(self):
         import numpy as np
         from clipper import watch
