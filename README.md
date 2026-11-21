@@ -36,70 +36,49 @@ you:  clip this video: https://youtu.be/...
 > **New to all this?** Start with the **[user guide](docs/user-guide.md)**: simple steps, no coding
 > needed.
 
-## 🎮 New in v2.7: gameplay with friends, done by itself
+## 🎮 Gameplay with friends, done by itself
 
-A long stream where you and your friends play and talk on voice chat now needs nothing but the link:
-- **ClipKaro watches the game, not just the words.** The best moment is often seen first and talked about
-  after (the bike catches fire, a chair breaks on camera). Claude's helpers now look at the video too, and
-  the clip starts at the moment itself.
-- **Careful listening.** Three voices over game sound garble the words, so two more speech models listen
-  (with an NVIDIA card); words they can't agree on get no caption. A wrong caption is worse than none.
-- **Your friends count like you**, and their Hinglish keeps its captions (the game characters still don't
-  get any).
-- **Sound effects included** (a free set from Mixkit), and they start on their moment, never before it.
-- **Lots of clips** ("no limit"), a short and a long version of the same funny moment, a "© twitch.tv/name"
-  credit, and an email address or phone number said on stream cut out of every clip.
-- **The action stays in** *(v2.7.1)*. Pause cutting goes by the sound, so a quiet second where something
-  happens on screen (a takedown, a crash) could be cut out, leaving the shout without its cause. Now a
-  pause where the picture suddenly changes a lot stays in.
+<p align="center">
+  <img src="docs/media/gameplay-friends.gif" alt="Left: the owner's 4-hour GTA 6 stream with two friends on the webcam; at 2:46:56 he says he is a technical gamer and falls off his bicycle. Right: the vertical clip ClipKaro made, the game on top, the webcam below, starting on the boast and showing the fall; the mumbled words after it have no captions." width="800">
+</p>
+<p align="center"><sub>Real output from the owner's own GTA 6 stream with friends on voice chat (Twitch). ClipKaro saw the
+fall in the picture; the mumbled words after it get no caption rather than a wrong one.</sub></p>
 
-Podcasts and talks are not touched by any of the gameplay work. Details: [CHANGELOG.md](CHANGELOG.md).
+A long stream where you and your friends play and talk on voice chat needs nothing but the link:
+- **It watches the game, not just the words.** A clip starts at the crash or the fall, not at the shout
+  after it, and a quiet second where something happens on screen stays in.
+- **Careful listening.** On noisy Hinglish streams two more speech models check every caption word (with
+  an NVIDIA card); words nobody can make out get no caption.
+- **Your friends count like you.** Their banter and roasts become clips, with captions; the game
+  characters' lines get none (the game shows its own).
+- **Sound effects included** and on time, lots of clips when you ask ("no limit"), a "© twitch.tv/name"
+  credit, and an email address or phone number said on stream cut out.
 
-## 🔴 New in v2.6: live clipping, clips posted while you stream
+Podcasts and talks aren't touched by any of this.
 
-Made for game launches like GTA 6, where the first clips get the views. You stream as usual, and
-ClipKaro clips your stream **while it is still running**. It posts the clips to YouTube Shorts,
-Instagram Reels and your Facebook Page about **15-30 minutes after the moment**.
+## 🔴 Live clipping: clips posted while you stream
 
-```
-OBS streams to YouTube / Twitch / Kick, and records the same picture: a new file every 10 minutes
-        │
-        ▼
-ClipKaro writes down each finished piece   (+ hints: Twitch chat going wild, the clips viewers made)
-        │
-        ▼
-Claude, every 10 minutes: 0-2 clips per piece → captions → cut → edit → quality check
-        │                                                        (a clip that fails is never posted)
-        ▼
-PostKaro posts each clip at once on every connected platform
-```
+<p align="center">
+  <img src="docs/media/live-clipping.gif" alt="An illustration, sped up: a live GTA 6 stream with a LIVE badge; below it OBS's 10-minute pieces fill up, the piece with the moment is written down and clipped, and on the right the finished vertical clip appears with the banner 'Posted: Shorts, Reels, Facebook', about 20 minutes after the moment." width="800">
+</p>
+<p align="center"><sub>How it works, sped up. The footage and the clip are real ClipKaro output from the owner's GTA 6 stream.</sub></p>
 
-- **The video is your own OBS recording**, never a download: full quality, with your cam in it.
-  Twitch only adds hints about where people reacted. Your words decide what becomes a clip.
-- **Your stream stays smooth.** While it runs, ClipKaro works at low priority and edits on the
-  processor. It uses the graphics card only when OBS leaves enough room.
-- **No review step.** For live streams the clips go out at once (a clip that fails the quality check
-  is never posted). For a test stream, `"live_post": "dry"` only shows what it would post.
-- **What you need:**
-  - OBS recording in 10-minute pieces;
-  - [PostKaro](https://github.com/allthingsaman/PostKaro) with your accounts connected;
-  - Claude Code left open;
-  - free Twitch developer keys (optional).
-- **Cost:** no money. Claude usage is roughly 150-250k tokens per hour of stream: comfortable on Max,
-  a few hours on Pro.
-- **Start and stop.** In Claude Code, inside the ClipKaro folder, say **"start live clipping gta6"**.
-  When you end the stream, say **"the stream is over"**.
+Made for game launches, where the first clips get the views. OBS records your stream in 10-minute
+pieces; every 10 minutes Claude clips the finished ones, and PostKaro posts them to YouTube Shorts,
+Instagram Reels and your Facebook Page, **about 15-30 minutes after the moment**.
+- **Your own OBS recording**, never a download: full quality, with your cam in it. Twitch chat and the
+  clips viewers make only hint where people reacted.
+- **Your stream stays smooth.** ClipKaro works at low priority and leaves the graphics card to OBS.
+- **No review step.** Clips go out at once, and one that fails the quality check is never posted. For a
+  test stream, `"live_post": "dry"` only shows what it would post.
+- **What you need:** OBS, [PostKaro](https://github.com/allthingsaman/PostKaro) with your accounts
+  connected, and Claude Code left open. About 150-250k Claude tokens per hour of stream: comfortable on
+  Max, a few hours on Pro.
+- **Start and stop.** Say **"start live clipping gta6"**, and **"the stream is over"** when you end.
 
-**Set it up:** **[docs/live-clipping.md](docs/live-clipping.md)**, step by step:
-- the OBS settings (10-minute pieces, recording while streaming, your mic on its own track);
-- your OBS folder and Twitch channel (Claude asks for them the first time);
-- the Twitch keys;
-- a test stream before the real one;
-- going live, from "Start Streaming" to "the stream is over".
-
-Streaming to YouTube, Twitch and Kick at once: **[docs/streaming-setup.md](docs/streaming-setup.md)**
-(the encoder settings for each, stream keys, checking you're really live). Posting:
-**[docs/postkaro.md](docs/postkaro.md)**.
+**Set it up:** [docs/live-clipping.md](docs/live-clipping.md) (OBS settings, Twitch keys, a test stream,
+going live). Streaming to YouTube, Twitch and Kick at once: [docs/streaming-setup.md](docs/streaming-setup.md).
+Posting: [docs/postkaro.md](docs/postkaro.md).
 
 ## The best of ClipKaro
 
@@ -108,6 +87,38 @@ Ask for them on a long podcast ("deep clip this"). The question at minute 8 and 
 52, or a point and the moment that proves it, become **one short**, in the order they were said, with
 a white flash where it jumps (the GIF above). Three AI judges check that no join changes what anyone
 meant, and a deep clip is only kept when it scores at least as well as the best single stretch around it.
+
+### 🎙️ Two people: the one talking, and both when it matters
+It listens to who is talking and shows that person. When someone laughs, both talk at once or the
+talk goes quickly back and forth, it shows **both**, stacked, with the captions on the seam.
+
+<p align="center">
+  <img src="docs/media/two-people.gif" alt="Left: a wide shot of the host and Khan Sir side by side. Right: the vertical clip shows Khan Sir while he talks, then both of them stacked when the host laughs, then Khan Sir again." width="800">
+</p>
+<p align="center"><sub>Real output. Footage: Khan Sir on <i>Figuring Out</i> with Raj Shamani (YouTube), shown as a demo.</sub></p>
+
+### 🎮 Gameplay and live streams, without explaining
+It notices a webcam overlay by itself: **the game on top, you below**, the captions in between. It
+sees that a video was a live stream, leaves out "Starting soon", "Be right back" and the ending
+screen, and builds clips around **your** commentary and reactions, not the game characters' lines.
+Game characters' lines get **no captions** (the game shows its own subtitles, so they'd appear twice);
+their sound stays, and a great game scene can still be in a clip.
+
+<p align="center">
+  <img src="docs/media/gameplay.gif" alt="Left: a Black Myth Wukong stream with a round webcam in the corner. Right: the vertical clip with the game on top, the webcam enlarged below and Hinglish captions between them." width="800">
+</p>
+<p align="center"><sub>Real output from the owner's own Black Myth: Wukong stream.</sub></p>
+
+### 💬 Captions that stay off faces and out of the apps' buttons
+Captions keep out of the like and share buttons and the apps' top and bottom texts, and move to a
+free line when they would cover a face or a chin. Made-up words (Whisper inventing text during a laugh
+or game music) get no caption at all. Before cutting, Claude reads every clip's captions like a viewer
+and fixes clear mishearings ("sorry" heard as "saari", a wrong name) *(standard and deep mode; quick
+mode skips it)*.
+
+<p align="center">
+  <img src="docs/media/captions-clear.png" alt="Three frames of finished clips with the apps' button areas marked in red: a close-up with the caption below the chin, a split screen with the caption on the seam, and gameplay with the caption between the game and the webcam." width="800">
+</p>
 
 ### 🧐 A blind second opinion on every clip
 Claude picks about twice as many ideas as you need. Then an AI critic, who never sees the titles or the
@@ -121,46 +132,14 @@ report, from the podcast above:
     hook 4.0 "answered 'almost all the advice is terrible'" · payoff 4.0 "ironic landing"
 ```
 
-### 🎙️ Two people: the one talking, and both when it matters
-It listens to who is talking and shows that person. When someone laughs, both talk at once or the
-talk goes quickly back and forth, it shows **both**, stacked, with the captions on the seam.
-
-<p align="center">
-  <img src="docs/media/two-people.gif" alt="Left: a wide shot of the host and Khan Sir side by side. Right: the vertical clip shows Khan Sir while he talks, then both of them stacked when the host laughs, then Khan Sir again." width="800">
-</p>
-<p align="center"><sub>Real output. Footage: Khan Sir on <i>Figuring Out</i> with Raj Shamani (YouTube), shown as a demo.</sub></p>
-
-### 💬 Captions that stay off faces and out of the apps' buttons
-Captions keep out of the like and share buttons and the apps' top and bottom texts, and move to a
-free line when they would cover a face or a chin. Made-up words (Whisper inventing text during a laugh
-or game music) get no caption at all. Before cutting, Claude reads every clip's captions like a viewer
-and fixes clear mishearings ("sorry" heard as "saari", a wrong name) *(new in v2.3; standard and deep
-mode, quick mode skips it)*.
-
-<p align="center">
-  <img src="docs/media/captions-clear.png" alt="Three frames of finished clips with the apps' button areas marked in red: a close-up with the caption below the chin, a split screen with the caption on the seam, and gameplay with the caption between the game and the webcam." width="800">
-</p>
-
-### 🎮 Gameplay and live streams, without explaining
-It notices a webcam overlay by itself: **the game on top, you below**, the captions in between. It
-sees that a video was a live stream, leaves out "Starting soon", "Be right back" and the ending
-screen, and builds clips around **your** commentary and reactions, not the game characters' lines.
-Game characters' lines get **no captions** (the game shows its own subtitles, so they'd appear twice);
-their sound stays, and a great game scene can still be in a clip *(new in v2.3)*.
-
-<p align="center">
-  <img src="docs/media/gameplay.gif" alt="Left: a Black Myth Wukong stream with a round webcam in the corner. Right: the vertical clip with the game on top, the webcam enlarged below and Hinglish captions between them." width="800">
-</p>
-<p align="center"><sub>Real output from the owner's own Black Myth: Wukong stream.</sub></p>
-
 ### 🇮🇳 Hindi and Hinglish, for real
 Found by itself. Captions in English letters ("aaj hum business ki baat karenge") or in Hindi
 letters, spelled the way people write Hinglish online. With an NVIDIA card, a **speech model trained
 on Hinglish** writes the words down: on public tests it got half as many words wrong as before, and
-its text costs Claude about 40 % fewer tokens to read *(new in v2.3)*. Skipped words are heard again,
+its text costs Claude about 40 % fewer tokens to read. Skipped words are heard again,
 so a line isn't lost to one stretched "word".
 
-### 👂 It hears what the words can't show *(new in v2.3)*
+### 👂 It hears what the words can't show
 Some of the best moments live in **how** something is said or shown. Claude reads short notes next to
 the words: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
 and in gameplay `(other voice)` on lines spoken by a game character, not the streamer, and a line of
@@ -185,7 +164,7 @@ captions". "Hook title" adds a big title for the first seconds.
   them and ranks them higher: a rant, a roast, a blunt verdict, gaali said with real feeling, taboo talk,
   an A-rated moment. Nothing is bleeped; captions and titles write rude words with stars ("F******").
   `"bold_clips": "neutral"` and `"star_words": false` turn that off.
-- 🔴 **Live clipping** for game launches: clips posted while you stream ([see above](#-new-in-v26-live-clipping-clips-posted-while-you-stream)).
+- 🔴 **Live clipping** for game launches: clips posted while you stream ([see above](#-live-clipping-clips-posted-while-you-stream)).
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
   your Facebook Page, each with its own text, from your own laptop.
