@@ -64,8 +64,8 @@ def ideas(pdir):
 
 def unused(pdir):
     """The ideas not cut yet: none overlapping a clip in clips.json, none overlapping a better one. With
-    settings.json "overlap_clips": "allow" (the default since v2.7) an idea may share seconds with them, only
-    not be a near-copy or a fourth clip of the same moment."""
+    overlaps allowed (gameplay and streams with "overlap_clips": "streams", the default since v2.7, or "allow")
+    an idea may share seconds with them, only not be a near-copy or a fourth clip of the same moment."""
     clips = (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
     taken = [c['ranges'] for c in clips]
     used_ids = {c.get('from') for c in clips if c.get('from')}

@@ -788,7 +788,7 @@ def main():
     taken = []                                   # (clip id, start, end) of every range so far
     picked, overlap = [], overlap_mode(project)  # settings.json "overlap_clips" (v2.7)
     from . import private
-    secret_spans = private.spans(words) if private.enabled(settings()) else []
+    secret_spans = private.spans(words) if private.wanted(project) else []
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         if want and cid not in want:
@@ -872,7 +872,7 @@ def main():
         act_on = settings().get('action_pauses', 'keep') != 'cut'
         cam_box = fc['cam'] if fc else (project.get('facecam') or None)
     from . import private                        # an email or phone number said out loud never ends up in a clip
-    secret = private.spans(words) if private.enabled(settings()) else []
+    secret = private.spans(words) if private.wanted(project) else []
     for i, clip in enumerate(picks['clips'], 1):
         cid = int(clip.get('id', i))
         hits = [sp for sp in secret for a, b in clip['ranges'] if a < sp[1] and sp[0] < b]

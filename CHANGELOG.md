@@ -16,6 +16,20 @@
   worked out per video length for podcasts and gameplay, with advice for small creators. Quick mode
   uses about half of standard; a 30-minute podcast in standard is about 0.6 million tokens.
 - The speech model and disk tables list the Hinglish model and the two careful-listening models.
+- **Checked before release.** A review of everything since v2.6 found these, all fixed (none was ever
+  published):
+  - **Private details:** everyday talk ("the number of people who quit at 25 ... one in two", "मुझे नहीं
+    पता") was taken for a phone number and cut out of podcast clips. Now only letters and numbers said one
+    right after another count, and it runs on gameplay and streams only (`"private_details": "all"` for
+    every video). The real email address and in-game number on the GTA stream are still found.
+  - **Careful listening** crashed on clips longer than about 25 seconds; they are now heard in windows of
+    under 30 seconds (checked on three 34-58 s clips of the GTA stream).
+  - **Live clipping keeps the graphics card for OBS:** careful listening and frame sheets wait while it runs.
+  - **"Never flip a nahin"** knows every spelling ("don't", "nahiii", "नहीं"), and a plain respelling
+    (nahi -> nahin) is no longer hidden.
+  - **Frame sheets on Windows** work when the video's title has Hindi letters, and a failing frame sheet
+    never stops `fetch` or `parts`. A game named in a podcast's title no longer turns them on.
+  - **Event starts:** no clip grows past 90 seconds, and an event is never shown by two clips.
 
 ## v2.7 (November 2026): gameplay with friends, watched and heard carefully
 

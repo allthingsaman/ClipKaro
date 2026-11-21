@@ -262,7 +262,11 @@ def build(pdir, project, lines, n, margin, shift, chapters, out_dir='parts', cue
                         'or phone number said out loud) are marked with ===== lines: their words are left out. Never '
                         'take a topic, best moment or clip from them.')
         if watch_on:                            # gameplay and streams: the frame sheets of this stretch (v2.7)
-            sheets = watch.part_sheets(pdir, k + 1, (a, b))
+            try:
+                sheets = watch.part_sheets(pdir, k + 1, (a, b))
+            except (Exception, SystemExit) as e:  # a sheet that fails never stops parts
+                print(f'   (frame sheets of part {k + 1} skipped: {type(e).__name__}: {e})')
+                sheets = []
             if sheets:
                 head.append(watch.SHEET_NOTE.format(files=', '.join(
                     f'{p} ({fmt_ts(t0).split(".")[0]}-{fmt_ts(t1).split(".")[0]})' for p, t0, t1 in sheets)))
@@ -331,10 +335,14 @@ def main():
         die('--margin must be at least 45 s, so a 90 s clip always fits inside one part')
 
     from . import watch                         # gameplay and streams: the frame overview (fetch makes it since v2.7)
+    from .kind import _video_file
     if watch.wanted(project)[0] and not (pdir / 'frames' / 'overview' / 'meta.json').exists():
         try:
-            watch.overview(pdir, project)
-        except Exception as e:
+            if _video_file(pdir, project):      # parts never needs the video: no download, no stop (v2.7.1 review)
+                watch.overview(pdir, project)
+            else:
+                print('   (frame overview skipped: the video is not here; `run.py watch` makes it later)')
+        except (Exception, SystemExit) as e:
             print(f'   (frame overview skipped: {type(e).__name__}: {e})')
 
     wish = update_wish(project, a)
@@ -346,7 +354,7 @@ def main():
     from . import hints
     lines = hints.with_silent(kind.hide_breaks(lines, breaks), hints.silent_notes(pdir, project, lines), breaks)
     from . import private                       # an email or phone number said out loud: never clip material (v2.7)
-    secret = private.spans(load_json(pdir / 'transcript' / 'words.json') or []) if private.enabled(settings()) else []
+    secret = private.spans(load_json(pdir / 'transcript' / 'words.json') or []) if private.wanted(project) else []
     lines = private.hide_lines(lines, secret)
     cues = sound.load(pdir)
     if cues and breaks:                         # break music isn't a lively spot

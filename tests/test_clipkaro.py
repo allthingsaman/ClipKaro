@@ -924,6 +924,11 @@ class CarefulListening(unittest.TestCase):
         ws = [['Are', 1.0, 1.1]] + [['bhai,', 1.2 + k / 10, 1.25 + k / 10] for k in range(40)] + [['itna', 6.0, 6.2]]
         out = hearing.no_loops(ws)
         self.assertEqual([w[0] for w in out], ['Are', 'bhai,', 'bhai,', 'bhai,', 'itna'])
+        loop = [[t, 0, 0] for t in 'Raahul gaandhi kaary maal kar rahe the.'.split()] * 10 + [['Tabhi', 0, 0]]
+        self.assertEqual(' '.join(w[0] for w in hearing.no_loops(loop)),
+                         'Raahul gaandhi kaary maal kar rahe the. Tabhi')               # a phrase loop: kept once
+        chant = [[t, 0, 0] for t in 'GTA six GTA six GTA six aa gaya'.split()]
+        self.assertEqual(len(hearing.no_loops(chant)), 8)                                 # said three times: stays
 
     def test_readers_get_their_stretch_of_the_second_hearing(self):
         from clipper import hearing
@@ -938,6 +943,179 @@ class CarefulListening(unittest.TestCase):
             self.assertIn('पहले', text)
             self.assertNotIn('बाद में', text)                                           # outside this part
             self.assertIn('Never quote it', text)
+
+
+class ReleaseReviewFixes(unittest.TestCase):
+    """v2.7.1 review (2026-11-21): what the review before the release found, each fixed and kept fixed."""
+
+    @staticmethod
+    def said(text, start=0.0, dur=0.3, gap=0.08):
+        out, t = [], start
+        for w in text.split():
+            out.append(W(w, round(t, 2), round(t + dur, 2)))
+            t += dur + gap
+        return out
+
+    def test_private_details_leave_everyday_talk_alone(self):
+        from clipper import private
+        for text in ('The number of people who quit at 25 is huge. One in two founders fail at 30, and at that point '
+                     'you have maybe two options left.',
+                     'My phone was dead, so I waited at the station for one hour, two hours, and at 9 I got home.',
+                     'मेरा नंबर एक पे आया था, फिर दो साल बाद 2019 में मैंने एक और try किया, और 3 महीने में हो गया।',
+                     'मुझे नहीं पता था कि एक दिन ऐसा होगा, दो साल पहले मैंने 5 लाख लगाए थे और 2020 में सब डूब गया',
+                     'From 1999 2000 2001 the company grew very fast.'):
+            self.assertEqual(private.spans(self.said(text)), [], text)
+        for text in ('email ID hai x x 1 2 1 1 at the rate gmail dot com',
+                     'Thik hai email ID aapki yahi sahi hai na. Haan, aman bhi baat hai 1211. 1 1. Bataana kaha aap '
+                     'mujhe. AMAN. Haan. UP8. DH. YAY. 1 2 1 1.',                       # the real one, from a stream
+                     'Kya tha 0 7 double 0 7 7 double 0. 77, haan, aage',
+                     'mera number hai nine eight seven six five four three two one zero'):
+            self.assertTrue(private.spans(self.said(text)), text)
+        podcast, stream = {'title': 'Business talk', 'video_kind': {}}, {'video_kind': {'live': True}}
+        self.assertFalse(private.wanted(podcast, {}))                  # gameplay and streams only, by default
+        self.assertTrue(private.wanted(stream, {}))
+        self.assertTrue(private.wanted(podcast, {'private_details': 'all'}))
+        self.assertFalse(private.wanted(stream, {'private_details': 'keep'}))
+
+    def test_long_clips_are_heard_in_windows(self):
+        import wave
+        from unittest import mock
+        import numpy as np
+        from clipper import hearing
+        sr = 16000
+        self.assertIsNone(hearing._windows(np.zeros(20 * sr, np.float32)))     # short: heard whole, as before
+        audio = (np.random.default_rng(1).standard_normal(45 * sr) * 0.3).astype(np.float32)
+        audio[int(24.5 * sr):int(25.5 * sr)] = 0.0                             # a pause at 25 s
+        win = hearing._windows(audio)
+        self.assertEqual((win[0]['start'], win[-1]['end']), (0.0, 45.0))
+        odd = hearing._windows(np.zeros(650_207, np.float32))                  # 40.6379 s: never past the last sample
+        self.assertLessEqual(int(odd[-1]['end'] * sr), 650_207)
+        self.assertTrue(all(w['end'] - w['start'] <= 28.0 for w in win))
+        self.assertTrue(24.5 <= win[0]['end'] <= 25.5)                          # split in the pause
+        seen = []
+
+        class Stub:                                    # faster-whisper's batch mode, as strict as the real one
+            def transcribe(self, audio, **kw):
+                if kw.get('clip_timestamps') is None and len(audio) / sr >= 30:
+                    raise RuntimeError('No clip timestamps found.')
+                seen.append(kw.get('clip_timestamps'))
+                return [], None
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'source').mkdir()
+            with wave.open(str(pdir / 'source' / 'audio16k.wav'), 'wb') as w:
+                w.setnchannels(1)
+                w.setsampwidth(2)
+                w.setframerate(sr)
+                w.writeframes((audio * 20000).astype(np.int16).tobytes())
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [{'id': 1, 'ranges': [[6.0, 40.0]]},
+                                                                   {'id': 2, 'ranges': [[10.0, 25.0]]}]}))
+            with mock.patch.object(hearing, '_pipeline', return_value=(object(), Stub())):
+                hearing.hear_clips(pdir, quiet=True)                           # crashed on clip 1 before
+        self.assertEqual(len(seen), 4)                                         # 2 clips x 2 models
+        self.assertTrue(seen[0] and seen[1] is None)                           # long: windows; short: whole
+
+    def test_never_on_the_graphics_card_when_live_or_on_the_processor(self):
+        import os
+        from unittest import mock
+        from clipper import gpu, hearing, watch
+        stream = {'language': 'hinglish', 'video_kind': {'live': True}}
+        with mock.patch.object(gpu, 'cuda_device_count', return_value=1):
+            self.assertTrue(hearing.wanted(stream, {})[0])
+            self.assertFalse(hearing.wanted(stream, {}, device='cpu')[0])          # live clipping chose the processor
+            self.assertFalse(hearing.wanted(stream, {'device': 'cpu'})[0])
+            with mock.patch.dict(os.environ, {'CLIPKARO_LIVE': '1'}):
+                self.assertFalse(hearing.wanted(stream, {})[0])
+                self.assertFalse(watch.wanted(stream, {})[0])
+
+    def test_no_flip_of_a_nahin_in_any_spelling(self):
+        from clipper import hearing
+        n = hearing._negations
+        self.assertNotEqual(n("don't go"), n('go'))                                # was applied before
+        self.assertNotEqual(n('nahin-aaunga'), n('aaunga'))
+        self.assertNotEqual(n('main nahiii jaunga'), n('main jaunga'))
+        self.assertEqual(n('main nahi aaunga'), n('main nahin aaunga'))           # a respelling keeps the meaning
+        self.assertEqual(n('मैं नहीं आऊंगा'), n('main nahin aaunga'))
+
+    def test_a_hidden_flip_stays_hidden(self):
+        from unittest import mock
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = CarefulListening.project(None, d)
+            (pdir / 'wordcheck').mkdir()
+            (pdir / 'wordcheck' / 'batch-01.json').write_text(json.dumps([
+                {'id': 1, 'fixes': [{'at': 16.0, 'wrong': 'main aaunga', 'right': 'main nahin aaunga'}]},
+                {'id': 2, 'fixes': [{'at': 16.0, 'wrong': 'main aaunga', 'right': 'main aaoonga'},
+                                    {'wrong': 'yaar', 'right': 'yar'}]}]))         # no "at": skipped, no crash
+            with mock.patch.object(hearing, 'settings', return_value={}):
+                hearing.apply(pdir)
+            words = json.loads((pdir / 'transcript' / 'words.json').read_text(encoding='utf-8'))
+            self.assertTrue(words[8].get('unsure') and words[9].get('unsure'))     # a later fix can't show it again
+            self.assertTrue((pdir / 'transcript' / 'words-before-fixes.json').exists())   # words as first heard
+
+    def test_game_line_marks_its_own_line(self):
+        from unittest import mock
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            words = [W('bhai', 10.0, 10.4), W('chal.', 10.5, 11.0), W('Get', 11.1, 11.4), W('down!', 11.5, 12.0)]
+            lines = [{'s': 10.0, 'e': 11.0, 'i0': 0, 'i1': 1}, {'s': 11.1, 'e': 12.0, 'i0': 2, 'i1': 3}]
+            (pdir / 'transcript' / 'words.json').write_text(json.dumps(words))
+            (pdir / 'transcript' / 'sentences.json').write_text(json.dumps(lines))
+            (pdir / 'project.json').write_text('{}')
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [{'id': 1, 'ranges': [[9.5, 12.5]]}]}))
+            (pdir / 'wordcheck').mkdir()
+            (pdir / 'wordcheck' / 'batch-01.json').write_text(json.dumps([{'id': 1, 'game_english': [11.1]}]))
+            with mock.patch.object(hearing, 'settings', return_value={}):
+                hearing.apply(pdir)
+            clip = json.loads((pdir / 'clips.json').read_text())['clips'][0]
+            self.assertEqual(clip['hide_captions'], [[11.05, 12.05]])              # not the friend's line before it
+
+    def events(self, clips, events, cfg=None):
+        from unittest import mock
+        from clipper import watch
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'frames').mkdir()
+            (pdir / 'project.json').write_text(json.dumps({'duration': 600.0}))
+            (pdir / 'clips.json').write_text(json.dumps({'clips': clips}))
+            (pdir / 'frames' / 'events.json').write_text(json.dumps(
+                [dict({'spot': 1, 'where': 'game', 'title': 'Crash', 'why': 'x'}, **e) for e in events]))
+            with mock.patch.object(watch, 'settings', return_value=cfg or {}), \
+                    mock.patch.object(watch, '_video', return_value=None), mock.patch.object(watch, 'exact_sheet'):
+                done = watch.apply_events(pdir)
+            return [(what, cid) for what, cid, _ in done], json.loads((pdir / 'clips.json').read_text())['clips'] \
+                if done else clips
+
+    def test_event_starts(self):
+        ev = {'event_at': 100.0, 'end': 130.0}
+        done, clips = self.events([{'id': 1, 'ranges': [[102.0, 130.0]]}], [ev])
+        self.assertEqual(done, [('starts at its event', 1)])                      # 2 s after: it gets its lead-in
+        self.assertEqual(clips[0]['ranges'][0][0], 98.5)
+        done, _ = self.events([{'id': 1, 'ranges': [[60.0, 120.0]]}, {'id': 2, 'ranges': [[118.0, 150.0]]}], [ev])
+        self.assertEqual(done, [('already shows it', 1)])                         # never a second clip of it
+        done, _ = self.events([{'id': 1, 'ranges': [[125.0, 210.0]]}], [ev])
+        self.assertEqual(done, [('reaction clip kept', 1)])                       # would pass 90 s
+        done, _ = self.events([{'id': 1, 'ranges': [[110.0, 140.0]]}], [ev], {'event_lead_in': False})
+        self.assertEqual(done, [('reaction clip kept', 1)])                       # no near-copy next to it
+        done, clips = self.events([], [{'event_at': 300.0, 'end': 500.0}, {'event_at': 599.5, 'end': 640.0}])
+        self.assertEqual(done, [('new clip', 1)])                                 # past the end: nothing
+        self.assertEqual(clips[0]['ranges'], [[298.5, 388.5]])                    # at most 90 s
+
+    def test_frame_sheets_safe_on_windows(self):
+        import numpy as np
+        from clipper import watch
+        from clipper.common import imwrite
+        self.assertIsNone(watch.compose([], Path(tempfile.gettempdir()) / 'none.jpg'))   # no frames: no sheet, no crash
+        src = Path(watch.__file__).read_text(encoding='utf-8')
+        self.assertNotIn('cv2.imread(', src)              # OpenCV's own file calls fail on Hindi letters on Windows
+        self.assertNotIn('cv2.imwrite(', src)
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d) / 'gta-6-दिन-एक'
+            folder.mkdir()
+            imwrite(folder / 'f.jpg', np.full((180, 320, 3), 90, np.uint8))
+            self.assertTrue(watch.compose([(folder / 'f.jpg', '0:10', True, 'bhaag', False)], folder / 'sheet.jpg'))
 
 
 class LiveSettings(unittest.TestCase):
@@ -1568,6 +1746,10 @@ class FrameSheets(unittest.TestCase):
         self.assertTrue(watch.wanted({'title': 'x', 'video_kind': {'live': True}}, {})[0])
         self.assertTrue(watch.wanted({'title': 'GTA 6 day one gameplay', 'video_kind': {}}, {})[0])
         self.assertFalse(watch.wanted({'video_kind': {'live': True}}, {'watch_gameplay': False})[0])   # way back
+        # v2.7.1 review: a game or console in the title of a podcast or a review is not gameplay
+        self.assertFalse(watch.wanted({'title': 'PS5 Pro review in Hindi', 'video_kind': {}}, {})[0])
+        self.assertFalse(watch.wanted({'title': 'Gaming addiction in kids | Doctor podcast', 'video_kind': {}}, {})[0])
+        self.assertTrue(watch.wanted({'title': 'x', 'source': 'https://www.twitch.tv/videos/1', 'video_kind': {}}, {})[0])
 
     def test_sheet_of_21_frames_with_marks(self):
         import cv2

@@ -13,7 +13,8 @@ its line here, in the same commit.** Released so far:
 - **v2.3** (2026-11-16): the lines marked v2.3;
 - **v2.4** (2026-11-17): the lines marked v2.4;
 - **v2.5** (2026-11-17): the lines marked v2.5;
-- **v2.6** (2026-11-17): the lines marked v2.6.
+- **v2.6** (2026-11-17): the lines marked v2.6;
+- **v2.7.1** (2026-11-21, published together with v2.7): the lines marked v2.7 and v2.7.1.
 
 **The marks**
 - ⬆ **Upgrade**: v1.1 does this too, and now it's better; or it's new and changes nothing
@@ -24,6 +25,9 @@ its line here, in the same commit.** Released so far:
 
 Checked again for v2.7.1 on 2026-11-20: nothing removed; the one change to clips (action pauses stay)
 only touches gameplay and streams, and `"action_pauses": "cut"` brings v2.7's cutting back.
+Checked again after the release review on 2026-11-21: the private-details check, which ran on every video,
+now runs on gameplay and streams only, like the rest of v2.7, so podcasts and talks are cut exactly as in
+v2.6 again; nothing else reaches a normal video.
 
 Checked again for v2.7 on 2026-11-20: no v1.1 command, option or setting has been removed. Everything new for
 gameplay and streams (frame sheets, careful listening, overlapping clips, the two-person webcam finder) stays
@@ -171,13 +175,34 @@ changed. Only new ones were added.
   clip the same) and at most 3 clips per moment; `cut --check` names those. Podcasts and every other video
   keep one clip per moment, exactly as before. *(v2.7, 2026-11-20)*
   - Way back: `"overlap_clips": "avoid"` in settings.json (`"allow"` puts overlaps on every video).
-- ⬆ **Private details said out loud stay out of clips.** On a GTA stream a viewer's email address was
-  spelled out letter by letter, and Claude kept it out of every clip by hand. Now ClipKaro finds an email
-  address, contact detail or phone number said out loud (a cue like "email ID" or "number" followed by
-  spelled-out letters and digits, or 9+ digits in a row; counting, prices and game buttons are left alone),
-  leaves it out of what the reading helpers see, and `cut` takes those seconds out of any clip that touches
-  them. *(v2.7, 2026-11-20)*
-  - Way back: `"private_details": "keep"` in settings.json.
+- ⬆ **Private details said out loud stay out of clips** (gameplay and streams). On a GTA stream a viewer's
+  email address was spelled out letter by letter, and Claude kept it out of every clip by hand. Now ClipKaro
+  finds an email address, contact detail or phone number said out loud (a cue like "email ID" or "number"
+  followed by letters and digits said one right after another, or 9+ digits in a row; counting, years,
+  prices and game buttons are left alone), leaves it out of what the reading helpers see, and `cut` takes
+  those seconds out of any clip that touches them. *(v2.7, 2026-11-20)*
+  - The release review found everyday talk taken for a detail ("the number of people who quit at 25 ...
+    one in two", "मेरा नंबर एक पे आया ... दो साल बाद 2019 में", "मुझे नहीं पता"), which cut seconds out of podcast
+    clips. Now only pieces said one right after another count, a number word ("one", "एक") only next to
+    another piece, and it runs on gameplay and streams only, where viewers and friends read things out.
+    The stream's real email address and in-game number are still found. *(v2.7.1, 2026-11-21)*
+  - Way back: `"private_details": "keep"` turns it off; `"all"` also checks podcasts and talks.
+- ⬆ **Checked before release** (the v2.7.1 review, 2026-11-21). Found by reading the code and fixed:
+  - Careful listening crashed on every clip longer than about 25 s (the speech engine hears at most 30 s at
+    once without its speech detector): longer clips are now heard in windows of under 30 s, split in a
+    pause. Checked on three 34-58 s clips of the GTA stream. A model's loop (one sentence ten times) is kept
+    once.
+  - Careful listening and frame sheets wait while live clipping runs (the graphics card is OBS's, and live
+    clips must go out fast), and careful listening stays off the graphics card when the processor was chosen.
+  - "Never flip a nahin" knows every spelling ("don't", "nahiii", "नहीं", "nahin-aaunga"); a respelling
+    (nahi -> nahin) is applied instead of hidden, and a hidden flip can't be shown again by a later fix.
+  - A game line marks its own line, never the friend's line just before it.
+  - Frame sheets work on Windows with Hindi letters in the video's title (the safe picture helpers of v2.5);
+    a frame sheet that fails never stops `fetch` or `parts`, and they never download the video again; a game
+    or console named in a podcast's or a review's title no longer turns frame sheets on.
+  - Event starts: a clip starting just after its event gets its lead-in, an event another clip already
+    shows is never repeated, no clip grows past 90 s, and with `"event_lead_in": false` no near-copy is
+    added next to the reaction clip. *(v2.7.1, 2026-11-21)*
 - ⬆ ⚠ **ClipKaro watches gameplay, not just the words** (gameplay and live streams only). The best game
   moment is often seen first and talked about after, so clips started when the talking started, after the
   bike fire or the chair breaking. Now `fetch` makes a frame overview (one frame every 10 s, about a minute
@@ -373,6 +398,8 @@ changed. Only new ones were added.
   streaming" (Settings → General → Output in newer OBS). New: `docs/streaming-setup.md` (multistream on
   OBS: YouTube, Twitch and Kick at once, the encoder settings, checking you're live) and `docs/postkaro.md`
   (posting with PostKaro). The README highlights the YouTube cookies file Windows needs.
+- ⬆ **Docs** *(2026-11-21)*: the README opens with the owner's 16-minute video guide (installing ClipKaro and
+  PostKaro on Windows and using them), linked under the short description.
 
 ## Cost
 

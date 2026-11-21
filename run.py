@@ -156,6 +156,7 @@ def main():
     kw = {}
     if sys.argv[1] in HEAVY and live_running():
         env.setdefault('CLIPKARO_ENCODER', 'x264')
+        env['CLIPKARO_LIVE'] = '1'      # careful listening and frame sheets wait: the card is OBS's (v2.7.1)
         kw = {'creationflags': 0x00004000} if os.name == 'nt' else {'preexec_fn': lambda: os.nice(10)}
     sys.exit(subprocess.run(cmd, cwd=ROOT, env=with_nvidia_libs(env), **kw).returncode)
 

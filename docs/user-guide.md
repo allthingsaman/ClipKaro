@@ -240,7 +240,8 @@ models listen too, and Claude's helpers compare all three for every clip: words 
 and words nobody can make out get no caption (the sound stays). A wrong caption is worse than none.
 
 **Private details stay out.** When someone spells out an email address or says a phone number on
-stream, ClipKaro leaves those seconds out of every clip by itself and tells you where they were.
+stream or in gameplay, ClipKaro leaves those seconds out of every clip by itself and tells you where they
+were. Everyday talk about numbers ("number one", "2019 mein") is left alone.
 
 **In every clip, by itself.** Pauses inside a clip are shortened and "um" / "uh" are cut out, so it
 feels quick (laughs are never cut, and in gameplay a long quiet stretch stays). Words Whisper made up

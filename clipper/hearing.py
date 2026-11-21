@@ -40,18 +40,29 @@ PER_PACKET = 20            # clips per word-check packet
 HEAR_V = 3                 # how clips are heard; a clip heard an older way is heard again
 LEAD_S = 5.0               # a clip is heard from this long before it: with less, the batch mode missed its first line
 FIX_WINDOW = (-4.0, 12.0)  # a fix's words are looked for this far around its time
-NEGATIONS = {'nahin', 'nahi', 'nai', 'na', 'naa', 'mat', 'not', 'no', 'never', 'dont', 'didnt', 'cant', 'wont',
-             'isnt', 'nhi', 'नहीं', 'नही', 'ना', 'मत'}
+WINDOW_S = 28.0            # without its speech detector the batch mode hears at most 30 s at once: a longer piece
+                           # is heard in windows of at most this long, split at its quietest moment (v2.7.1 review)
+# every spelling of a "no": a fix that changes how many of them a line has would flip its meaning (never applied);
+# a fix that only respells one (nahi -> nahin, नहीं -> nahin) keeps the meaning and is applied
+NEGATIONS = {'nahin', 'nahi', 'nahee', 'naheen', 'nahim', 'nhin', 'nhi', 'nai', 'na', 'mat', 'not', 'no', 'never',
+             'dont', 'didnt', 'doesnt', 'cant', 'cannot', 'wont', 'isnt', 'wasnt', 'arent', 'werent', 'havent', 'hasnt',
+             'hadnt', 'shouldnt', 'couldnt', 'wouldnt', 'aint', 'nothing', 'nobody', 'nope', 'nah', 'नहीं', 'नही',
+             'नहि', 'नहिं', 'न', 'ना', 'मत'}
 
 
-def wanted(project, cfg=None):
-    """(True, why) when careful listening is for this video, else (False, why)."""
+def wanted(project, cfg=None, device=None):
+    """(True, why) when careful listening is for this video, else (False, why). `device`: the one fetch was told
+    to use ("cpu": the extra models stay off the graphics card too)."""
     from . import gpu
     from .fetch import is_hindi
     from .kind import is_irregular
     cfg = settings() if cfg is None else cfg
     if cfg.get('careful_listening', True) is False:
         return False, 'off in settings.json ("careful_listening": false)'
+    if os.environ.get('CLIPKARO_LIVE'):
+        return False, 'not while live clipping runs (the graphics card belongs to OBS, and clips go out fast)'
+    if str(device or cfg.get('device') or 'auto').lower() == 'cpu':
+        return False, 'the processor was chosen for this video ("device": "cpu")'
     if not is_hindi((project or {}).get('language') or ''):
         return False, 'only for Hindi / Hinglish videos'
     if not is_irregular(project):
@@ -76,6 +87,29 @@ def _wav(pdir):
         from .cut import audio16k, ensure_video
         audio16k(pdir, ensure_video(pdir, load_json(pdir / 'project.json', {}) or {}))
     return f
+
+
+def _windows(audio, sr=16000, most=WINDOW_S, least=18.0):
+    """None when the batch mode can hear the audio whole (up to most + 1 s: the way clips were always heard);
+    else [{'start', 'end'}] in seconds, each at most `most` long, split at the quietest tenth of a second
+    between `least` and `most` into the window (a pause between words, so no word is cut in two)."""
+    total = len(audio) / sr
+    if total <= most + 1.0:
+        return None
+    end = int(total * 1000) / 1000           # rounded down: a window past the audio's last sample is refused
+    out, a, step = [], 0.0, int(0.1 * sr)
+    while total - a > most:
+        lo, hi = int((a + least) * sr), int((a + most) * sr)
+        n = (hi - lo) // step
+        rms = np.sqrt((audio[lo:lo + n * step].reshape(n, step) ** 2).mean(axis=1))
+        cut = (lo + (int(np.argmin(rms)) + 0.5) * step) / sr
+        out.append({'start': round(a, 3), 'end': round(cut, 3)})
+        a = cut
+    if end - a < 1.0:                         # a sliver at the end joins the window before it (still under 30 s)
+        out[-1]['end'] = end
+    else:
+        out.append({'start': round(a, 3), 'end': end})
+    return out
 
 
 def _read(w, s, e):
@@ -159,8 +193,9 @@ def hear_clips(pdir, ids=None, quiet=False):
                     a0 = max(0.0, s - LEAD_S)
                     # no speech detector on a clip: with it, the Roman model looped ("bhai, bhai, bhai ...") and
                     # missed words on a GTA stream; without it, it heard more, just as fast
-                    res, _ = bp.transcribe(_read(w, a0, e + 0.6), language='en', batch_size=BATCH, beam_size=5,
-                                           word_timestamps=True, vad_filter=False)
+                    audio = _read(w, a0, e + 0.6)
+                    res, _ = bp.transcribe(audio, language='en', batch_size=BATCH, beam_size=5, word_timestamps=True,
+                                           vad_filter=False, clip_timestamps=_windows(audio))
                     ws = no_loops([[x.word.strip(), round(a0 + x.start, 2), round(a0 + x.end, 2)]
                                    for sg in res for x in (sg.words or []) if x.word.strip()])
                     pieces.append({'range': [s, e], 'words': ws, 'v': HEAR_V})
@@ -174,14 +209,31 @@ def hear_clips(pdir, ids=None, quiet=False):
     return folder
 
 
-def no_loops(ws, keep=3):
-    """Heard words without a model's loop: the same word more than `keep` times in a row is cut to `keep`."""
+def no_loops(ws, keep=3, phrase_loop=4):
+    """Heard words without a model's loop: the same word more than `keep` times in a row is cut to `keep`, and
+    a stretch of 2-10 words said `phrase_loop` times or more in a row is kept once (the Roman model repeated
+    "Raahul gaandhi kaary maal kar rahe the" ten times over 17 s of other talk on a GTA stream; a chant said
+    two or three times stays)."""
     out, run = [], 0
     for w in ws:
         run = run + 1 if out and norm_token(out[-1][0]) == norm_token(w[0]) else 1
         if run <= keep:
             out.append(w)
-    return out
+    toks = [norm_token(w[0]) for w in out]
+    res, i = [], 0
+    while i < len(out):
+        for n in range(2, 11):
+            reps = 1
+            while toks[i + reps * n:i + (reps + 1) * n] == toks[i:i + n] and i + (reps + 1) * n <= len(out):
+                reps += 1
+            if reps >= phrase_loop:
+                res += out[i:i + n]
+                i += n * reps
+                break
+        else:
+            res.append(out[i])
+            i += 1
+    return res
 
 
 def _rows(ws, every=12):
@@ -255,8 +307,14 @@ def packets(pdir, per=PER_PACKET, ids=None):
 
 # ---------------------------------------------------------------- 3. the helpers' answers applied
 
+def _is_negation(token):
+    t = norm_token(token.replace('’', "'")).replace("'", '')
+    return t in NEGATIONS or re.sub(r'(.)\1+$', r'\1', t) in NEGATIONS        # "nahiii", "naaa"
+
+
 def _negations(text):
-    return sorted(n for n in (norm_token(t) for t in text.split()) if n in NEGATIONS)
+    """How many "no"s the words hold, in any spelling ("don't", "nahin-aaunga", "नहीं")."""
+    return sum(_is_negation(t) for t in re.split(r'[\s\-]+', text or '') if t)
 
 
 def _locate(words, at, phrase):
@@ -312,14 +370,20 @@ def apply(pdir, dry=False):
         n['hidden'] += 1
         log.append(f'hidden   {at:9.2f} {why}: ' + ' '.join(w['w'] for w in words[i:i + k]))
 
-    fixes = sorted(((float(f['at']), f['wrong'], f['right'], x.get('id')) for x in answers for f in x.get('fixes') or []
-                    if f.get('wrong') and f.get('right')), key=lambda t: t[0])
+    def when(f):
+        try:
+            return float(f['at'])
+        except (KeyError, TypeError, ValueError):
+            return None
+    fixes = sorted(((when(f), f['wrong'], f['right'], x.get('id')) for x in answers for f in x.get('fixes') or []
+                    if f.get('wrong') and f.get('right') and when(f) is not None), key=lambda t: t[0])
+    flips = []
     for at, wrong, right, cid in fixes:
         if norm_token(wrong) == norm_token(right) or not right.split():
             continue
-        if _negations(wrong) != _negations(right):          # a meaning flip is never written: hidden instead
-            n['meaning'] += 1
-            hide(at, wrong, f'clip {cid}: would flip the meaning ("{wrong}" -> "{right}")')
+        if _negations(wrong) != _negations(right):          # a meaning flip is never written: hidden instead,
+            n['meaning'] += 1                               # after every other fix (one can't show it again)
+            flips.append((at, wrong, f'clip {cid}: would flip the meaning ("{wrong}" -> "{right}")'))
             continue
         hit = _locate(words, at, wrong)
         if not hit or [norm_token(w['w']) for w in words[hit[0]:hit[0] + hit[1]]] != \
@@ -342,13 +406,17 @@ def apply(pdir, dry=False):
         n['fixed'] += 1
         log.append(f'fixed    {at:9.2f} clip {cid}: "{wrong}" -> "{right}"')
 
+    for at, wrong, why in flips:
+        hide(at, wrong, why)
     for x in answers:
         for d in x.get('doubts') or []:
-            if d.get('heard') and d.get('at') is not None:
+            if d.get('heard') and when(d) is not None:
                 hide(float(d['at']), d['heard'], f"clip {x.get('id')}: {d.get('context') or 'unsure'}")
 
     def line_at(t):
-        return next((ln for ln in lines if 's' in ln and ln['s'] - 0.3 <= t <= ln['e'] + 0.3), None)
+        """The line said at t: one that holds t first, else the nearest start (never the line before by mistake)."""
+        near = [ln for ln in lines if 's' in ln and ln['s'] - 0.3 <= t <= ln['e'] + 0.3]
+        return min(near, key=lambda ln: (not ln['s'] <= t <= ln['e'], abs(ln['s'] - t))) if near else None
 
     for x in answers:
         clip = by_id.get(int(x['id'])) if str(x.get('id', '')).isdigit() else None
@@ -376,6 +444,8 @@ def apply(pdir, dry=False):
                                              'doubts': asked})
     if not (tdir / 'words-before-wordcheck.json').exists():
         shutil.copy2(tdir / 'words.json', tdir / 'words-before-wordcheck.json')
+    if not (tdir / 'words-before-fixes.json').exists():   # the words as first heard: what deep, topics and the
+        shutil.copy2(tdir / 'words.json', tdir / 'words-before-fixes.json')  # caption check match quotes against
     write_transcript(pdir, words, load_json(pdir / 'project.json', {}) or {})
     save_json(pdir / 'clips.json', doc)
     n['asked'] = len(asked)

@@ -91,7 +91,9 @@ The first clips of a stream come about 20-30 minutes after you go live.
 While a live session runs, ClipKaro's heavy steps run at **low priority** and edit on the **processor**,
 so OBS keeps the graphics card's video encoder and your stream never drops frames because of ClipKaro.
 The words are written down on the graphics card only when OBS leaves enough of its memory free;
-otherwise on the processor (slower, but safe).
+otherwise on the processor (slower, but safe). The extra work made for recorded gameplay (careful listening
+with two more speech models, and frame sheets) waits while live clipping runs: it would take the graphics
+card from OBS and slow the clips down. "Clip this" on the recording after the stream still gets all of it.
 
 ## What you need
 | | |

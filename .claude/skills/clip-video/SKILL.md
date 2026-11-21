@@ -89,9 +89,10 @@ python run.py fetch "<youtube url or path to a video file>"
     transcript.txt and the parts, with one `# ===== BREAK SCREEN ... =====` marker line instead. A
     pause menu or map with the streamer talking in the cam is real video and stays.
   When breaks were found, look at `output/<project>/breaks.jpg` once (one picture per break).
-  **Private details** (an email address spelled out, a phone number said out loud) are left out the same
-  way (`# ===== PRIVATE DETAILS ... =====`), and `cut` takes those seconds out of any clip that touches
-  them; say where they were in your report, without repeating them. If one
+  **Private details** (an email address spelled out, a phone number said out loud; gameplay and streams,
+  or every video with `"private_details": "all"`) are left out the same way (`# ===== PRIVATE DETAILS ...
+  =====`), and `cut` takes those seconds out of any clip that touches them; say where they were in your
+  report, without repeating them. If one
   is real video after all, `python run.py kind <project> --keep 2` shows its lines again.
   Live streams and gameplay get the **stream rules** (section "Live streams and gameplay" in
   `references/picking-moments.md`); the part files carry them too.
@@ -316,7 +317,7 @@ In quick mode, read the sheets yourself with the parts, write `frames/look_close
 `{"at", "where", "why"}`), and look at the close-ups yourself: write each packet's answer in the
 eventfinder's format.
 
-## 2a-2. Careful listening (noisy Hindi / Hinglish streams and gameplay; every mode; after the final clips.json, before 2b)
+## 2a-2. Careful listening (noisy Hindi / Hinglish streams and gameplay; every mode, never in live clipping; after the final clips.json, before 2b)
 When `fetch` printed `-> careful listening:` with a second hearing, three voices and game sound have
 garbled the transcript, so the words get checked properly before the caption check:
 ```

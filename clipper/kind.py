@@ -60,6 +60,10 @@ GAME_WORDS = re.compile(
     r"rdr2|god of war|cyberpunk|roblox|among us|counter.?strike|cs2|dota|league of legends|wukong|assassin'?s creed|"
     r"resident evil|hogwarts legacy|last of us|ghost of tsushima|ps5|xbox)\b", re.I)
 PLATFORMS = re.compile(r'twitch\.tv/|kick\.com/', re.I)
+# ... of those, the words that say the video IS gameplay or a stream (a game's or a console's name alone also fits a
+# review or a podcast about games): frame sheets need one of these when the title is all there is (v2.7.1 review)
+GAMEPLAY_WORDS = re.compile(r"\b(gameplay|walkthrough|playthrough|let'?s play|speedrun|livestream|live stream|"
+                            r"stream highlights)\b", re.I)
 
 
 def stream_hint(project):

@@ -26,7 +26,7 @@ import subprocess
 
 import numpy as np
 
-from .common import fmt_ts, load_json, norm_token, save_json, settings
+from .common import fmt_ts, imread, imwrite, load_json, norm_token, save_json, settings
 
 EVERY = 10.0               # seconds between overview frames
 PER_SHEET, COLS = 21, 7    # 21 frames, 7 across and 3 down (the owner's choice)
@@ -38,6 +38,7 @@ LOUD_WINDOW = 60           # ... against the median loudness of this many second
 CLOSE_BEFORE, CLOSE_AFTER = 15, 6    # a close-up: 21 frames, one a second, mostly before the spot
 MERGE_S = 12.0             # spots this close together share a close-up
 LEAD_IN = 1.5              # an event clip starts this long before its event
+MAX_CLIP_S = 90.0          # an event never makes a clip longer than this (the hard limit for a short)
 PER_BATCH = 24             # close-up spots per eventfinder helper (fewer helpers: each carries its own instructions)
 REACTIONS = re.compile(
     r"^(yah kya|ye kya|kya ho gaya|kya hua|kya tha|kya kar|bhaag|bhago|mar gaya|mar gae|mar gayi|aag|toot|tooti|"
@@ -46,11 +47,18 @@ REACTIONS = re.compile(
 
 def wanted(project, cfg=None):
     """(True, why) for gameplay and live streams, unless settings.json "watch_gameplay" is false."""
-    from .kind import is_irregular, stream_hint
+    import os
+    from .kind import GAMEPLAY_WORDS, is_irregular, stream_hint
     cfg = settings() if cfg is None else cfg
     if cfg.get('watch_gameplay', True) is False:
         return False, 'off in settings.json ("watch_gameplay": false)'
-    why = stream_hint(project)
+    if os.environ.get('CLIPKARO_LIVE'):
+        return False, 'not while live clipping runs (clips go out fast; the graphics card belongs to OBS)'
+    # a game or console named in the title alone is not enough ("PS5 Pro review", "gaming addiction podcast"): the
+    # picture check, the link, YouTube's category or a title that says "gameplay" / "live stream" must (v2.7.1 review)
+    why = [w for w in stream_hint(project) if 'title' not in w]
+    if not why and GAMEPLAY_WORDS.search(str((project or {}).get('title') or '')):
+        why = ['the title says gameplay or a stream']
     if is_irregular(project) or why:
         return True, ', '.join(why) or 'gameplay or a live stream'
     return False, 'a normal video (no gameplay or stream)'
@@ -156,12 +164,15 @@ def _marks(t0, t1, jump, react, laughs, level=LOUD_DB):
 # ---------------------------------------------------------------- sheets
 
 def compose(tiles, out, cols=COLS):
-    """tiles: [(image path, label, loud, word, laugh)] -> one sheet (cols across), the label on each frame."""
+    """tiles: [(image path, label, loud, word, laugh)] -> one sheet (cols across), the label on each frame; None
+    when there are no frames (a spot past the video's end)."""
     import cv2
+    if not tiles:
+        return None
     rows = -(-len(tiles) // cols)
     sheet = np.zeros((rows * TILE_H, cols * TILE_W, 3), np.uint8)
     for k, (path, label, loud, word, laugh) in enumerate(tiles):
-        img = cv2.imread(str(path))
+        img = imread(path)                             # safe with Hindi letters in the path on Windows
         if img is None:
             continue
         img = cv2.resize(img, (TILE_W, TILE_H))
@@ -176,8 +187,7 @@ def compose(tiles, out, cols=COLS):
         r, c = divmod(k, cols)
         sheet[r * TILE_H:(r + 1) * TILE_H, c * TILE_W:(c + 1) * TILE_W] = img
     out.parent.mkdir(parents=True, exist_ok=True)
-    cv2.imwrite(str(out), sheet, [cv2.IMWRITE_JPEG_QUALITY, 85])
-    return out
+    return out if imwrite(out, sheet, [cv2.IMWRITE_JPEG_QUALITY, 85]) else None
 
 
 def overview(pdir, project=None, quiet=False):
@@ -225,8 +235,8 @@ def part_sheets(pdir, k, stretch):
         tiles = [(p, fmt_ts(t).split('.')[0], *_marks(t - EVERY / 2, t + EVERY / 2, jump, react, laughs, level))
                  for t, p in chunk]
         f = pdir / 'frames' / f'part-{k:02d}-{n // PER_SHEET + 1}.jpg'
-        compose(tiles, f)
-        out.append((str(f.relative_to(pdir)), chunk[0][0], chunk[-1][0]))
+        if compose(tiles, f):
+            out.append((str(f.relative_to(pdir)), chunk[0][0], chunk[-1][0]))
     return out
 
 
@@ -314,10 +324,10 @@ def zoom(pdir, quiet=False):
         for n, s in enumerate(spots[b:b + PER_BATCH], b + 1):
             sheet = close_up(pdir, project, s, n, video)
             t0 = max(0.0, s['at'] - CLOSE_BEFORE)
+            seen = (f'sheet: {sheet.relative_to(pdir)} (one frame a second, {t0:.0f}-{t0 + 20:.0f} s; red border: the '
+                    f'sound jumps; yellow word: a reaction)') if sheet else 'sheet: none (no frames there: past the end?)'
             rows += ['=' * 90, f'## SPOT {n} at {fmt_ts(s["at"]).split(".")[0]} ({s["at"]:.1f} s), {s["where"]}',
-                     f'reader: {s["why"] or "-"}',
-                     f'sheet: {sheet.relative_to(pdir)} (one frame a second, {t0:.0f}-{t0 + 20:.0f} s; red border: the '
-                     f'sound jumps; yellow word: a reaction)',
+                     f'reader: {s["why"] or "-"}', seen,
                      'what is said around it (seconds in the video):'] + transcript_near(pdir, s['at'] - 25, s['at'] + 35)
             rows.append('')
         f = pdir / 'frames' / f'zoom-batch-{b // PER_BATCH + 1:02d}.txt'
@@ -377,26 +387,36 @@ def apply_events(pdir, dry=False):
     clips = doc.get('clips', [])
     done = []
     move = settings().get('event_lead_in', True) is not False
+    duration = float(project.get('duration') or 0) or None
+    length = lambda c: sum(b - a for a, b in c['ranges'])                       # noqa: E731
     for ev in events:
         at = ev['event_at']
-        twin = next((c for c in clips if c.get('ranges') and at - 5 <= c['ranges'][0][0] <= at + 3), None)
-        if twin:                                  # a clip already starts at this event: moving another makes a twin
-            done.append(('already shows it', twin.get('id'), ev))
+        if duration and at >= duration - 1.0:     # past the video's end: nothing to show
             continue
-        hit = next((c for c in clips if c.get('event_at') is None and c.get('ranges')
-                    and at <= c['ranges'][0][0] <= at + 30), None) if move else None
-        if hit:
-            hit['ranges'][0][0] = round(max(0.0, at - LEAD_IN), 2)
-            hit['event_at'], hit['event_where'] = at, ev['where']
-            done.append(('starts at its event', hit.get('id'), ev))
-            continue
-        inside = next((c for c in clips for a, b in c.get('ranges', []) if a <= at < b), None)
+        start = round(max(0.0, at - LEAD_IN), 2)
+        # a clip that already starts at the event (up to 5 s before it, never after it: then its first seconds
+        # would still be missing), or one that already holds it: another would only repeat it (v2.7.1 review)
+        twin = next((c for c in clips if c.get('ranges') and at - 5 <= c['ranges'][0][0] <= at + 0.3), None)
+        inside = twin or next((c for c in clips for a, b in c.get('ranges', []) if a <= at < b), None)
         if inside:
             done.append(('already shows it', inside.get('id'), ev))
             continue
+        after = next((c for c in clips if c.get('event_at') is None and c.get('ranges')
+                      and at < c['ranges'][0][0] <= at + 30), None)
+        if after and move and length(after) + (after['ranges'][0][0] - start) <= MAX_CLIP_S:
+            after['ranges'][0][0] = start         # the clip that starts on the reaction starts at its cause
+            after['event_at'], after['event_where'] = at, ev['where']
+            done.append(('starts at its event', after.get('id'), ev))
+            continue
+        if after:                                 # "event_lead_in": false, or it would get too long: left as it is,
+            done.append(('reaction clip kept', after.get('id'), ev))   # never a near-copy next to it
+            continue
+        end = min(float(ev['end']), start + MAX_CLIP_S, duration or float('inf'))
+        if end - start < 5:
+            continue
         cid = max([int(c.get('id', 0)) for c in clips] + [0]) + 1
         clips.append({'id': cid, 'from': f"event-{ev['spot']}", 'title': ev['title'] or f'Event at {fmt_ts(at)}',
-                      'ranges': [[round(max(0.0, at - LEAD_IN), 2), ev['end']]], 'event_at': at,
+                      'ranges': [[start, round(end, 2)]], 'event_at': at,
                       'event_where': ev['where'], 'why': ev['why'], 'score': None, 'clip_score': None})
         done.append(('new clip', cid, ev))
     if dry or not done:
@@ -408,6 +428,6 @@ def apply_events(pdir, dry=False):
     save_json(pdir / 'clips.json', doc)
     video = _video(pdir, project)
     for what, cid, ev in done:
-        if what != 'already shows it':
+        if what in ('starts at its event', 'new clip'):
             exact_sheet(pdir, project, cid, ev['event_at'], ev['where'], video)
     return done

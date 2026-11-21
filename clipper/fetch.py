@@ -1277,15 +1277,20 @@ def main():
     # frame sheets (v2.7): gameplay and streams get a frame overview, one frame every 10 s (about a minute per 4 h)
     try:
         from . import watch
-        if not a.no_video and watch.wanted(load_json(pdir / 'project.json', {}) or project)[0]:
-            watch.overview(pdir, load_json(pdir / 'project.json', {}) or project)
-    except Exception as e:
+        from .kind import _video_file
+        now = load_json(pdir / 'project.json', {}) or project
+        if not a.no_video and watch.wanted(now)[0]:
+            if _video_file(pdir, now):          # never a second download here: parts or `run.py watch` make it later
+                watch.overview(pdir, now)
+            else:
+                print('   (frame overview later: the video is not downloaded yet)')
+    except (Exception, SystemExit) as e:        # die() inside must not stop fetch (v2.7.1 review)
         print(f'   (frame overview skipped: {type(e).__name__}: {e})')
 
     # careful listening (v2.7): a Hindi / Hinglish stream or gameplay on an NVIDIA card gets a second hearing
     try:
         from . import hearing
-        ok, why = hearing.wanted(load_json(pdir / 'project.json', {}) or project)
+        ok, why = hearing.wanted(load_json(pdir / 'project.json', {}) or project, device=a.device)
         if ok:
             import subprocess
             import sys

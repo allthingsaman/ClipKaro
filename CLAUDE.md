@@ -19,7 +19,8 @@ censoring: gaali, abuse, slurs, taboo talk (sex, cheating) and A-rated moments s
 in full, and bold, honest takes count extra (way back: settings.json `"bold_clips": "neutral"`);
 abusive and taboo words are written with stars in captions and posting texts, "F******" (way back:
 `"star_words": false`, or `edit --no-stars` for "no stars"); racial and caste slurs never in a title.
-**Careful listening, every mode** (Hindi/Hinglish gameplay and streams on an NVIDIA card; `fetch` says so):
+**Careful listening, every mode** (Hindi/Hinglish gameplay and streams on an NVIDIA card; `fetch` says so;
+never during live clipping, where the graphics card belongs to OBS):
 `run.py rehear`, one `clipkaro-wordcheck` helper per packet, `run.py wordcheck` (skill step 2a-2): unsure
 words get no captions. **Standard and deep only** (quick mode skips it to save usage): the caption check (`run.py captions`,
 fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
@@ -58,7 +59,7 @@ fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user 
   `"facecam"` in settings.json if the cam is found in the wrong place. In gameplay videos the
   transcript also holds the game's own dialogue: build clips around the players' commentary and
   reactions (friends on voice chat count like the streamer), not the game characters' lines.
-  Gameplay and live streams also get **frame sheets** (never podcasts): the readers see a frame every
+  Gameplay and live streams also get **frame sheets** (never podcasts, never during live clipping): the readers see a frame every
   10 s, `run.py zoom` and `clipkaro-eventfinder` helpers look closer, and `run.py events` makes a clip
   start at what happens on screen (skill steps 3b and 2a-1).
 - Live streams and gameplay are recognised automatically at the end of `fetch` (`run.py kind`):
