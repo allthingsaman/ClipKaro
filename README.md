@@ -14,6 +14,12 @@ Reels and TikTok**: framed on whoever is talking, with captions that appear word
 it runs on your own computer, and it works just as well for **Hindi and Hinglish** as for English.
 
 <p align="center">
+  <a href="https://youtu.be/Dlq4z26w1QM"><img src="https://img.youtube.com/vi/Dlq4z26w1QM/maxresdefault.jpg" alt="Watch the video guide on YouTube: I Built an AI That Clips Your GTA 6 Stream While You're Live (Windows Setup + Installation)" width="640"></a>
+</p>
+<p align="center"><b>▶ <a href="https://youtu.be/Dlq4z26w1QM">Watch the video guide</a></b> (16 min): how to install ClipKaro and
+<a href="https://github.com/allthingsaman/PostKaro">PostKaro</a> on Windows and use them yourself.</p>
+
+<p align="center">
   <img src="docs/media/deep-clip.gif" alt="Left: a 1-hour-8-minute podcast with a timeline; the playhead jumps from minute 35 to minute 63. Right: the vertical short ClipKaro made from those two moments, with yellow word-by-word captions." width="800">
 </p>
 <p align="center"><sub><b>Real ClipKaro output, not a mock-up.</b> Left: the real video, and where each moment sits in it.
