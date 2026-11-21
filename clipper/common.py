@@ -23,6 +23,10 @@ DEFAULT_SETTINGS = {
     'hinglish_captions': 'roman',  # roman ("aaj hum baat karenge") | devanagari ("आज हम बात करेंगे")
     'layout': 'auto',              # auto (facecam layout when a webcam overlay is found) | facecam | crop
     'facecam': None,               # optional fixed cam box: {"x","y","w","h" (fractions), "shape": "circle"|"rect"}
+    'facecam_margins': {'left': 50, 'right': 50, 'top': 50, 'bottom': 30},   # free space (px of the 1080x1920
+                                   # clip) around the cam in its panel; it grows until one side reaches it (the
+                                   # owner's choice, 2026-11-21); {"left": 60, "right": 60, "top": 90, "bottom": 30}
+                                   # is the layout before
     'jump_label': False,           # true: a small "27 MIN LATER" label where a joined clip jumps in time
     'deep_clips': 'ask',           # ask (videos over 21 min: ask once) | always | never
     'max_clips': 20,               # the most clips the default count gives (a number the user asks for wins)

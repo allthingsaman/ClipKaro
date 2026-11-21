@@ -18,7 +18,11 @@ from .reframe import _faces
 
 TOP_H = 1150                 # gameplay panel height (of 1920); the cam panel gets the rest
 CAP_GAP = 10                 # caption line sits just below the seam
-CAM_TOP_PAD, CAM_BOTTOM_PAD = 90, 30   # room for the captions above the cam
+CAM_MARGINS = {'left': 50, 'right': 50, 'top': 50, 'bottom': 30}   # free space kept around the cam in its
+                             # panel; the top one keeps the captions clear (the owner's choice, 2026-11-21; it was
+                             # 60/60/90/30). settings.json "facecam_margins" changes them
+CAMERA_SHAPES = (16 / 9, 4 / 3)       # width / height of a webcam picture on a stream
+TALL_CAM = 0.8               # a rectangular cam box taller than this x its width is taller than 4:3: maybe game in it
 EDGE_MIN, EDGE_RATIO = 4.0, 2.5         # a cam border: at least this mean brightness step, and this many times the area's median
 
 
@@ -160,10 +164,67 @@ def framed_box(frames, per_frame, src_w, src_h):
     y1 = bottom + 1 if bottom is not None else min(src_h, ry1)
     if sum(e is not None for e in (inner, top, bottom)) < 2:    # no fixed box: not a cam overlay
         return None
+    y0, y1 = camera_shape(rows, x1 - x0, y0, y1, top is not None, bottom is not None, (min(ys), max(ys)))
     w, h = x1 - x0, y1 - y0
     if not (0.08 * src_w <= w <= 0.45 * src_w and 0.1 * src_h <= h <= 0.6 * src_h):
         return None
     return {'x': float(x0), 'y': float(y0), 'w': float(w), 'h': float(h), 'shape': 'rect'}
+
+
+def camera_shape(rows, w, y0, y1, top_sure, bottom_sure, faces=None):
+    """(y0, y1) of a cam box, made a webcam's shape when it came out too tall.
+
+    A webcam picture on a stream is 16:9 or 4:3. The border search can take a fixed edge of the game (a menu
+    line, a HUD bar) below or above the cam for its border when the faces sit near the cam's edge: on a GTA 6
+    stream a 454x260 cam came out 454x459, half of it game picture, and the layout shrank the faces to fit. When
+    the box is taller than 4:3, look for the cam's real border where those shapes put it, measured from a border
+    that was found (`rows`: mean brightness step per row over the sampled frames), and only beyond every face
+    (`faces`: the lowest and highest face centre), so a shelf or a desk line in the room is never taken for it.
+    No such border (a square or tall cam, or no fixed edge there): unchanged, and `cut` warns with a picture."""
+    if y1 - y0 <= TALL_CAM * w:
+        return y0, y1
+    lo, hi = faces if faces else (y0, y1)
+    tol = max(4.0, 0.03 * w)
+    for r in CAMERA_SHAPES:
+        want = w / r
+        if top_sure:
+            e = _edge(rows, y0 + want - 1 - tol, y0 + want - 1 + tol)
+            if e is not None and e + 1 > hi:
+                return y0, e + 1
+        if bottom_sure:
+            e = _edge(rows, y1 - want - 1 - tol, y1 - want - 1 + tol)
+            if e is not None and e + 1 < lo:
+                return e + 1, y1
+    return y0, y1
+
+
+def is_tall(cam):
+    """A rectangular cam box taller than a 4:3 camera picture: it may hold game picture too."""
+    return cam.get('shape') == 'rect' and cam['h'] > TALL_CAM * cam['w']
+
+
+def box_sheet(video, cam, at, out):
+    """One frame of the video at `at` seconds with the cam box drawn on it (to check a doubtful box by eye)."""
+    import subprocess
+    out.parent.mkdir(parents=True, exist_ok=True)
+    box = f"drawbox=x={int(cam['x'])}:y={int(cam['y'])}:w={int(cam['w'])}:h={int(cam['h'])}:color=red:t=6"
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{max(0.0, at):.2f}', '-i', str(video), '-frames:v', '1',
+                    '-vf', f'{box},scale=960:-2', str(out)], check=False)
+    return out
+
+
+def margins(value=None):
+    """The free space around the cam: settings.json "facecam_margins" ({"left", "right", "top", "bottom"} in pixels
+    of the 1080x1920 clip, or a list in that order), anything missing or not a number from CAM_MARGINS."""
+    m = dict(CAM_MARGINS)
+    if isinstance(value, (list, tuple)):
+        value = dict(zip(('left', 'right', 'top', 'bottom'), value))
+    if isinstance(value, dict):
+        for k in m:
+            v = value.get(k)
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 300:
+                m[k] = int(v)
+    return m
 
 
 def from_settings(box, src_w, src_h):
@@ -178,8 +239,11 @@ def clamp(cam, src_w, src_h):
     return {**cam, 'x': x, 'y': y, 'w': w, 'h': h}
 
 
-def geometry(cam, src_w, src_h):
-    """Where everything goes in the 1080x1920 frame."""
+def geometry(cam, src_w, src_h, margin=None):
+    """Where everything goes in the 1080x1920 frame. The cam grows evenly (never stretched) until one side reaches
+    the free space kept around it (`margin`, see margins()), and sits in the middle of that room: a 16:9 cam fills
+    the width, a round or 4:3 one the height."""
+    m = margin or CAM_MARGINS
     bot_h = H - TOP_H
     gw = min(src_w, int(src_h * W / TOP_H) // 2 * 2)          # gameplay crop, full height
     gx = (src_w - gw) // 2
@@ -187,11 +251,11 @@ def geometry(cam, src_w, src_h):
         right = cam['x'] + cam['w'] / 2 > src_w / 2
         gx = max(0, min(int(cam['x']) - gw, gx)) if right else min(src_w - gw, max(int(cam['x'] + cam['w']), gx))
     gx = gx // 2 * 2
-    room_w, room_h = W - 2 * 60, bot_h - CAM_TOP_PAD - CAM_BOTTOM_PAD
+    room_w, room_h = W - m['left'] - m['right'], bot_h - m['top'] - m['bottom']
     s = min(room_w / cam['w'], room_h / cam['h'])
     cw, ch = int(cam['w'] * s) // 2 * 2, int(cam['h'] * s) // 2 * 2
     return {'gx': gx, 'gw': gw, 'bot_h': bot_h, 'cam_w': cw, 'cam_h': ch,
-            'cam_x': (W - cw) // 2, 'cam_y': CAM_TOP_PAD + (room_h - ch) // 2,
+            'cam_x': m['left'] + (room_w - cw) // 2, 'cam_y': m['top'] + (room_h - ch) // 2,
             'caption_y': TOP_H + CAP_GAP}
 
 

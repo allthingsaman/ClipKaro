@@ -1,5 +1,17 @@
 # What's new
 
+## Not released yet
+
+- **A bigger webcam in gameplay clips.** The webcam under the game now grows until it is 50 px from the
+  sides, 50 px below the captions and 30 px above the bottom (it was 60 / 90 / 30): a 16:9 webcam is 980
+  wide instead of 958, a round one 690 instead of 650. `"facecam_margins"` in settings.json changes the
+  space (`{"left": 60, "right": 60, "top": 90, "bottom": 30}` is the layout before).
+- **The webcam box is the webcam, not a strip of the game too.** When your faces sit low in the webcam,
+  ClipKaro could take a line of the game below it for the webcam's border: on a GTA 6 stream the 16:9 webcam
+  came out square, half of it game, and your faces shrank to fit. Now a box taller than a webcam picture is
+  cut at the webcam's own border (where a 16:9 or 4:3 picture ends, below every face). If a box still looks
+  too tall, `cut` warns and saves a picture of it (`frames/facecam-box.jpg`) so Claude checks it.
+
 ## v2.7.1 (November 2026): the action stays in, and real usage numbers
 
 - **No pause cut where something happens on screen** (gameplay and streams). Pause cutting goes by the

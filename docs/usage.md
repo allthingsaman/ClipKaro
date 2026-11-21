@@ -382,6 +382,7 @@ Claude to change them.
   "hinglish_captions": "roman",
   "layout": "auto",
   "facecam": null,
+  "facecam_margins": {"left": 50, "right": 50, "top": 50, "bottom": 30},
   "jump_label": false,
   "deep_clips": "ask",
   "max_clips": 20,
@@ -461,6 +462,7 @@ Claude to change them.
 | `safe_zones` | `true` | `false`: captions on one fixed line and up to 940 px wide, as in v1.1 (only as a way back: they may cover a chin or sit under TikTok's buttons) |
 | `jump_label` | `false` | `true`: a small "27 MIN LATER" label where a deep clip jumps in time (the white flash and a soft whoosh are always there) |
 | `facecam` | `null` | only if the webcam is found in the wrong place (it is found by itself, also with two or three people in it): the webcam's fixed position, as parts of the picture: `{"x": 0.80, "y": 0.35, "w": 0.19, "h": 0.34, "shape": "circle"}` (`x` left, `y` top, `w` width, `h` height; `shape` is `circle` or `rect`) |
+| `facecam_margins` | `{"left": 50, "right": 50, "top": 50, "bottom": 30}` | gameplay with a webcam: the free space (in pixels of the 1080x1920 clip) kept around the webcam below the game. The webcam grows until one side reaches it: a 16:9 webcam fills the width, a round one the height. The top space keeps the captions off the webcam. `{"left": 60, "right": 60, "top": 90, "bottom": 30}` is the smaller webcam of before |
 
 ## 6. Doing the steps by hand (optional)
 

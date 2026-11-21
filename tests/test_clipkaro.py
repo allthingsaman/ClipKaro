@@ -1751,6 +1751,78 @@ class FacecamFinder(unittest.TestCase):
         from clipper import facecam
         self.assertIsNone(facecam.framed_box(self.frames(with_box=False), self.faces(), 640, 360))
 
+    @staticmethod
+    def low_faces(n=24, seed=3):
+        # as on the stream, scaled to these frames: one friend higher, one low in the cam (centres 531-620 of a
+        # 410-670 cam, faces 87 px)
+        import numpy as np
+        rng = np.random.default_rng(seed)
+        per = []
+        for i in range(n):
+            fs = []
+            if i % 2:
+                fs.append((530 + rng.uniform(-10, 10), 180 + rng.uniform(-2, 2), 29.0))
+            if i % 3:
+                fs.append((600 + rng.uniform(-10, 10), 210 + rng.uniform(-2, 2), 29.0))
+            per.append(fs)
+        return per
+
+    def test_game_edge_below_the_cam_is_not_its_border(self):
+        # 2026-11-21, a GTA 6 stream: the friends sat low in the cam, so the bottom border was searched below them
+        # and a fixed line of the game 200 px lower was taken for it; the 16:9 cam came out square and the layout
+        # shrank the faces. The box now ends at the cam's own border, where a 16:9 picture ends.
+        from clipper import facecam
+        frames = self.frames()
+        for f in frames:
+            f[296:300, 486:640] = 250                        # a fixed bright line of the game below the cam
+        box = facecam.framed_box(frames, self.low_faces(), 640, 360)
+        self.assertIsNotNone(box)
+        self.assertAlmostEqual(box['y'], 140, delta=3)
+        self.assertAlmostEqual(box['y'] + box['h'], 230, delta=3)      # was 296: the game line
+        self.assertFalse(facecam.is_tall(box))
+
+    def test_a_line_in_the_room_above_the_faces_is_not_a_border(self):
+        # a tall cam with a shelf across it, the people below the shelf: the shelf is never taken for the border
+        import numpy as np
+        from clipper import facecam
+        rows = np.full(359, 1.0)
+        rows[139], rows[229], rows[299] = 40.0, 40.0, 40.0              # top border, a shelf, bottom border
+        self.assertEqual(facecam.camera_shape(rows, 154, 140, 300, True, True, (245, 270)), (140, 300))
+        self.assertEqual(facecam.camera_shape(rows, 154, 140, 300, True, True, (170, 215)), (140, 230))
+        self.assertEqual(facecam.camera_shape(rows, 154, 140, 228, True, True, (170, 215)), (140, 228))   # 16:9 already
+        self.assertTrue(facecam.is_tall({'shape': 'rect', 'w': 154, 'h': 160}))
+        self.assertFalse(facecam.is_tall({'shape': 'circle', 'w': 154, 'h': 154}))
+
+    def test_cam_fills_its_panel_up_to_the_margins(self):
+        # the owner's choice, 2026-11-21: 50 px free left, right and top (captions), 30 px at the bottom; the cam
+        # grows evenly until one side reaches them (a 16:9 cam fills the width, a round or 4:3 one the height)
+        from clipper import facecam
+        from clipper.common import DEFAULT_SETTINGS
+        m = facecam.margins(DEFAULT_SETTINGS['facecam_margins'])
+        self.assertEqual(m, {'left': 50, 'right': 50, 'top': 50, 'bottom': 30})
+        wide = facecam.geometry({'x': 1458, 'y': 410, 'w': 462, 'h': 260, 'shape': 'rect'}, 1920, 1080, m)
+        self.assertEqual((wide['cam_w'], wide['cam_h'], wide['cam_x'], wide['cam_y']), (980, 550, 50, 120))
+        rnd = facecam.geometry({'x': 1500, 'y': 400, 'w': 300, 'h': 300, 'shape': 'circle'}, 1920, 1080, m)
+        self.assertEqual((rnd['cam_w'], rnd['cam_h'], rnd['cam_y']), (690, 690, 50))
+        before = facecam.margins({'left': 60, 'right': 60, 'top': 90, 'bottom': 30})     # the way back
+        old = facecam.geometry({'x': 1458, 'y': 410, 'w': 462, 'h': 260, 'shape': 'rect'}, 1920, 1080, before)
+        self.assertEqual((old['cam_w'], old['cam_h'], old['cam_x'], old['cam_y']), (958, 540, 61, 145))   # as v2.7.1
+        self.assertEqual(facecam.margins([60, 60, 90, 30]), before)
+        self.assertEqual(facecam.margins({'top': 'x', 'left': 20}), {'left': 20, 'right': 50, 'top': 50, 'bottom': 30})
+        self.assertEqual(facecam.geometry({'x': 1458, 'y': 410, 'w': 462, 'h': 260, 'shape': 'rect'}, 1920, 1080), wide)
+
+    def test_doubtful_box_gets_a_picture(self):
+        import subprocess
+        import tempfile
+        from pathlib import Path
+        from clipper import facecam
+        with tempfile.TemporaryDirectory() as d:
+            v = Path(d) / 'v.mp4'
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=gray:s=640x360:d=1', str(v)],
+                           check=True)
+            out = facecam.box_sheet(v, {'x': 486, 'y': 140, 'w': 154, 'h': 160}, 0.5, Path(d) / 'f' / 'box.jpg')
+            self.assertTrue(out.exists())
+
 
 class SoundTiming(unittest.TestCase):
     """v2.7: a mood sound never starts before its moment (clip 159: a trombone started 1 s before the crash)."""

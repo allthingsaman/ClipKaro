@@ -401,7 +401,11 @@ laugh, in gameplay only pauses up to 2 s and never one where the picture moves a
 or a crash; it prints `jump cuts: N` and `N pause(s) kept: something happens on screen there`).
 **Gameplay with a webcam overlay** is detected automatically and stacked instead: gameplay on top,
 the cam enlarged below, captions on the seam (`-> layout: facecam` in the output). `--layout crop`
-turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (see README). In gameplay
+turns it off; a wrong cam position is fixed with `"facecam"` in settings.json (see README). If `cut` warns
+`! the webcam box is taller than a camera picture`, look at `frames/facecam-box.jpg` before editing: when
+the red box holds game picture too, write the webcam's real box in the project's `project.json` as
+`"facecam": {"x", "y", "w", "h"}` (pixels, `"shape": "rect"`) and cut again (the owner wants the webcam
+big: a small one inside blurred game is a fault). In gameplay
 videos, pick moments from the players' commentary and reactions (the streamer and friends on voice chat
 alike), not the game characters' dialogue.
 Use `--horizontal` to keep 16:9, and `--clips 2,4` to redo only some.

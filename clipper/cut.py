@@ -19,7 +19,7 @@ from pathlib import Path
 
 from . import facecam as fclib
 from .common import (H, JUMP_FLASH, W, die, out_fps, ffmpeg, fmt_ts, is_sentence_end, load_json, norm_token, probe, project_dir, save_json,
-                     open_video, overlap_mode, overlap_problem, settings, slugify)
+                     open_video, overlap_mode, overlap_problem, ROOT, settings, slugify)
 from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter, split_box
 
 PAD_IN, PAD_OUT = 0.12, 0.30
@@ -743,13 +743,18 @@ def facecam_layout(pdir, project, video, info, layout):
                 '(fractions of the frame: left, top, width, height)')
         return None
     cam = fclib.clamp(cam, src_w, src_h)
-    g = fclib.geometry(cam, src_w, src_h)
+    g = fclib.geometry(cam, src_w, src_h, fclib.margins(settings().get('facecam_margins')))
     mask = None
     if cam.get('shape') == 'circle':
         (pdir / '.work').mkdir(exist_ok=True)
         mask = fclib.mask_png(pdir / '.work' / f"cam_mask_{g['cam_w']}x{g['cam_h']}.png", g['cam_w'], g['cam_h'])
     print(f"-> layout: facecam ({how}: {cam['shape']} cam at x={cam['x']} y={cam['y']} {cam['w']}x{cam['h']}). "
           f"Gameplay on top, cam below, captions between. Normal framing: --layout crop")
+    if fclib.is_tall(cam):          # taller than a 4:3 camera picture: maybe a strip of game in it, so the faces shrink
+        sheet = fclib.box_sheet(video, cam, info['duration'] / 2, pdir / 'frames' / 'facecam-box.jpg')
+        print(f"   ! the webcam box is taller than a camera picture ({cam['w']}x{cam['h']}): look at "
+              f"{sheet.relative_to(ROOT) if sheet.is_relative_to(ROOT) else sheet}. If it holds game picture too, set the "
+              f'right box in project.json "facecam" (pixels: x, y, w, h) and cut again')
     return {'cam': cam, 'g': g, 'mask': mask}
 
 

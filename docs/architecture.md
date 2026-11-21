@@ -972,10 +972,19 @@ Detection runs once per video, on 24 frames spread across it. A webcam overlay i
 - and is near a side (not in the middle 28-72 % of the width), which a presenter's face isn't.
 
 A round cam is traced exactly (Hough circle) and drawn round; otherwise a 4:3 box about 3x the face
-height is used. The layout: the middle of the gameplay on top (1080 x 1150, cropped to fill the
-width), the cam enlarged below over a blurred copy of the game, and the captions on the seam.
-Zooms are switched off in this layout. A fixed box in `settings.json` (`"facecam"`) overrides the
-detection; `--layout crop` turns the layout off.
+height is used. A cam with two or three people in it (`framed_box`, gameplay and streams only) is found
+by its fixed border: an edge in the same place in every frame while the game around it changes. A box
+taller than 4:3 (`TALL_CAM`) is cut where a 16:9 or 4:3 picture ends (`camera_shape`), at a fixed border
+beyond every face, because the border search can take a fixed line of the game for the cam's edge; a box
+that still looks too tall makes `cut` warn and save `frames/facecam-box.jpg`.
+
+The layout: the middle of the gameplay on top (1080 x 1150, cropped to fill the width), the cam below
+over a blurred copy of the game, and the captions on the seam. The cam grows evenly (never stretched)
+until one side reaches the free space kept around it in its 1080 x 770 panel (`CAM_MARGINS`: 50 px
+left, right and top, 30 px at the bottom; settings.json `"facecam_margins"`), and sits in the middle of
+that room: a 16:9 cam fills the width (980 x 550), a round or 4:3 one the height (690). Zooms are
+switched off in this layout. A fixed box in `settings.json` (`"facecam"`) overrides the detection;
+`--layout crop` turns the layout off.
 
 ### 5.8 Zooms and camera moves (`plan.build_camera`)
 - **Beats**: the framing changes at sentence ends and pauses over 0.45 s, at least 2.8 s apart
@@ -1204,7 +1213,7 @@ inside PostKaro, which adds the clips and returns the page link that the AI edit
 | Sound effects and when they play | `assets/sfx/` (drop files in), `clipper/plan.py`: `sfx_cues` |
 | Fonts | `assets/fonts/` and `LATIN_FONT` / `HINDI_FONT` in `clipper/plan.py` |
 | Languages | [adding-a-language.md](adding-a-language.md) |
-| The facecam layout | `clipper/facecam.py`: `TOP_H`, `geometry` |
+| The facecam layout | `clipper/facecam.py`: `TOP_H`, `CAM_MARGINS`, `geometry`; the cam's shape: `CAMERA_SHAPES`, `TALL_CAM` |
 | Two-person framing rules | `clipper/director.py`: `HOLD`, `PRE`, `POST`, `LAUGH_ON`, `WIDE_SOLO`, `FLOOR` |
 | What counts as a break screen | `clipper/kind.py`: `STILL`, `MIN_BREAK_S`, `QUIET`, `RULES` |
 | How many clips by default | `clipper/parts.py`: `MINUTES_PER_CLIP` (7), `MIN_CLIPS` (3), `V11_MAX` (8), `IDEAS_PER_CLIP`; `"max_clips"` in settings.json |

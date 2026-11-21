@@ -317,6 +317,19 @@ changed. Only new ones were added.
   video already known as gameplay or a stream (live, YouTube's Gaming category, a Twitch or Kick link, a game
   in the title), so a podcast recorded in boxes is never taken for one. *(v2.7, 2026-11-20)*
   - Way back: `"facecam"` in settings.json sets the box by hand; `--layout crop` turns the layout off.
+- ⬆ **The webcam box stops at the webcam's own border.** The border search looked for the bottom edge
+  below the faces, so when the friends sat low in the webcam it took a fixed line of the game 200 px lower:
+  on a GTA 6 stream the 454x260 webcam came out 454x459, half of it game, and the layout shrank the faces to
+  fit. Now a box taller than 4:3 is cut where a 16:9 or 4:3 webcam picture ends, at a fixed border below
+  every face (so a shelf in the room is never taken for it). A box that still looks too tall makes `cut`
+  warn and save `frames/facecam-box.jpg` to check by eye. Boxes already the right shape, round webcams and
+  hand-set boxes are unchanged (the other GTA stream: 454x260, as before). *(2026-11-21)*
+  - Way back: none needed (the box holding game picture was a fault); `"facecam"` set by hand still wins.
+- ↔ **A bigger webcam under the game.** The webcam grew until it was 60 px from the sides, 90 px below the
+  seam and 30 px from the bottom. The owner chose 50 / 50 / 50 / 30 after comparing frames of two GTA
+  streams (2026-11-21): a 16:9 webcam is now 980x550 (was 958x540), a round one 690 across (was 650). The
+  50 px on top still keeps the captions off the webcam.
+  - Way back: `"facecam_margins": {"left": 60, "right": 60, "top": 90, "bottom": 30}` in settings.json.
 - ↔ **No captions for game characters** in gameplay with a Hindi or Hinglish streamer. v1.1 captioned
   every line it heard clearly, so a game character's line appeared twice: in the game's own subtitles
   and in ClipKaro's. Now only the streamer is captioned; the game lines keep their sound and stay in
