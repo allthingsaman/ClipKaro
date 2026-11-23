@@ -58,3 +58,22 @@ Tip: one English gameplay stream with game dialogue and one long Hinglish stream
   advanced mode only.
 - [ ] **Compilation from streams with different webcam spots.** Claude should warn that the webcam layout
   follows the first video.
+
+## v2.10 (the review studio in PostKaro 0.9)
+
+Update PostKaro first (`git pull` in its folder, then restart it: `python run.py open` there).
+- [ ] **Fix button and Studio tab.** In PostKaro, every clip of a ClipKaro video has a **Fix** button, and the
+  **Studio** tab lists your videos and clips.
+- [ ] **Start and end.** Open a clip, click an earlier (grey) word under Start, and a later word under End,
+  then **Make the clip again**. You should see: the steps tick (cut, edit, quality check), about a minute, and
+  the new clip plays from the word you picked to the word you picked.
+- [ ] **A caption word.** Click a wrong caption word, type the right one, make the clip again: the caption is
+  fixed, the sound is the same. Try "No caption for this word" too.
+- [ ] **Framing (a podcast).** On a two-person clip, pick **Both people**, then **Left person**: the whole clip
+  shows that.
+- [ ] **Emojis, sounds, whooshes.** Switch one emoji, one sound effect and the whooshes off: gone in the new
+  clip; switch them back on: back.
+- [ ] **Undo last change.** Puts the clip back exactly as before.
+- [ ] **Posting after a fix.** Schedule a fixed clip: the fixed version is the one that goes out. A clip
+  already uploaded (scheduled on YouTube, not live yet) says to cancel that post first.
+- [ ] **Speed.** Is "about a minute" true on your laptop? Note the time it shows.

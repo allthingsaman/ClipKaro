@@ -543,6 +543,10 @@ may remove it and give a strike; Instagram may stop recommending it." It is a no
 stops, changes or drops the clip (nothing is censored; the owner decides what to post). If `post` printed
 a link, end with it: "Post them: <link>" (it opens PostKaro with every clip filled in; it only works
 on this computer). Otherwise mention that the files are ready to upload to Shorts, Reels and TikTok.
+With PostKaro 0.9+, add one line: "To fix a clip yourself (start, end, a caption word, framing, emojis,
+sounds), press **Fix** on it in PostKaro." When the user asks you for such a change, make it as usual
+(clips.json, `fixword --at`, cut/edit `--clips N`); `run.py studio <project> --clip N` (`--apply` / `--undo`)
+is the same thing for PostKaro's page.
 
 ## 7. More clips later (without reading the video again)
 The critic scores every clip idea of a video, often 15-30, and only the best are cut. The others are

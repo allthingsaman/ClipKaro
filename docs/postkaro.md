@@ -147,6 +147,18 @@ On the page:
 
 **Post one clip right now:** **Post now** at the top of the clip.
 
+**Fix a clip before posting it (the Studio, PostKaro 0.9 with ClipKaro v2.10):** press **Fix** at the top of a
+clip (or open the **Studio** tab). Without typing anything you can:
+- **move its start or end**: click the word it should start on, or the last word it should keep;
+- **fix a caption word**: click it, type the right word (or switch its caption off); the sound never changes;
+- **change the framing** (podcasts and interviews): automatic, the left or right person, both people, or the
+  whole picture;
+- **switch an emoji, a sound effect or the whooshes off** (or back on).
+
+Then press **Make the clip again**. Only that clip is cut and edited again (about a minute), and the page
+shows each step. **Undo last change** puts it back. A clip whose post is already uploaded (not live yet) can't
+be changed until you cancel that post; a live post stays as it was.
+
 **How each platform goes live**
 
 | | Goes live at its time by itself? | Laptop on at that time? |

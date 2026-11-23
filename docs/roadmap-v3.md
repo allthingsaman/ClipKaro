@@ -1,7 +1,7 @@
-# ClipKaro after v2.9: what's next, in order
+# ClipKaro after v2.10: what's next, in order
 
-ClipKaro v2.9 ("boast, then fail" clips and compilations) is the newest version (2026-11-23), finishing phase 1
-of v3.0; phase 2 (v2.10 the review studio inside PostKaro, v2.11 learning from views) is next. The owner tests
+ClipKaro v2.10 (the review studio, with PostKaro 0.9) is the newest version (2026-11-23); v2.11, learning from
+real views, finishes phase 2 of v3.0. The owner tests
 every new part together at the end ([test-list.md](test-list.md)). **The plan for v3.0, approved by the owner on 2026-11-23, is
 [plan-v3.0.md](plan-v3.0.md)**: three phases, released step by step (v2.8, v2.9 …) and then bundled as v3.0. This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
@@ -37,6 +37,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
   for English streamers, a DaVinci Resolve timeline, "word check done", whole reaction words.
 - v2.9 (2026-11-23): "boast, then fail" story clips with the game's own game-over screens, and compilations
   across videos (advanced mode).
+- v2.10 (2026-11-23): the review studio, a Studio page inside PostKaro 0.9: fix a clip by clicking and make
+  only it again.
 
 ---
 
@@ -58,8 +60,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 
 ## Next phase
 The major update, v3.0, planned in detail in [plan-v3.0.md](plan-v3.0.md). Phase 1 is done: v2.8 quick wins and
-v2.9 "boast, then fail" clips and compilations (2026-11-23). Phase 2 is next: v2.10 the review studio (a page
-inside PostKaro), v2.11 learning from real views. Item J's other two clues (voices in
+v2.9 "boast, then fail" clips and compilations (2026-11-23). Phase 2: v2.10 the review studio is out (a page
+inside PostKaro 0.9); v2.11 learning from real views is next. Item J's other two clues (voices in
 bursts, studio vs mic sound) wait for an English test stream.
 
 ## Major update (v3.0), later
@@ -67,7 +69,7 @@ Big new features for a later major version, once everything essential for clippi
 
 | # | What | Why | Rough size |
 |---|---|---|---|
-| 15 | **Review studio.** A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days |
+| 15 | **Review studio** (done in v2.10, PostKaro's Studio page). A page where you move a clip's start or end, fix a caption word and re-render one clip, without typing commands (maybe inside PostKaro). | The last bit of quality is a human touch, and it should be easy. | 3-5 days |
 | 14 | **Learn from real views.** PostKaro reads back views and watch time, compares them with the clip scores, and tunes the critic for your channels. | The scores should learn what works for *your* viewers. Needs about 50 posted clips with 2+ weeks of views. | 2-3 days |
 | | **B-roll**: short stock clips or pictures over the speaker where the words name something | Opus Clip has AI B-roll | 2-3 days |
 | | **Following people who move**, and objects | Opus Clip's ReframeAnything | 1-2 weeks |

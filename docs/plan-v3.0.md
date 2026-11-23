@@ -61,6 +61,10 @@ house rules:
   Posted). PostKaro only handles posting, so it is the natural home: one app for checking, fixing and posting,
   nothing scattered. PostKaro calls ClipKaro's commands to re-render a clip.
 - **Still to settle when building:** which edits come first (start/end and caption words are the obvious two).
+- **Status (v2.10, 23 November):** built, all four kinds of edit: start/end by clicking a word, caption words
+  (fix or hide), the whole clip's framing, emojis / sound effects / whooshes on or off; plus one step of undo.
+  ClipKaro `run.py studio` + PostKaro 0.9's Studio page (Fix button, Studio tab). Tested through the page in
+  a sandbox PostKaro: a change re-rendered in 54-60 s, undo restored it.
 
 ### B. Learn from real views
 - **What:** PostKaro reads back each posted clip's views and watch time, and ClipKaro learns which kinds of clips do well on *your* channels.

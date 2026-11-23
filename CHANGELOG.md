@@ -1,5 +1,14 @@
 # What's new
 
+## v2.10 (the review studio, November 2026)
+
+- **Fix a clip by clicking** (with PostKaro 0.9): press **Fix** on a clip in PostKaro, or open its new
+  **Studio** tab. Move the start or end to another word, fix or hide a caption word, change the framing of a
+  podcast clip, switch an emoji, a sound effect or the whooshes off; press **Make the clip again** and only that
+  clip is cut and edited again (about a minute). **Undo last change** puts it back. No Claude usage, nothing to
+  type.
+- A landscape copy is cut again when its clip changes.
+
 ## v2.9 (boast, then fail; compilations, November 2026)
 
 - **"Boast, then fail" clips** (gameplay, standard and deep mode): someone promises to do a mission "like a

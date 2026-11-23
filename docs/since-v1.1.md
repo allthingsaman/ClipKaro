@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.10 on 2026-11-23: nothing removed or changed on purpose; the Studio only adds (it writes
+the same clips.json fields Claude writes), and a clip's `"whooshes": false` only exists when the owner sets it.
 Checked again for v2.9 on 2026-11-23: nothing removed. One change is different on purpose: a game-over
 screen inside a clip is always shown whole (`"game_over_screens": false` is the way back). The rest only adds
 (story clips, compilations) or fixes (a piece without words kept, no clip past the video's end).
@@ -439,6 +441,12 @@ changed. Only new ones were added.
 
 ## Posting
 
+- ⬆ **Fix a clip by clicking: PostKaro's Studio** (with PostKaro 0.9). Press **Fix** on a clip: move its start
+  or end to another word, fix or hide a caption word, change the framing, switch an emoji, a sound effect or
+  the whooshes off; only that clip is made again (about a minute), and **Undo last change** puts it back. No
+  Claude usage. Before, every change meant asking Claude or typing commands. *(v2.10, 2026-11-23)*
+- ⬆ **A landscape copy follows its clip.** When a clip with a landscape copy is cut again, the wide copy is
+  cut again too (it used to keep its old cut and its own sound). *(v2.10)*
 - ⬆ **Text for each platform**: a YouTube title of up to 100 characters with fitting hashtags,
   Instagram and Facebook captions, and `post.json` for PostKaro. The finished clips in `edited/` are
   the same files as before. Without PostKaro nothing changes. *(v2.0, 2026-11-12)*

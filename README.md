@@ -174,7 +174,8 @@ captions". "Hook title" adds a big title for the first seconds.
   `"bold_clips": "neutral"` and `"star_words": false` turn that off.
 - ⚡ **Three modes** to match your Claude plan: Quick, Standard and Deep ([see below](#three-modes-quick-standard-and-deep)).
 - 📤 **Posting.** With **PostKaro** (a separate app) the clips go to YouTube Shorts, Instagram Reels and
-  your Facebook Page, each with its own text, from your own laptop.
+  your Facebook Page, each with its own text, from your own laptop. Its **Studio** fixes a clip by clicking
+  (start, end, a caption word, framing, emojis, sounds) and makes only that clip again.
 - 🔒 **Free and private.** No extra accounts, keys or subscriptions for ClipKaro, nothing uploaded.
   Fast with an NVIDIA graphics card (a 7-minute Hinglish video is written down in about a minute).
 

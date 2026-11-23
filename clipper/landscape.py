@@ -120,7 +120,10 @@ def main():
         todo.append((cid, name, found[0]))
     if not todo:
         die('no edited clips to copy')
-    missing = [str(cid) for cid, name, _ in todo if not (pdir / 'clips-landscape' / f'{name}.mp4').exists()]
+    def stale(name):                    # no wide cut yet, or one older than the standing cut (the clip changed)
+        wide, standing = pdir / 'clips-landscape' / f'{name}.mp4', pdir / 'clips' / f'{name}.mp4'
+        return not wide.exists() or (standing.exists() and wide.stat().st_mtime < standing.stat().st_mtime)
+    missing = [str(cid) for cid, name, _ in todo if stale(name)]
     if missing:
         print(f"-> cutting the wide copies of clip(s) {', '.join(missing)} (same pieces as the standing clips) ...",
               flush=True)

@@ -523,6 +523,7 @@ def edit_one(job):
     safe = cfg.get('safe_zones', True) if a.safe_zones is None else a.safe_zones
     hook_on = cfg.get('hook_title', False) if a.hook_title is None else a.hook_title
     clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
+    clip_opts['whoosh'] = picked.get('whooshes', True) is not False      # the review studio's switch (v2.10)
     emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
     clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
     hook_text = picked.get('hook_text') or picked.get('title')

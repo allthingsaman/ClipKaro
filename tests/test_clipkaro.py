@@ -7,6 +7,7 @@ change can't break them without anyone noticing.
 import contextlib
 import io
 import json
+import os
 import tempfile
 import unittest
 from unittest import mock
@@ -2420,6 +2421,76 @@ class Compilations(unittest.TestCase):
                 with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
                     cp.read_moments(out / 'comp')
         self.assertTrue(e.exception.code)
+
+
+class ReviewStudio(unittest.TestCase):
+    """v2.10: the review studio's changes to one clip (PostKaro's Studio page calls run.py studio)."""
+
+    def clip(self):
+        return {'id': 3, 'ranges': [[100.0, 110.0], [130.0, 140.0]], 'emoji': [['billion', 'x'], ['glitch', 'y']],
+                'sfx': [[105.0, 'shock'], [135.5, 'funny']]}
+
+    def test_clock(self):
+        from clipper import studio
+        parts = [[100.0, 110.0], [130.0, 140.0]]
+        self.assertEqual(studio.to_source(parts, 12.0), 132.0)
+        self.assertEqual(studio.to_clip(parts, 132.0), 12.0)
+        self.assertIsNone(studio.to_clip(parts, 120.0))            # cut out between the pieces
+
+    def test_changes(self):
+        from clipper import studio
+        words = sentence('farts are back', 101.0) + sentence('yes yes', 131.0)
+        c, w = studio.change_clip(self.clip(), {
+            'start': 98.5, 'end': 142.0, 'framing': 'split', 'emoji_off': ['glitch'], 'moods_off': [135.5],
+            'whooshes': False, 'words': [{'i': 0, 'text': 'fads'}, {'i': 3, 'hide': True}]}, words)
+        self.assertEqual(c['ranges'], [[98.5, 110.0], [130.0, 142.0]])
+        self.assertEqual(c['framing'], [[98.5, 142.0, 'split']])
+        self.assertEqual((c['emoji'], c['emoji_off']), ([['billion', 'x']], [['glitch', 'y']]))
+        self.assertEqual((c['sfx'], c['sfx_off']), ([[105.0, 'shock']], [[135.5, 'funny']]))
+        self.assertIs(c['whooshes'], False)
+        self.assertEqual((w[0]['w'], w[0]['s']), ('fads', 101.0))         # fixed, its time kept
+        self.assertTrue(w[3]['unsure'])                                   # hidden: no caption
+        back, w2 = studio.change_clip(c, {'framing': 'auto', 'emoji_off': [], 'moods_off': [], 'whooshes': True,
+                                          'words': [{'i': 3, 'show': True}]}, w)
+        self.assertNotIn('framing', back)
+        self.assertEqual(len(back['emoji']), 2)
+        self.assertNotIn('emoji_off', back)
+        self.assertEqual(len(back['sfx']), 2)
+        self.assertNotIn('whooshes', back)
+        self.assertNotIn('unsure', w2[3])
+        self.assertEqual(studio.framing_now(c), 'split')
+        self.assertEqual(studio.framing_now(back), 'auto')
+
+    def test_bad_changes_refused(self):
+        from clipper import studio
+        for ch in ({'start': 109.5}, {'end': 130.5}, {'framing': 'sideways'}, {'words': [{'i': 99, 'text': 'x'}]},
+                   {'words': [{'i': 0, 'text': ' '}]}):
+            with self.assertRaises(ValueError):
+                studio.change_clip(self.clip(), ch, sentence('one two', 101.0))
+
+    def test_no_whoosh_keeps_mood_sounds(self):
+        from clipper import plan
+        with mock.patch.object(plan.sfxlib, 'pick', side_effect=lambda role, *a, **k: {
+                'file': role, 'variant': 0, 'start': 0.0, 'length': 1.0, 'peak': 0.1, 'path': role}):
+            on = plan.sfx_cues([], [], 20.0, moods=[(5.0, 'funny')])
+            off = plan.sfx_cues([], [], 20.0, moods=[(5.0, 'funny')], whoosh=False)
+        self.assertIn('whoosh', [c['role'] for c in on])
+        self.assertEqual([c['role'] for c in off], ['funny'])
+
+    def test_one_render_at_a_time(self):
+        from clipper import studio
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            self.assertIsNone(studio.lock_owner(pdir))
+            studio.lock(pdir)
+            self.assertEqual(studio.lock_owner(pdir), os.getpid())
+            with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                studio.lock(pdir)
+            studio.unlock(pdir)
+            self.assertIsNone(studio.lock_owner(pdir))
+            (pdir / '.studio' / 'lock').write_text(f'{os.getpid()} 1000')      # left over long ago
+            self.assertIsNone(studio.lock_owner(pdir))
 
 
 class NormalVideosUntouched(unittest.TestCase):

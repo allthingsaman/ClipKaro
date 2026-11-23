@@ -154,6 +154,8 @@ clipper/                     the toolbox (Python)
     subtitles.py  English gameplay: the game's own subtitles read on screen (rapidocr, English PP-OCRv5) -> game lines
     gameover.py   gameplay: game-over screens (WASTED, FAILED, BUSTED ...) read on the keyframes -> transcript lines
     compile.py    compilations across videos (advanced mode): moments.json -> frame sheets -> one built project
+    studio.py     the review studio's helper (PostKaro's Studio page): one clip's facts as JSON; changes -> clips.json /
+                  words.json -> cut, edit, qa (and the landscape copy) for that clip; one step of undo
     resolve.py    "export to resolve": a clip as Final Cut Pro 7 XML (pieces on V1/A1, sound effects on A2, pause-cut
                   markers) + captions.srt; DNxHR LB + PCM edit copies on Linux (the free Resolve can't read H.264/AAC)
     hearing.py    noisy Hindi / Hinglish streams: two more speech models and the word check (hear, rehear, wordcheck);
@@ -804,6 +806,24 @@ game-over screens, and the voices (each line takes its source line's row: the so
 frames, so pieces join exactly. A source whose webcam sits elsewhere, or that speaks another language, is
 warned about. `--at <project> <seconds>` maps a source second to the compilation's clock. Tested on 3 glitch
 moments from two GTA streams: 29.9 s, cut and edited, no pause cut, no flash at the joins.
+
+### 5.4d-3 The review studio (v2.10: `studio.py`; the page is PostKaro 0.9's Studio)
+`run.py studio <project> --clip N` prints one clip's facts as JSON: its ranges, the words 15 s before to 6 s
+after its start and 6 s before to 15 s after its end (with their indexes in words.json), the caption groups
+of the edit plan (each word mapped back to its transcript word through the cut's `parts`), the words without
+a caption, the framing (`framing_now`: auto, one whole-clip mode, or custom) and the choices for this layout
+(none for the webcam layout or a wide clip), the emojis and mood sounds with their on/off state, the
+whoosh switch, and whether an undo exists or a render is running. `--apply` takes the changes as JSON
+(`change_clip`: start/end of the first/last piece, caption words through `fixword.replace_at` or the
+`unsure` mark, a whole-clip `framing`, `emoji_off` / `sfx_off` lists so a switched-off one can come back, and
+`"whooshes": false`, which `plan.sfx_cues(whoosh=False)` honours while keeping the mood sounds). It saves the
+clip entry (and words.json when words change) to `.studio/<clip>/` first, takes `.studio/lock` (one render
+per video; a lock older than 30 minutes, or of a dead process, is stale; on Windows only the age counts,
+because `os.kill(pid, 0)` would send Ctrl+C there), then runs cut, edit and qa for that clip (and
+`landscape`, which now re-cuts a wide copy older than the standing cut). Lines `STEP ...` and `RESULT {json}`
+are what PostKaro follows. `--undo` restores the saved entry and words and renders again. PostKaro finds
+ClipKaro from the video's folder (`<ClipKaro>/output/<project>`), refuses a change while a post of the clip is
+uploaded but not live, and refreshes the clip's length, size and frame thumbnail afterwards.
 
 ### 5.4e More clips later (`more.py`)
 The critic scores every idea (all candidates of a long video, the shortlist of a short one), and
