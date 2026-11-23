@@ -674,6 +674,23 @@ reaction like a heard laugh: a split-screen zone from 0.3 s before to 0.8 s afte
 two-shot (two edited clips side by side): the right person's real grin found at 7.0-8.0 s (0.999), kept as
 silent while the left one talked. `"silent_reactions": false` turns both off.
 
+### 5.4b-2c Three people in one shot (v2.13: `reframe.choose_subject` `group`, `speakers.group_sides`, `cut._framed`)
+A wide shot of three people (a panel, three on a sofa) was handled as a two-person shot: the two most present
+faces, the third person never shown. Now `choose_subject` reports `group` (up to 3 subjects, left to right) when
+three score at least RIVAL of the best and are seen together; such shots go to the director like two-person
+ones (`cut._two_shot`). Mouth movement is measured for all three (`face_activity` with labels L / M / R, kept
+apart from the two-person rows, `group_activity`), and each voice of the clip is placed on the face whose mouth
+moves the most while it talks alone (`group_sides`: calm moments, at least 5, SIDE_RATIO over the next face;
+otherwise not placed). The two-person register is untouched (its L / R mean other people). The director's
+SPEAKER on 'M' is `middle` (also usable in clips.json `framing`); its BOTH in a group shot is a three-panel
+stack (`_framed` 'split' with `panels`: one 27:16 box per person, left to right, `split_box(rows=3)`,
+`shot_filter` vstacks three 1080x640 crops). It stays mode 'split', so everything the split layout does (no
+zooms, no caption across a layout switch) holds; the captions sit on the lower seam (1280, plan.py
+`split_seam`; the clip's shots keep `panels`). Wide shots keep the two-person rule: a crop on one person only
+when they talk alone for 6 s, else everyone. Tested on 3 minutes of a Hinglish panel podcast (three on a sofa,
+two-shots and close-ups between): every wide shot stacked all three, two-shots split as before, close-ups
+cropped; 4 of 6 voices placed. Signals cache version 3 (re-cut clips measure again).
+
 ### 5.4b-4 The Hinglish speech model (v2.3: `fetch.hinglish_model`, `romanize.ROMAN_RESPELL`)
 With an NVIDIA card and English-letter captions, Hindi and Hinglish videos are written down by
 Whisper-Hindi2Hinglish-Prime (Oriserve, Apache 2.0; the CTranslate2 int8 build `Hub84/faster-whisper-

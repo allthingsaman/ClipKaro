@@ -714,18 +714,22 @@ def build(meta, brand, opts):
     caps = caption_groups(meta, upper=upper, style=style, max_w=layout.SAFE_W if safe else MAX_CAPTION_W) \
         if opts.get('captions', True) else []
     caps = cut_at_seams(caps, meta.get('shots', []), fps)
-    shot_frames = [(s.get('f0', int(round(s['t0'] * fps))), s.get('mode')) for s in meta.get('shots', [])]
+    shot_frames = [(s.get('f0', int(round(s['t0'] * fps))), s.get('mode'),
+                    H * 2 // 3 if len(s.get('panels') or []) >= 3 else H // 2) for s in meta.get('shots', [])]
+
+    def split_seam(f):                  # frame f in the split-screen layout: the seam's height, else None
+        mode, seam = (shot_frames[0][1], shot_frames[0][2]) if shot_frames else (None, None)
+        for f0, md, sm in shot_frames:
+            if f0 <= f:
+                mode, seam = md, sm
+        return seam if mode == 'split' else None
 
     def split_at(f):                    # is frame f in the split-screen layout?
-        mode = shot_frames[0][1] if shot_frames else None
-        for f0, md in shot_frames:
-            if f0 <= f:
-                mode = md
-        return mode == 'split'
-    for g in caps:                      # in the split-screen layout the captions sit on the seam
-        fs = int(math.ceil(g['start'] * fps - 1e-6))
+        return split_seam(f) is not None
+    for g in caps:                      # in the split-screen layout the captions sit on the seam (three people
+        fs = int(math.ceil(g['start'] * fps - 1e-6))     # stacked, v2.13: the lower seam)
         if split_at(fs):
-            g['y'] = H // 2
+            g['y'] = split_seam(fs)
         if fs > 0 and not g.get('cont') and split_at(fs - 1) != split_at(fs):
             g['nolead'] = True          # its one-frame early start would fall in the other layout
     faces = opts.get('faces')

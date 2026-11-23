@@ -96,6 +96,7 @@ CLUSTER_TOL = 0.08       # faces within this share of the width are the same sub
 MINOR_FACE = 0.5         # faces under half the size of the biggest one in a frame are background
 RIVAL = 0.6              # a second subject scoring at least this share of the first one is a real rival
 TOGETHER = 0.5           # ... and seen in the same frame at least this share of the time (else it's one person)
+GROUP_MAX = 3            # a group shot: at most this many people (left, middle, right; v2.13)
 
 
 def sample_faces(cap, t0, t1, step=SAMPLE_STEP):
@@ -191,6 +192,11 @@ def choose_subject(samples, crop_frac, min_hits):
     if not subj:
         return None, info
     best = subj[0]
+    # three people seen together (a panel, three on a sofa; v2.13): all of them, left to right, for the director
+    together = [s for s in subj if s['score'] >= RIVAL * best['score']
+                and len(s['seen'] & best['seen']) >= TOGETHER * min(len(s['seen']), len(best['seen']))]
+    if len(together) >= 3:
+        info['group'] = sorted((tuple(round(v, 4) for v in s['face']) for s in together[:GROUP_MAX]), key=lambda f: f[0])
     # a rival is a second person only if both are seen in the same frames: two places one person was
     # in (leaning, or two layouts the cut detection missed) are never on screen together
     rival = next((s for s in subj[1:] if s['score'] >= RIVAL * best['score']
@@ -292,7 +298,7 @@ def analyse_range(video, start, dur, src_w, src_h):
                 # ordinary shots frame exactly as before (the subjects found are still reported)
                 face = face_in_shot(cap, start + a, start + b)
             out.append({'a': f['a'] - start, 'b': f['b'] - start, 'face': face, 'subjects': info['subjects'],
-                        'faces': info['faces'], 'pair': info.get('pair'),
+                        'faces': info['faces'], 'pair': info.get('pair'), 'group': info.get('group'),
                         'ambiguous': info['ambiguous']})
     cap.release()
     return out
@@ -350,17 +356,17 @@ def plan_shots(shots, src_w, src_h, min_fit=1.0):
     return plan
 
 
-def split_box(face, src_w, src_h, x_lo=0, x_hi=None):
-    """Source rectangle (x, y, w, h) for one half of the split-screen layout: a 9:8 box around a face
-    (cx, cy, size as shares of the frame) with room for the shoulders, kept inside the frame, and
-    inside [x_lo, x_hi] when given (the person's own side of a side-by-side picture, so no strip of
-    the other camera shows at the edge)."""
+def split_box(face, src_w, src_h, x_lo=0, x_hi=None, rows=2):
+    """Source rectangle (x, y, w, h) for one panel of the split-screen layout: a 9:8 box (rows=2; 27:16 for the
+    three-person stack, rows=3) around a face (cx, cy, size as shares of the frame) with room for the shoulders,
+    kept inside the frame, and inside [x_lo, x_hi] when given (the person's own side of a side-by-side picture,
+    so no strip of the other camera shows at the edge)."""
     cx, cy, fh = face
     x_lo = (int(x_lo) + 1) // 2 * 2
     x_hi = src_w if x_hi is None else int(x_hi)
-    bh = min(src_h, max(fh * src_h * 2.4, src_h * 0.45))
-    bw = min(x_hi - x_lo, bh * W / (H / 2))
-    bh = bw * (H / 2) / W
+    bh = min(src_h, max(fh * src_h * (2.4 if rows == 2 else 2.0), src_h * (0.45 if rows == 2 else 0.25)))
+    bw = min(x_hi - x_lo, bh * W / (H / rows))
+    bh = bw * (H / rows) / W
     x = min(max(cx * src_w - bw / 2, x_lo), x_hi - bw)
     y = min(max(cy * src_h - bh * 0.42, 0), src_h - bh)
     return int(x) // 2 * 2, int(y) // 2 * 2, int(bw) // 2 * 2, int(bh) // 2 * 2
@@ -370,6 +376,14 @@ def shot_filter(inp, shot, src_w, src_h, label, fps=FPS):
     """ffmpeg filter chain turning one shot of input `inp` into 1080x1920 [label]."""
     trim = f"trim=start={shot['a']:.3f}:end={shot['b']:.3f},setpts=PTS-STARTPTS"
     tail = f'setsar=1,fps={fps},format=yuv420p'
+    if shot['mode'] == 'split' and len(shot.get('panels') or []) >= 3:    # three people stacked (v2.13)
+        ps = shot['panels']
+        n, h = len(ps), H // len(shot['panels'])
+        heads = ''.join(f'[{label}p{k}]' for k in range(n))
+        crops = ';'.join(f"[{label}p{k}]crop={pw}:{ph}:{px}:{py},scale={W}:{h if k < n - 1 else H - h * (n - 1)}"
+                         f":flags=lanczos,setsar=1[{label}q{k}]" for k, (px, py, pw, ph) in enumerate(ps))
+        stack = ''.join(f'[{label}q{k}]' for k in range(n))
+        return f"[{inp}]{trim},split={n}{heads};{crops};{stack}vstack=inputs={n},{tail}[{label}]"
     if shot['mode'] == 'split':                  # two people stacked: top half and bottom half
         (tx, ty, tw, th), (bx, by, bw, bh) = shot['top'], shot['bottom']
         half = H // 2

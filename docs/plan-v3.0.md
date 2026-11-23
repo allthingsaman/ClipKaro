@@ -142,6 +142,10 @@ house rules:
   - **Who's talking:** decided from both the lips and the voice with active-speaker detection. [Light-ASD](https://arxiv.org/pdf/2303.04439v1.pdf) is about 1M parameters, so it runs fine on the processor; its licence is checked when building.
   - **Layouts:** the speaker crop, 2 or 3 stacked panels, or picture-in-picture for a remote guest.
 - **To settle:** a 3-person video of yours (or one you like) to test with.
+- **Status (v2.13, 23 November):** built for three people in one wide shot (group detection, who talks from mouth
+  movement per voice within the clip, a crop on the talker or a three-panel stack). Light-ASD was not needed for
+  this first version; remote-guest grids were not in the test video (the show cut to each speaker full screen,
+  which ClipKaro already handles). Tested on a Hinglish panel podcast (MensXP).
 
 ### F. "Boast, then fail" clips (gameplay)
 - **What:** a friend promises "we'll do this mission like a boss", and minutes later the game says FAILED.

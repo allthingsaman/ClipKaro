@@ -137,10 +137,13 @@ def sheet(cap, clip, video, info, every, words, planned, auto):
                 cv2.drawMarker(tile, (x, 12), (255, 255, 0), cv2.MARKER_TRIANGLE_DOWN, 14, 3)
             directed = any(a <= s + t < b for a, b, _ in auto or [])
             if sh['mode'] == 'split':
-                for (bx, by, bw, bh), col in ((sh['top'], (255, 0, 255)), (sh['bottom'], (0, 200, 255))):
+                boxes = sh.get('panels') or [sh['top'], sh['bottom']]
+                cols = [(255, 0, 255), (0, 230, 0), (0, 200, 255)] if len(boxes) >= 3 else [(255, 0, 255), (0, 200, 255)]
+                for (bx, by, bw, bh), col in zip(boxes, cols):
                     cv2.rectangle(tile, (int(bx / src_w * TILE_W), int(by / src_h * TILE_H)),
                                   (int((bx + bw) / src_w * TILE_W), int((by + bh) / src_h * TILE_H)), col, 3)
-                cv2.putText(tile, 'BOTH (split)', (8, TILE_H - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
+                cv2.putText(tile, 'ALL (stack)' if len(boxes) >= 3 else 'BOTH (split)', (8, TILE_H - 12),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
             elif directed and sh['mode'] == 'crop':
                 cv2.putText(tile, 'SPEAKER', (8, TILE_H - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 230, 0), 2)
             elif sh.get('ambiguous') and sh['mode'] == 'crop':

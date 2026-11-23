@@ -1,5 +1,11 @@
 # What's new
 
+## v2.13 (three people in one shot, November 2026)
+
+- **Three people in one shot** (panels, three on a sofa): the one talking gets the crop, wherever they sit, and
+  laughs or cross-talk show all three stacked, with the captions between the second and third person.
+  Two-person podcasts are framed exactly as before.
+
 ## v2.12 (silent reactions in podcasts, November 2026)
 
 - **A listener's silent laugh is seen.** ClipKaro only heard laughs; now it also reads faces. When the listener

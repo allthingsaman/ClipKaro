@@ -150,8 +150,12 @@ def face_activity(cap, t0, t1, subjects, step=0.25, gap=3):
     """How much each face's mouth area moves: [(t, {'L': motion, 'R': motion})] for one two-person
     stretch, where L / R are the left and right person. Moment to moment this can't tell talking from
     laughing; it is only used summed up over many calm moments, to learn which voice is which face."""
-    left, right = sorted(subjects)[:1] + sorted(subjects)[-1:]
-    side = {left: 'L', right: 'R'}
+    xs = sorted(subjects)
+    if len(xs) >= 3:                     # three people (v2.13): left, middle, right
+        side = dict(zip(xs[:3], ('L', 'M', 'R')))
+    else:
+        left, right = xs[:1] + xs[-1:]
+        side = {left: 'L', right: 'R'}
     import cv2
     from .reframe import _faces
     out = []
@@ -169,7 +173,7 @@ def face_activity(cap, t0, t1, subjects, step=0.25, gap=3):
             row, size = {}, {}
             for x, y, w, h in _faces(sa):
                 cx = (x + w / 2) / 640
-                near = min((left, right), key=lambda s: abs(s - cx))
+                near = min(side, key=lambda s: abs(s - cx))
                 # per side only the biggest face: small faces in wall art or posters behind a person
                 # never move, and measuring one of them made a talking guest look silent (seen)
                 if abs(near - cx) > 0.12 or w * h <= size.get(side[near], 0):
@@ -192,7 +196,8 @@ def face_activity(cap, t0, t1, subjects, step=0.25, gap=3):
 # moments in ANY clip which side of a two-person shot each person sits on. A funny clip, where the
 # listener laughs and smiles the whole time, then still gets the right face for each voice.
 
-SIGNALS_V = 2            # raise when voices / laughter / face_activity change: cached signals are redone
+SIGNALS_V = 3            # raise when voices / laughter / face_activity change: cached signals are redone
+                         # (3: three-person shots measured apart, v2.13)
 SAME_VOICE = 0.55       # voice prints at least this similar are the same person (Raj vs Khan Sir: <= 0.38)
 SOFT_VOICE = 0.35        # a voice disturbed by laughter or talking-over still resembles its owner this much ...
 SOFT_MARGIN = 0.2        # ... and clearly more than anyone else: treat it as that person (prints unchanged)
@@ -245,6 +250,37 @@ def calm_moments(activity, segs, laughs, words):
         if i >= len(starts) or starts[i] > t + 0.2:
             continue
         out.append((next(iter(act)), row))
+    return out
+
+
+GROUP_MIN_ROWS = 5       # calm moments a voice needs before it is placed in a three-person shot
+
+
+def group_sides(activity, segs, laughs, words):
+    """{voice: 'L' | 'M' | 'R'} in a three-person shot (v2.13), learnt inside the clip: the face whose mouth moves
+    the most while that voice talks alone (calm moments only), at least SIDE_RATIO more than the next face.
+    The two-person register (L / R) stays as it is: these labels mean other people."""
+    import bisect
+    laugh = [(a - 0.5, b + 0.5) for a, b, s in laughs or []]
+    starts = sorted(w['s'] for w in words)
+    rows = {}
+    for t, row in activity:
+        if not all(k in row for k in ('L', 'M', 'R')) or any(a <= t <= b for a, b in laugh):
+            continue
+        act = {v for a, b, v in segs if a <= t < b}
+        if len(act) != 1:
+            continue
+        i = bisect.bisect_left(starts, t - 0.6)
+        if i >= len(starts) or starts[i] > t + 0.2:
+            continue
+        rows.setdefault(next(iter(act)), []).append(row)
+    out = {}
+    for v, rs in rows.items():
+        if len(rs) < GROUP_MIN_ROWS:
+            continue
+        med = sorted(((float(np.median([r[k] for r in rs])), k) for k in ('L', 'M', 'R')), reverse=True)
+        if med[0][0] >= SIDE_RATIO * max(med[1][0], 1e-6):
+            out[v] = med[0][1]
     return out
 
 

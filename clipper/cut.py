@@ -25,7 +25,7 @@ from .reframe import analyse_range, crop_width, crop_x, plan_shots, shot_filter,
 PAD_IN, PAD_OUT = 0.12, 0.30
 MIN_PIECE = 0.25          # a framing boundary never leaves a sliver shorter than this
 QUIET_GAP_S = 8.0         # live streams / gameplay: `--check` points out a silence this long inside a clip
-HOWS = ('full', 'left', 'right', 'center', 'split')
+HOWS = ('full', 'left', 'right', 'center', 'split', 'middle')
 
 
 def framing_spans(clip):
@@ -45,6 +45,10 @@ def _framed(sh, how, src_w, src_h):
     """One shot piece re-framed the way an override asks."""
     if how == 'full':
         return {**sh, 'mode': 'fit', 'x0': 0, 'focus': [round(W / 2), round(H * 0.42)]}
+    if how == 'split' and len(sh.get('group') or []) >= 3:      # three people (v2.13): all stacked, left to right
+        boxes = [split_box(f, src_w, src_h, rows=len(sh['group'])) for f in sh['group']]
+        return {**sh, 'mode': 'split', 'x0': 0, 'panels': boxes, 'top': boxes[0], 'bottom': boxes[-1],
+                'focus': [round(W / 2), round(H / 2)]}
     if how == 'split':                  # both people stacked: the one who talks most on top
         faces = sh.get('pair') or sorted(sh.get('faces') or [], key=lambda f: -f[2] * 1.0)[:2]
         if len(faces) < 2:
@@ -58,9 +62,12 @@ def _framed(sh, how, src_w, src_h):
         up, down = ('R', 'L') if sh.get('star') == 'R' else ('L', 'R')
         return {**sh, 'mode': 'split', 'x0': 0, 'top': boxes[up], 'bottom': boxes[down],
                 'focus': [round(W / 2), round(H / 2)]}
-    # the two people of a two-person shot (seen together), else every subject found
-    subjects = [f[0] for f in sh['pair']] if sh.get('pair') else (sh.get('subjects') or ([sh['face'][0]] if sh.get('face') else []))
-    if how == 'left':
+    # the people of a group shot, the two of a two-person shot (seen together), else every subject found
+    subjects = [f[0] for f in sh['group']] if len(sh.get('group') or []) >= 3 else \
+        [f[0] for f in sh['pair']] if sh.get('pair') else (sh.get('subjects') or ([sh['face'][0]] if sh.get('face') else []))
+    if how == 'middle':                 # the person in the middle of a group (v2.13), else the centre
+        cx = sorted(subjects)[len(subjects) // 2] if len(subjects) >= 3 else 0.5
+    elif how == 'left':
         cx = min(subjects) if subjects else 0.0       # the face on the left, else the left edge
     elif how == 'right':
         cx = max(subjects) if subjects else 1.0       # the face on the right, else the right edge
@@ -538,7 +545,12 @@ def range_shots(video, info, clip, words):
 
 
 def _two_shot(sh):
-    return sh.get('ambiguous') and sh['mode'] == 'crop' and len(sh.get('faces') or []) >= 2
+    """A stretch for the director: two people too far apart for one crop, or three people (v2.13)."""
+    return bool(sh.get('ambiguous') or _group(sh)) and sh['mode'] == 'crop' and len(sh.get('faces') or []) >= 2
+
+
+def _group(sh):
+    return len(sh.get('group') or []) >= 3
 
 
 def two_shot_pieces(planned):
@@ -553,7 +565,7 @@ def _wide_pieces(planned):
     for start, _, shots in planned:
         for sh in shots:
             if _two_shot(sh):
-                two = sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]
+                two = sh['group'] if _group(sh) else sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]
                 out[(start + sh['a'], start + sh['b'])] = max(f[2] for f in two) < WIDE_FACE
     return out
 
@@ -607,15 +619,17 @@ def two_person(pdir, video, plans, words):
             cap.release()
             return {}
         la = speakers.laughter(audio, parts) or []
-        act = []
+        act, act_g = [], []
         for (start, _, shots) in planned:
             for sh in shots:
-                if _two_shot(sh):
+                if _two_shot(sh) and _group(sh):          # three people (v2.13): measured apart, other labels
+                    act_g += speakers.face_activity(cap, start + sh['a'], start + sh['b'], [f[0] for f in sh['group']])
+                elif _two_shot(sh):
                     two = sorted(f[0] for f in (sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]))
                     act += speakers.face_activity(cap, start + sh['a'], start + sh['b'], two)
         signals[cid] = {'v': speakers.SIGNALS_V, 'parts': parts, 'pieces': [list(x) for x in pieces],
-                        'voices': vo, 'laughter': la,
-                        'activity': act, 'prints': speakers.voice_prints(audio, vo) or {}}
+                        'voices': vo, 'laughter': la, 'activity': act, 'group_activity': act_g,
+                        'prints': speakers.voice_prints(audio, vo) or {}}
         save_json(cache, signals[cid])
     cap.release()
     if settings().get('silent_reactions', True):       # v2.12: faces that laugh or look shocked, read once a clip
@@ -679,9 +693,12 @@ def two_person(pdir, video, plans, words):
         silent = rx.silent([tuple(r) for r in sg.get('reactions') or []], heard, talking)
         if silent:
             print(f"   clip {cid}: {len(silent)} silent reaction(s) of the listener: both people shown then", flush=True)
+        group_side = speakers.group_sides(sg.get('group_activity') or [], sg['voices'], sg['laughter'], words)
+        groups = {(start + sh['a'], start + sh['b']) for start, _, shots in plans[cid][1] for sh in shots if _group(sh)}
         spans = []
         for a, b in todo[cid]:
-            spans += director.direct((a, b), words, sg['voices'], sg['laughter'], side_of, wide=wide.get((a, b), False),
+            sides_here = group_side if (a, b) in groups else side_of      # left / middle / right in a group shot
+            spans += director.direct((a, b), words, sg['voices'], sg['laughter'], sides_here, wide=wide.get((a, b), False),
                                      reactions=[(r[0], r[1]) for r in silent])
         out[cid] = spans
         kinds = {}
@@ -782,7 +799,8 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
         offset = (math.ceil((start - st0) * fps - 1e-6) / fps + st0 - start) if exact else 0.0
         for sh in shots:
             out_sh = {'t0': round(sh['a'] + timeline, 3), 't1': round(sh['b'] + timeline, 3),
-                      'mode': sh['mode'], 'focus': sh['focus']}
+                      'mode': sh['mode'], 'focus': sh['focus'],
+                      **({'panels': sh['panels']} if sh.get('panels') else {})}   # three people stacked (v2.13)
             if exact:
                 j = max(0, math.ceil((sh['a'] - offset) * fps - 1e-6))
                 # a part's first frame shows right after the previous part's last one (when the

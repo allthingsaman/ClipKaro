@@ -2662,6 +2662,56 @@ class SilentReactions(unittest.TestCase):
         self.assertFalse(rx.wanted({'video_kind': {'gaming': True}}))                 # gameplay has its own hints
 
 
+class ThreePeople(unittest.TestCase):
+    """v2.13: a shot with three people: the one talking cropped, everyone stacked for laughs and cross-talk."""
+
+    def samples(self, faces, n=10):
+        return [(k * 0.4, list(faces)) for k in range(n)]
+
+    def test_a_group_is_found(self):
+        from clipper import reframe
+        three = [(0.17, 0.4, 0.09), (0.60, 0.4, 0.094), (0.83, 0.4, 0.115)]
+        face, info = reframe.choose_subject(self.samples(three), 0.32, 3)
+        self.assertEqual([round(f[0], 2) for f in info['group']], [0.17, 0.6, 0.83])
+        two = [(0.26, 0.4, 0.21), (0.74, 0.4, 0.2)]
+        face, info = reframe.choose_subject(self.samples(two), 0.32, 3)
+        self.assertNotIn('group', info)                                   # two people: as before
+
+    def test_framing_in_a_group_shot(self):
+        sh = {'a': 0.0, 'b': 4.0, 'mode': 'crop', 'face': (0.83, 0.4, 0.115), 'faces': [(0.83, 0.4, 0.115)] * 3,
+              'subjects': [0.83, 0.6, 0.17], 'pair': [(0.17, 0.4, 0.09), (0.83, 0.4, 0.115)],
+              'group': [(0.17, 0.4, 0.09), (0.6, 0.4, 0.094), (0.83, 0.4, 0.115)], 'ambiguous': True}
+        st = cut._framed(sh, 'split', 1280, 720)
+        self.assertEqual((st['mode'], len(st['panels'])), ('split', 3))
+        self.assertTrue(all(abs(w / h - 1080 / 640) < 0.02 for _, _, w, h in st['panels']))   # 27:16 panels
+        mid = cut._framed(sh, 'middle', 1280, 720)
+        left = cut._framed(sh, 'left', 1280, 720)
+        self.assertLess(left['x0'], mid['x0'])                            # the middle person is to the right of the left one
+        self.assertTrue(cut._two_shot(sh) and cut._group(sh))
+        f = __import__('clipper.reframe', fromlist=['shot_filter']).shot_filter('0:v', st, 1280, 720, 'v0')
+        self.assertIn('vstack=inputs=3', f)
+
+    def test_who_talks_in_a_group(self):
+        from clipper import speakers, director
+        words = sentence('a b c d e f g h i j k l', 0.0, gap=0.0, dur=0.5)
+        voices = [(0.0, 6.0, 'v1')]
+        act = [(t / 4, {'L': 1.0, 'M': 6.0, 'R': 1.5}) for t in range(0, 24)]
+        self.assertEqual(speakers.group_sides(act, voices, [], words), {'v1': 'M'})
+        even = [(t / 4, {'L': 2.0, 'M': 2.2, 'R': 2.1}) for t in range(0, 24)]
+        self.assertEqual(speakers.group_sides(even, voices, [], words), {})     # not clear: not placed
+        spans = director.direct((0.0, 6.0), words, voices, [], {'v1': 'M'})
+        self.assertEqual({how for _, _, how in spans}, {'middle'})
+
+    def test_captions_on_the_lower_seam(self):
+        from clipper import plan
+        meta = {'duration': 4.0, 'fps': 30, 'words': sentence('one two three four', 0.0),
+                'shots': [{'t0': 0.0, 't1': 4.0, 'mode': 'split', 'focus': [540, 960], 'f0': 0,
+                           'panels': [[0, 0, 400, 237]] * 3}], 'splices': [], 'jumps': []}
+        brand = {'accent': '#FFD60A', 'text': '#FFFFFF', 'outline': '#000000'}
+        p = plan.build(meta, brand, {'zoom': False, 'captions': True, 'sfx': 'none', 'caption_y': 1270})
+        self.assertTrue(p['captions'] and all(g['y'] == 1280 for g in p['captions']))
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""

@@ -445,7 +445,8 @@ sheets of every clip with a two-person shot or a red border. Fix only what is wr
 (source seconds, at word gaps), then `cut --clips N` again:
 - `"framing": [[a, b, "split"]]`: show both people, e.g. the listener visibly laughs or reacts
   while the other talks (a silent laugh, an "impressed" face). Sound can't catch these; you can.
-- `"framing": [[a, b, "left" | "right" | "center" | 0-1]]`: show that person (or point); e.g. a big
+- `"framing": [[a, b, "left" | "middle" | "right" | "center" | 0-1]]`: show that person (or point; `middle`: the
+  middle one of three people); e.g. a big
   reaction shot of the one laughing while the speaker pauses, or the wrong face in any crop.
 - `"show_full": [[a, b]]` (or `"framing": [[a, b, "full"]]`): the whole landscape frame over a
   blurred background, when what is shown or talked about lies outside the crop (a product held up,

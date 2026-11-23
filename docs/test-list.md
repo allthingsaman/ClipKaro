@@ -113,3 +113,13 @@ bot", say which browser you use, and ClipKaro fetches with its sign-in (`--cooki
 - [ ] **Both people shown.** In a clip where the listener laughs silently while the other talks, the split
   screen shows both of them then, and goes back to the speaker after.
 - [ ] **No false ones.** People simply talking or smiling a little never trigger it.
+
+## Phase 3: v2.13 (three or more people)
+
+Needs a podcast or panel with three people in one wide shot (or remote guests).
+- [ ] **The one talking is shown.** In a wide shot of three, when one person talks for a while, the clip crops
+  on them, also when they sit in the middle or are the one the old version ignored.
+- [ ] **Everyone for a laugh.** Laughs and talking over each other show all three stacked; the captions sit
+  between the second and third person, never on a face.
+- [ ] **Two-person podcasts unchanged.** A normal two-person podcast clip looks the same as before.
+- [ ] **Your fix.** "In clip 2, show the middle person at 0:14" works (`"framing": [[a, b, "middle"]]`).

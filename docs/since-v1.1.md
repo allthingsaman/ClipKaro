@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.13 on 2026-11-23: nothing removed; three-person shots gain their own framing, two-person
+shots are unchanged (their clips measure their signals again once, on the next cut).
 Checked again for v2.12 on 2026-11-23: nothing removed; one change on purpose (two-person clips show both people
 during a listener's silent laugh; `"silent_reactions": false` is the way back).
 Checked again for v2.11 on 2026-11-23: nothing removed. One change is different on purpose: the critic's weights
@@ -452,6 +454,11 @@ changed. Only new ones were added.
   while the listener laughs or looks shocked, as around a heard laugh. Only strong ones (the owner's rule). About 4
   minutes per hour of video at fetch. *(v2.12, 2026-11-23)*
   - Way back: `"silent_reactions": false` in settings.json.
+
+- ⬆ **Three people in one shot** (panels, three on a sofa). The wide shot used to be framed as if only the two
+  most visible people were there; the third was never shown, even when talking. Now the one talking alone gets
+  the crop (left, middle or right), and laughs and talking over each other show all three stacked, with the
+  captions on the lower seam. Two-person shots are framed exactly as before. *(v2.13, 2026-11-23)*
 
 ## Posting
 

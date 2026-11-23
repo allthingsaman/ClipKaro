@@ -122,7 +122,7 @@ def direct(piece, words, voices, laughs, side_of, wide=False, reactions=()):
     spans = _snap(spans, [w for w in words if a0 - 0.2 <= w['s'] < b0], a0, b0)
     out = []
     for s, e, kind, side in spans:
-        how = 'split' if kind == 'BOTH' or side is None else ('left' if side == 'L' else 'right')
+        how = 'split' if kind == 'BOTH' or side is None else {'L': 'left', 'R': 'right', 'M': 'middle'}[side]
         out.append((round(s, 3), round(e, 3), how))
     return out
 
