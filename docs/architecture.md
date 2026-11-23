@@ -821,7 +821,15 @@ clip entry (and words.json when words change) to `.studio/<clip>/` first, takes 
 per video; a lock older than 30 minutes, or of a dead process, is stale; on Windows only the age counts,
 because `os.kill(pid, 0)` would send Ctrl+C there), then runs cut, edit and qa for that clip (and
 `landscape`, which now re-cuts a wide copy older than the standing cut). Lines `STEP ...` and `RESULT {json}`
-are what PostKaro follows. `--undo` restores the saved entry and words and renders again. PostKaro finds
+are what PostKaro follows. `--undo` restores the saved entry and words and renders again.
+v2.10.1: the facts also hold every word of the clip by piece and sentence (`pieces_words`, with the caption
+text where it has one) and the moods of the sound library; `--lines A B` and `--find TEXT` give transcript lines
+for "Add a moment" (find: the words in order, one word with spelling slips at 0.85). Changes `cut` (subtracted
+from the ranges, a piece may split; pieces under 0.7 s go), `add` (merged in time order), `emoji_add`
+(`[word, emoji, second]`: the edit converts the second to the clip's clock, `edit.emoji_times`, and
+`plan.emoji_marks` puts it on the word said nearest it, before Claude's in the 3 places; one whose moment was
+cut out is left out) and `sfx_add` (`[second, mood]`). A whole-clip framing follows the new first and last
+second. PostKaro finds
 ClipKaro from the video's folder (`<ClipKaro>/output/<project>`), refuses a change while a post of the clip is
 uploaded but not live, and refreshes the clip's length, size and frame thumbnail afterwards.
 

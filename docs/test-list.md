@@ -77,3 +77,14 @@ Update PostKaro first (`git pull` in its folder, then restart it: `python run.py
 - [ ] **Posting after a fix.** Schedule a fixed clip: the fixed version is the one that goes out. A clip
   already uploaded (scheduled on YouTube, not live yet) says to cancel that post first.
 - [ ] **Speed.** Is "about a minute" true on your laptop? Note the time it shows.
+
+## v2.10.1 (your own cuts in the Studio, PostKaro 0.9.1)
+
+- [ ] **Cut a part out.** Under **Words**, click a word, "Cut out from here", click a later word, **Make the clip
+  again**: that part is gone, the rest plays on (a short flash at the join, as with Claude's joins).
+- [ ] **Add a moment.** Use **Find** (words said anywhere in the video) and "The 2 minutes after the clip"; click the
+  first and last word, **Add**, make the clip again: the moment plays in its place in time, with captions.
+- [ ] **Your own emoji.** Click a word, pick 🔥 (or type any emoji): it shows on that word, even when the clip
+  already had 3 of Claude's. Pick one on a word said twice: it shows on the one you clicked.
+- [ ] **Your own sound.** Click a word, pick a mood (funny, shock …): the sound plays on that word.
+- [ ] **Undo** after all of these puts the clip back.

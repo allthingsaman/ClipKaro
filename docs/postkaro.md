@@ -153,7 +153,13 @@ clip (or open the **Studio** tab). Without typing anything you can:
 - **fix a caption word**: click it, type the right word (or switch its caption off); the sound never changes;
 - **change the framing** (podcasts and interviews): automatic, the left or right person, both people, or the
   whole picture;
-- **switch an emoji, a sound effect or the whooshes off** (or back on).
+- **switch an emoji, a sound effect or the whooshes off** (or back on);
+- **cut a part out of the middle** (v2.10.1): under **Words**, click the first word, "Cut out from here", then the
+  last word;
+- **add a moment** (v2.10.1): find words said anywhere in the video (or look at the 2 minutes before or after the
+  clip), click the moment's first and last word, **Add**; it plays in its place in time;
+- **put your own emoji or sound on a word** (v2.10.1): click the word, pick an emoji (or type any) or a sound
+  mood from your library. Your emojis go first among the 3 a clip can show.
 
 Then press **Make the clip again**. Only that clip is cut and edited again (about a minute), and the page
 shows each step. **Undo last change** puts it back. A clip whose post is already uploaded (not live yet) can't

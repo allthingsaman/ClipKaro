@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.10.1 on 2026-11-23: nothing removed; only the Studio's own marks behave differently (an
+emoji with a second, which only the Studio writes).
 Checked again for v2.10 on 2026-11-23: nothing removed or changed on purpose; the Studio only adds (it writes
 the same clips.json fields Claude writes), and a clip's `"whooshes": false` only exists when the owner sets it.
 Checked again for v2.9 on 2026-11-23: nothing removed. One change is different on purpose: a game-over
@@ -445,6 +447,9 @@ changed. Only new ones were added.
   or end to another word, fix or hide a caption word, change the framing, switch an emoji, a sound effect or
   the whooshes off; only that clip is made again (about a minute), and **Undo last change** puts it back. No
   Claude usage. Before, every change meant asking Claude or typing commands. *(v2.10, 2026-11-23)*
+- ⬆ **Make your own cuts in the Studio** (PostKaro 0.9.1). Cut a part out of a clip's middle, add a moment from
+  anywhere in the video, put your own emoji or sound on a word; your emojis go first among the 3 a clip shows.
+  Claude's emojis without a second are placed exactly as before. *(v2.10.1, 2026-11-23)*
 - ⬆ **A landscape copy follows its clip.** When a clip with a landscape copy is cut again, the wide copy is
   cut again too (it used to keep its old cut and its own sound). *(v2.10)*
 - ⬆ **Text for each platform**: a YouTube title of up to 100 characters with fitting hashtags,

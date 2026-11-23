@@ -65,6 +65,8 @@ house rules:
   (fix or hide), the whole clip's framing, emojis / sound effects / whooshes on or off; plus one step of undo.
   ClipKaro `run.py studio` + PostKaro 0.9's Studio page (Fix button, Studio tab). Tested through the page in
   a sandbox PostKaro: a change re-rendered in 54-60 s, undo restored it.
+- **v2.10.1 (23 November, owner's pick from the gaps list):** cut a part out of the middle, add a moment, your own
+  emoji or sound on a word (PostKaro 0.9.1). Still open, offered: a new clip from scratch, frame-exact trimming.
 
 ### B. Learn from real views
 - **What:** PostKaro reads back each posted clip's views and watch time, and ClipKaro learns which kinds of clips do well on *your* channels.

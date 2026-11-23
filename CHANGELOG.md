@@ -1,5 +1,11 @@
 # What's new
 
+## v2.10.1 (your own cuts in the Studio, November 2026)
+
+- **Make your own cuts** in PostKaro 0.9.1's Studio: cut a part out of a clip's middle, add a moment from
+  anywhere in the video (find its words, or look at the 2 minutes before or after the clip), and put your own
+  emoji or sound on any word. Your emojis go first among the 3 a clip can show.
+
 ## v2.10 (the review studio, November 2026)
 
 - **Fix a clip by clicking** (with PostKaro 0.9): press **Fix** on a clip in PostKaro, or open its new

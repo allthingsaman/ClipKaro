@@ -8,6 +8,8 @@ PostKaro's Studio page calls it (the owner clicks, nothing is typed); it works f
                                                           cut, edit and check that one clip again
     python run.py studio <project> --clip 3 --undo        put the clip back as it was before the last change, and
                                                           render it again
+    python run.py studio <project> --clip 3 --lines A B   JSON: the transcript lines between A and B seconds
+    python run.py studio <project> --clip 3 --find "text" JSON: the lines that say it (to add a moment)
 
 The changes (any of them):
     {"start": 123.4, "end": 170.2,                        the clip's first and last second in the video
@@ -16,7 +18,11 @@ The changes (any of them):
      "framing": "auto" | "left" | "right" | "center" | "split" | "full",   the whole clip's framing
      "emoji_off": ["billion"],                            the emojis switched off (by their word), the rest on
      "moods_off": [3090.0],                               the sound effects switched off (by their second), the rest on
-     "whooshes": false}                                   the automatic whooshes on or off
+     "whooshes": false,                                   the automatic whooshes on or off
+     "cut": [[131.2, 136.8]],                             (v2.10.1) seconds cut out of the clip's middle
+     "add": [[402.1, 409.5]],                             (v2.10.1) another moment added (in time order)
+     "emoji_add": [["girne", "💥", 10034.1]],               (v2.10.1) your own emoji on the word said at that second
+     "sfx_add": [[10021.3, "funny"]]}                     (v2.10.1) your own sound (a mood of your sound library)
 
 It writes the same clips.json fields Claude writes ("ranges", "framing", "emoji", "sfx"; a switched-off emoji or
 sound waits in "emoji_off" / "sfx_off", so it can come back), fixes words like `fixword --at` (or marks them
@@ -36,6 +42,8 @@ from pathlib import Path
 from .common import die, load_json, project_dir, save_json
 
 FRAMINGS = ('auto', 'left', 'right', 'center', 'split', 'full')
+MIN_PIECE = 0.7           # a piece left after a cut shorter than this goes (no flicker)
+FIND_MAX = 25             # lines returned by --find
 EDGE_BEFORE, EDGE_AFTER = 15.0, 6.0       # seconds of words shown around the start (before, after) and the end
 
 
@@ -117,6 +125,25 @@ def info(pdir, cid):
         groups.append({'t': round(g.get('start', row[0]['t'] if row else 0), 2), 'words': row})
     hidden = [{'i': k, 'w': w['w'], 't': to_clip(parts, w['s'])} for k, w in enumerate(words)
               if w.get('unsure') and any(a <= w['s'] < b for a, b in parts)]
+    shown = {w['i']: w['text'] for g in groups for w in g['words'] if w['i'] is not None}
+    lines = load_json(pdir / 'transcript' / 'sentences.json') or []
+    pieces = []
+    for a, b in clip['ranges']:                  # every word of the clip, by piece and by sentence (v2.10.1)
+        rows = []
+        for ln in lines:
+            if 'i0' not in ln or ln['e'] <= a or ln['s'] >= b:
+                continue
+            ws = [{'i': k, 'w': words[k]['w'], 'text': shown.get(k), 's': words[k]['s'], 'e': words[k]['e'],
+                   't': to_clip(parts, words[k]['s']), 'hidden': bool(words[k].get('unsure'))}
+                  for k in range(ln['i0'], ln['i1'] + 1) if a - 0.05 <= words[k]['s'] < b]
+            if ws:
+                rows.append({'t': ws[0]['t'], 'words': ws})
+        pieces.append({'a': a, 'b': b, 'lines': rows})
+    try:
+        from . import sfx as sfxlib
+        moods = sorted(sfxlib.moods_available().items())
+    except Exception:
+        moods = []
     edited = next((f for f in sorted((pdir / 'edited').glob(f'{name}.mp4'))), None) if (pdir / 'edited').is_dir() else None
     layout = meta.get('layout') or ('horizontal' if any(s.get('mode') == 'horizontal' for s in meta.get('shots', []))
                                     else 'crop')
@@ -125,10 +152,12 @@ def info(pdir, cid):
         'layout': layout, 'ranges': clip['ranges'], 'start': start, 'end': end, 'pieces': len(parts),
         'video_duration': (load_json(pdir / 'project.json', {}) or {}).get('duration'),
         'edges': {'start': edge(start - EDGE_BEFORE, start + EDGE_AFTER), 'end': edge(end - EDGE_AFTER, end + EDGE_BEFORE)},
-        'captions': groups, 'hidden': hidden,
+        'captions': groups, 'hidden': hidden, 'pieces_words': pieces,
+        'moods_available': [{'mood': m, 'sounds': n} for m, n in moods],
         'framing': framing_now(clip), 'framings': [] if layout in ('facecam', 'horizontal') else list(FRAMINGS),
-        'emoji': [{'word': e[0], 'char': e[1], 'on': True} for e in clip.get('emoji') or []]
-                 + [{'word': e[0], 'char': e[1], 'on': False} for e in clip.get('emoji_off') or []],
+        'emoji': [{'word': e[0], 'char': e[1], 'at': e[2] if len(e) > 2 else None, 'on': True} for e in clip.get('emoji') or []]
+                 + [{'word': e[0], 'char': e[1], 'at': e[2] if len(e) > 2 else None, 'on': False}
+                    for e in clip.get('emoji_off') or []],
         'moods': [{'t': m[0], 'mood': m[1], 'clip_t': to_clip(parts, m[0]), 'on': True} for m in clip.get('sfx') or []]
                  + [{'t': m[0], 'mood': m[1], 'clip_t': to_clip(parts, m[0]), 'on': False} for m in clip.get('sfx_off') or []],
         'whooshes': clip.get('whooshes', True) is not False,
@@ -156,6 +185,23 @@ def change_clip(clip, ch, words):
         if not e > rs[-1][0] + 1.0:
             raise ValueError('the new end must be at least 1 s after the start of the last piece')
         rs[-1][1] = round(e, 2)
+    whole = framing_now(clip) not in ('auto', 'custom')       # a whole-clip framing follows the new edges
+    for a, b in ch.get('cut') or []:                            # out of the middle (v2.10.1)
+        a, b = float(a), float(b)
+        if b <= a:
+            raise ValueError('a part to cut out must end after it starts')
+        rs = subtract(rs, a, b)
+    for a, b in ch.get('add') or []:                            # another moment (v2.10.1)
+        a, b = float(a), float(b)
+        if b - a < 1.0:
+            raise ValueError('an added moment must be at least 1 s long')
+        rs = merge(rs + [[round(a, 2), round(b, 2)]])
+    rs = [r for r in rs if r[1] - r[0] >= MIN_PIECE]
+    if not rs:
+        raise ValueError('nothing would be left of the clip')
+    c['ranges'] = rs
+    if whole and c.get('framing'):
+        c['framing'] = [[rs[0][0], rs[-1][1], c['framing'][0][2]]]
     total = sum(b - a for a, b in rs)
     if not 3.0 <= total <= 600.0:
         raise ValueError(f'the clip would be {total:.0f} s long')
@@ -181,6 +227,17 @@ def change_clip(clip, ch, words):
         c['sfx_off'] = [m for m in every if round(float(m[0]), 2) in off]
         if not c['sfx_off']:
             c.pop('sfx_off')
+    for e in ch.get('emoji_add') or []:                         # your own emoji on a word (v2.10.1)
+        word, char = str(e[0]).strip(), str(e[1]).strip()
+        if not word or not char:
+            raise ValueError('an emoji needs its word and the emoji')
+        mark = [word, char] + ([round(float(e[2]), 2)] if len(e) > 2 and e[2] is not None else [])
+        c['emoji'] = [x for x in c.get('emoji') or [] if x[0] != word] + [mark]
+    for m in ch.get('sfx_add') or []:                           # your own sound at a moment (v2.10.1)
+        t, mood = round(float(m[0]), 2), str(m[1]).strip().lower()
+        if not mood:
+            raise ValueError('a sound needs its mood')
+        c['sfx'] = [x for x in c.get('sfx') or [] if round(float(x[0]), 2) != t] + [[t, mood]]
     if 'whooshes' in ch:
         if ch['whooshes']:
             c.pop('whooshes', None)
@@ -200,6 +257,61 @@ def change_clip(clip, ch, words):
         else:
             raise ValueError(f'word {i}: give the right word, or hide it')
     return c, w
+
+
+def subtract(ranges, a, b):
+    """The ranges without [a, b] (a piece may split in two)."""
+    out = []
+    for x, y in ranges:
+        if b <= x or a >= y:
+            out.append([x, y])
+            continue
+        if a > x:
+            out.append([x, round(a, 2)])
+        if b < y:
+            out.append([round(b, 2), y])
+    return out
+
+
+def merge(ranges):
+    """Ranges in time order, overlapping or touching ones joined."""
+    out = []
+    for x, y in sorted(ranges):
+        if out and x <= out[-1][1] + 0.05:
+            out[-1][1] = max(out[-1][1], y)
+        else:
+            out.append([x, y])
+    return out
+
+
+def line_rows(words, lines, keep):
+    return [{'s': ln['s'], 'e': ln['e'], 'words': [{'i': k, 'w': words[k]['w'], 's': words[k]['s'], 'e': words[k]['e']}
+                                                  for k in range(ln['i0'], ln['i1'] + 1)]}
+            for ln in lines if 'i0' in ln and keep(ln)]
+
+
+def lines_between(pdir, a, b):
+    words = load_json(pdir / 'transcript' / 'words.json') or []
+    lines = load_json(pdir / 'transcript' / 'sentences.json') or []
+    return line_rows(words, lines, lambda ln: ln['e'] > a and ln['s'] < b)
+
+
+def find_lines(pdir, text):
+    """The lines that say it (case, punctuation and spelling slips ignored), at most FIND_MAX."""
+    from .common import norm_token
+    from difflib import SequenceMatcher
+    words = load_json(pdir / 'transcript' / 'words.json') or []
+    lines = load_json(pdir / 'transcript' / 'sentences.json') or []
+    q = [t for t in (norm_token(x) for x in str(text).split()) if t]
+    if not q:
+        return []
+
+    def says(ln):
+        toks = [norm_token(words[k]['w']) for k in range(ln['i0'], ln['i1'] + 1)]
+        if len(q) == 1:
+            return any(t == q[0] or (len(q[0]) > 3 and SequenceMatcher(None, t, q[0]).ratio() >= 0.85) for t in toks)
+        return ' '.join(q) in ' '.join(toks)
+    return line_rows(words, lines, lambda ln: says(ln))[:FIND_MAX]
 
 
 # ---------------------------------------------------------------- one render at a time
@@ -329,6 +441,8 @@ def main():
     g = ap.add_mutually_exclusive_group()
     g.add_argument('--apply', metavar='FILE', help='a JSON file with the changes, or - to read them from stdin')
     g.add_argument('--undo', action='store_true', help='put the clip back as it was before the last change')
+    g.add_argument('--lines', nargs=2, type=float, metavar=('FROM', 'TO'), help='the transcript lines between two seconds')
+    g.add_argument('--find', metavar='TEXT', help='the transcript lines that say it')
     a = ap.parse_args()
     pdir = project_dir(a.project)
     if a.apply:
@@ -340,6 +454,10 @@ def main():
         apply(pdir, a.clip, ch if isinstance(ch, dict) else {})
     elif a.undo:
         undo(pdir, a.clip)
+    elif a.lines:
+        print(json.dumps({'lines': lines_between(pdir, *a.lines)}, ensure_ascii=False))
+    elif a.find is not None:
+        print(json.dumps({'lines': find_lines(pdir, a.find)}, ensure_ascii=False))
     else:
         print(json.dumps(info(pdir, a.clip), ensure_ascii=False))
 

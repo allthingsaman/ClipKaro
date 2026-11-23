@@ -38,7 +38,7 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 - v2.9 (2026-11-23): "boast, then fail" story clips with the game's own game-over screens, and compilations
   across videos (advanced mode).
 - v2.10 (2026-11-23): the review studio, a Studio page inside PostKaro 0.9: fix a clip by clicking and make
-  only it again.
+  only it again. v2.10.1: your own cuts there (cut out, add a moment, your own emoji or sound).
 
 ---
 

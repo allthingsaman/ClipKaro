@@ -175,6 +175,25 @@ def mood_marks(marks, meta):
     return out
 
 
+def emoji_times(marks, meta):
+    """clips.json "emoji" marks with a source second ([word, "🔥", 10034.1], set in the review studio, v2.10.1)
+    -> the same second on the clip's clock, so the emoji goes on the word said then (not on its first time)."""
+    out = []
+    for m in marks or []:
+        if isinstance(m, (list, tuple)) and len(m) == 3 and isinstance(m[2], (int, float)):
+            t, at = float(m[2]), 0.0
+            for a, b in meta.get('parts', []):
+                if a - 0.05 <= t <= b + 0.05:
+                    out.append([m[0], m[1], round(at + min(max(t, a), b) - a, 3)])
+                    break
+                at += b - a
+            else:                                 # its word was cut out of the clip: the emoji goes too
+                print(f'   ! emoji {m[1]} on "{m[0]}" left out: that moment is no longer in the clip')
+        else:
+            out.append(m)
+    return out
+
+
 def cap_style(st, white, accent, outline):
     """The ASS caption style of the look: an outline (and a soft shadow), or a dark box (box look).
     Karaoke fills from white (SecondaryColour) to the accent (PrimaryColour) as each word is said."""
@@ -525,7 +544,7 @@ def edit_one(job):
     clip_opts['moods'] = mood_marks(picked.get('sfx'), meta)
     clip_opts['whoosh'] = picked.get('whooshes', True) is not False      # the review studio's switch (v2.10)
     emoji_on = cfg.get('emoji', True) if a.emoji is None else a.emoji
-    clip_opts['emoji'] = picked.get('emoji') if emoji_on else None
+    clip_opts['emoji'] = emoji_times(picked.get('emoji'), meta) if emoji_on else None
     hook_text = picked.get('hook_text') or picked.get('title')
     if stars_on:
         hook_text = starlib.star_text(hook_text, starlib.marks(meta['stars']))

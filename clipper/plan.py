@@ -621,11 +621,14 @@ def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=Non
     out, missing = [], []
     half = EMOJI_SIZE / 2
     for m in marks or []:
-        if not (isinstance(m, (list, tuple)) and len(m) == 2 and str(m[1]).strip()):
+        if not (isinstance(m, (list, tuple)) and len(m) in (2, 3) and str(m[1]).strip()):
             continue
         want = {norm_token(t) for t in str(m[0]).split()[:1]} - {''}
-        w = next((w for w in words if not w.get('unsure') and not w.get('game') and
-                  want & {norm_token(w['w']), norm_token(w.get('orig', ''))}), None)
+        said = [w for w in words if not w.get('unsure') and not w.get('game') and
+                want & {norm_token(w['w']), norm_token(w.get('orig', ''))}]
+        if len(m) == 3 and said:                 # a second given (the review studio): the word said nearest it
+            said.sort(key=lambda w: abs(w['s'] - float(m[2])))
+        w = said[0] if said else None
         if not w:
             missing.append(str(m[0]))
             continue
@@ -656,15 +659,15 @@ def emoji_marks(marks, words, caps, shots, faces, default_y, duration, style=Non
             on_face = any(min(x1, b[2]) > max(x0, b[0]) and min(y1, b[3]) > max(y0, b[1]) for b in boxes)
             if inside and not on_face:
                 out.append({'char': str(m[1]).strip(), 't0': round(t0, 3), 't1': round(t1, 3), 'x': int(x),
-                            'y': int(y), 'size': EMOJI_SIZE})
+                            'y': int(y), 'size': EMOJI_SIZE, 'own': len(m) == 3})
                 break
         else:
             missing.append(f'{m[0]} (no free spot: every place near the caption covers a face)')
-    kept = []                                    # one at a time: a later one waits its turn or is left out
-    for e in sorted(out, key=lambda e: e['t0']):
-        if not kept or e['t0'] >= kept[-1]['t1']:
+    kept = []                                    # one at a time: a later one waits its turn or is left out;
+    for e in sorted(out, key=lambda e: (not e.pop('own'), e['t0'])):   # the owner's own (studio) ones first
+        if len(kept) < 3 and all(e['t0'] >= k['t1'] or e['t1'] <= k['t0'] for k in kept):
             kept.append(e)
-    return kept[:3], missing
+    return sorted(kept, key=lambda e: e['t0']), missing
 
 
 def safe_caption_y(caps, shots, faces, default_y, fixed, cam=None, fps=FPS):

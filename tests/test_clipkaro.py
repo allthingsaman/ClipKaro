@@ -137,6 +137,19 @@ class Captions(unittest.TestCase):
                 wide = plan.caption_width('POLICE', st)
                 self.assertGreaterEqual(abs(e['x'] - 540) - plan.EMOJI_SIZE / 2, wide / 2)
 
+    def test_own_emoji_goes_first(self):
+        """v2.10.1: an emoji the owner put on a word (with its second) wins a place among the 3, on that moment."""
+        st = {'font': plan.LATIN_FONT[0], 'font_file': plan.LATIN_FONT[1], 'size': 96, 'outline': 8, 'spacing': 1}
+        words = sentence('one two three four five bhai six bhai', 0.0, gap=1.2)
+        caps = [{'start': w['s'], 'end': w['e'] + 1.0, 'words': [{'text': w['w'].upper()}]} for w in words]
+        shots = [{'t0': 0.0, 't1': 20.0, 'mode': 'crop'}]
+        claude = [['one', 'a'], ['two', 'b'], ['three', 'c'], ['four', 'd']]
+        got, _ = plan.emoji_marks(claude, words, caps, shots, {}, 1160, 20.0, st)
+        self.assertEqual([e['char'] for e in got], ['a', 'b', 'c'])                   # as before: the first 3
+        got, _ = plan.emoji_marks(claude + [['bhai', 'z', words[7]['s']]], words, caps, shots, {}, 1160, 20.0, st)
+        self.assertIn('z', [e['char'] for e in got])
+        self.assertEqual(next(e for e in got if e['char'] == 'z')['t0'], words[7]['s'])  # the second "bhai"
+
     def test_caption_part_at_a_split_keeps_the_seam(self):
         # Khan Sir clip 10: the split starts on frame 374 (14.96 s at 25 fps) but its t0 says 14.98; the part
         # of a caption from that frame on belongs on the seam, not on the lower person's head
@@ -2476,6 +2489,43 @@ class ReviewStudio(unittest.TestCase):
             off = plan.sfx_cues([], [], 20.0, moods=[(5.0, 'funny')], whoosh=False)
         self.assertIn('whoosh', [c['role'] for c in on])
         self.assertEqual([c['role'] for c in off], ['funny'])
+
+    def test_cut_add_and_own_marks(self):
+        from clipper import studio
+        c, _ = studio.change_clip(self.clip(), {
+            'cut': [[103.0, 106.0]], 'add': [[200.0, 204.0], [139.0, 141.0]],
+            'emoji_add': [['glitch', 'z', 135.2]], 'sfx_add': [[132.0, 'funny']]}, [])
+        self.assertEqual(c['ranges'], [[100.0, 103.0], [106.0, 110.0], [130.0, 141.0], [200.0, 204.0]])
+        self.assertEqual(c['emoji'], [['billion', 'x'], ['glitch', 'z', 135.2]])      # replaces Claude's on that word
+        self.assertIn([132.0, 'funny'], c['sfx'])
+        with self.assertRaises(ValueError):
+            studio.change_clip(self.clip(), {'cut': [[90.0, 150.0]]}, [])               # nothing left
+        with self.assertRaises(ValueError):
+            studio.change_clip(self.clip(), {'add': [[300.0, 300.5]]}, [])              # too short
+        framed = dict(self.clip(), framing=[[100.0, 140.0, 'left']])
+        c, _ = studio.change_clip(framed, {'add': [[150.0, 155.0]]}, [])
+        self.assertEqual(c['framing'], [[100.0, 155.0, 'left']])                        # follows the new end
+
+    def test_find_and_lines(self):
+        from clipper import studio
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            words = sentence('main technical gamer hoon', 10.0) + sentence('who is gonna try next', 30.0)
+            (pdir / 'transcript' / 'words.json').write_text(json.dumps(words))
+            (pdir / 'transcript' / 'sentences.json').write_text(json.dumps(
+                [{'s': 10.0, 'e': 11.5, 'i0': 0, 'i1': 3}, {'s': 30.0, 'e': 31.9, 'i0': 4, 'i1': 8}]))
+            self.assertEqual([ln['s'] for ln in studio.find_lines(pdir, 'gonna try')], [30.0])
+            self.assertEqual([ln['s'] for ln in studio.find_lines(pdir, 'tecnical')], [10.0])   # a spelling slip
+            self.assertEqual([ln['s'] for ln in studio.lines_between(pdir, 20.0, 40.0)], [30.0])
+            self.assertEqual(studio.lines_between(pdir, 20.0, 40.0)[0]['words'][0], {'i': 4, 'w': 'who', 's': 30.0, 'e': 30.3})
+
+    def test_own_emoji_on_its_moment_and_first(self):
+        from clipper import edit
+        meta = {'parts': [[100.0, 110.0], [130.0, 140.0]]}
+        self.assertEqual(edit.emoji_times([['bhai', 'x', 132.0], ['yaar', 'y']], meta), [['bhai', 'x', 12.0], ['yaar', 'y']])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(edit.emoji_times([['bhai', 'x', 120.0]], meta), [])            # its moment was cut out
 
     def test_one_render_at_a_time(self):
         from clipper import studio
