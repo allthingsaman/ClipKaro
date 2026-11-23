@@ -77,6 +77,8 @@ DEFAULT_SETTINGS = {
                                    # "yes" / "no" always / never
     'game_over_screens': True,     # gameplay: WASTED / FAILED / BUSTED screens read from the picture, as lines in the
                                    # transcript, and kept whole in clips (v2.9); false: not read
+    'silent_reactions': True,      # podcasts: a listener's strong laugh or shock without a sound is a hint for picking
+                                   # and shows both people at cut (v2.12); false: not read
     'learn_from_views': True,      # the critic's weights learned from your posted clips' real views (run.py learn,
                                    # v2.11); false: the fixed weights (hook 3, payoff 3, emotion 2, share 2, quote 1)
     'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...

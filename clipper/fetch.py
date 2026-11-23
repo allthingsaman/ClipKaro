@@ -1340,6 +1340,8 @@ def main():
         hints.ensure(pdir)
         if not a.no_video:
             gameover.ensure(pdir)                  # gameplay: WASTED / FAILED screens as lines (v2.9)
+            from . import reactions               # talk videos: a strong laugh or shock without a sound (v2.12)
+            reactions.ensure(pdir)
         render_transcript(pdir, project, load_json(pdir / 'transcript' / 'sentences.json') or [])
     except Exception as e:
         print(f'   (hints skipped: {type(e).__name__}: {e})')

@@ -618,6 +618,22 @@ def two_person(pdir, video, plans, words):
                         'activity': act, 'prints': speakers.voice_prints(audio, vo) or {}}
         save_json(cache, signals[cid])
     cap.release()
+    if settings().get('silent_reactions', True):       # v2.12: faces that laugh or look shocked, read once a clip
+        from . import reactions as rx
+        for cid, sg in signals.items():
+            if 'reactions' in sg:
+                continue
+            found = []
+            for (start, _, shots) in plans[cid][1]:
+                for sh in shots:
+                    if _two_shot(sh):
+                        two = sorted(f[0] for f in (sh.get('pair') or sorted(sh['faces'], key=lambda f: -f[2])[:2]))
+                        got = rx.read(video, start + sh['a'], start + sh['b'], two=two)
+                        if got is None:                          # no expression model: nothing more to read
+                            break
+                        found += rx.strong(got)
+            sg['reactions'] = [list(r) for r in found]
+            save_json(work / f'signals-{cid:02d}.json', sg)
     reg = speakers.Register(load_json(pdir / 'speakers.json'))
     who = {}
     for cid, sg in signals.items():
@@ -654,9 +670,19 @@ def two_person(pdir, video, plans, words):
                 for sh in shots:
                     sh['star'] = star
         wide = _wide_pieces(plans[cid][1])
+        # a listener's silent laugh or shock (v2.12): not heard as a laugh, and not the person talking then
+        from . import reactions as rx
+        heard = director._intervals(sg['laughter'])
+
+        def talking(s, e, side, sg=sg, side_of=side_of):
+            return any(side_of.get(v) == side and min(e, b) - max(s, a) >= 0.5 * (e - s) for a, b, v in sg['voices'])
+        silent = rx.silent([tuple(r) for r in sg.get('reactions') or []], heard, talking)
+        if silent:
+            print(f"   clip {cid}: {len(silent)} silent reaction(s) of the listener: both people shown then", flush=True)
         spans = []
         for a, b in todo[cid]:
-            spans += director.direct((a, b), words, sg['voices'], sg['laughter'], side_of, wide=wide.get((a, b), False))
+            spans += director.direct((a, b), words, sg['voices'], sg['laughter'], side_of, wide=wide.get((a, b), False),
+                                     reactions=[(r[0], r[1]) for r in silent])
         out[cid] = spans
         kinds = {}
         for a, b, how in spans:

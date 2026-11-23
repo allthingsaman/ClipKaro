@@ -154,6 +154,8 @@ clipper/                     the toolbox (Python)
     subtitles.py  English gameplay: the game's own subtitles read on screen (rapidocr, English PP-OCRv5) -> game lines
     gameover.py   gameplay: game-over screens (WASTED, FAILED, BUSTED ...) read on the keyframes -> transcript lines
     compile.py    compilations across videos (advanced mode): moments.json -> frame sheets -> one built project
+    reactions.py  silent reactions: faces' expressions (EmotiEffLib / HSEmotion) -> strong silent laughs and shocks:
+                  picking hints (whole talk video at fetch) and split screens in two-person shots (cut.two_person)
     learn.py      learn from real views: PostKaro's numbers -> each clip's place on its channel -> report and the
                   critic's weights (gameplay / talk), slowly; critic.merge uses them
     studio.py     the review studio's helper (PostKaro's Studio page): one clip's facts as JSON; changes -> clips.json /
@@ -650,6 +652,23 @@ The owner's favourite gameplay clip is a boast paid off by a fail ("ye mission l
   screen inside a clip's ranges is added to its `keep_whole` by itself. Every piece ends at the video's end at
   the latest. Tested: clip 161 as a 6-piece story with the FAILED screen as a piece (people talk over it): the
   screen piece starts on its own second, not on the first word.
+
+### 5.4b-2b Silent reactions (v2.12: `reactions.py`, `director.direct(reactions=...)`)
+A listener who cracks up or looks shocked without a sound was invisible to ClipKaro (it hears laughs). Faces are
+found with YuNet (the 2 largest, at least 8 % of the frame high) and cropped with 12 % margin; EmotiEffLib's
+`enet_b0_8_best_vgaf` (HSEmotion, Apache 2.0, 16 MB, onnxruntime on the processor; RGB, 224 px, ImageNet
+normalisation, softmax over 8 expressions) gives happiness and surprise. A STRONG reaction is happiness >= 0.85
+or surprise >= 0.85 in at least 2 samples in a row (3 a second at cut, 2 for the whole video), with readings
+of one face closer than 0.8 s joined. Measured on 5 edited podcast clips (312 face readings): people talking
+reach happiness 0.5 at most, real big grins 0.98-1.0 (8 readings >= 0.85, all real smiles); surprise >= 0.6
+caught people mid-word (13 % of readings, false "shocks" up to 9 s long), >= 0.8 none, hence 0.85. SILENT: no
+laugh heard then (sound.py / the clip's laughter frames) and, at cut, not the face of the person talking
+(the voice register's side). Whole talk videos at fetch (`reactions.scan`, 2 samples a second, about 4-8 minutes
+per hour of video) -> `transcript/reactions.json` -> hint lines through `hints.event_notes`. At cut, each clip's
+two-person shots are read at 3 a second (cached in the clip's signals file), and the director treats a silent
+reaction like a heard laugh: a split-screen zone from 0.3 s before to 0.8 s after it. Tested on a made-up
+two-shot (two edited clips side by side): the right person's real grin found at 7.0-8.0 s (0.999), kept as
+silent while the left one talked. `"silent_reactions": false` turns both off.
 
 ### 5.4b-4 The Hinglish speech model (v2.3: `fetch.hinglish_model`, `romanize.ROMAN_RESPELL`)
 With an NVIDIA card and English-letter captions, Hindi and Hinglish videos are written down by

@@ -72,14 +72,20 @@ def _label(t0, t1, voices, side_of, laughs, zones, words):
     return 'BOTH', None                  # someone talks but we can't tell who
 
 
-def direct(piece, words, voices, laughs, side_of, wide=False):
+REACT_PRE, REACT_POST = 0.3, 0.8     # a silent reaction (v2.12) is shown from just before it to just after
+
+
+def direct(piece, words, voices, laughs, side_of, wide=False, reactions=()):
     """Framing spans [(a, b, how)] for one two-person stretch `piece` = (a, b) in source seconds.
     side_of = {voice id: 'L' | 'R'} from the speaker register (voices it can't place are left out);
-    wide = the faces are small (a wide room shot). how = 'left' | 'right' | 'split'."""
+    wide = the faces are small (a wide room shot); reactions = [(s, e)] when the listener laughs or looks
+    shocked without a sound (reactions.py, v2.12): both people are shown then, as around a heard laugh.
+    how = 'left' | 'right' | 'split'."""
     a0, b0 = piece
     voices = voices or []
     laugh_iv = _intervals(laughs)
     zones = [[s - PRE, e + POST] for s, e in laugh_iv]
+    zones += [[s - REACT_PRE, e + REACT_POST] for s, e in reactions or () if s < b0 and e > a0]
     # words, with the part stretched over a laugh or a pause cut off
     ws = [{**w, 'e': min(w['e'], w['s'] + MAX_WORD)} for w in words if a0 - 0.2 <= w['s'] < b0]
     # cut the stretch at every change of voice and laughter

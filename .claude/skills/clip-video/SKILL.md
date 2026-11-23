@@ -133,6 +133,7 @@ least N" from the user, never fewer than N.
 full. Look at the words around the **lively spots** `parts` printed (laughs, both talking at once;
 the detector can be wrong, so judge them only by the words). Lines may carry **hints** from the sound
 and picture: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
+`[a silent laugh on screen ~2 s]` (podcasts: someone on camera cracks up without a sound; cut shows both people then),
 and in gameplay `(other voice)` before a line that isn't the streamer's (a game character, or a friend on voice chat). They show where to look; the words
 decide; never quote them, and no hint is no reason to skip a moment. In gameplay, build clips around
 the players' own lines (friends on voice chat count like the streamer), not the game's scripted ones. A

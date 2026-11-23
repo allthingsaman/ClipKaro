@@ -192,6 +192,10 @@ house rules:
     - a hint for picking moments: "[the guest laughs silently ~2 s]";
     - a split screen at that moment, so viewers see both people.
 - **To settle:** nothing big; the strength threshold is tuned on one of your podcasts.
+- **Status (v2.12, 23 November):** built (`reactions.py`): EmotiEffLib / HSEmotion `enet_b0_8_best_vgaf` (Apache 2.0)
+  on YuNet faces; strong = 0.85 for laughs and shocks (measured on 5 edited podcast clips: talking faces stay under
+  0.5 happiness; surprise 0.6 caught people mid-word). Hints at fetch for talk videos; split screens at cut. The
+  owner's podcast test waits for YouTube (it refused this laptop on 23 November: cookies needed).
 
 ### J. Captions for the streamer, never for game characters, also when both speak English
 - **The owner's rule:** the streamer's (and friends') words always get captions; game characters never do.

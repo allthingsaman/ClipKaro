@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.12 on 2026-11-23: nothing removed; one change on purpose (two-person clips show both people
+during a listener's silent laugh; `"silent_reactions": false` is the way back).
 Checked again for v2.11 on 2026-11-23: nothing removed. One change is different on purpose: the critic's weights
 can be learned from real views (`"learn_from_views": false` is the way back); until `run.py learn` has 30+ clips
 with results, nothing changes at all.
@@ -443,6 +445,13 @@ changed. Only new ones were added.
   some, every moment is checked on its frames, the pieces are joined frame-exact with the loudness evened,
   and nothing is pause-cut (silent glitches stay). Over 1:30 it also gets a landscape copy. Before, this was
   done by hand (22 November). *(v2.9, 2026-11-23)*
+
+- ↔ **A listener's silent laugh is seen** (podcasts and talk videos). ClipKaro only heard laughs, so a guest who
+  cracked up without a sound was missed. Now faces are read 2-3 times a second: a strong laugh or shock without a
+  sound becomes a hint for picking (`[a silent laugh on screen ~2 s]`), and in a two-person shot both people are
+  shown while the listener reacts, as around a heard laugh. Only strong ones (the owner's rule). About 4-8 minutes
+  per hour of video at fetch. *(v2.12, 2026-11-23)*
+  - Way back: `"silent_reactions": false` in settings.json.
 
 ## Posting
 

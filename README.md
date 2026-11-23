@@ -541,6 +541,8 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
   [Poppins](https://github.com/itfoundry/Poppins) (Hindi + English letters), SIL Open Font License 1.1.
 - Face finding: [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT).
 - Pitch of the voice (the "voice raised" hint): [SwiftF0](https://github.com/lars76/swift-f0) (MIT).
+- A listener's silent laugh or shock (podcasts): [EmotiEffLib](https://github.com/sb-ai-lab/EmotiEffLib) (HSEmotion,
+  Apache 2.0) expression model, trained on the AffectNet research dataset.
 - Who is talking, and laughter (podcasts): [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache 2.0)
   running [pyannote segmentation 3.0](https://huggingface.co/pyannote/segmentation-3.0) (MIT),
   [3D-Speaker ERes2Net](https://github.com/modelscope/3D-Speaker) (Apache 2.0) and Google's

@@ -1,5 +1,11 @@
 # What's new
 
+## v2.12 (silent reactions in podcasts, November 2026)
+
+- **A listener's silent laugh is seen.** ClipKaro only heard laughs; now it also reads faces. When the listener
+  cracks up or looks shocked without a sound, it's a hint for picking the moment, and the clip shows both people
+  then, as it does around a heard laugh. Only strong reactions count. `"silent_reactions": false` turns it off.
+
 ## v2.11 (learning from real views, November 2026)
 
 - **How your clips really did** (with PostKaro 0.10): PostKaro reads every live post's numbers back (views, how

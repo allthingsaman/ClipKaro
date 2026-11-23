@@ -2616,6 +2616,52 @@ class LearnFromViews(unittest.TestCase):
                     self.assertIsNone(learn.learned_weights(game))
 
 
+class SilentReactions(unittest.TestCase):
+    """v2.12: a listener's strong laugh or shock without a sound: a picking hint, and both people shown at cut."""
+
+    def samples(self, happy_r):
+        return [(round(k / 3, 2), {'L': {'happiness': 0.1, 'surprise': 0.0},
+                                   'R': {'happiness': h, 'surprise': 0.0}}) for k, h in enumerate(happy_r)]
+
+    def test_only_strong_and_held(self):
+        from clipper import reactions as rx
+        st = rx.strong(self.samples([0.2, 0.95, 0.97, 0.9, 0.3, 0.99, 0.2, 0.5, 0.86, 0.88]))
+        self.assertEqual([(r[2], r[3]) for r in st], [('R', 'laugh'), ('R', 'laugh')])
+        self.assertEqual((st[0][0], st[0][1]), (0.33, 1.33))       # 3 samples in a row
+        self.assertEqual(st[1][0], 2.67)                            # the lone 0.99 at 1.67 s is too short
+        self.assertEqual(rx.strong(self.samples([0.84] * 10)), [])   # never strong enough
+        joined = rx.strong(self.samples([0.9, 0.9, 0.2, 0.9, 0.9]))
+        self.assertEqual(len(joined), 1)                            # a blink between two halves: one reaction
+
+    def test_silent_means_not_heard_and_not_talking(self):
+        from clipper import reactions as rx
+        r = [(7.0, 8.0, 'R', 'laugh', 0.99), (12.0, 13.0, 'L', 'laugh', 0.95), (20.0, 21.0, 'R', 'shock', 0.9)]
+        left_talks = lambda s, e, side: side == 'L'                  # noqa: E731
+        got = rx.silent(r, [(19.5, 20.5)], left_talks)
+        self.assertEqual(got, [(7.0, 8.0, 'R', 'laugh', 0.99)])     # L is the talker; 20 s was heard
+
+    def test_the_director_shows_both(self):
+        from clipper import director
+        words = sentence('so this is what happened next and then', 0.0, gap=0.4)
+        voices = [(0.0, 10.0, 'v1')]
+        plain = director.direct((0.0, 10.0), words, voices, [], {'v1': 'L'})
+        self.assertEqual({how for _, _, how in plain}, {'left'})
+        with_r = director.direct((0.0, 10.0), words, voices, [], {'v1': 'L'}, reactions=[(4.0, 5.0)])
+        split = [(a, b) for a, b, how in with_r if how == 'split']
+        self.assertTrue(split and split[0][0] <= 4.0 and split[0][1] >= 5.0)     # the reaction is covered (switches in word gaps)
+
+    def test_hint_text(self):
+        from clipper import reactions as rx, hints
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            (pdir / 'transcript' / 'reactions.json').write_text(json.dumps(
+                {'v': rx.REACTIONS_V, 'reactions': [[7.0, 9.1, 'R', 'laugh', 0.99], [20.0, 21.0, 'L', 'shock', 0.9]]}))
+            self.assertEqual([n[2] for n in rx.notes(pdir)], ['[a silent laugh on screen ~2 s]', '[shock on a face ~1 s]'])
+        self.assertEqual(hints.strip_hints('haan [a silent laugh on screen ~2 s] bilkul').split(), ['haan', 'bilkul'])
+        self.assertFalse(rx.wanted({'video_kind': {'gaming': True}}))                 # gameplay has its own hints
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""
