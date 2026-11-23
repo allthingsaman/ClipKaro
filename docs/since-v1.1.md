@@ -23,6 +23,9 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.11 on 2026-11-23: nothing removed. One change is different on purpose: the critic's weights
+can be learned from real views (`"learn_from_views": false` is the way back); until `run.py learn` has 30+ clips
+with results, nothing changes at all.
 Checked again for v2.10.1 on 2026-11-23: nothing removed; only the Studio's own marks behave differently (an
 emoji with a second, which only the Studio writes).
 Checked again for v2.10 on 2026-11-23: nothing removed or changed on purpose; the Studio only adds (it writes
@@ -443,6 +446,13 @@ changed. Only new ones were added.
 
 ## Posting
 
+- ⬆ **How your clips really did** (with PostKaro 0.10). PostKaro reads every live post's numbers back (views,
+  watched %, shares, likes) at about 1, 3, 7 and 28 days and shows them on Posted; "how are my clips doing?" gives
+  a plain report per channel (`run.py learn`). *(v2.11, 2026-11-23)*
+- ↔ **The critic learns from your channels.** With 30+ posted clips that have a critic score and a result, the
+  clip score's five weights move towards what really did well on your channels (gameplay and talk videos apart,
+  at most half up or down, slowly). It only changes the ranking; no clip is dropped. *(v2.11, 2026-11-23)*
+  - Way back: `"learn_from_views": false` in settings.json (the fixed weights).
 - ⬆ **Fix a clip by clicking: PostKaro's Studio** (with PostKaro 0.9). Press **Fix** on a clip: move its start
   or end to another word, fix or hide a caption word, change the framing, switch an emoji, a sound effect or
   the whooshes off; only that clip is made again (about a minute), and **Undo last change** puts it back. No

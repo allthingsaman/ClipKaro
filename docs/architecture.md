@@ -154,6 +154,8 @@ clipper/                     the toolbox (Python)
     subtitles.py  English gameplay: the game's own subtitles read on screen (rapidocr, English PP-OCRv5) -> game lines
     gameover.py   gameplay: game-over screens (WASTED, FAILED, BUSTED ...) read on the keyframes -> transcript lines
     compile.py    compilations across videos (advanced mode): moments.json -> frame sheets -> one built project
+    learn.py      learn from real views: PostKaro's numbers -> each clip's place on its channel -> report and the
+                  critic's weights (gameplay / talk), slowly; critic.merge uses them
     studio.py     the review studio's helper (PostKaro's Studio page): one clip's facts as JSON; changes -> clips.json /
                   words.json -> cut, edit, qa (and the landscape copy) for that clip; one step of undo
     resolve.py    "export to resolve": a clip as Final Cut Pro 7 XML (pieces on V1/A1, sound effects on A2, pause-cut
@@ -832,6 +834,22 @@ cut out is left out) and `sfx_add` (`[second, mood]`). A whole-clip framing foll
 second. PostKaro finds
 ClipKaro from the video's folder (`<ClipKaro>/output/<project>`), refuses a change while a post of the clip is
 uploaded but not live, and refreshes the clip's length, size and frame thumbnail afterwards.
+
+### 5.4d-4 Learning from real views (v2.11: `learn.py`; the numbers come from PostKaro 0.10's `stats.py`)
+`run.py learn` runs `<PostKaro>/run.py stats --json`: every live post with its reading closest to day 7 turned
+into reach (YouTube engaged views over the first 7 days, else views / plays), watched % (YouTube's average view
+percentage, or Instagram / Facebook average watch time over the clip's length) and shares per 1,000 views
+(likes and comments per 1,000 until shares can be read). Posts younger than 3 days are left out. Each number
+is ranked within its own account (`rank`: percentile, ties share), and a clip's result is the mean of its ranks
+(top / middle / bottom third). The clip is found through the batch's kit (`<ClipKaro>/output/<project>`): its
+clips.json entry (pieces, story, deep, compilation, hook type, emojis, sounds) and, through `"from"`, its critic
+scores. For gameplay / streams and for talk videos apart, the Spearman correlation of each of the critic's five
+scores with the result gives a learned weight `w * (1 + a * clamp(rho, -0.5, 0.5))`, `a = min(1, n / 150)`, used only
+from 30 clips on (`learn_weights`). `output/_learn/weights.json` holds them; `critic.merge` asks
+`learn.learned_weights(project)` and records `weights_from` (critic.txt says it). The report
+(`output/_learn/report.md`, plain words) has per channel the best clips and the typical result by length, pieces,
+story clips and hook type (groups of 3+), the gaps PostKaro names, and per kind how well the clip score matched
+the results. `"learn_from_views": false` keeps the fixed weights.
 
 ### 5.4e More clips later (`more.py`)
 The critic scores every idea (all candidates of a long video, the shortlist of a short one), and

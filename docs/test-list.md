@@ -88,3 +88,18 @@ Update PostKaro first (`git pull` in its folder, then restart it: `python run.py
   already had 3 of Claude's. Pick one on a word said twice: it shows on the one you clicked.
 - [ ] **Your own sound.** Click a word, pick a mood (funny, shock …): the sound plays on that word.
 - [ ] **Undo** after all of these puts the clip back.
+
+## v2.11 (learning from real views, PostKaro 0.10)
+
+Your steps first (once):
+1. In Google Cloud (your PostKaro project): **YouTube Analytics API** → **Enable** (PostKaro's Posted page has
+   the direct link). In Google Auth platform → Data Access, also tick `.../auth/yt-analytics.readonly`.
+2. In PostKaro → Accounts: **Reconnect** YouTube, and **Reconnect** Facebook and Instagram (allow everything).
+
+- [ ] **Posted shows numbers.** Under each live post: views, watched %, shares (or likes until then), and the
+  day it was read. After the steps above, the "no … yet" notices on Posted are gone.
+- [ ] **The numbers are right.** Compare two or three posts with YouTube Studio / Instagram Insights.
+- [ ] **"How are my clips doing?"** Claude runs `run.py learn` and tells you per channel: the best clips, which
+  lengths and kinds do best, and how well the clip score matched. Does it sound right to you?
+- [ ] **The critic learns.** After the report says "Weights now used", the next video's critic.txt says
+  "Weights: learned from N posted clips". The ranking may change; no clip should ever be missing because of it.

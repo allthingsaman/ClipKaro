@@ -88,6 +88,12 @@ house rules:
   would be ideal, but the API doesn't offer it. Instagram's Reels numbers are checked when building.
 - **Decided:** the owner leaves the measure to Claude; this proposal is it.
 - **What it changes:** the critic's weights per channel, slowly, and only the ranking, never dropping a clip.
+- **Status (v2.11, 23 November):** built: PostKaro 0.10 reads every live post's numbers (`stats.py`, at 1, 3, 7, 28
+  days); `run.py learn` ranks each clip on its own channel, writes the report and learns the critic's weights per
+  video kind (gameplay / talk; weights rather than per posting channel, because a new video's posting channel
+  isn't known when it is clipped). Measured: with today's logins only YouTube views / likes / comments and
+  Instagram / Facebook likes / comments can be read; the owner's two steps (YouTube Analytics API on + Reconnect)
+  unlock watched % and shares.
   It also writes a plain report ("on Gaming Things, clips under 30 s are watched 20% further").
 
 ### C. B-roll over the speaker

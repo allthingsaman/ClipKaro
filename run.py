@@ -57,6 +57,7 @@ COMMANDS = {
     'gameover': 'clipper.gameover',
     'compile': 'clipper.compile',
     'studio': 'clipper.studio',
+    'learn': 'clipper.learn',
     'find': 'clipper.find',
     'fixword': 'clipper.fixword',
     'more': 'clipper.more',

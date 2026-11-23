@@ -165,6 +165,13 @@ Then press **Make the clip again**. Only that clip is cut and edited again (abou
 shows each step. **Undo last change** puts it back. A clip whose post is already uploaded (not live yet) can't
 be changed until you cancel that post; a live post stays as it was.
 
+**How your clips did (PostKaro 0.10):** **Posted** shows each live post's numbers (views, how much of it people
+watched, shares, likes), read back about 1, 3, 7 and 28 days after it went live. Likes and comments always work;
+for the rest PostKaro needs one step per platform, and the Posted page says which: switch on the **YouTube
+Analytics API** in your Google project (its notice has the link) and **Reconnect** YouTube once; **Reconnect**
+Instagram and Facebook once and allow everything (read-only numbers). Then tell Claude **"how are my clips
+doing?"**: ClipKaro learns from these numbers (`run.py learn`).
+
 **How each platform goes live**
 
 | | Goes live at its time by itself? | Laptop on at that time? |

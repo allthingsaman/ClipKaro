@@ -2543,6 +2543,79 @@ class ReviewStudio(unittest.TestCase):
             self.assertIsNone(studio.lock_owner(pdir))
 
 
+class LearnFromViews(unittest.TestCase):
+    """v2.11: each clip's real result is its place on its own channel; the critic's weights move slowly with it."""
+
+    def post(self, acct, reach, pct=None, shares=None, likes=None, age=8.0, clip=1):
+        n = {'reach': reach, 'watched_pct': pct, 'shares_per_1k': shares, 'likes': likes,
+             'likes_per_1k': round(1000 * likes / reach, 2) if likes is not None and shares is None else None}
+        return {'platform': 'youtube', 'account': acct, 'age_days': age, 'numbers': n, 'kit': '', 'clip': clip}
+
+    def test_ranked_on_its_own_channel(self):
+        from clipper import learn
+        posts = [self.post('big', 3000, 60, 5), self.post('big', 9000, 80, 9), self.post('big', 1000, 40, 1),
+                 self.post('small', 30, 70, 8), self.post('small', 10, 30, 2),
+                 self.post('small', 900, 90, 9, age=1.0)]                      # too young: left out
+        rs = learn.results(posts)
+        self.assertEqual(len(rs), 5)
+        top = {(r['account'], r['numbers']['reach']): r['third'] for r in rs}
+        self.assertEqual(top[('big', 9000)], 'top')
+        self.assertEqual(top[('small', 30)], 'top')            # 30 views is the best of its small channel
+        self.assertEqual(top[('big', 1000)], 'bottom')
+        self.assertEqual(learn.rank([5, None, 1, 5]), [0.75, None, 0.0, 0.75])
+
+    def test_weights_move_slowly_and_only_with_enough_clips(self):
+        from clipper import learn
+        from clipper.critic import WEIGHTS
+        def rows(n):
+            out = []
+            for k in range(n):                 # the hook follows the result exactly, the rest is noise
+                res = k / max(1, n - 1)
+                out.append({'result': res, 'facts': {'kind': 'gameplay', 'clip_score': 5,
+                            'scores': {'hook': res * 5, 'payoff': (k * 7) % 5, 'emotion': (k * 3) % 5, 'share': 2, 'quote': 1}}})
+            return out
+        few = learn.learn_weights(rows(10))['gameplay']
+        self.assertIsNone(few['weights'])                      # 10 clips: nothing moves
+        many = learn.learn_weights(rows(200))['gameplay']
+        self.assertEqual(many['rho']['hook'], 1.0)
+        self.assertEqual(many['weights']['hook'], WEIGHTS['hook'] * 1.5)         # at most half up
+        self.assertTrue(all(0.5 * WEIGHTS[d] <= many['weights'][d] <= 1.5 * WEIGHTS[d] for d in WEIGHTS))
+        some = learn.learn_weights(rows(75))['gameplay']        # half the way at 75 clips
+        self.assertAlmostEqual(some['weights']['hook'], WEIGHTS['hook'] * 1.25, places=2)
+        self.assertIsNone(learn.learn_weights(rows(200))['talk']['weights'])     # the other kind keeps its own
+
+    def test_facts_travel_in_post_json(self):
+        """The clip's critic scores go to PostKaro with the clip: learning works after the project is deleted."""
+        from clipper import learn
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'critic').mkdir()
+            (pdir / 'project.json').write_text(json.dumps({'video_kind': {'gaming': True}, 'language': 'hinglish'}))
+            (pdir / 'clips.json').write_text(json.dumps({'clips': [{'id': 2, 'from': 'p1-c3', 'title': 'T', 'hook_type': 'story',
+                                                                    'ranges': [[1, 5], [9, 20], [30, 33]], 'keep_whole': [[30, 33]]}]}))
+            (pdir / 'critic' / 'critic.json').write_text(json.dumps({'clips': [{'id': 'p1-c3', 'clip_score': 7.2,
+                'scores': {'hook': {'mean': 4.3}, 'payoff': {'mean': 3.0}}}]}))
+            f = learn.clip_facts(pdir, 2, {})
+        self.assertEqual((f['kind'], f['clip_score'], f['scores']['hook'], f['pieces'], f['story']),
+                         ('gameplay', 7.2, 4.3, 3, True))
+
+    def test_the_critic_uses_them_and_the_way_back(self):
+        from clipper import learn
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(learn, 'LEARN', Path(d)):
+                (Path(d) / 'weights.json').write_text(json.dumps({'made': '2026-11-23T10:00:00', 'kinds': {
+                    'gameplay': {'n': 40, 'weights': {'hook': 4.0, 'payoff': 3, 'emotion': 2, 'share': 2, 'quote': 1}},
+                    'talk': {'n': 3, 'weights': None}}}))
+                game = {'video_kind': {'gaming': True}}
+                with mock.patch.object(learn, 'settings', return_value={}):
+                    w, why = learn.learned_weights(game)
+                    self.assertEqual(w['hook'], 4.0)
+                    self.assertIn('40 posted clips', why)
+                    self.assertIsNone(learn.learned_weights({'video_kind': {}}))           # talk: not learned yet
+                with mock.patch.object(learn, 'settings', return_value={'learn_from_views': False}):
+                    self.assertIsNone(learn.learned_weights(game))
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""

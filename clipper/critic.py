@@ -478,6 +478,9 @@ def keep_place(res, prev):
 
 def merge(pdir, plan, answers, prev=None):
     project = load_json(pdir / 'project.json', {}) or {}
+    from .learn import learned_weights              # v2.11: the weights learned from your clips' real views
+    got = learned_weights(project)
+    weights, weights_from = got if got else (WEIGHTS, 'the fixed weights')
     topics = load_json(pdir / 'topics.json')
     tr = Transcript(pdir)
     cues = sound.load(pdir)
@@ -506,7 +509,7 @@ def merge(pdir, plan, answers, prev=None):
             scores[d] = {'mean': round(mean, 2), 'runs': vals, 'why': near[d][1]}
             if max(vals) - min(vals) >= 2:
                 spread_big.append(d)
-        total = sum(WEIGHTS[d] * scores[d]['mean'] for d in DIMS) / sum(WEIGHTS.values())
+        total = sum(weights[d] * scores[d]['mean'] for d in DIMS) / sum(weights.values())
         res.update(gates=gates, scores=scores, clip_score=round(2 * total, 1),
                    position=round(statistics.mean(x['pos'] / max(1, x['n'] - 1) for x in runs), 2))
         res['band'] = band(res['clip_score'])
@@ -558,7 +561,8 @@ def merge(pdir, plan, answers, prev=None):
         'mean_spread': round(statistics.mean(max(x['scores'][d]['runs']) - min(x['scores'][d]['runs'])
                                              for x in out for d in DIMS), 2),
     }
-    return {'project': pdir.name, 'pool': plan['pool'], 'weights': WEIGHTS, 'runs': len(answers),
+    return {'project': pdir.name, 'pool': plan['pool'], 'weights': weights, 'weights_from': weights_from,
+            'runs': len(answers),
             'peaks': pk, 'checks': checks, 'clips': out, 'made': time.strftime('%Y-%m-%d %H:%M')}
 
 
@@ -588,7 +592,8 @@ def write_txt(pdir, doc, path):
     rows = [f"# Clip scores for {len(cl)} clip ideas ({doc['runs']} blind runs), best first. "
             f"{count['fix']} have a note to fix, {count['check']} a note to check.",
             '# A clip score judges how well-made a clip looks from its words and sound (hook, payoff, feeling,',
-            '# shareability), compared with the other moments of this video. It is not a prediction of views.',
+            '# shareability), compared with the other moments of this video. It is not a prediction of views.'
+            + (f" Weights: {doc['weights_from']}." if doc.get('weights_from', 'the fixed weights') != 'the fixed weights' else ''),
             '# Pick from the top (the rank includes a tiny hint bonus that only reorders near-ties). "trim?" notes are dead',
             '# weight most runs would cut (lead-in, tail, detour): tighten in the repair round. A "fix?" note',
             '# (needs context, the payoff comes after the cut) is for the repair round, not a reason to drop a',

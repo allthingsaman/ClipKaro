@@ -76,6 +76,7 @@ def build(pdir):
     proj = load_json(pdir / 'project.json', {})
     files = clip_files(pdir)
     out, notes = [], []
+    facts_cache = {}
     stars_on = starlib.on()
     joined_on = settings().get('joined_note', False) is True
     for c in clips:
@@ -104,10 +105,13 @@ def build(pdir):
         elif text and set(PLATFORMS) - set(text):
             notes.append(f"clip {c['id']}: no text for {', '.join(sorted(set(PLATFORMS) - set(text)))} "
                          '(PostKaro will use the caption)')
+        from .learn import clip_facts                # v2.11: what the clip is, kept by PostKaro for learning
+        facts = clip_facts(pdir, c['id'], facts_cache)  # (the project folder may be deleted later)
         out.append({'id': c['id'], 'file': str(f.relative_to(pdir)), 'duration': dur,
                     'clip_score': c.get('clip_score', c.get('score')), 'title': title,
                     'caption': caption, 'note': honesty_note(c), 'deep': bool(c.get('deep')),
-                    'text': {p: text[p] for p in PLATFORMS if p in text}})
+                    'text': {p: text[p] for p in PLATFORMS if p in text},
+                    **({'facts': facts} if facts else {})})
     kit = {'postkit': KIT_VERSION, 'made_by': 'ClipKaro', 'project': pdir.name, 'title': proj.get('title'),
            'source': {'channel': proj.get('channel'), 'channel_url': proj.get('channel_url'),
                       'url': proj.get('source') if proj.get('kind') == 'youtube' else None},

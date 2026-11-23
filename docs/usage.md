@@ -152,6 +152,7 @@ captions". To have one every time, add it to your preferences.
 |---|---|
 | "keep it wide" / "16:9" | keeps the original wide shape (instead of the standing clips) |
 | "compilation of every glitch from my last 4 streams" (advanced mode) | one clip made of moments from several clipped videos on one topic (you name it, or Claude suggests some). Every moment is checked on its frames first, so it takes a while. Up to 1:30 it is a vertical Short; longer, also a landscape copy for a normal YouTube video |
+| "how are my clips doing?" / "learn from my views" | Claude runs `run.py learn`: how your posted clips really did on each channel (from PostKaro's numbers), in plain words: which lengths, kinds and openings do best, and how well the clip score matched; and the critic's weights tuned to it (only with 30+ clips, slowly). Report: `output/_learn/report.md` |
 | (in PostKaro) **Fix** on a clip, or the **Studio** tab | change a finished clip by clicking, no Claude needed: its start or end, a caption word, the framing, an emoji, a sound effect or the whooshes; cut a part out of the middle, add a moment from anywhere in the video, put your own emoji or sound on a word (v2.10.1); then only that clip is made again (about a minute) and **Undo last change** puts it back. Needs PostKaro 0.9 |
 | "export to resolve" / "open clip 3 in Resolve" | each clip as a timeline for DaVinci Resolve (free), to finish by hand: `resolve/NN-title/` with the timeline (`.xml`: the clip in its pieces, its sound, the sound effects), `captions.srt` and the steps (`HOW-TO.txt`). The zooms, caption style, emojis, logo and credit stay in ClipKaro's finished clip. On Linux it makes edit copies the free Resolve can read (about 6 MB a second of clip) |
 | "landscape copy" / "16:9 copy too" / "YouTube video version bhi" | the finished clips stay standing, and a wide 1920x1080 copy is made next to each (`edited/NN-title-landscape.mp4`): the same moment, captions, credit, logo, emojis and sound, placed for a wide frame; no zooms, no outro. Compilations longer than 1:30 always get one |
@@ -410,6 +411,7 @@ Claude to change them.
   "game_subtitles": true,
   "resolve_copies": "auto",
   "game_over_screens": true,
+  "learn_from_views": true,
   "hints": true,
   "source_credit": true,
   "logo": true,
@@ -453,6 +455,7 @@ Claude to change them.
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
+| `learn_from_views` | `true` | the critic ranks with the weights `run.py learn` learned from your posted clips' real results (gameplay and talk videos apart; only after 30+ clips; at most half up or down); `false`: the fixed weights (hook 3, payoff 3, emotion 2, share 2, quote 1), as before v2.11 |
 | `game_over_screens` | `true` | gameplay and streams: the game's WASTED / FAILED / BUSTED screens are read from the picture (about a minute for 4 hours), shown to Claude as lines of their own (for "boast, then fail" clips) and always kept whole in a clip; `false`: not read |
 | `resolve_copies` | `auto` | "export to resolve": edit copies (DNxHR, PCM sound) only on Linux, where the free DaVinci Resolve can't read normal MP4 files; `yes` / `no`: always / never |
 | `game_subtitles` | `true` | gameplay with an English streamer: a line the game's own subtitles show on screen gets no caption (a text reader reads the subtitle area); `false`: not read, every line captioned as before |

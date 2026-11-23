@@ -1,5 +1,20 @@
 # What's new
 
+## v2.11 (learning from real views, November 2026)
+
+- **How your clips really did** (with PostKaro 0.10): PostKaro reads every live post's numbers back (views, how
+  much of it people watched, shares, likes) about 1, 3, 7 and 28 days after it went live, and shows them on
+  Posted. Ask Claude **"how are my clips doing?"** for a plain report per channel: the best clips, which lengths
+  and kinds do best, and how well ClipKaro's clip score matched reality.
+- **The critic learns from your channels**: with 30+ posted clips that have a critic score and a result, the
+  clip score's weights move towards what really did well (gameplay and talk videos apart, slowly). It only
+  changes the ranking; no clip is ever dropped. `"learn_from_views": false` keeps the fixed weights.
+- Each posted clip now carries its critic scores to PostKaro, so learning keeps working after you delete a
+  project to free space.
+- **One step each to unlock the full numbers:** switch on the YouTube Analytics API in your Google project and
+  Reconnect YouTube; Reconnect Instagram and Facebook (read-only permissions). Until then: views, likes and
+  comments.
+
 ## v2.10.1 (your own cuts in the Studio, November 2026)
 
 - **Make your own cuts** in PostKaro 0.9.1's Studio: cut a part out of a clip's middle, add a moment from

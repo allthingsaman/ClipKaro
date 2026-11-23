@@ -635,6 +635,14 @@ projects in `output/` (their words checked); paste a link that isn't one yet and
    (`python run.py landscape <name>`). Post the vertical one through PostKaro as usual; the landscape one
    is for a normal YouTube video (say where it is).
 
+## 10. How the clips did (when the user asks: "how are my clips doing?", "learn from my views")
+`python run.py learn` reads how every posted clip did from PostKaro (installed and posting is needed), ranks each
+on its own channel, writes `output/_learn/report.md`, and tunes the critic's weights (only with 30+ clips that
+have a critic score and a result; gameplay and talk apart; slowly). Tell the user the report in a few plain
+lines: the best clips, what length and kind do best per channel, how well the clip score matched. When it lists
+numbers PostKaro can't read yet, give the steps it names (switch on the YouTube Analytics API, Reconnect).
+The weights only change the ranking: never drop or skip a clip because of them. `learn --show` only reports.
+
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.
 - Never commit anything in `output/` (it's gitignored). Don't upload anything anywhere yourself:
