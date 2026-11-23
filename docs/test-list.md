@@ -136,3 +136,12 @@ Needs a podcast or talk where films, places or famous people are named. Say "add
 - [ ] **Switch it off.** In PostKaro's Studio (B-roll), switch a piece off and make the clip again: the speaker
   is back there, the other pieces stay.
 - [ ] **Not asked, not added.** A normal "clip this" makes no b-roll.
+
+## Phase 3: v2.15 (following people who move)
+
+Needs a video where someone walks around in front of a still camera (a class at the board, a stage talk, a vlog).
+- [ ] **Never out of the picture.** The person stays in the standing clip while they walk, also when they turn
+  their back to the camera.
+- [ ] **Smooth, not shaky.** The camera holds still for small moves and pans gently; no jitter, no jumps.
+- [ ] **Still people unchanged.** A podcast or a seated talk looks exactly as before.
+- [ ] **Your fix wins.** "In clip 2, keep the left side at 0:14" (a framing in clips.json) holds the crop still.

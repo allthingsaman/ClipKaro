@@ -541,6 +541,7 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
 - Fonts: [Montserrat](https://github.com/JulietaUla/Montserrat) and
   [Poppins](https://github.com/itfoundry/Poppins) (Hindi + English letters), SIL Open Font License 1.1.
 - Face finding: [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT).
+- Following a person who moves: [YOLOX-Nano](https://github.com/Megvii-BaseDetection/YOLOX) (Megvii, Apache 2.0).
 - Pitch of the voice (the "voice raised" hint): [SwiftF0](https://github.com/lars76/swift-f0) (MIT).
 - A listener's silent laugh or shock (podcasts): [EmotiEffLib](https://github.com/sb-ai-lab/EmotiEffLib) (HSEmotion,
   Apache 2.0) expression model, trained on the AffectNet research dataset.

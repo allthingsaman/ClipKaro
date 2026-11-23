@@ -2812,6 +2812,83 @@ class BRoll(unittest.TestCase):
             self.assertIsNone(broll.bars(full, at=0.0))                             # no bands: nothing cut off
 
 
+class FollowPeople(unittest.TestCase):
+    """v2.15: a person who walks across a still camera's picture: the crop follows them, smoothly."""
+
+    def test_when_to_follow(self):
+        from clipper import follow
+        crop = 0.316                                                  # a 9:16 crop of a 16:9 picture
+        still = [0.50, 0.52, 0.49, 0.51, 0.50, 0.53, 0.50]
+        self.assertFalse(follow.needs_follow(still, 0.5, crop, 0.4))
+        walk = [0.50, 0.55, 0.62, 0.70, 0.76, 0.80, 0.82]
+        self.assertTrue(follow.needs_follow(walk, 0.5, crop, 0.4))
+        blip = [0.50, 0.50, 0.75, 0.50, 0.50]                         # one sample far off: not a walk
+        self.assertFalse(follow.needs_follow(blip, 0.5, crop, 0.4))
+        self.assertEqual(follow.fill([None, 0.4, None, 0.6, None]), [0.4, 0.4, 0.5, 0.6, 0.6])
+        self.assertIsNone(follow.fill([None, None]))
+
+    def test_the_camera_moves_like_an_operator(self):
+        from clipper import follow
+        crop = 0.316
+        sway = [0.50 + 0.02 * ((-1) ** i) for i in range(20)]         # small moves: the camera holds still
+        cam = follow.camera(sway, 0.4, crop)
+        self.assertLess(max(cam) - min(cam), 0.01)
+        walk = [0.3] * 10 + [0.3 + 0.05 * k for k in range(1, 9)] + [0.7] * 12
+        cam = follow.camera(walk, 0.4, crop)
+        self.assertAlmostEqual(cam[0], 0.3, delta=0.02)
+        self.assertAlmostEqual(cam[-1], 0.7, delta=0.02)               # it ends centred on the person
+        steps = [b - a for a, b in zip(cam, cam[1:])]
+        self.assertTrue(all(abs(d) <= follow.SPEED * 0.4 + 1e-9 for d in steps))   # never faster than the top speed
+        self.assertTrue(all(d >= -1e-9 for d in steps))                # one way, no back-and-forth jitter
+        self.assertTrue(all(crop / 2 - 1e-9 <= c <= 1 - crop / 2 + 1e-9 for c in follow.camera([0.0, 1.0] * 5, 0.4, crop)))
+
+    def test_the_path_for_ffmpeg(self):
+        from clipper import follow
+        path = [[0.0, 100], [2.0, 100], [4.0, 500], [6.0, 500], [7.0, 300]]
+        self.assertEqual(follow.simplify([(0, 0), (1, 1), (2, 2.01), (3, 3)], 0.1), [(0, 0), (3, 3)])
+        for a, b in ((0.0, 7.0), (1.0, 5.0), (3.0, 6.5)):
+            expr = follow.path_expr(path, a, b).replace('\\,', ',')
+            for t in (0.0, 0.5, 1.7, 2.9, 3.4, b - a):
+                if t <= b - a:
+                    self.assertAlmostEqual(eval(expr, {'max': max, 't': t}), follow.x_at({'path': path}, a + t), delta=0.6)
+        big = [[k * 0.4, 100 + (k * 37) % 400] for k in range(400)]          # FFmpeg can't nest 60+ terms in a row:
+        self.assertLess(follow.path_expr(big, 0, 160).count('(') - 400, 40)  # a balanced sum keeps it shallow
+        self.assertEqual(follow.x_at({'x0': 42}, 3.0), 42)
+
+    def test_faces_and_bodies(self):
+        from clipper import follow
+        # the face is seen, then the person turns to the board (no face), then it's seen again; the body's middle
+        # sits 0.05 left of the face (a pointing arm)
+        samples = [(0.0, [(0.40, 0.3, 0.1)]), (0.4, [(0.45, 0.3, 0.1)]), (0.8, []), (1.2, []),
+                   (1.6, [(0.62, 0.3, 0.1)]), (2.0, [(0.30, 0.3, 0.05)])]              # someone else far away
+        found = {0.0: [(0.35, 0.2, 0.2, 0.7, 0.9)], 0.4: [(0.40, 0.2, 0.2, 0.7, 0.9)],
+                 0.8: [(0.50, 0.2, 0.2, 0.7, 0.9)], 1.2: [(0.55, 0.2, 0.2, 0.7, 0.9)], 1.6: [], 2.0: []}
+        pos = follow.track_both(samples, found, 0.40)
+        self.assertEqual([round(p, 2) if p is not None else None for p in pos], [0.4, 0.45, 0.55, 0.6, 0.62, None])
+        # a face in a picture on the board (0.38, never a body under it): he walks past it and on, it stays behind
+        board = [(k * 0.4, [(0.38, 0.3, 0.15)] + [(0.2 + 0.05 * k, 0.3, 0.16)]) for k in range(9)]
+        bodies = {k * 0.4: [(0.2 + 0.05 * k, 0.2, 0.12, 0.7, 0.9)] for k in range(9)}
+        pos = follow.track_both(board, bodies, 0.2)
+        for k, p in enumerate(pos):                     # (right in front of it, it may stand in for one sample)
+            self.assertAlmostEqual(p, 0.2 + 0.05 * k, delta=0.03)
+
+    def test_still_people_keep_their_fixed_crop(self):
+        from unittest import mock
+        from clipper import follow, reframe
+        samples = [(k * 0.4, [(0.5 + 0.01 * (k % 2), 0.3, 0.1)]) for k in range(20)]
+        with mock.patch.object(follow, 'bodies', side_effect=AssertionError('no body check needed')):
+            self.assertIsNone(follow.plan(None, samples, 0.0, 8.0, (0.5, 0.3, 0.1), 0.0, 1920, 1080, 0.4))
+        walk = [(k * 0.4, [(min(0.85, 0.3 + 0.04 * k), 0.3, 0.1)]) for k in range(20)]
+        with mock.patch.object(follow, 'bodies', return_value={}):
+            path = follow.plan(None, walk, 0.0, 8.0, (0.5, 0.3, 0.1), 0.0, 1920, 1080, 0.4)
+        self.assertTrue(path and path[-1][1] > path[0][1] + 500)                   # it pans right with them
+        with mock.patch.object(follow, 'settings', return_value={'follow_moving': False}):
+            self.assertIsNone(follow.plan(None, walk, 0.0, 8.0, (0.5, 0.3, 0.1), 0.0, 1920, 1080, 0.4))
+        sh = {'a': 0.0, 'b': 8.0, 'mode': 'crop', 'x0': 300, 'path': path, 'face': (0.5, 0.3, 0.1), 'subjects': [0.5]}
+        self.assertIn("crop=606:1080:'", reframe.shot_filter('0:v', sh, 1920, 1080, 'v0'))
+        self.assertNotIn('path', cut._framed(sh, 'left', 1920, 1080))           # a hand-picked framing stays put
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""

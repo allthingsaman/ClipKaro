@@ -441,7 +441,8 @@ python run.py frames <project> --clips 1,3
 ```
 It writes `output/<project>/frames/NN-title.jpg`: frames with the crop box, SPEAKER / BOTH (split)
 labels, a FULL border for whole-frame stretches, red borders where something moves outside the
-crop, and orange dots where words point at something ("ye dekho", "look at this"). Look at the
+crop, orange dots where words point at something ("ye dekho", "look at this"), and FOLLOWS where the
+crop moves with a person who walks (v2.15; a `framing` you set there holds it still). Look at the
 sheets of every clip with a two-person shot or a red border. Fix only what is wrong, in clips.json
 (source seconds, at word gaps), then `cut --clips N` again:
 - `"framing": [[a, b, "split"]]`: show both people, e.g. the listener visibly laughs or reacts

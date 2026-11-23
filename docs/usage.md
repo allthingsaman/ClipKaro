@@ -417,6 +417,7 @@ Claude to change them.
   "pexels_key": null,
   "pixabay_key": null,
   "silent_reactions": true,
+  "follow_moving": true,
   "hints": true,
   "source_credit": true,
   "logo": true,
@@ -460,6 +461,7 @@ Claude to change them.
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
+| `follow_moving` | `true` | a person who walks across a still camera's picture (a teacher at the board, a speaker on a stage) is followed by the crop, smoothly, like a camera operator; `false`: one fixed crop per camera shot, as before v2.15 (a hand-picked framing is always fixed) |
 | `silent_reactions` | `true` | podcasts and talk videos: a face that laughs or looks shocked strongly without a sound is a hint for picking, `[a silent laugh on screen ~2 s]` (the strongest few), and in a two-person shot both people are shown while the listener laughs or looks shocked; `false`: not read (about 4 minutes per hour of video at fetch) |
 | `pexels_key` / `pixabay_key` | `null` | b-roll only: your free [Pexels](https://www.pexels.com/api/) or [Pixabay](https://pixabay.com/api/docs/) key, for free stock video clips ("stock" b-roll). Pictures from Wikimedia Commons and film trailers need no key |
 | `learn_from_views` | `true` | the critic ranks with the weights `run.py learn` learned from your posted clips' real results (gameplay and talk videos apart; only after 30+ clips; at most half up or down); `false`: the fixed weights (hook 3, payoff 3, emotion 2, share 2, quote 1), as before v2.11 |

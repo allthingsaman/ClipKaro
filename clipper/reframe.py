@@ -297,9 +297,13 @@ def analyse_range(video, start, dur, src_w, src_h):
                 # no layout change inside this camera shot: keep the classic 5-frame median, so
                 # ordinary shots frame exactly as before (the subjects found are still reported)
                 face = face_in_shot(cap, start + a, start + b)
+            path = None
+            if face and not info['ambiguous'] and not info.get('group'):    # one person who may walk (v2.15)
+                from .follow import plan as follow_plan
+                path = follow_plan(cap, samples, f['a'], f['b'], face, start, src_w, src_h, SAMPLE_STEP)
             out.append({'a': f['a'] - start, 'b': f['b'] - start, 'face': face, 'subjects': info['subjects'],
                         'faces': info['faces'], 'pair': info.get('pair'), 'group': info.get('group'),
-                        'ambiguous': info['ambiguous']})
+                        'ambiguous': info['ambiguous'], **({'path': path} if path else {})})
     cap.release()
     return out
 
@@ -352,7 +356,12 @@ def plan_shots(shots, src_w, src_h, min_fit=1.0):
             mode = 'crop'
             fx = (face[0] * src_w - x0) / cw * W
             fy = face[1] * H
-        plan.append({**s, 'mode': mode, 'x0': x0, 'focus': [round(fx), round(fy)]})
+            if s.get('path'):                  # the crop follows the person (v2.15): they stay near the middle
+                x0, fx = s['path'][0][1], W / 2
+        sh = {**s, 'mode': mode, 'x0': x0, 'focus': [round(fx), round(fy)]}
+        if mode != 'crop':
+            sh.pop('path', None)
+        plan.append(sh)
     return plan
 
 
@@ -401,5 +410,9 @@ def shot_filter(inp, shot, src_w, src_h, label, fps=FPS):
                 f"[{label}f]scale={W}:-2:flags=lanczos[{label}ff];"
                 f"[{label}bb][{label}ff]overlay=0:(H-h)/2*0.85,{tail}[{label}]")
     cw = crop_width(src_w, src_h)
-    return (f"[{inp}]{trim},crop={cw}:{src_h}:{shot['x0']}:0,scale={W}:{H}:flags=lanczos,"
+    x = shot['x0']
+    if shot.get('path'):                         # a moving crop: it follows the person (v2.15)
+        from .follow import path_expr
+        x = f"'{path_expr(shot['path'], shot['a'], shot['b'])}'"
+    return (f"[{inp}]{trim},crop={cw}:{src_h}:{x}:0,scale={W}:{H}:flags=lanczos,"
             f"{tail}[{label}]")

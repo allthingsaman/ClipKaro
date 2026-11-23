@@ -29,6 +29,7 @@ import numpy as np
 
 from .common import imwrite, load_json, open_video, probe, project_dir, settings, slugify
 from .cut import apply_framing, ensure_video, framing_spans, range_shots, two_person
+from .follow import x_at
 from .reframe import crop_width
 
 TILE_W, TILE_H = 320, 180
@@ -66,8 +67,9 @@ def outside_activity(cap, start, dur, shots, src_w):
         _, g = _gray(fr)
         sh = next((s for s in shots if s['a'] <= t < s['b']), shots[-1])
         if prev is not None and sh['mode'] == 'crop':
-            a = int(sh['x0'] / src_w * TILE_W)
-            b = int((sh['x0'] + sh['cw']) / src_w * TILE_W)
+            x0 = x_at(sh, t)
+            a = int(x0 / src_w * TILE_W)
+            b = int((x0 + sh['cw']) / src_w * TILE_W)
             d = np.abs(g - prev)
             outside = np.concatenate([d[:, :a], d[:, b:]], axis=1)
             if outside.size:
@@ -149,8 +151,10 @@ def sheet(cap, clip, video, info, every, words, planned, auto):
             elif sh.get('ambiguous') and sh['mode'] == 'crop':
                 cv2.putText(tile, '2 FACES', (8, TILE_H - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 255), 2)
             if sh['mode'] == 'crop':
-                a = int(sh['x0'] / src_w * TILE_W)
+                a = int(x_at(sh, t) / src_w * TILE_W)
                 cv2.rectangle(tile, (a, 1), (int(a + cw / src_w * TILE_W), TILE_H - 2), (0, 220, 0), 3)
+                if sh.get('path'):                       # the crop follows a person who moves (v2.15)
+                    cv2.putText(tile, 'FOLLOWS', (a + 6, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 230, 0), 2)
             elif sh['mode'] == 'fit':
                 cv2.rectangle(tile, (1, 1), (TILE_W - 2, TILE_H - 2), (255, 140, 0), 5)
                 cv2.putText(tile, 'FULL', (TILE_W - 70, TILE_H - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 140, 0), 2)

@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.15 on 2026-11-23: nothing removed; one change on purpose (a person who walks out of the
+fixed crop is followed; `"follow_moving": false` is the way back). Shots where people stay put are unchanged.
 Checked again for v2.14 on 2026-11-23: nothing removed; b-roll is new and only runs when asked ("add b-roll"),
 so a clip without `broll` marks is made exactly as before.
 Checked again for v2.13 on 2026-11-23: nothing removed; three-person shots gain their own framing, two-person
@@ -462,6 +464,13 @@ changed. Only new ones were added.
   the crop (left, middle or right), and laughs and talking over each other show all three stacked, with the
   captions on the lower seam. Two-person shots are framed exactly as before. *(v2.13, 2026-11-23)*
 
+- ↔ **A person who walks around is followed** (a teacher at the board, a speaker on a stage, a vlogger). Each
+  camera shot used to get one fixed crop, so someone walking across a still camera's picture walked out of the
+  clip. Now, only when the person would leave the fixed crop, the crop follows them like a camera operator:
+  it holds still for small moves and pans smoothly when they move away, also while they turn their back (a body
+  finder, YOLOX-Nano, fills in for the face). Everyone who stays put is framed exactly as before; a framing you
+  pick is always fixed. About a second more per minute of such clips. *(v2.15, 2026-11-23)*
+  - Way back: `"follow_moving": false` in settings.json.
 - ⬆ **B-roll, only when you ask** ("add b-roll"). When the words name a film, a place, a famous person or a
   product, a picture of it (Wikimedia Commons) or a short piece of the film's official trailer (at most 5 s)
   covers the speaker for 2-3 seconds; the captions carry on, the credit shows at the top and goes into the

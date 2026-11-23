@@ -77,6 +77,8 @@ DEFAULT_SETTINGS = {
                                    # "yes" / "no" always / never
     'game_over_screens': True,     # gameplay: WASTED / FAILED / BUSTED screens read from the picture, as lines in the
                                    # transcript, and kept whole in clips (v2.9); false: not read
+    'follow_moving': True,         # a person who walks across a still camera's picture: the crop follows them
+                                   # (v2.15); false: one fixed crop per shot, as before
     'silent_reactions': True,      # podcasts: a listener's strong laugh or shock without a sound is a hint for picking
                                    # and shows both people at cut (v2.12); false: not read
     'pexels_key': None,            # b-roll (v2.14, only when asked): your free Pexels key for stock video clips

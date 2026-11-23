@@ -1065,6 +1065,25 @@ A framing switch (split <-> speaker) never leaves a first or last shot under 0.6
    Two people who fit in one crop get a crop centred between them; two who don't are a
    **two-person shot**, framed by the director (5.6a).
 
+### 5.6-1 Following a person who moves (v2.15: `follow.py`)
+- **When**: a shot piece with one subject (not two or three people, not a layout change), on a crop layout. The
+  faces `sample_faces` already read every 0.4 s are tracked (the face nearest the last place, at most `JUMP`
+  0.22 of the width away). If, with the fixed crop, that face is more than `EDGE` 0.30 of the crop's width from
+  its middle for `EDGE_FOR` 0.8 s, or the face is missing a quarter of the time or more (`UNSEEN`), the bodies
+  are read too: YOLOX-Nano (Megvii, Apache 2.0, 3.6 MB ONNX on onnxruntime, about 17 ms a picture at 640 px;
+  person boxes at least 0.45 sure and a quarter of the picture high). A body stands in for an unseen face, moved
+  by the usual face-to-body offset of this person. Only if the person still leaves the fixed crop does the shot
+  get a `path`; otherwise nothing changes.
+- **The camera** (`camera`): a 3-sample median (one wrong sample ignored), a dead zone (`DEAD` 0.12 of the crop
+  width: it re-aims only when the person moves further), a forward-and-backward smoothing (`SMOOTH` 0.45 s: eased
+  starts and stops, no lag), a top speed (`SPEED` 0.55 of the width a second), kept inside the picture. The path
+  is kept as keyframes `[[t, x pixels]]` on the range's clock, simplified to within 2 px.
+- **Rendering**: `shot_filter` writes the crop's x as an FFmpeg expression: straight lines between keyframes as a
+  sum of ramps `slope*max(0,t-tk)`, nested as a balanced tree (FFmpeg refuses about 60+ terms in a row; 600
+  keyframes render fine this way). `plan_shots` sets the focus to the middle; captions and emojis find the faces
+  in the cut clip itself, so they follow too. `frames` draws the moving box and "FOLLOWS".
+- **Way back**: `"follow_moving": false`; a framing from clips.json (`_framed`) always drops the path.
+
 ### 5.6a Two people on screen: the director (`director.py`, `speakers.py`)
 For podcasts and interviews where two people sit too far apart for one crop (a side-by-side
 picture, or a wide shot of the room). It runs only on those stretches; all other shots are framed

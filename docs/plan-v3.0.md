@@ -140,6 +140,11 @@ house rules:
   - **The detector:** one with a free licence (not the AGPL Ultralytics YOLO). The licence is checked when building.
   - **The camera:** smoothed, the same way ClipKaro already smooths its face camera.
 - **To settle:** which of your videos have people moving: IRL streams, vlogs, events? We need one to test with.
+- **Status (v2.15, 23 November):** built as `follow.py` for one person per shot: faces first, YOLOX-Nano bodies
+  (Apache 2.0) when the face is unseen, a camera with a dead zone, eased pans and a top speed, rendered as a
+  moving FFmpeg crop. A full tracker (ByteTrack / BoT-SORT) was not needed for one person (nearest-to-last with a
+  jump limit, as practitioners advise); moving two-person shots and objects are later. Tested on a Khan Sir map
+  class (a still camera, the teacher walking and pointing at the board).
 
 ### E. Three or more people
 - **What:** podcasts or panels with 3+ people, and remote guests in a grid.

@@ -1,5 +1,13 @@
 # What's new
 
+## v2.15 (following people who move, November 2026)
+
+- **People who walk around stay in the picture.** A teacher moving along the board, a speaker crossing a stage
+  or a vlogger stepping aside used to walk out of the standing crop. Now the crop follows them smoothly, like a
+  camera operator: it stays still for small moves and pans gently when they move away, also while they turn
+  their back to the camera. People who sit or stand still are framed exactly as before.
+  `"follow_moving": false` keeps one fixed crop per shot.
+
 ## v2.14 (b-roll, November 2026)
 
 - **B-roll, when you ask for it.** Say "add b-roll": when someone names a film, a place, a famous person or a

@@ -42,7 +42,8 @@ def framing_spans(clip):
 
 
 def _framed(sh, how, src_w, src_h):
-    """One shot piece re-framed the way an override asks."""
+    """One shot piece re-framed the way an override asks (a fixed crop: a hand-picked framing never follows)."""
+    sh = {k: v for k, v in sh.items() if k != 'path'}
     if how == 'full':
         return {**sh, 'mode': 'fit', 'x0': 0, 'focus': [round(W / 2), round(H * 0.42)]}
     if how == 'split' and len(sh.get('group') or []) >= 3:      # three people (v2.13): all stacked, left to right

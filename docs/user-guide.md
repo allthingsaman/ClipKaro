@@ -269,6 +269,10 @@ seconds while the captions carry on, with a small credit at the top. If nothing 
 simply no b-roll there. A trailer piece can get a copyright claim on YouTube; in PostKaro's Studio you can
 switch any piece off again.
 
+**People who walk around stay in the picture.** A teacher moving along the board or a speaker
+crossing a stage used to walk out of the standing crop. Now the crop follows them smoothly, also when
+they turn their back. People who sit or stand still are framed exactly as before.
+
 **A wrong word in the captions?** Say "in clip 4, 'bow' should be 'boat'". It is fixed everywhere
 the word was heard, and the clips that have it are made again.
 
