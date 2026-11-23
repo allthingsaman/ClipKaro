@@ -24,7 +24,7 @@ never during live clipping, where the graphics card belongs to OBS):
 `run.py rehear`, one `clipkaro-wordcheck` helper per packet, `run.py wordcheck` (skill step 2a-2): unsure
 words get no captions. **Standard and deep only** (quick mode skips it to save usage): the caption check (`run.py captions`,
 fix clear mishearings with `fixword --at`; skill step 2c). **Only when the user names it**: "hook title" (write `hook_text` per clip, `edit
---hook-title`) and a caption look ("box captions" ...). Background music is on hold: no `music` mood.
+--hook-title`), a caption look ("box captions" ...) and "b-roll" (skill step 5b). Background music is on hold: no `music` mood.
 
 ## Rules
 - **Asked to install / set up this repo?** Follow "For AI agents installing ClipKaro" in README.md

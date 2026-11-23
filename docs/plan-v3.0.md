@@ -109,6 +109,12 @@ house rules:
   - **Not found:** **no guessing;** a note for you instead.
   - **Copyright:** **warn, never block,** and keep snippets short.
 - **Shared with EditKaro:** this is the same job as EditKaro's Phase 3, so it's built once and used by both.
+- **Status (v2.14, 23 November):** built as `broll.py` (EditKaro can import it). Trailers through yt-dlp search,
+  pictures from the Wikimedia Commons API, stock only with a key; contact sheets that dim what the standing
+  screen leaves out; Claude picks (SigLIP matching was not needed: a sheet of 12 is quick to judge, and a wrong
+  picture is worse than none); letterbox bands cut off; `"fit"` for title cards and wide shots; credits on
+  screen and in the posting texts; PostKaro 0.10.1's Studio switches a piece off. Tested on a Hinglish panel
+  podcast (the Animal trailer's title card, a Taj Mahal photo).
 - **What changes in a podcast clip, an example:** the guest says "jab main Kedarnath gaya, poori valley baraf
   se dhaki thi…". For 2–3 seconds the picture switches from his face to a clip of the snowy Kedarnath valley,
   the captions carry on, then it's back to his face. One to three cutaways a minute, only on clear, concrete

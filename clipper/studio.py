@@ -22,7 +22,9 @@ The changes (any of them):
      "cut": [[131.2, 136.8]],                             (v2.10.1) seconds cut out of the clip's middle
      "add": [[402.1, 409.5]],                             (v2.10.1) another moment added (in time order)
      "emoji_add": [["girne", "💥", 10034.1]],               (v2.10.1) your own emoji on the word said at that second
-     "sfx_add": [[10021.3, "funny"]]}                     (v2.10.1) your own sound (a mood of your sound library)
+     "sfx_add": [[10021.3, "funny"]],                     (v2.10.1) your own sound (a mood of your sound library)
+     "broll_off": [1]}                                    (v2.14) the b-roll pieces switched off (by their number), the
+                                                          rest on
 
 It writes the same clips.json fields Claude writes ("ranges", "framing", "emoji", "sfx"; a switched-off emoji or
 sound waits in "emoji_off" / "sfx_off", so it can come back), fixes words like `fixword --at` (or marks them
@@ -161,11 +163,28 @@ def info(pdir, cid):
         'moods': [{'t': m[0], 'mood': m[1], 'clip_t': to_clip(parts, m[0]), 'on': True} for m in clip.get('sfx') or []]
                  + [{'t': m[0], 'mood': m[1], 'clip_t': to_clip(parts, m[0]), 'on': False} for m in clip.get('sfx_off') or []],
         'whooshes': clip.get('whooshes', True) is not False,
+        'broll': broll_info(pdir, cid, clip, parts),
         'edited': str(edited) if edited else None, 'cut': str(pdir / 'clips' / meta['file']),
         'updated': os.path.getmtime(edited) if edited else None,
         'can_undo': (pdir / '.studio' / str(cid) / 'clip.json').exists(),
         'busy': lock_owner(pdir) is not None,
     }
+
+
+def broll_info(pdir, cid, clip, parts):
+    """The clip's picked b-roll (v2.14): [{'i', 'what', 'clip_t', 'credit', 'on'}]."""
+    if not clip.get('broll'):
+        return []
+    from .broll import _cands, load_found
+    found = load_found(pdir, cid)
+    out = []
+    for k, m in enumerate(clip['broll']):
+        pick = str(m.get('pick') or 'none')
+        c = next((x for x in _cands(found.get(str(k))) if x['id'] == pick), None)
+        if c:
+            out.append({'i': k, 'what': m.get('what') or m.get('query') or '', 'clip_t': to_clip(parts, float(m['at'])),
+                        'credit': c['credit'], 'on': not m.get('off')})
+    return out
 
 
 # ---------------------------------------------------------------- changes
@@ -238,6 +257,13 @@ def change_clip(clip, ch, words):
         if not mood:
             raise ValueError('a sound needs its mood')
         c['sfx'] = [x for x in c.get('sfx') or [] if round(float(x[0]), 2) != t] + [[t, mood]]
+    if 'broll_off' in ch:                                      # b-roll pieces off / on again (v2.14)
+        off = {int(k) for k in ch['broll_off'] or []}
+        for k, m in enumerate(c.get('broll') or []):
+            if k in off:
+                m['off'] = True
+            else:
+                m.pop('off', None)
     if 'whooshes' in ch:
         if ch['whooshes']:
             c.pop('whooshes', None)

@@ -1274,6 +1274,29 @@ and `none` leave them out. `run.py sfx` lists the moods; `sfx add <file> <mood>`
 - **Faces for titles**: a box may be covered at its top 12 % by the hook title (the hair line, never the
   eyes; `layout.TITLE_TOP`); captions and emojis keep 15 % above and 12 % below every face.
 
+### 5.11b-2 B-roll (v2.14: `broll.py`; only when the user asks)
+- **Marks**: clips.json `broll` = `[{at, len, kind, what, query, pick?, fit?, off?}]` in source seconds.
+  Claude writes them while picking; `pick` after looking at the contact sheet; `off` comes from the review
+  studio (`studio --apply {"broll_off": [k]}`, PostKaro 0.10.1's B-roll switches).
+- **Search** (`run.py broll`): `film` = `yt-dlp ytsearch5:"<query> official trailer"`, the first result with
+  "trailer" in its title and 30-400 s long, downloaded once (avc1, at most 720p) into `output/.cache/broll/`;
+  `place` / `person` / `thing` = the Wikimedia Commons API (`generator=search`, files only, `imageinfo` with
+  `extmetadata` for the author and licence, 1280 px thumbnails, JPEG / PNG only, a User-Agent as Wikimedia
+  asks); `stock` = Pexels or Pixabay with the user's key. Results are cached per mark in
+  `broll/candidates.json` under what was searched (`kind|query`); a changed query searches again, `--fresh`
+  always. A trailer's letterbox bands are found once (`cropdetect` over 20 s) and cut off everywhere.
+- **Contact sheets**: `broll/NN-M.jpg`, 4 tiles a row, numbered (T = trailer frames every duration/12 s from
+  4 s, P = pictures with their licence, S = stock clips); outside the middle 9:16 window a tile is dimmed.
+  Claude looks and picks; no automatic matching (12 candidates are quick to judge by eye, and a wrong
+  picture is worse than none).
+- **Edit** (python engine): `pieces` maps each picked mark to the clip's clock (`studio.to_clip`; a mark
+  whose moment was cut out goes), caps it (trailer `TRAILER_MAX` 5 s, others `LEN_MAX` 3 s), never two at
+  once. `render_python` swaps the clip's frame for the piece's frame (an ffmpeg pipe: cover crop, or `fit`:
+  the whole frame scaled to the width at `FIT_TOP` 16 % over a blurred, darker copy; pictures zoom in slowly
+  with `zoompan`); emojis and the ASS captions go on top, and a `Broll` ASS event shows the credit at
+  y 250 while it shows. The sound stays the speaker's. `post.build` appends "B-roll: <credits>" to every
+  platform's text (YouTube also gets the pictures' Commons pages), once.
+
 ### 5.11c The quality check and the tests (`qa.py`, `tests/`)
 `run.py qa` checks every finished clip, from its file and its saved edit plan, and writes `qa.txt`.
 FAIL: Devanagari in Roman captions, a caption wider than the safe zone or outside it (only when the

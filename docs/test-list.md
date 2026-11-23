@@ -123,3 +123,16 @@ Needs a podcast or panel with three people in one wide shot (or remote guests).
   between the second and third person, never on a face.
 - [ ] **Two-person podcasts unchanged.** A normal two-person podcast clip looks the same as before.
 - [ ] **Your fix.** "In clip 2, show the middle person at 0:14" works (`"framing": [[a, b, "middle"]]`).
+
+## Phase 3: v2.14 (b-roll)
+
+Needs a podcast or talk where films, places or famous people are named. Say "add b-roll".
+- [ ] **The right picture.** Each cutaway shows the thing named (the right film, place or person), for 2-3
+  seconds, and the captions carry on over it.
+- [ ] **Nothing wrong.** Where nothing right was found, the report says so and the speaker stays on screen.
+- [ ] **Credits.** The credit shows at the top ("Trailer: <channel>", "Photo: <author>, <licence>, Wikimedia
+  Commons") and the posting texts end with a "B-roll: ..." line.
+- [ ] **Trailer pieces.** No trailer piece is longer than 5 seconds; no black bands; a title card shows whole.
+- [ ] **Switch it off.** In PostKaro's Studio (B-roll), switch a piece off and make the clip again: the speaker
+  is back there, the other pieces stay.
+- [ ] **Not asked, not added.** A normal "clip this" makes no b-roll.

@@ -1,5 +1,15 @@
 # What's new
 
+## v2.14 (b-roll, November 2026)
+
+- **B-roll, when you ask for it.** Say "add b-roll": when someone names a film, a place, a famous person or a
+  product, a picture of it (from Wikimedia Commons, free with credit) or a short piece of the film's official
+  trailer covers the speaker for 2-3 seconds, while the captions carry on. A small credit shows at the top
+  and goes into the posting texts. Claude looks at the candidates and picks; if nothing right is found, there
+  is no b-roll there (never a wrong picture). Trailer pieces are at most 5 seconds and can get a YouTube
+  copyright claim; PostKaro 0.10.1's Studio switches any piece off again. Free stock video works with your own
+  Pexels or Pixabay key (`"pexels_key"` / `"pixabay_key"`).
+
 ## v2.13 (three people in one shot, November 2026)
 
 - **Three people in one shot** (panels, three on a sofa): the one talking gets the crop, wherever they sit, and

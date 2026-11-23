@@ -23,6 +23,8 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.14 on 2026-11-23: nothing removed; b-roll is new and only runs when asked ("add b-roll"),
+so a clip without `broll` marks is made exactly as before.
 Checked again for v2.13 on 2026-11-23: nothing removed; three-person shots gain their own framing, two-person
 shots are unchanged (their clips measure their signals again once, on the next cut).
 Checked again for v2.12 on 2026-11-23: nothing removed; one change on purpose (two-person clips show both people
@@ -460,6 +462,14 @@ changed. Only new ones were added.
   the crop (left, middle or right), and laughs and talking over each other show all three stacked, with the
   captions on the lower seam. Two-person shots are framed exactly as before. *(v2.13, 2026-11-23)*
 
+- ⬆ **B-roll, only when you ask** ("add b-roll"). When the words name a film, a place, a famous person or a
+  product, a picture of it (Wikimedia Commons) or a short piece of the film's official trailer (at most 5 s)
+  covers the speaker for 2-3 seconds; the captions carry on, the credit shows at the top and goes into the
+  posting texts. Claude picks from contact sheets; nothing right found means no b-roll there. Before, there
+  was no b-roll at all. Free stock video only with your own Pexels / Pixabay key. PostKaro 0.10.1's Studio
+  switches a piece off. A little extra Claude usage (looking at one sheet per mark), only when asked.
+  *(v2.14, 2026-11-23)*
+
 ## Posting
 
 - ⬆ **How your clips really did** (with PostKaro 0.10). PostKaro reads every live post's numbers back (views,
@@ -502,6 +512,8 @@ changed. Only new ones were added.
   unless a live session is started; while one runs, heavy steps run at low priority and edit with the
   processor's encoder (the stream comes first). Auto-posting without review is the owner's choice for live
   streams only; normal clipping still ends with PostKaro's review page.
+- ⬆ New settings `pexels_key` and `pixabay_key` (b-roll stock video, empty by default) and the command
+  `run.py broll`. *(v2.14)*
 - ⬆ New settings `source_credit`, `logo` and `outro`, and `edit --no-credit`, `--no-logo`, `--no-outro`.
   No Claude usage; an outro adds about a second of rendering per clip. *(v2.4)*
 - ⬆ **YouTube's sign-in check on Windows** *(2026-11-17)*: on Windows, `--cookies-from-browser` can't read

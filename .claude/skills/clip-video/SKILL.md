@@ -46,7 +46,8 @@ and the user's logo (bottom right) and outro from `brand/` when the files are th
 and rank higher, every word is heard, and abusive and taboo words are written with stars in captions
 and posting texts, "F******" (unless "no stars": `edit --no-stars`; `references/editing.md`).
 **Only when named** (in any message, or in "My preferences"): **"hook title"** (write `hook_text` for
-each clip, then `edit --hook-title`) and a caption look. Without "hook title": no `hook_text`.
+each clip, then `edit --hook-title`), a caption look, and **"b-roll"** (step 5b). Without "hook title": no
+`hook_text`; without "b-roll": no `broll` marks.
 
 **First, a quick look** (a few seconds, nothing is downloaded):
 ```
@@ -514,6 +515,33 @@ stars": rude words in full in the captions), `--logo-corner`,
 `--credit-corner` (`top-left|top-right|bottom-left|bottom-right`, when the user names a corner for one
 video; for good: `"logo_corner"` / `"credit_corner"` in settings.json).
 Read `references/editing.md` if the user wants a different look.
+
+## 5b. B-roll (only when the user asks: "add b-roll", "with b-roll", "b-roll on clip 3")
+For 2-3 seconds a picture or a short trailer piece of what is named covers the speaker; the captions carry on.
+1. **Mark** in clips.json (source seconds, like `ranges`), per clip, only clear, concrete things the words
+   name: a film, a place, a famous person, a product. One to three a minute, never on vague words, never
+   on the hook line's first seconds or the payoff. `at` = the start of the word that names it (`run.py find`):
+   ```
+   "broll": [{"at": 4815.2, "len": 2.5, "kind": "film", "what": "Animal (2023)", "query": "Animal 2023"},
+             {"at": 4830.0, "len": 2.0, "kind": "place", "what": "Kedarnath in snow", "query": "Kedarnath snow"}]
+   ```
+   Kinds: `film` (its official trailer on YouTube; a piece is at most 5 s, the owner's rule), `place` /
+   `person` / `thing` (pictures from Wikimedia Commons, free with credit; at most 3 s), `stock` (free stock
+   video, only with `"pexels_key"` or `"pixabay_key"` in settings.json). More cover means more marks, never
+   one long piece.
+2. `python run.py broll <project> [--clips N]` searches and writes one contact sheet per mark,
+   `broll/NN-M.jpg` (T1.. trailer frames, P1.. pictures, S1.. stock clips). The bright middle of a tile is
+   what fills the standing screen.
+3. **Look at every sheet** and write the mark's `"pick"`: the id that clearly shows **that** thing (the
+   right film, the right person or place), else `"none"`. Never a near miss: a different film or person is
+   worse than no b-roll. Add `"fit": true` when what matters lies outside the bright middle (a title card,
+   a wide shot): the whole picture then shows in the upper half over a blurred copy, above the captions.
+4. `python run.py edit <project> --clips N` cuts it in, with its credit at the top ("Trailer: T-Series",
+   "Photo: author, licence, Wikimedia Commons"); `post` adds a "B-roll: ..." credit line to the posting
+   texts. The python engine only.
+5. In the report: which b-roll went in (credit), which marks found nothing ("no guessing"), and one line:
+   "Trailer pieces can get a YouTube copyright claim (usually the ad money goes to the studio); switch a
+   piece off in PostKaro's Studio (B-roll) if that happens."
 
 ## 5a. Quality check (every time, before showing anything)
 ```

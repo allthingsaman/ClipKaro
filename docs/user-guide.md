@@ -263,6 +263,12 @@ your words from the microphone alone.
 title"), or later "add a hook title to clip 3": a big 3-6 word title for the first 2-3 seconds, in the
 upper part of the picture, never on a face.
 
+**B-roll, only when you name it.** Say "add b-roll": when someone names a film, a place, a famous
+person or a product, a picture of it (or a short piece of the film's trailer) covers the speaker for 2-3
+seconds while the captions carry on, with a small credit at the top. If nothing right is found, there's
+simply no b-roll there. A trailer piece can get a copyright claim on YouTube; in PostKaro's Studio you can
+switch any piece off again.
+
 **A wrong word in the captions?** Say "in clip 4, 'bow' should be 'boat'". It is fixed everywhere
 the word was heard, and the clips that have it are made again.
 

@@ -70,6 +70,34 @@ def honesty_note(c):
     return note or None
 
 
+def broll_credits(pdir, c):
+    from .broll import credits
+    try:
+        return credits(pdir, c)
+    except Exception:
+        return []
+
+
+def with_broll_credits(text, creds):
+    """The posting texts with a "B-roll: ..." line (YouTube's description also gets the pictures' source pages)."""
+    if not creds or not text:
+        return text
+    line = 'B-roll: ' + ' · '.join(cr for cr, _ in creds)
+    links = [src for cr, src in creds if src and cr.startswith('Photo')]
+    out = {}
+    for p, t in text.items():
+        if not isinstance(t, dict):
+            out[p] = t
+            continue
+        t = dict(t)
+        key = 'description' if p == 'youtube' else 'caption'
+        if line not in (t.get(key) or ''):
+            extra = line + ('\n' + '\n'.join(links) if p == 'youtube' and links else '')
+            t[key] = ((t.get(key) or '').rstrip() + '\n\n' + extra).strip()
+        out[p] = t
+    return out
+
+
 def build(pdir):
     """-> (kit, notes): the post kit and a list of things worth telling the user."""
     clips = load_json(pdir / 'clips.json', {}).get('clips', [])
@@ -100,6 +128,8 @@ def build(pdir):
             text = {p: ({k: starlib.star_text(v, marked) if isinstance(v, str) else v for k, v in t.items()}
                         if isinstance(t, dict) else t) for p, t in text.items()}
             caption = starlib.star_text(caption, marked)
+        if c.get('broll'):              # v2.14: the b-roll's credits go with the clip, as its licences ask
+            text = with_broll_credits(text, broll_credits(pdir, c))
         if not c.get('caption') and not text:
             notes.append(f"clip {c['id']}: no posting caption (PostKaro will start from the title)")
         elif text and set(PLATFORMS) - set(text):

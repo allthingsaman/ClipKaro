@@ -2712,6 +2712,106 @@ class ThreePeople(unittest.TestCase):
         self.assertTrue(p['captions'] and all(g['y'] == 1280 for g in p['captions']))
 
 
+class BRoll(unittest.TestCase):
+    """v2.14: b-roll over the speaker, only when asked: a short trailer piece or a picture of what is named."""
+
+    FOUND = {'0': {'ask': 'film|Animal 2023', 'cands': [
+                 {'id': 'T1', 'type': 'video', 'file': 'tr.mp4', 'start': 40.0, 'credit': 'Trailer: T-Series',
+                  'crop': '1280:536:0:92', 'source': 'https://www.youtube.com/watch?v=x'}]},
+             '1': {'ask': 'place|Taj Mahal', 'cands': [
+                 {'id': 'P1', 'type': 'image', 'file': 'taj.jpg', 'credit': 'Photo: A, CC BY-SA 3.0, Wikimedia Commons',
+                  'source': 'https://commons.wikimedia.org/wiki/File:Taj.jpg'}]},
+             '2': [{'id': 'P1', 'type': 'image', 'file': 'x.jpg', 'credit': 'Photo: B, Wikimedia Commons'}]}
+
+    def test_pieces_follow_the_rules(self):
+        from clipper import broll
+        meta = {'parts': [[100.0, 120.0], [200.0, 220.0]], 'duration': 40.0}
+        clip = {'broll': [{'at': 105.0, 'len': 9.0, 'kind': 'film', 'pick': 'T1', 'fit': True},
+                          {'at': 210.0, 'len': 9.0, 'kind': 'place', 'pick': 'P1'},
+                          {'at': 150.0, 'len': 2.0, 'kind': 'thing', 'pick': 'P1'}]}       # its moment was cut out
+        got = broll.pieces(clip, meta, self.FOUND)
+        self.assertEqual([(p['t0'], p['t1']) for p in got], [(5.0, 10.0), (30.0, 33.0)])  # trailer 5 s, picture 3 s
+        self.assertTrue(got[0]['fit'] and got[0]['crop'] == '1280:536:0:92')
+        self.assertFalse(got[1]['fit'])
+        clip['broll'][1].update(at=106.0)                                  # overlapping the trailer: never two at once
+        self.assertEqual(len(broll.pieces(clip, meta, self.FOUND)), 1)
+        clip['broll'][0]['pick'] = 'none'                                   # "none": nothing right, no guessing
+        self.assertEqual([p['type'] for p in broll.pieces(clip, meta, self.FOUND)], ['image'])
+
+    def test_switched_off_in_the_studio(self):
+        from clipper import broll, studio
+        clip = {'ranges': [[100.0, 120.0]], 'broll': [{'at': 105.0, 'len': 2.0, 'kind': 'film', 'pick': 'T1'},
+                                                       {'at': 112.0, 'len': 2.0, 'kind': 'place', 'pick': 'P1'}]}
+        c, _ = studio.change_clip(clip, {'broll_off': [0]}, [])
+        self.assertEqual([bool(m.get('off')) for m in c['broll']], [True, False])
+        meta = {'parts': [[100.0, 120.0]], 'duration': 20.0}
+        self.assertEqual([p['type'] for p in broll.pieces(c, meta, self.FOUND)], ['image'])
+        c2, _ = studio.change_clip(c, {'broll_off': []}, [])                       # on again
+        self.assertEqual(len(broll.pieces(c2, meta, self.FOUND)), 2)
+
+    def test_wikimedia_answer(self):
+        from clipper import broll
+        answer = {'query': {'pages': {
+            '2': {'index': 2, 'title': 'File:B.svg', 'imageinfo': [{'mime': 'image/svg+xml', 'url': 'u2'}]},
+            '1': {'index': 1, 'title': 'File:Taj Mahal.jpg', 'imageinfo': [{
+                'mime': 'image/jpeg', 'thumburl': 'https://upload/t.jpg', 'descriptionurl': 'https://commons/File:T',
+                'extmetadata': {'Artist': {'value': '<a href="x">Jos&eacute; K</a>'},
+                                'LicenseShortName': {'value': 'CC BY-SA 4.0'}}}]}}}}
+
+        def get(url, params=None, timeout=30):
+            return json.dumps(answer).encode() if 'api.php' in url else b'jpg'
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(broll, 'CACHE', Path(d)), \
+                mock.patch.object(broll, '_get', side_effect=get):
+            got = broll.commons('Taj Mahal')
+        self.assertEqual([(g['author'], g['license'], g['url']) for g in got],
+                         [('José K', 'CC BY-SA 4.0', 'https://commons/File:T')])   # pictures only, no drawings
+
+    def test_credit_on_screen_and_in_the_posts(self):
+        from clipper import edit, post
+        p = {'duration': 10.0, 'captions': [], 'zooms': [], 'emoji': [], 'jump_labels': [],
+             'broll': [{'t0': 2.0, 't1': 4.5, 'credit': 'Trailer: T-Series {x}'}]}
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / 'a.ass'
+            try:
+                edit.write_ass({**plan.build({'duration': 10.0, 'fps': 30, 'words': sentence('one two', 0.0),
+                                              'shots': [], 'splices': [], 'jumps': []},
+                                             {'accent': '#FFD60A', 'text': '#FFFFFF', 'outline': '#000000'},
+                                             {'zoom': False, 'captions': True, 'sfx': 'none'}), **{'broll': p['broll']}}, out)
+            except Exception as e:                                                  # the plan needs more: say so
+                self.fail(f'write_ass failed: {e}')
+            ass = out.read_text()
+        self.assertIn('Style: Broll,', ass)
+        self.assertIn(',Broll,,0,0,0,,{\\pos(540,250)}Trailer: T-Series (x)', ass)
+        text = {'youtube': {'title': 't', 'description': 'About it. #tag'}, 'instagram': {'caption': 'Hi #tag'}}
+        creds = [('Trailer: T-Series', 'https://youtu.be/x'), ('Photo: A, CC BY-SA 3.0, Wikimedia Commons', 'https://c/F')]
+        got = post.with_broll_credits(text, creds)
+        self.assertEqual(got['youtube']['description'], 'About it. #tag\n\nB-roll: Trailer: T-Series · Photo: A, '
+                                                        'CC BY-SA 3.0, Wikimedia Commons\nhttps://c/F')
+        self.assertTrue(got['instagram']['caption'].endswith('Wikimedia Commons'))
+        self.assertEqual(post.with_broll_credits(got, creds), got)                 # never twice
+
+    def test_frames_and_letterbox(self):
+        import subprocess
+        import numpy as np
+        import cv2
+        from clipper import broll
+        with tempfile.TemporaryDirectory() as d:
+            img = Path(d) / 'p.png'
+            cv2.imwrite(str(img), np.full((90, 160, 3), 200, np.uint8))
+            fr = list(broll.frames({'t0': 0.0, 't1': 0.5, 'type': 'image', 'file': str(img)}, 30, (108, 192)))
+            self.assertEqual((len(fr), fr[0].shape), (15, (192, 108, 3)))
+            fit = list(broll.frames({'t0': 0.0, 't1': 0.2, 'type': 'image', 'file': str(img), 'fit': True}, 30, (108, 192)))
+            self.assertEqual(len(fit), 6)
+            vid = Path(d) / 'lb.mp4'                     # a wide film inside a 16:9 frame: black bands top and bottom
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'testsrc=size=320x132:rate=10:duration=3',
+                            '-vf', 'pad=320:180:0:24', '-pix_fmt', 'yuv420p', str(vid)], check=True)
+            self.assertEqual(broll.bars(vid, at=0.0), '320:132:0:24')
+            full = Path(d) / 'full.mp4'
+            subprocess.run(['ffmpeg', '-v', 'error', '-f', 'lavfi', '-i', 'testsrc=size=320x180:rate=10:duration=3',
+                            '-pix_fmt', 'yuv420p', str(full)], check=True)
+            self.assertIsNone(broll.bars(full, at=0.0))                             # no bands: nothing cut off
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""

@@ -410,6 +410,7 @@ Add your wishes to the same message, in normal words (English, Hindi or Hinglish
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"
 - Caption looks: "box captions" · "karaoke captions" · "minimal captions" · "bold captions" · "comic captions" (classic otherwise)
 - "hook title" (a big 3-6 word title for the first seconds; only when you ask) · "no emojis"
+- "add b-roll" (a picture or a short trailer piece over the speaker when a film, place or person is named)
 - "use #00E5FF as the caption colour" · "Hindi captions in Hindi letters"
 - "it's a gameplay video" · "keep it wide (16:9)" · "landscape copy" (a wide copy next to the standing clip) · "export to resolve" (finish a clip in DaVinci Resolve) · "the video is in English"
 - After you see the clips: "clip 2 starts too early" · "make clip 1 shorter" · "use yellow captions"
@@ -554,6 +555,10 @@ Bug reports, fixes and new languages are welcome: [CONTRIBUTING.md](CONTRIBUTING
   Hinglish Whisper ([CTranslate2 build](https://huggingface.co/nikh360pro/capsbro-hinglish-ct2)) and
   [Oriserve](https://huggingface.co/Oriserve)'s Whisper-Hindi2Hinglish-Swift
   ([CTranslate2 build](https://huggingface.co/MSpider3/whisper-hindi2hinglish-swift-ct2)), both Apache 2.0.
+- B-roll (only when asked): pictures from [Wikimedia Commons](https://commons.wikimedia.org) (each credited with
+  its author and licence on screen and in the posting texts), films' official trailers on YouTube (the channel
+  credited), and, with your own free key, stock video from [Pexels](https://www.pexels.com) or
+  [Pixabay](https://pixabay.com).
 - Starter sound effects: [Mixkit](https://mixkit.co/free-sound-effects/) (Mixkit Sound Effects Free License).
 - Demo footage in the README: *Figuring Out* with Raj Shamani (YouTube), credited under each picture;
   the gameplay is the owner's own stream.

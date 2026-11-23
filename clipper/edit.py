@@ -220,6 +220,10 @@ def hook_style(plan):
             f"0,0,0,0,100,100,1,0,3,18,0,5,60,60,0,1")
 
 
+BROLL_CREDIT_SIZE = 30         # b-roll credit ("Trailer: <channel>"), under the apps' top bar (v2.14)
+BROLL_CREDIT_Y = 250
+
+
 def credit_style(plan):
     """The ASS style of the source credit: small and white with a thin dark outline, at the brand kit's
     opacity (70 %, like the logo)."""
@@ -263,6 +267,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 Style: Jump,{st['font']},{css_to_ass_size(JUMP_SIZE, st['font_file'])},&H00FFFFFF,&H00FFFFFF,&H5A000000,&H5A000000,0,0,0,0,100,100,1,0,3,14,0,5,60,60,0,1
 {hook_style(plan)}
 {credit_style(plan)}
+Style: Broll,{st['font']},{css_to_ass_size(BROLL_CREDIT_SIZE, st['font_file'])},&H20FFFFFF,&H20FFFFFF,&H40000000,&H60000000,0,0,0,0,100,100,0,0,1,2,1,8,40,40,0,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -337,6 +342,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
                       f"{{\\pos({fw // 2},{jump_y})\\fad(120,250)}}{lb['text']}")
     cr = plan.get('credit')
+    for b in plan.get('broll') or []:        # b-roll (v2.14): its source, small, at the top while it shows
+        text = b['credit'].replace('\\', '/').replace('{', '(').replace('}', ')')
+        events.append(f"Dialogue: 3,{t(b['t0'])},{t(b['t1'])},Broll,,0,0,0,,{{\\pos({fw // 2},{BROLL_CREDIT_Y})}}{text}")
     if cr:                                   # "(C) Channel": in its corner, the whole clip (not the outro)
         text = cr['text'].replace('\\', '/').replace('{', '(').replace('}', ')')
         events.append(f"Dialogue: 3,{t(0)},{t(plan['duration'])},Credit,,0,0,0,,"
@@ -432,6 +440,8 @@ def render_python(clip_mp4, plan, audio, out_mp4, workdir):
     cam = plan['cam']
     size = W * H * 3
     emojis = load_emojis(plan.get('emoji', []))
+    brolls = list(plan.get('broll') or [])           # v2.14: frames of the picked b-roll replace the clip's
+    bgen, bpiece = None, None
     prev = None
     f = 0
     # frames where the camera cuts (and their neighbours): never blend two different shots
@@ -453,6 +463,17 @@ def render_python(clip_mp4, plan, audio, out_mp4, workdir):
             if 0.012 < vel < 0.08:
                 out = cv2.addWeighted(out, 0.7, prev, 0.3, 0)
         prev = out
+        tnow = f / plan['fps']
+        if bpiece and tnow >= bpiece['t1']:
+            bgen, bpiece = None, None
+        if bpiece is None and brolls and brolls[0]['t0'] <= tnow < brolls[0]['t1']:
+            from . import broll as brolllib
+            bpiece = brolls.pop(0)
+            bgen = brolllib.frames(bpiece, plan['fps'], (W, H))
+        if bgen is not None:
+            bf = next(bgen, None)
+            if bf is not None:
+                out = bf
         if emojis:
             out = draw_emojis(out, emojis, f / plan['fps'])
         enc.stdin.write(out.tobytes())
@@ -554,6 +575,13 @@ def edit_one(job):
     if meta.get('layout') == 'facecam':
         clip_opts['zoom'] = False      # zooming would push the cam / gameplay split around
     plan = planlib.build(meta, brand, clip_opts)
+    if picked.get('broll') and a.engine == 'python':        # b-roll picked in the review of broll/*.jpg (v2.14)
+        from . import broll as brolllib
+        plan['broll'] = brolllib.pieces(picked, meta, brolllib.load_found(pdir, meta['id']))
+        for b in plan['broll']:
+            say(f"   b-roll {b['t0']:.1f}-{b['t1']:.1f}s: {b['credit']}")
+    elif any(str(m.get('pick') or 'none') != 'none' for m in picked.get('broll') or []):
+        say('   ! b-roll left out: it needs the python engine (not --engine remotion)')
     for m in plan.get('emoji_missing', []):
         say(f'   ! emoji left out: "{m}" (a word not said in this clip, or no free spot)')
     for e in plan.get('emoji', []):

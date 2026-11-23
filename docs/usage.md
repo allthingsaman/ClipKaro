@@ -90,6 +90,7 @@ Put the name in your message, as many as you like:
 |---|---|
 | **hook title** | 3-6 big words on a coloured box for the first 2-3 seconds ("PAKISTAN KA PM BANOGE?"), in the upper part of the picture, never on a face |
 | **box captions**, **karaoke captions**, **minimal captions**, **bold captions**, **comic captions** | another caption look (below); normally the classic look |
+| **b-roll** | when the words name a film, a place, a famous person or a product, a picture of it or a short piece of the film's trailer covers the speaker for 2-3 seconds (the captions carry on), with its credit at the top. Trailer pieces are at most 5 s; a trailer can get a YouTube copyright claim. Nothing right found: no b-roll there, never a wrong picture |
 | **deep clips** | moments far apart joined into one story (see "Deep clips" below) |
 | **quick** | uses much less of your Claude plan: Claude picks the clips alone |
 
@@ -154,6 +155,7 @@ captions". To have one every time, add it to your preferences.
 | "compilation of every glitch from my last 4 streams" (advanced mode) | one clip made of moments from several clipped videos on one topic (you name it, or Claude suggests some). Every moment is checked on its frames first, so it takes a while. Up to 1:30 it is a vertical Short; longer, also a landscape copy for a normal YouTube video |
 | "how are my clips doing?" / "learn from my views" | Claude runs `run.py learn`: how your posted clips really did on each channel (from PostKaro's numbers), in plain words: which lengths, kinds and openings do best, and how well the clip score matched; and the critic's weights tuned to it (only with 30+ clips, slowly). Report: `output/_learn/report.md` |
 | (in PostKaro) **Fix** on a clip, or the **Studio** tab | change a finished clip by clicking, no Claude needed: its start or end, a caption word, the framing, an emoji, a sound effect or the whooshes; cut a part out of the middle, add a moment from anywhere in the video, put your own emoji or sound on a word (v2.10.1); then only that clip is made again (about a minute) and **Undo last change** puts it back. Needs PostKaro 0.9 |
+| "add b-roll" / "b-roll on clip 3" | pictures and trailer pieces over the speaker where something concrete is named (see "Extras you switch on by name"). In PostKaro's Studio each piece can be switched off again (B-roll) |
 | "export to resolve" / "open clip 3 in Resolve" | each clip as a timeline for DaVinci Resolve (free), to finish by hand: `resolve/NN-title/` with the timeline (`.xml`: the clip in its pieces, its sound, the sound effects), `captions.srt` and the steps (`HOW-TO.txt`). The zooms, caption style, emojis, logo and credit stay in ClipKaro's finished clip. On Linux it makes edit copies the free Resolve can read (about 6 MB a second of clip) |
 | "landscape copy" / "16:9 copy too" / "YouTube video version bhi" | the finished clips stay standing, and a wide 1920x1080 copy is made next to each (`edited/NN-title-landscape.mp4`): the same moment, captions, credit, logo, emojis and sound, placed for a wide frame; no zooms, no outro. Compilations longer than 1:30 always get one |
 | "use the facecam layout" / "don't use the facecam layout" | gameplay on top and your webcam below, or not |
@@ -412,6 +414,8 @@ Claude to change them.
   "resolve_copies": "auto",
   "game_over_screens": true,
   "learn_from_views": true,
+  "pexels_key": null,
+  "pixabay_key": null,
   "silent_reactions": true,
   "hints": true,
   "source_credit": true,
@@ -457,6 +461,7 @@ Claude to change them.
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
 | `silent_reactions` | `true` | podcasts and talk videos: a face that laughs or looks shocked strongly without a sound is a hint for picking, `[a silent laugh on screen ~2 s]` (the strongest few), and in a two-person shot both people are shown while the listener laughs or looks shocked; `false`: not read (about 4 minutes per hour of video at fetch) |
+| `pexels_key` / `pixabay_key` | `null` | b-roll only: your free [Pexels](https://www.pexels.com/api/) or [Pixabay](https://pixabay.com/api/docs/) key, for free stock video clips ("stock" b-roll). Pictures from Wikimedia Commons and film trailers need no key |
 | `learn_from_views` | `true` | the critic ranks with the weights `run.py learn` learned from your posted clips' real results (gameplay and talk videos apart; only after 30+ clips; at most half up or down); `false`: the fixed weights (hook 3, payoff 3, emotion 2, share 2, quote 1), as before v2.11 |
 | `game_over_screens` | `true` | gameplay and streams: the game's WASTED / FAILED / BUSTED screens are read from the picture (about a minute for 4 hours), shown to Claude as lines of their own (for "boast, then fail" clips) and always kept whole in a clip; `false`: not read |
 | `resolve_copies` | `auto` | "export to resolve": edit copies (DNxHR, PCM sound) only on Linux, where the free DaVinci Resolve can't read normal MP4 files; `yes` / `no`: always / never |
