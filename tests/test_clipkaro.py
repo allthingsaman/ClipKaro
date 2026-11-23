@@ -1188,6 +1188,23 @@ class PartOfVideo(unittest.TestCase):
         self.assertIn('only part of the video is written down: 1:00:00 to 2:00:00', head)
 
 
+class ReactionWords(unittest.TestCase):
+    """v2.8: reaction words on the frame sheets are whole words, in English and Hindi letters."""
+
+    def test_whole_words_both_scripts(self):
+        from clipper.common import norm_token
+        from clipper.watch import reaction_word
+        said = lambda t: reaction_word(' '.join(norm_token(w) for w in t.split()))    # noqa: E731
+        self.assertEqual(said('aag lag gayi'), 'aag')
+        self.assertIsNone(said('aage chalo bhai'))                 # was "AAG" (fire) before v2.8
+        self.assertIsNone(said('bachpan mein'))                    # was "BACH"
+        self.assertEqual(said('Bhaago bhai!'), 'bhaago')
+        self.assertEqual(said('kya kar raha hai'), 'kya kar')
+        self.assertEqual(said('भाग भाई'), 'bhaag')                 # Hindi letters, written in English letters
+        self.assertEqual(said('क्या हो गया यार'), 'kya ho gaya')
+        self.assertIsNone(said('आगे चलो'))
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

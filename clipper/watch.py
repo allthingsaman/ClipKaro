@@ -40,9 +40,32 @@ MERGE_S = 12.0             # spots this close together share a close-up
 LEAD_IN = 1.5              # an event clip starts this long before its event
 MAX_CLIP_S = 90.0          # an event never makes a clip longer than this (the hard limit for a short)
 PER_BATCH = 24             # close-up spots per eventfinder helper (fewer helpers: each carries its own instructions)
-REACTIONS = re.compile(
-    r"^(yah kya|ye kya|kya ho gaya|kya hua|kya tha|kya kar|bhaag|bhago|mar gaya|mar gae|mar gayi|aag|toot|tooti|"
-    r"phat|gir gaya|gira|bach|bachao|oh my god|what the|vaah|wow|shit|are bhai bhai)", re.I)
+# A reaction at the start of a line, as WHOLE words (v2.8: "aage" no longer reads as "aag", "bachpan" as "bach"),
+# in English letters and in Hindi letters (a transcript written by the regular model is in Devanagari).
+_REACT_ROMAN = ['yah kya', 'ye kya', 'yeh kya', 'kya ho gaya', 'kya hua', 'kya tha', 'kya kar', 'bhaag', 'bhaago',
+                'bhago', 'bhaga', 'mar gaya', 'mar gaye', 'mar gae', 'mar gayi', 'aag', 'toot', 'tooti', 'toota',
+                'toot gaya', 'phat', 'phata', 'phat gaya', 'gir gaya', 'gira', 'giri', 'bach', 'bacha', 'bachao',
+                'bach gaya', 'oh my god', 'omg', 'what the', 'vaah', 'wah', 'waah', 'wow', 'shit', 'are bhai',
+                'arre bhai', 'are bhai bhai', 'arre bhai bhai']
+# Hindi letters -> how the frame sheet writes them (OpenCV's own font has no Hindi letters)
+_REACT_HINDI = {'यह क्या': 'yah kya', 'ये क्या': 'ye kya', 'क्या हो गया': 'kya ho gaya', 'क्या हुआ': 'kya hua',
+                'क्या था': 'kya tha', 'क्या कर': 'kya kar', 'भाग': 'bhaag', 'भागो': 'bhaago', 'भागा': 'bhaaga',
+                'मर गया': 'mar gaya', 'मर गए': 'mar gaye', 'मर गई': 'mar gayi', 'मर गयी': 'mar gayi', 'आग': 'aag',
+                'टूट': 'toot', 'टूटी': 'tooti', 'टूटा': 'toota', 'टूट गया': 'toot gaya', 'फट': 'phat', 'फटा': 'phata',
+                'फट गया': 'phat gaya', 'गिर गया': 'gir gaya', 'गिरा': 'gira', 'गिरी': 'giri', 'बच': 'bach',
+                'बचा': 'bacha', 'बचाओ': 'bachao', 'बच गया': 'bach gaya', 'ओह माय गॉड': 'oh my god', 'वाह': 'vaah',
+                'अरे भाई': 'are bhai', 'अरे भाई भाई': 'are bhai bhai'}
+_plain = lambda x: ' '.join(norm_token(w) for w in x.split())      # noqa: E731
+_SHOWN = {_plain(h): r for h, r in _REACT_HINDI.items()}
+REACTIONS = re.compile('^(' + '|'.join(re.escape(x) for x in sorted(
+    {_plain(x) for x in _REACT_ROMAN} | set(_SHOWN), key=len, reverse=True)) + r')(?=\s|$)', re.I)
+
+
+def reaction_word(text):
+    """The reaction a line starts with (its first words, plain forms joined by spaces), as the frame sheet
+    writes it (in English letters), or None."""
+    m = REACTIONS.match(text or '')
+    return _SHOWN.get(m.group(1), m.group(1)) if m else None
 
 
 def wanted(project, cfg=None):
@@ -138,10 +161,9 @@ def reactions(pdir):
         if 'i0' not in ln:
             continue
         ws = [w for w in words[ln['i0']:ln['i0'] + 4] if not w.get('unsure')]
-        text = ' '.join(norm_token(w['w']) for w in ws)
-        m = REACTIONS.match(text)
-        if m and ws:
-            out[int(ws[0]['s'])] = m.group(1)
+        word = reaction_word(' '.join(norm_token(w['w']) for w in ws))
+        if word and ws:
+            out[int(ws[0]['s'])] = word
     return out
 
 
