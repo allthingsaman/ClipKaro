@@ -442,8 +442,9 @@ def apply(pdir, dry=False):
     if dry:
         return n
     if asked:
-        save_json(pdir / 'word-check.json', {'how_to_use': 'Listen at each time; if "heard" is wrong, write what was '
-                                             'really said in "correct", then tell Claude "word check done".',
+        save_json(pdir / 'word-check.json', {'how_to_use': 'Listen at each time. If "heard" is wrong, write what was '
+                                             'really said in "correct" ("-" for no caption; leave it empty if it was '
+                                             'right), then tell Claude "word check done".',
                                              'doubts': asked})
     if not (tdir / 'words-before-wordcheck.json').exists():
         shutil.copy2(tdir / 'words.json', tdir / 'words-before-wordcheck.json')
@@ -452,4 +453,51 @@ def apply(pdir, dry=False):
     write_transcript(pdir, words, load_json(pdir / 'project.json', {}) or {})
     save_json(pdir / 'clips.json', doc)
     n['asked'] = len(asked)
+    return n
+
+
+def apply_answers(pdir, dry=False):
+    """The owner's corrections in word-check.json ("unsure_words": "ask"), applied: for each doubt, "correct"
+    = what was really said (those words are written), "-" or "hide" = no caption for them, empty = left as
+    heard. The owner's ear is final, so no "nahin" guard here. -> {'fixed', 'hidden', 'left', 'not_found',
+    'clips': [ids of the clips that changed]} (v2.8)."""
+    from .fetch import write_transcript
+    from .fixword import replace_at
+    doc = load_json(pdir / 'word-check.json') or {}
+    tdir = pdir / 'transcript'
+    words = load_json(tdir / 'words.json') or []
+    clips = (load_json(pdir / 'clips.json', {}) or {}).get('clips', [])
+    n = {'fixed': 0, 'hidden': 0, 'left': 0, 'not_found': 0, 'clips': []}
+    changed = []
+    for d in doc.get('doubts') or []:
+        heard, correct = str(d.get('heard') or '').strip(), str(d.get('correct') or '').strip()
+        try:
+            at = float(d.get('at'))
+        except (TypeError, ValueError):
+            continue
+        if not heard or not correct:
+            n['left'] += 1
+            continue
+        hit = _locate(words, at, heard)
+        if not hit:
+            n['not_found'] += 1
+            continue
+        i, k = hit
+        if correct.lower() in ('-', 'hide'):
+            for w in words[i:i + k]:
+                w['unsure'] = True
+            n['hidden'] += 1
+        else:
+            words, k = replace_at(words, i, k, correct)
+            n['fixed'] += 1
+        changed.append(words[i]['s'])
+        d['done'] = True
+    n['clips'] = sorted({int(c['id']) for c in clips if 'id' in c and any(a - 0.5 <= t <= b + 0.5 for t in changed
+                                                                         for a, b in c.get('ranges', []))})
+    if dry or not changed:
+        return n
+    if not (tdir / 'words-before-fixes.json').exists():
+        shutil.copy2(tdir / 'words.json', tdir / 'words-before-fixes.json')
+    write_transcript(pdir, words, load_json(pdir / 'project.json', {}) or {})
+    save_json(pdir / 'word-check.json', doc)
     return n

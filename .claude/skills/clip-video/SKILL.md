@@ -336,7 +336,10 @@ python run.py wordcheck <project>    # fixes where the hearings agree; no captio
 It never writes a fix that adds or drops a "nahin" (those words get no caption instead), brings back
 the captions of players' English lines the game-voice rule hid, and drops game lines it let through.
 Report the counts it prints. `"careful_listening": false` in settings.json turns this off; with
-`"unsure_words": "ask"` the doubts go to `word-check.json` for the owner instead of losing their captions.
+`"unsure_words": "ask"` the doubts go to `word-check.json` for the owner instead of losing their captions:
+tell the owner how many, and that he writes what was really said in "correct" ("-" for no caption, empty
+if it was right). When he says **"word check done"**: `python run.py wordcheck <project> --answers`, then
+romanize (Hinglish), cut and edit only the clips it names.
 Then romanize (2b) and do the caption check (2c) as usual.
 
 ## 2b. Roman Hinglish captions (Hindi/Hinglish projects only)

@@ -201,6 +201,10 @@ changed. Only new ones were added.
   someone shouts "bhaag", "kya ho gaya") now matches whole words only ("aage" no longer reads as "aag", fire),
   and finds the Hindi-letter spellings too, so a transcript in Devanagari gets its reaction words as well.
   *(v2.8, 2026-11-23)*
+- ⬆ **"Word check done" applies your answers.** With `"unsure_words": "ask"`, careful listening lists the
+  words it couldn't settle in `word-check.json` instead of hiding them; now you write what was really said
+  (or "-" for no caption), say "word check done", and the corrections go into the captions of the clips
+  they're in (`wordcheck --answers`). Before, nothing read your answers back. *(v2.8, 2026-11-23)*
 - ⬆ **Checked before release** (the v2.7.1 review, 2026-11-21). Found by reading the code and fixed:
   - Careful listening crashed on every clip longer than about 25 s (the speech engine hears at most 30 s at
     once without its speech detector): longer clips are now heard in windows of under 30 s, split in a

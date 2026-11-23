@@ -2,10 +2,12 @@
 
     python run.py wordcheck <project>          fixes, no captions on the doubts, players' lines shown again
     python run.py wordcheck <project> --dry    only show what would change (wordcheck/applied.txt)
+    python run.py wordcheck <project> --answers  the owner's corrections in word-check.json ("word check done")
 
 A fix is written only where the hearings agree; one that would add or drop a "nahin" is never written
 (those words get no caption instead). settings.json "unsure_words": "ask" puts the doubts in word-check.json
-for you to correct by ear, instead of hiding them. Then romanize, the caption check, cut and edit as usual.
+for you to correct by ear, instead of hiding them; "word check done" applies your answers (--answers, v2.8).
+Then romanize, the caption check, cut and edit as usual.
 """
 import argparse
 
@@ -16,9 +18,22 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('project')
     ap.add_argument('--dry', action='store_true', help='only show what would change')
+    ap.add_argument('--answers', action='store_true',
+                    help="apply the owner's corrections in word-check.json (after \"word check done\")")
     a = ap.parse_args()
     from . import hearing
     pdir = project_dir(a.project)
+    if a.answers:
+        if not (pdir / 'word-check.json').exists():
+            die(f'no word-check.json in {pdir.name}: it is written only with "unsure_words": "ask"')
+        n = hearing.apply_answers(pdir, dry=a.dry)
+        print(f"-> your answers{' (dry run)' if a.dry else ''}: {n['fixed']} corrected, {n['hidden']} without "
+              f"captions, {n['left']} left as heard, {n['not_found']} not found")
+        if n['clips'] and not a.dry:
+            ids = ','.join(map(str, n['clips']))
+            print(f"next: clips {ids} changed: romanize (Hinglish), then `python run.py cut {pdir.name} --clips {ids}` "
+                  f"and `edit {pdir.name} --clips {ids}`")
+        return
     if not list((pdir / 'wordcheck').glob('batch-*.json')):
         die(f'no answers yet: start the clipkaro-wordcheck helpers on {pdir.name}/wordcheck/batch-NN.txt first')
     n = hearing.apply(pdir, dry=a.dry)

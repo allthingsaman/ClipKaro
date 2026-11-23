@@ -1205,6 +1205,27 @@ class ReactionWords(unittest.TestCase):
         self.assertIsNone(said('आगे चलो'))
 
 
+class WordCheckAnswers(unittest.TestCase):
+    """v2.8: "word check done" applies the owner's corrections from word-check.json ("unsure_words": "ask")."""
+
+    def test_answers_applied(self):
+        from clipper import hearing
+        with tempfile.TemporaryDirectory() as d:
+            pdir = CarefulListening.project(None, d)
+            (pdir / 'word-check.json').write_text(json.dumps({'doubts': [
+                {'at': 12.3, 'heard': 'bhaag', 'correct': 'bhaago'},          # what was really said
+                {'at': 10.4, 'heard': 'khaao', 'correct': '-'},               # no caption
+                {'at': 16.0, 'heard': 'main aaunga', 'correct': ''}]}))      # it was right
+            n = hearing.apply_answers(pdir)
+            words = json.loads((pdir / 'transcript' / 'words.json').read_text(encoding='utf-8'))
+            doubts = json.loads((pdir / 'word-check.json').read_text())['doubts']
+        self.assertEqual((n['fixed'], n['hidden'], n['left'], n['clips']), (1, 1, 1, [1]))
+        self.assertEqual(words[4]['w'], 'bhaago')
+        self.assertTrue(words[1].get('unsure'))
+        self.assertEqual([w['w'] for w in words[8:10]], ['main', 'aaunga'])
+        self.assertTrue(doubts[0].get('done') and not doubts[2].get('done'))
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""
