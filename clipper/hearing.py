@@ -130,9 +130,12 @@ def hear_full(pdir, quiet=False):
         return out
     m, bp = _pipeline(SECOND)
     segs, t0 = [], time.time()
+    rng = (load_json(pdir / 'project.json', {}) or {}).get('range')    # "only the first hour" (v2.8)
     with wave.open(str(_wav(pdir))) as w:
         total = w.getnframes() / w.getframerate()
         a = 0.0
+        if rng:
+            a, total = float(rng[0]), min(total, float(rng[1])) if rng[1] is not None else total
         while a < total:
             b = min(total, a + CHUNK_S)
             audio = _read(w, a, b)

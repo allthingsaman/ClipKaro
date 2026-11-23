@@ -1155,6 +1155,39 @@ class ReleaseReviewFixes(unittest.TestCase):
             self.assertTrue(watch.compose([(folder / 'f.jpg', '0:10', True, 'bhaag', False)], folder / 'sheet.jpg'))
 
 
+class PartOfVideo(unittest.TestCase):
+    """v2.8: "only the first hour" writes down and clips only that part, on the full video's clock."""
+
+    def test_times(self):
+        from clipper.fetch import parse_time
+        for text, secs in (('1:05:30', 3930), ('20:00', 1200), ('90', 90), ('1h', 3600), ('1h30m', 5400),
+                           ('45m', 2700), ('30s', 30), (None, None), ('', None)):
+            self.assertEqual(parse_time(text), secs, text)
+        with self.assertRaises(SystemExit):
+            parse_time('soon')
+
+    def test_ranges(self):
+        from clipper.fetch import video_range
+        self.assertIsNone(video_range(None, None, 3600))                          # the whole video, as before
+        self.assertEqual(video_range(None, '1:00:00', 14650), [0.0, 3600.0])      # "only the first hour"
+        self.assertEqual(video_range('20:00', '1:10:00', 14650), [1200.0, 4200.0])
+        self.assertEqual(video_range('2:00:00', None, 14650), [7200.0, 14650.0])  # to the end
+        self.assertEqual(video_range(None, '9:00:00', 3600), [0.0, 3600.0])       # never past the end
+        with self.assertRaises(SystemExit):
+            video_range('10:00', '10:20', 3600)                                   # too short
+
+    def test_transcript_says_which_part(self):
+        from clipper import fetch
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            words = sentence('this part was asked for by the owner.', 3600.0)
+            project = {'title': 'Stream', 'language': 'en', 'duration': 14650, 'range': [3600.0, 7200.0]}
+            tx, _ = fetch.write_transcript(pdir, words, project)
+            head = Path(tx).read_text(encoding='utf-8')
+        self.assertIn('only part of the video is written down: 1:00:00 to 2:00:00', head)
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

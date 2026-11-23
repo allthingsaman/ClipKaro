@@ -326,6 +326,47 @@ def local_source(path, name=None):
     return pdir, project
 
 
+def parse_time(text):
+    """Seconds from "1:05:30", "20:00", "90", "1h", "1h30m", "45m" or "30s"; None for None/empty."""
+    import re
+    if text is None or str(text).strip() == '':
+        return None
+    t = str(text).strip().lower()
+    if re.fullmatch(r'\d+(\.\d+)?', t):
+        return float(t)
+    if re.fullmatch(r'\d+(:\d{1,2}){1,2}(\.\d+)?', t):
+        secs = 0.0
+        for part in t.split(':'):
+            secs = secs * 60 + float(part)
+        return secs
+    m = re.fullmatch(r'(?:(\d+(?:\.\d+)?)h)?\s*(?:(\d+(?:\.\d+)?)m(?:in)?)?\s*(?:(\d+(?:\.\d+)?)s)?', t)
+    if m and any(m.groups()):
+        h, mi, se = (float(x) if x else 0.0 for x in m.groups())
+        return h * 3600 + mi * 60 + se
+    die(f'not a time: "{text}" (write it like 1:05:30, 20:00, 90, 1h or 45m)')
+
+
+def video_range(start, end, duration=None):
+    """[start, end] in seconds for "only part of the video" (--from / --to), or None for the whole video.
+    end None = to the end of the video."""
+    s, e = parse_time(start), parse_time(end)
+    if s is None and e is None:
+        return None
+    s = max(0.0, s or 0.0)
+    if duration:
+        e = min(e, float(duration)) if e is not None else float(duration)
+    if e is not None and e - s < 30:
+        die('the part of the video to clip must be at least 30 seconds long (check --from / --to)')
+    return [round(s, 3), None if e is None else round(e, 3)]
+
+
+def range_wav(wav, rng, dst):
+    """A copy of the 16 kHz wav holding only the asked-for part (made again each time)."""
+    args = ['-ss', f'{rng[0]:.3f}'] + (['-to', f'{rng[1]:.3f}'] if rng[1] is not None else [])
+    ffmpeg(*args, '-i', wav, '-c:a', 'pcm_s16le', dst)
+    return dst
+
+
 def to_wav16k(src, dst, stream=None):
     """16 kHz mono wav of the file's sound (of audio track `stream` when given: the microphone track)."""
     if not dst.exists():
@@ -1165,6 +1206,10 @@ def render_transcript(pdir, project, lines):
             f"# duration: {fmt_ts(project.get('duration') or max([x.get('e', 0) for x in lines] or [0]))}",
             f'# language: {lang}',
             '# format: [start_seconds-end_seconds] text   (seconds are what clips.json uses)']
+    if project.get('range'):
+        r0, r1 = project['range']
+        head.insert(3, f"# only part of the video is written down: {fmt_ts(r0).split('.')[0]} to "
+                       f"{fmt_ts(r1).split('.')[0] if r1 is not None else 'the end'} (the owner asked; clip only from it)")
     if nt:
         head.append('# ' + hints.READER_NOTE)
     breaks = active_breaks(project)
@@ -1193,6 +1238,10 @@ def main():
                     help='a cookies file with your YouTube login (if YouTube blocks; cookies.txt in the ClipKaro '
                          'folder is found by itself, and used only when YouTube asks)')
     ap.add_argument('--retranscribe', action='store_true')
+    ap.add_argument('--from', dest='start', default=None, metavar='TIME',
+                    help='clip only from this time on (e.g. 20:00 or 1:05:30): only that part is written down')
+    ap.add_argument('--to', dest='end', default=None, metavar='TIME',
+                    help='clip only up to this time (e.g. 1:00:00 for "only the first hour")')
     ap.add_argument('--name', default=None, help='project name for a local file (default: from the file name)')
     ap.add_argument('--no-video', action='store_true',
                     help="don't download the video now (cut does it later; break screens aren't checked then)")
@@ -1219,14 +1268,33 @@ def main():
                   'the words are written down from it, without the game sound; clips keep the full mix')
 
     tx = pdir / 'transcript' / 'transcript.txt'
+    # "only the first hour" / "from 20:00 to 1:10:00" (v2.8): only that part is written down; every time stays
+    # on the full video's clock, so cut, the hints and the frame sheets work as for a whole video
+    rng = video_range(a.start, a.end, project.get('duration'))
+    if tx.exists() and not a.retranscribe and project.get('range') != rng:
+        print('-> the part of the video to clip changed: writing it down again')
+        a.retranscribe = True
     if tx.exists() and not a.retranscribe:
         print('-> transcript already exists (use --retranscribe to redo)')
     else:
         wav = to_wav16k(audio_src, pdir / 'source' / 'audio16k.wav', project.get('mic_track'))
+        use = wav
+        if rng:
+            use = range_wav(wav, rng, pdir / 'source' / 'audio16k-part.wav')
+            print(f"-> only part of the video: {fmt_ts(rng[0]).split('.')[0]} to "
+                  f"{fmt_ts(rng[1]).split('.')[0] if rng[1] is not None else 'the end'}")
         t0 = time.time()
-        words, lang, model_name, device = transcribe(wav, a.model, a.lang, a.device, a.beam)
+        words, lang, model_name, device = transcribe(use, a.model, a.lang, a.device, a.beam)
         if not words:
-            die('no speech found in this video')
+            die('no speech found in this video' + (' (in that part)' if rng else ''))
+        if rng:
+            for w in words:
+                w['s'], w['e'] = round(w['s'] + rng[0], 3), round(w['e'] + rng[0], 3)
+            Path(use).unlink(missing_ok=True)
+        if rng:
+            project['range'] = rng
+        else:
+            project.pop('range', None)
         project.update({'language': lang, 'asr_model': model_name, 'asr_device': device})
         save_json(pdir / 'project.json', project)
         tx, n = write_transcript(pdir, words, project)

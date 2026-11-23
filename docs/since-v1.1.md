@@ -40,6 +40,10 @@ changed. Only new ones were added.
 
 ## Writing down what is said
 
+- ⬆ **Only part of a video.** "Only the first hour" or "from 20:00 to 1:10:00" writes down and clips only
+  that part (`fetch --from / --to`), with every time on the full video's clock. Asked for after a stream
+  kept recording an hour after the owner stopped playing. Without it, the whole video, as before.
+  *(v2.8, 2026-11-23)*
 - ⬆ **Long videos no longer crash the computer.** Audio over 30 minutes is transcribed in pieces of
   about 20 minutes. Shorter videos are transcribed exactly as in v1.1. *(v2.0)*
 - ↔ **Game voices.** Where a game character speaks English in a Hindi video, v1.1 showed wrong

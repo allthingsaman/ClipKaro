@@ -404,7 +404,7 @@ If a user asked you to install this repo, follow these steps (details per system
 Add your wishes to the same message, in normal words (English, Hindi or Hinglish):
 
 - "quick clip this" / "basic mode" (uses the least of your Claude plan) · "deep clip this" / "advanced mode" · later: "3 more clips from that video"
-- "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money"
+- "clip this, but only the 3 best" · "at least 10 clips" · "clips under 30 seconds" · "only the parts about money" · "only the first hour"
 - "show me the moments before you cut them" · "don't edit them, just cut"
 - "no sound effects" · "no zooms" · "captions lower" · "bigger captions" · "not in capital letters"
 - Caption looks: "box captions" · "karaoke captions" · "minimal captions" · "bold captions" · "comic captions" (classic otherwise)

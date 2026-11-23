@@ -104,6 +104,7 @@ captions". To have one every time, add it to your preferences.
 | "no limit" / "as many as possible" / "jitne ho sake" / "100+" | every decent moment, however many: a 4-hour stream can give 100 or more |
 | "at most 5 clips" / "only the 3 best" | no more than that |
 | "give me 8 clips" | exactly 8 |
+| "only the first hour" / "from 20:00 to 1:10:00" / "pehle ek ghante ka hi" | only that part of the video is written down and clipped (`fetch --to 1:00:00`, `--from 20:00 --to 1:10:00`): faster, and handy when a stream kept recording after you stopped playing |
 | "clips under 30 seconds" / "around 45-60 seconds" | that length (normally 25-60 seconds, never under 15 or over 90) |
 | "one clip only, the strongest" | a single clip |
 

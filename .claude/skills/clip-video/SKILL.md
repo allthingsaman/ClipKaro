@@ -75,6 +75,10 @@ python run.py fetch "<youtube url or path to a video file>"
 - A **local file** works the same as a link: pass its full path in quotes, e.g.
   `python run.py fetch "C:\Users\me\Videos\my talk.mp4"`. Nothing is uploaded or copied; `cut`
   reads the file in place, so it must stay where it is until the clips are done.
+- **Only part of the video** ("only the first hour", "ignore everything after 1 hour", "from 20:00 to
+  1:10:00", "pehle ek ghante ka hi"): add `--to 1:00:00`, or `--from 20:00 --to 1:10:00`. Only that part
+  is written down (faster, and nothing outside it can become a clip); every time stays on the full video's
+  clock, so the rest of the steps are the same. The transcript's header says which part.
 - This downloads the audio and transcribes it with word timestamps (Whisper). On an
   NVIDIA GPU it takes a few minutes even for a long video; on the CPU, roughly 1/4 to 1/2 of the
   video's length for English and 1-4x the video's length for Hindi/Hinglish (bigger
