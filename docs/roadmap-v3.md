@@ -1,6 +1,8 @@
-# ClipKaro after v2.6: what's next, in order
+# ClipKaro after v2.7.1: what's next, in order
 
-ClipKaro v2.6 is the newest version (2026-11-17, like v2.4 and v2.5; v2.3 came on 2026-11-16). This page lists what is
+ClipKaro v2.7.1 is the newest published version (2026-11-21); v2.8, the first step towards v3.0, is being built
+(branch `v2.8-quick-wins`). **The plan for v3.0, approved by the owner on 2026-11-23, is
+[plan-v3.0.md](plan-v3.0.md)**: three phases, released step by step (v2.8, v2.9 …) and then bundled as v3.0. This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
 by one. When one is done, it moves to **Done** with the date.
 
@@ -28,6 +30,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 - v2.7 (2026-11-20): gameplay with friends done by itself: frame sheets, careful listening, friends'
   captions, starter sound effects on time, private details kept out, "no limit"; never censored, with stars
   in written words. Planned with the owner in [plan-v2.7-just-paste-a-link.md](plan-v2.7-just-paste-a-link.md).
+- v2.7.1 (2026-11-21): the action stays in (pauses with something happening on screen), real usage numbers, and
+  the fixes of the release review.
 
 ---
 
@@ -35,10 +39,10 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 
 | # | What | Why | Build | Your part | Status |
 |---|---|---|---|---|---|
-| 3b | **Try cheaper models** (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. Real usage per mode is now measured from Claude Code's own records (v2.7.1, [requirements.md](requirements.md#how-much-claude-usage)): quick about half of standard; the helpers are most of a long video's usage (critic, part readers, word check). | Cheaper helpers would make standard and gameplay lighter for everyone. | 2-3 h | 30 min of blind pairs; `/usage` before and after shows the share of your own plan | Waiting for your blind pairs |
-| 13b | **Your microphone on its own track.** Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
-| 22 | **A first real install on a Windows PC or a Mac.** v2.5 checked both by reading the code and the steps and by tests on this laptop; nobody has run it on one yet. | The AI helper sorts out most surprises, but a real run finds what reading can't. | none | 1 h on a Windows or Mac computer (yours or a friend's): "install this repo", then one short video | When one is at hand |
-| 19 | **The first full "clip this video" run with everything new** (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
+| 3b | **On hold (the owner, 2026-11-23): Try cheaper models** (Sonnet or Haiku) for the helpers where a blind test shows no drop in quality. Real usage per mode is now measured from Claude Code's own records (v2.7.1, [requirements.md](requirements.md#how-much-claude-usage)): quick about half of standard; the helpers are most of a long video's usage (critic, part readers, word check). | Cheaper helpers would make standard and gameplay lighter for everyone. | 2-3 h | 30 min of blind pairs; `/usage` before and after shows the share of your own plan | Waiting for your blind pairs |
+| 13b | ~~**Your microphone on its own track.**~~ **Closed (2026-11-23):** it works only for your own OBS recordings; Twitch and YouTube mix every track into one, so their downloads can't separate the mic (checked by the owner on Windows). | Record a stream in OBS with the mic on its own audio track (Settings > Output > Recording: tracks 1 and 2; Edit > Advanced Audio Properties: mic on 1 and 2, desktop audio on 1), then clip that file. | The cleanest way to keep game voices out of the words: ClipKaro then writes down your voice alone. | none, it's built | one stream recorded that way | When you can (not every stream has to be) |
+| 22 | ~~**A first real install on a Windows PC or a Mac.**~~ **Done (2026-11-21):** the owner installed both apps on Windows for his video guide. | v2.5 checked both by reading the code and the steps and by tests on this laptop; nobody has run it on one yet. | The AI helper sorts out most surprises, but a real run finds what reading can't. | none | 1 h on a Windows or Mac computer (yours or a friend's): "install this repo", then one short video | When one is at hand |
+| 19 | ~~**The first full "clip this video" run with everything new**~~ **Done (2026-11-21/22):** two fresh GTA 6 streams clipped with v2.7. | (the Hinglish model, hints, game captions, caption check, the deep-clip question, live stream detection). | The pieces were tested one by one; a fresh stream is the full test. | none | your next stream | Waiting for your next stream |
 
 ## Ideas
 | # | What | Status |
@@ -48,7 +52,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | P4 | **YouTube's own captions as a second opinion.** | **On hold, for the owner to decide** (research, 2026-11-17): a study of 8,740 hours of Indian speakers found YouTube's captions worse than even a small Whisper model, with errors in the same places (so it would mostly repeat our mistakes), no published test exists for Hinglish (guides say it garbles fast Hindi-English switching), and a wrong second opinion could lead the caption check astray. |
 
 ## Next phase
-Everything planned before the major update is done. Next is the major update (v3.0), below.
+The major update, v3.0, planned in detail in [plan-v3.0.md](plan-v3.0.md). Phase 1 (v2.8 quick wins, then v2.9
+"boast, then fail" clips and compilations) is being built.
 
 ## Major update (v3.0), later
 Big new features for a later major version, once everything essential for clipping is done.
@@ -60,21 +65,21 @@ Big new features for a later major version, once everything essential for clippi
 | | **B-roll**: short stock clips or pictures over the speaker where the words name something | Opus Clip has AI B-roll | 2-3 days |
 | | **Following people who move**, and objects | Opus Clip's ReframeAnything | 1-2 weeks |
 | | **Three or more people**: panels, picture-in-picture for remote guests | Klap and Vizard have layouts | 1 week |
-| | **TikTok and LinkedIn in PostKaro** | a scheduler for more platforms | 1-2 days each, depending on their APIs |
 
 ## Later, if we need it
 Smaller items. We review them when the next phase is done and decide which are worth building.
 
 | What | Why | Rough size |
 |---|---|---|
-| **No game-character captions for English-speaking streamers** | v2.3 tells game lines apart by language (an English game, a Hinglish streamer); with an English streamer it needs another clue (the voice alone, or the game's own subtitles on screen) | 1-2 days |
-| **A facial-reaction hint** (a listener's silent laugh or shock in a podcast) | the one moment sound can't catch | 1-2 days |
+| **No game-character captions for English-speaking streamers**: now in the v3.0 plan (item J, v2.8) | v2.3 tells game lines apart by language; an English streamer needs other clues (the game's subtitles, voices in bursts, studio vs mic sound) | 2-3 days |
+| **A facial-reaction hint** (a listener's silent laugh or shock): now in the v3.0 plan (item I) | the one moment sound can't catch | 1-2 days |
 | **More pairs for the hints test** (on a podcast and a second stream) | the first test was 2 pairs, both won by the hints | your time, 20 min a video |
-| **Export to Premiere Pro** (XML), for creators who finish by hand | Opus Clip has it | 1 day |
+| ~~Export to Premiere Pro~~ → **a DaVinci Resolve timeline instead** (free), in the v3.0 plan (item K) | Premiere is paid; Resolve and Kdenlive are free | 1 day |
 
 The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ## On hold
+- **TikTok and LinkedIn in PostKaro**: removed from the plan by the owner (2026-11-23).
 - **The side-by-side test against Opus Clip**: the same English and gaming videos through both, rated
   blind. It needs an Opus Clip subscription, which the owner doesn't have right now.
 - **Background music** from your own `music` folder: built, but it doesn't suit podcasts
@@ -119,7 +124,7 @@ The [comparison with Opus Clip](roadmap-v2.md) explains where it is still ahead.
 
 ---
 
-**Waiting on you: items 3b, 4b, 13b, 19 and 22. Next: the major update (v3.0).**
+**Waiting on you: item 4b (and 3b, on hold). Next: v3.0, step by step ([plan-v3.0.md](plan-v3.0.md)).**
 
 The comparison with Opus Clip and others, and the reasons behind many of these items, are in
 [roadmap-v2.md](roadmap-v2.md).
