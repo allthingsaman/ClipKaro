@@ -2240,6 +2240,40 @@ class GameSubtitles(unittest.TestCase):
             self.assertFalse(st.wanted({'language': 'en', 'video_kind': {'live': True}}))
 
 
+class ResolveExport(unittest.TestCase):
+    """v2.8: "export to resolve": a clip as a Final Cut Pro 7 XML timeline (its pieces, sound, sound effects)."""
+
+    def test_pieces_follow_the_pause_cuts(self):
+        from clipper import resolve
+        meta = {'parts': [[0.38, 3.6], [4.92, 12.88]], 'duration': 11.18}
+        self.assertEqual(resolve.pieces(meta), [(0.0, 3.22), (3.22, 11.18)])
+        self.assertEqual(resolve.pieces({'duration': 9.0}), [(0.0, 9.0)])
+
+    def test_timeline(self):
+        import xml.dom.minidom
+        from fractions import Fraction
+        from clipper import resolve
+        x = resolve.timeline_xml('Fail Hoga (ClipKaro)', '/tmp/my clips/01 गिरा.mov', 11.18, Fraction(30),
+                                 [(0.0, 3.22), (3.22, 11.18)], [('/tmp/sfx-01.wav', 4.34, 2.5)])
+        d = xml.dom.minidom.parseString(x.encode('utf-8'))
+        spans = [(c.getAttribute('id'), int(c.getElementsByTagName('start')[0].firstChild.data),
+                  int(c.getElementsByTagName('end')[0].firstChild.data)) for c in d.getElementsByTagName('clipitem')]
+        self.assertEqual(spans, [('v-1', 0, 97), ('v-2', 97, 335), ('a-1', 0, 97), ('a-2', 97, 335), ('sfx-1', 130, 205)])
+        self.assertEqual(len(d.getElementsByTagName('marker')), 1)          # one pause cut
+        self.assertIn('file://localhost/tmp/my%20clips/01%20%E0%A4%97', x)  # spaces and Hindi letters encoded
+        self.assertIn('<width>1080</width><height>1920</height>', x)
+
+    def test_copies_only_on_linux_unless_set(self):
+        from clipper import resolve
+        with mock.patch.object(resolve, 'settings', return_value={}), mock.patch.object(resolve.sys, 'platform', 'win32'):
+            self.assertFalse(resolve.copies_wanted())
+        with mock.patch.object(resolve, 'settings', return_value={}), mock.patch.object(resolve.sys, 'platform', 'linux'):
+            self.assertTrue(resolve.copies_wanted())
+        with mock.patch.object(resolve, 'settings', return_value={'resolve_copies': 'no'}), \
+                mock.patch.object(resolve.sys, 'platform', 'linux'):
+            self.assertFalse(resolve.copies_wanted())
+
+
 class NormalVideosUntouched(unittest.TestCase):
     """v2.7 release check: everything new for gameplay and streams stays off for a normal video (a podcast, a talk),
     so it does no extra work there and nothing v2.6 did changes for it (the owner's rule: only upgrades)."""

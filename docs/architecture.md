@@ -151,6 +151,9 @@ clipper/                     the toolbox (Python)
     watch.py      gameplay and streams: frame sheets for the readers, close-ups (zoom.py), events into clips (events.py)
     landscape.py  a 16:9 copy of finished clips: cut --landscape-copy (same timeline) + the standing edit's plan
                   redrawn for 1920x1080 (edit.write_ass with a frame size) + its sound
+    subtitles.py  English gameplay: the game's own subtitles read on screen (rapidocr, English PP-OCRv5) -> game lines
+    resolve.py    "export to resolve": a clip as Final Cut Pro 7 XML (pieces on V1/A1, sound effects on A2, pause-cut
+                  markers) + captions.srt; DNxHR LB + PCM edit copies on Linux (the free Resolve can't read H.264/AAC)
     hearing.py    noisy Hindi / Hinglish streams: two more speech models and the word check (hear, rehear, wordcheck);
                   clips over ~29 s heard in windows of under 30 s; off while live clipping runs (CLIPKARO_LIVE)
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog

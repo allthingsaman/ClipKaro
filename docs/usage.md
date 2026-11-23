@@ -151,6 +151,7 @@ captions". To have one every time, add it to your preferences.
 | You write | What happens |
 |---|---|
 | "keep it wide" / "16:9" | keeps the original wide shape (instead of the standing clips) |
+| "export to resolve" / "open clip 3 in Resolve" | each clip as a timeline for DaVinci Resolve (free), to finish by hand: `resolve/NN-title/` with the timeline (`.xml`: the clip in its pieces, its sound, the sound effects), `captions.srt` and the steps (`HOW-TO.txt`). The zooms, caption style, emojis, logo and credit stay in ClipKaro's finished clip. On Linux it makes edit copies the free Resolve can read (about 6 MB a second of clip) |
 | "landscape copy" / "16:9 copy too" / "YouTube video version bhi" | the finished clips stay standing, and a wide 1920x1080 copy is made next to each (`edited/NN-title-landscape.mp4`): the same moment, captions, credit, logo, emojis and sound, placed for a wide frame; no zooms, no outro. Compilations longer than 1:30 always get one |
 | "use the facecam layout" / "don't use the facecam layout" | gameplay on top and your webcam below, or not |
 | "the webcam is in the bottom-left corner" | Claude saves the webcam's position in `settings.json` |
@@ -405,6 +406,7 @@ Claude to change them.
   "hinglish_model": "auto",
   "game_voice_captions": false,
   "game_subtitles": true,
+  "resolve_copies": "auto",
   "hints": true,
   "source_credit": true,
   "logo": true,
@@ -448,6 +450,7 @@ Claude to change them.
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
+| `resolve_copies` | `auto` | "export to resolve": edit copies (DNxHR, PCM sound) only on Linux, where the free DaVinci Resolve can't read normal MP4 files; `yes` / `no`: always / never |
 | `game_subtitles` | `true` | gameplay with an English streamer: a line the game's own subtitles show on screen gets no caption (a text reader reads the subtitle area); `false`: not read, every line captioned as before |
 | `game_voice_captions` | `false` | gameplay with a Hindi/Hinglish streamer: game characters' lines get no captions, because the game shows its own subtitles (their sound stays); `true`: captioned too, as before v2.3 |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |

@@ -208,6 +208,9 @@ house rules:
 - **Why not CapCut:** it can't import a timeline from another program, and has no Linux version (EditKaro's research).
 - **How:** reuse EditKaro's export: OpenTimelineIO plus Final Cut Pro 7 XML, with captions as a subtitle track and markers.
 - **Decided:** on request only ("export to resolve"). Built last in v2.8; the owner can still skip it.
+- **Status (v2.8, 23 November):** built as `run.py resolve` (Final Cut Pro 7 XML + captions.srt, written directly: no extra
+  library to install). Checked with OpenTimelineIO's own FCP 7 XML reader;
+  the first import into Resolve itself is the owner's check.
 
 ### L. The three limits from the review
 1. **Reaction words on frame sheets.** (Not an AI model: a fixed word list in the code.)

@@ -492,6 +492,11 @@ cuts a wide copy on the same timeline (`cut --landscape-copy`, into `clips-lands
 edit's captions, credit, logo and emojis for 1920x1080 with its sound: `edited/NN-title-landscape.mp4`. Name
 it in the report next to the standing clip. (Different from `cut --horizontal`, which makes the clips wide
 instead of standing.)
+**Export to Resolve** (only when the user asks: "export to resolve", "open clip 3 in Resolve"): after `edit`,
+`python run.py resolve <project> [--clips N]` writes `resolve/NN-title/` per clip: a DaVinci Resolve timeline
+(`.xml`, Final Cut Pro 7 format), `captions.srt` and `HOW-TO.txt`. Tell the user the folder and the two import
+steps (File > Import > Timeline, then File > Import > Subtitle). On Linux it first makes edit copies (about
+6 MB a second of clip).
 Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentence case),
 `--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,

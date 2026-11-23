@@ -405,6 +405,11 @@ changed. Only new ones were added.
   and sound placed for a wide frame; no zooms, no outro. For YouTube videos and long compilations. Before, it
   was made by hand (22 November). Without asking, nothing changes. *(v2.8, 2026-11-23)*
 
+- ⬆ **Finish a clip in DaVinci Resolve, when you ask.** "Export to resolve" writes each clip as a timeline the
+  free DaVinci Resolve opens (`run.py resolve`): the clip in its pieces (each pause cut a visible cut), its sound,
+  the sound effects on their own track, and the captions as a subtitle file. On Linux it makes edit copies the
+  free Resolve can read. Before, a clip could only be edited further from the finished MP4. *(v2.8, 2026-11-23)*
+
 ## Posting
 
 - ⬆ **Text for each platform**: a YouTube title of up to 100 characters with fitting hashtags,
