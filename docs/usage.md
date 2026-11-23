@@ -393,7 +393,7 @@ Claude to change them.
   "hook_title": false,
   "safe_zones": true,
   "jump_cuts": true,
-  "action_pauses": "keep",
+  "action_pauses": "smart",
   "caption_look": "classic",
   "emoji": true,
   "music": false,
@@ -430,7 +430,7 @@ Claude to change them.
 | `unsure_words` | `hide` | careful listening: a word the hearings can't settle gets no caption (the sound stays); `ask`: listed in `word-check.json` for you to correct by ear: write what was really said in "correct" ("-" for no caption), then tell Claude "word check done" and the clips are fixed |
 | `watch_gameplay` | `true` | gameplay and live streams: Claude's readers also see the video (a frame every 10 s, with the loud moments marked), close-ups where they point, and clips that start where something happens on screen (about 15-20 % more Claude usage on such videos; never on podcasts or talks, and not during live clipping); `false`: off |
 | `event_lead_in` | `true` | with frame sheets: a clip that starts on a reaction starts at its event instead; `false`: events only become new clips |
-| `action_pauses` | `keep` | gameplay and streams: a pause where the picture changes a lot (a takedown, a crash, a fast camera swing) is not cut; `cut`: pauses are cut by the sound alone, as in v2.7 |
+| `action_pauses` | `smart` | gameplay and streams: a pause where the picture changes a lot stays in only when something shows that it mattered: a game sound burst in it, or right after it a laugh, a shout, a reaction word ("arre", "ye kya", "bhai") or a voice clearly louder than before. A camera swing with no reaction is cut as usual. `keep`: every pause with a lot of picture change stays (v2.7.1); `cut`: pauses are cut by the sound alone (v2.7) |
 | `sound_onset` | `moment` | a sound effect starts on its moment, never more than 0.1 s before it; `peak`: its loudest point on the moment, as before v2.7 (a slow sound then starts early) |
 | `private_details` | `hide` | gameplay and streams: an email address or phone number said out loud (letters and digits said one after another, or 9+ digits) is left out of what Claude reads and cut out of every clip; `all`: checked on every video, podcasts too; `keep`: treated like any other words |
 | `overlap_clips` | `streams` | in gameplay and streams, two clips may share some seconds when they clearly differ (a short and a long cut of one moment, a joined clip), so you choose which to post; never near-copies, at most 3 clips per moment. Other videos keep one clip per moment. `allow`: overlaps everywhere; `avoid`: nowhere, as before v2.7 |

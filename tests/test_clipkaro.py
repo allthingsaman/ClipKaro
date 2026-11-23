@@ -618,7 +618,7 @@ class JumpCuts(unittest.TestCase):
             out = cut.with_jump_cuts(clip, words, {}, True, cut.action_check(clip, action, None, (320, 180)))
             self.assertEqual(out.get('action_kept'), 1)
         self.assertEqual(len(cut.with_jump_cuts(clip, words, {}, True)['ranges']), 2)       # no check: as before
-        self.assertEqual(DEFAULT_SETTINGS['action_pauses'], 'keep')
+        self.assertEqual(DEFAULT_SETTINGS['action_pauses'], 'smart')   # v2.8: picture + an event; 'keep' = this test's v2.7.1 rule
         from unittest import mock                                # one flicker (a quarter second) is not action
         calm = [(i / 4, (i + 1) / 4, 10.0) for i in range(24)]
         for spikes, expect in (({9}, False), ({9, 10}, True)):
@@ -1224,6 +1224,66 @@ class WordCheckAnswers(unittest.TestCase):
         self.assertTrue(words[1].get('unsure'))
         self.assertEqual([w['w'] for w in words[8:10]], ['main', 'aaunga'])
         self.assertTrue(doubts[0].get('done') and not doubts[2].get('done'))
+
+
+class SmartActionPauses(unittest.TestCase):
+    """v2.8: a gameplay pause stays only when the picture changes a lot AND something happened (a game sound
+    burst around it, or a reaction right after it); a camera swing alone is cut like any pause."""
+
+    def test_event_signs(self):
+        from clipper import cut, sound
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            words = (sentence('chalo aage chalte hain', 0.0) + sentence('ye kya ho gaya bhai', 10.0)
+                     + sentence('theek hai', 30.0))
+            lines = [{'s': 0.0, 'e': 1.5, 'i0': 0, 'i1': 3}, {'s': 10.0, 'e': 11.9, 'i0': 4, 'i1': 8},
+                     {'s': 30.0, 'e': 30.7, 'i0': 9, 'i1': 10}]
+            (pdir / 'transcript' / 'cues.json').write_text(json.dumps(
+                {'v': sound.CUES_V, 'bursts': [[20.0, 20.6, 'explosion']], 'laughter': []}))
+            (pdir / 'transcript' / 'hints.json').write_text(json.dumps({'raised': []}))
+            happened = cut.event_signs(pdir, words, lines)
+        self.assertTrue(happened(8.0, 9.6))           # "ye kya ho gaya" right after: the takedown stays
+        self.assertTrue(happened(19.5, 21.0))         # an explosion in the pause
+        self.assertFalse(happened(2.0, 4.0))          # a camera swing with nothing after it
+        swing = lambda a, b: True                     # noqa: E731  (the picture changes a lot everywhere)
+        both = cut.smart_moving(swing, happened)
+        self.assertEqual((both(8.0, 9.6), both(2.0, 4.0)), (True, False))
+        self.assertIsNone(cut.smart_moving(None, happened))
+
+    def test_a_shout_after_the_pause(self):
+        """A voice 6 dB or more above the talk around it counts (a friend's shout); excited talk (+3 dB) doesn't."""
+        import wave
+        import numpy as np
+        from clipper import cut, sound
+        sr = 16000
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            (pdir / 'source').mkdir()
+            words = sentence('chalo aage chalte hain yaar dekh', 0.0) + sentence('haan bhai', 10.0) \
+                + sentence('acha theek', 20.0)
+            x = np.zeros(30 * sr, np.float32)
+            tone = lambda a, b, amp: x.__setitem__(slice(int(a * sr), int(b * sr)),       # noqa: E731
+                                                   amp * np.sin(np.arange(int(b * sr) - int(a * sr)) * 0.05))
+            for w in words:
+                tone(w['s'], w['e'], 0.1)
+            tone(10.0, 10.8, 0.1 * 10 ** (8 / 20))     # +8 dB after the pause 8.0-10.0: a shout
+            tone(20.0, 20.8, 0.1 * 10 ** (3 / 20))     # +3 dB after the pause 18.0-20.0: excited talk
+            with wave.open(str(pdir / 'source' / 'audio16k.wav'), 'wb') as f:
+                f.setnchannels(1)
+                f.setsampwidth(2)
+                f.setframerate(sr)
+                f.writeframes((x * 32767).astype(np.int16).tobytes())
+            (pdir / 'transcript' / 'cues.json').write_text(json.dumps({'v': sound.CUES_V, 'bursts': [], 'laughter': []}))
+            (pdir / 'transcript' / 'hints.json').write_text(json.dumps({'raised': []}))
+            happened = cut.event_signs(pdir, words, [])
+            self.assertTrue(happened(8.0, 10.0))
+            self.assertFalse(happened(18.0, 20.0))
+
+    def test_default_and_way_back(self):
+        from clipper.common import DEFAULT_SETTINGS
+        self.assertEqual(DEFAULT_SETTINGS['action_pauses'], 'smart')     # "keep" = v2.7.1, "cut" = v2.7
 
 
 class LiveSettings(unittest.TestCase):

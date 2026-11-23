@@ -865,6 +865,21 @@ kept pauses (`action_kept`, printed by `cut`). Cancelling the camera's movement 
 didn't separate a takedown from a camera swing on the GTA stream, so both stay. Cost: about 1-3 s of
 decoding per clip. `"action_pauses": "cut"` turns it off.
 
+**Smart action pauses** (v2.8, `cut.event_signs`, `cut.smart_moving`; the default `"action_pauses": "smart"`):
+the picture alone can't tell a takedown from a camera swing, so a moving pause now also needs a sign that
+something happened, from what ClipKaro already has: a game sound burst within `EVENT_AROUND` (0.5 s) of
+the pause (`cues.json` bursts), or a reaction starting from 0.5 s before its end to `EVENT_AFTER` (2.5 s)
+after it: a raised voice (`hints.json`), a laugh, a line whose first four words hold a reaction word
+(`watch.reaction_word`, unsure words included: the sound is there, only the spelling isn't) or open on an
+exclamation (`EXCLAIM`: arre, oye, abe, oh, ruk ...), or a voice at least `LOUD_AFTER_DB` (6 dB) louder in
+the 1.5 s after the pause than the median of the words within 20 s (`LOUD_REF_S`; read from
+`audio16k.wav`, only for pauses the picture already flagged). `smart_moving` wraps the picture check, so
+`with_jump_cuts` is unchanged. Why 6 dB: on the GTA stream 46 % of ordinary pauses inside the clips reach
++3 dB (excited talk), only 14 % reach +6 dB. Measured there: of the 124 pauses the picture alone kept, about 36
+stay (31 clips), the takedown before "ye kya ho gaya" (clip 143, kept by its "Are") among them. The cue file
+held only 5 game bursts in 4 hours, so the words and the voice do most of the work. `"keep"` is v2.7.1 (the
+picture alone), `"cut"` is v2.7.
+
 **No flash at a piece's edge** (v2.3, `cut.edge_trims`): the shot detector ignores a camera cut within
 0.8 s of a piece's edge (a shot that short can't be framed), so a cut in the last frames showed a few
 frames of the next shot (12 of 106 test clips). Each piece's edges are scanned (ffmpeg scene score

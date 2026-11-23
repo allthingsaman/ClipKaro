@@ -383,6 +383,15 @@ changed. Only new ones were added.
   *(v2.7, 2026-11-20)*
   - Way back: `"sound_onset": "peak"` in settings.json.
 
+- ↔ **Action pauses: only the ones where something happened stay** (gameplay and streams). v2.7.1 kept every
+  pause where the picture changes a lot, so the takedown before "ye kya ho gaya" stayed, but so did plain camera
+  swings (76 of 160 GTA clips got about 1.4 s longer). Now such a pause stays only when there is also a sign that
+  something happened: a game sound burst in it, or right after it a laugh, a shout, a reaction word ("ye kya",
+  "bhaag") or an exclamation ("arre", "oye"), or a voice much louder than the talk around it. On that stream about
+  36 of the 124 kept pauses still stay, the takedown among them; swings with no reaction are cut again.
+  *(v2.8, 2026-11-23)*
+  - Way back: `"action_pauses": "keep"` in settings.json (v2.7.1); `"cut"` is v2.7.
+
 ## Posting
 
 - ⬆ **Text for each platform**: a YouTube title of up to 100 characters with fitting hashtags,

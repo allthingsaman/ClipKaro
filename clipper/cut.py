@@ -231,6 +231,81 @@ def action_check(clip, video, cam=None, src=(1920, 1080)):
     return moving
 
 
+# v2.8, the smarter check: a camera swing also changes the picture a lot, so in gameplay (the camera always
+# moves) the picture alone kept too many pauses (124 on the GTA stream). A pause now stays only when the
+# picture changes a lot AND something shows an event happened: a game sound burst (explosion, gunfire, crash)
+# around it, or a reaction right after it: a laugh, a raised voice or shout, a reaction word ("ye kya ho
+# gaya", "bhaag") or an exclamation ("arre", "oye"; even when careful listening marked its spelling unsure),
+# or anyone's voice suddenly louder than the talk around it (a friend's shout, which the raised-voice hints
+# don't mark). A swing with none of these is cut like any pause. No Claude usage.
+EVENT_AROUND = 0.5         # a game sound this close to the pause counts
+EVENT_AFTER = 2.5          # a reaction starting this soon after the pause counts
+LOUD_AFTER_S = 1.5         # ... or a voice this soon after it that is
+LOUD_AFTER_DB = 6.0        # this much louder than the words around it: a shout. Measured on the GTA stream, 46 %
+                           # of ordinary pauses in the clips reach +3 dB (excited talk), only 14 % reach +6 dB
+LOUD_REF_S = 20.0          # the words this far around the pause are "the talk around it"
+EXCLAIM = {'arre', 'are', 'arey', 'arrey', 'oye', 'oy', 'abe', 'abey', 'oh', 'ohh', 'ooh', 'whoa', 'woah', 'ruk',
+           'ruko', 'अरे', 'ओए', 'अबे', 'ओह', 'रुक', 'रुको'}
+
+
+def _rms_db(w, a, b):
+    import numpy as np
+    sr = w.getframerate()
+    w.setpos(max(0, int(a * sr)))
+    x = np.frombuffer(w.readframes(max(1, int((b - a) * sr))), np.int16).astype(np.float32) / 32768.0
+    return 20 * math.log10(float(np.sqrt((x ** 2).mean())) + 1e-9) if x.size else -120.0
+
+
+def event_signs(pdir, words, lines):
+    """A function (a, b) -> True when a game sound burst falls around [a, b] or a reaction starts right after it."""
+    from . import sound
+    from .watch import reaction_word
+    cues = sound.load(pdir) or {}
+    hints = load_json(pdir / 'transcript' / 'hints.json') or {}
+    bursts = [(x, y) for x, y, *_ in cues.get('bursts', [])]
+    starts = [x for x, *_ in hints.get('raised', [])] + [x for x, *_ in cues.get('laughter', [])]
+    for ln in lines or []:
+        if 'i0' in ln:
+            first = words[ln['i0']:ln['i0'] + 4]            # unsure words too: the sound is there, only the spelling isn't
+            plain = [norm_token(w['w']) for w in first]
+            if first and (reaction_word(' '.join(plain)) or plain[0] in EXCLAIM):
+                starts.append(first[0]['s'])
+    import bisect
+    import statistics
+    import wave
+    wav = pdir / 'source' / 'audio16k.wav'
+    times = [w['s'] for w in words]
+
+    def louder_after(a, b):
+        if not wav.exists():
+            return False
+        lo, hi = bisect.bisect_left(times, a - LOUD_REF_S), bisect.bisect_right(times, b + LOUD_REF_S)
+        near = [w for w in words[lo:hi] if w['e'] - w['s'] > 0.1]
+        if len(near) < 5:
+            return False
+        with wave.open(str(wav)) as f:
+            ref = statistics.median(_rms_db(f, w['s'], w['e']) for w in near)
+            peak = max(_rms_db(f, t, t + 0.5) for t in (b, b + 0.4, b + 0.8, b + LOUD_AFTER_S - 0.5))
+        return peak >= ref + LOUD_AFTER_DB
+
+    def happened(a, b):
+        return (any(x < b + EVENT_AROUND and a - EVENT_AROUND < y for x, y in bursts)
+                or any(b - EVENT_AROUND <= x <= b + EVENT_AFTER for x in starts)
+                or louder_after(a, b))
+    return happened
+
+
+def smart_moving(moving, happened):
+    """moving(a, b) and happened(a, b): the picture changes a lot and an event shows (v2.8)."""
+    if moving is None:
+        return None
+
+    def both(a, b):
+        return moving(a, b) and happened(a, b)
+    both.level, both.usual = getattr(moving, 'level', None), getattr(moving, 'usual', None)
+    return both
+
+
 def with_jump_cuts(clip, words, cues, gameplay, moving=None):
     """The clip with each range split at its long pauses (clips.json keeps the ranges as picked).
     Adds 'jump_edges' (piece edges made by a jump cut: they get small handles) and 'jump_saved'.
@@ -874,7 +949,10 @@ def main():
         from . import sound
         from .kind import is_irregular
         cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
-        act_on = settings().get('action_pauses', 'keep') != 'cut'
+        act_mode = str(settings().get('action_pauses', 'smart')).lower()       # smart | keep | cut
+        act_on = act_mode != 'cut'
+        happened = event_signs(pdir, words, load_json(pdir / 'transcript' / 'sentences.json') or []) \
+            if act_on and act_mode != 'keep' else None
         cam_box = fc['cam'] if fc else (project.get('facecam') or None)
     from . import private                        # an email or phone number said out loud never ends up in a clip
     secret = private.spans(words) if private.wanted(project) else []
@@ -889,6 +967,8 @@ def main():
         moving = None                            # gameplay: a quiet second with action on screen stays (v2.7.1)
         if jc_on and game and act_on and (not want or cid in want):
             moving = action_check(clip, video, cam_box, (info['width'], info['height']))
+            if happened is not None:                 # the smarter check (v2.8); "keep" = the picture alone
+                moving = smart_moving(moving, happened)
         prepared[cid] = with_jump_cuts(clip, words, cues, game, moving) if jc_on else clip
         if not want or cid in want:     # no flash of another shot at a piece's edge
             prepared[cid] = with_edge_trims(prepared[cid], video, words, info.get('fps', 30))

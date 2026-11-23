@@ -215,7 +215,7 @@ house rules:
 2. **`"unsure_words": "ask"` has no follow-up.** (The idea exists and writes the list; the answer step was never built. The normal setting, "hide", asks nothing.)
    - **What it is:** careful listening normally **hides** words the three hearings can't agree on. With `"ask"`, it lists them in word-check.json so you can correct them by ear.
    - **Problem:** nothing reads your corrections back.
-   - **Fix:** a step that applies them ("word check done" → `wordcheck --apply-answers`).
+   - **Fix:** a step that applies them ("word check done" → `wordcheck --answers`).
 3. **Kept pauses include fast camera swings.**
    - **What it is:** in gameplay, a quiet pause where the picture changes a lot stays in, so the takedown before "ye kya ho gaya" isn't cut out.
    - **Problem:** a fast camera turn also changes the picture a lot, so some boring camera swings stay too. On the GTA stream 76 of 160 clips got about 1.4 s longer.
