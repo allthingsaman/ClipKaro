@@ -643,8 +643,24 @@ such a line the streamer's Hindi words keep their captions. `cut` marks the othe
 clip's words; the captions and emojis skip them; their sound stays, and the transcript keeps them, so
 Claude can still pick a game scene. Tested on two clips of a GTA stream: every English game line lost
 its captions, every line of the streamer kept them (one short English shout of his would lose it).
-English-speaking streamers aren't covered (no language difference to go by).
-`"game_voice_captions": true` captions them as before.
+English-speaking streamers have no language difference to go by; for them the game's own subtitles decide
+(v2.8, `subtitles.py`, below). `"game_voice_captions": true` captions them as before.
+
+**The game's own subtitles** (v2.8, `subtitles.scan`, `subtitles.game_lines`; English gameplay and streams
+only, `subtitles.wanted`): for every line of the picked clips with 3+ shown words, a frame at 35 % and 75 % of
+the line is read by a text reader: rapidocr on onnxruntime with the English PP-OCRv5 reader
+(`en_PP-OCRv5_rec_mobile`) and the English text finder (`en_PP-OCRv3_det_mobile`), no rotation model; about
+10 MB in `~/.cache/clipkaro/models/ocr`, downloaded the first time. It reads the lower middle of the frame
+(62-97 % of the height, the middle 84 %, the webcam blacked out), shrunk to a 650 px frame (40 % faster, the
+same words). A line is the game's when 60 %+ of its heard words, and at least 3, are in the text read
+(`difflib` 0.8 for reading slips). Before reading the clips' lines it tries up to 10 lines least like the
+streamer's voice (from `voices.json`, anywhere in the video): when none matches, `subtitles.json` says
+`"none"` and the video is never read again (`--fresh` resets it). `voices.game_words` turns the found lines
+into hidden words; `cut` reads them first, and the caption check and the word check read them when the video
+is already downloaded (they never download it). About 1 s per frame on the CPU. Tested on 15 s of a GTA
+stream with two drawn subtitle cards: both lines found, the streamer's line not, shop signs read in the same
+band (PARTNER, GALLERY) didn't matter. The voices that come only in bursts and the studio-vs-mic sound (plan
+item J, clues 2 and 3) wait for an English test stream. `"game_subtitles": false` skips the reading.
 
 **The caption check** (`run.py captions`, skill step 2c, standard and deep mode): each picked clip's
 captions as they will show (Roman, without hidden words), one row per transcript line with its time and

@@ -992,7 +992,10 @@ def main():
     # shows its own subtitles; "game_voice_captions": true shows them again)
     game = set()
     if not settings().get('game_voice_captions', False):
-        from . import voices
+        from . import subtitles, voices
+        subtitles.scan(pdir, project, [c for k, c in enumerate(picks['clips'], 1) if not want or int(c.get('id', k)) in want],
+                       words, load_json(pdir / 'transcript' / 'sentences.json') or [], video,
+                       (fc['cam'] if fc else None) or project.get('facecam'))   # English gameplay (v2.8)
         game = voices.game_words(pdir, project, words)
 
     done = []

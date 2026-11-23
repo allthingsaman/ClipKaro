@@ -71,6 +71,8 @@ DEFAULT_SETTINGS = {
                                    # large-v3-turbo otherwise), or a model name; "large-v3-turbo": as in v2.2
     'game_voice_captions': False,  # gameplay: captions for game characters too (the game shows its own subtitles,
                                    # so they are off since v2.3); true: as before
+    'game_subtitles': True,        # English gameplay: lines the game's own subtitles show on screen are game lines
+                                   # (a text reader, v2.8); false: not read, every line keeps its captions
     'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...
                                    # (run.py hints); false: the plain transcript, as in v1.1
     'source_credit': True,         # "(C) Channel name" in the bottom-left corner of clips from a YouTube link

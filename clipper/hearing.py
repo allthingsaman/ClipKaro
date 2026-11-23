@@ -262,7 +262,8 @@ def packets(pdir, per=PER_PACKET, ids=None):
     heard = {k: load_json(pdir / 'second-hearing' / 'clips' / f'{k}.json') or {} for k in SHORT.values()}
     game = set()
     if not settings().get('game_voice_captions', False):
-        from . import voices
+        from . import subtitles, voices
+        subtitles.scan_if_ready(pdir, project, clips, words, lines)              # English gameplay (v2.8)
         game = voices.game_words(pdir, project, words, lines)
     crit = {c['id']: c for c in (load_json(pdir / 'critic' / 'critic.json', {}) or {}).get('clips', [])}
     folder = pdir / 'wordcheck'

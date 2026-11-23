@@ -6,3 +6,6 @@ opencv-python>=4.10
 swift-f0>=0.3,<0.4      # the voice's pitch, for the "voice raised" hint (MIT, tiny ONNX model)
 # optional, installed by install.py: two-person framing for podcasts (who talks, laughter)
 # sherpa-onnx>=1.10
+# optional, installed by install.py WITHOUT its dependencies (it wants opencv-python-headless, a second
+# OpenCV): reads the game's subtitles for English streamers (v2.8)
+# rapidocr==3.10.0  + colorlog omegaconf pillow pyclipper shapely six

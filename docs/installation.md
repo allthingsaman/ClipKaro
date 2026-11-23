@@ -230,7 +230,9 @@ python install.py --no-sounds # skip the free starter sound effects (2.5 MB from
    (yt-dlp), the speech engine (faster-whisper) and a few helpers. It also updates the downloader,
    because YouTube changes often, and adds sherpa-onnx, which hears who is talking in podcasts. If
    sherpa-onnx can't be installed on your computer, it says so and everything else still works:
-   podcasts with two people then keep the simpler framing.
+   podcasts with two people then keep the simpler framing. It also adds rapidocr, a small text reader that
+   reads a game's own subtitles, so an English-speaking streamer's game lines get no captions; without it
+   those lines simply keep their captions.
 3. **Looks for an NVIDIA graphics card.** If it finds one (with a working driver), it installs
    NVIDIA's helper files into `.venv` (about 1.5-2.5 GB), runs a quick test, and downloads the speech
    models (about 1.7 GB). If it finds none, it says so: ClipKaro then works on the processor, slowly.
@@ -251,6 +253,7 @@ A good run with an NVIDIA card looks like this:
 [ok] node v22.11.0 (helps YouTube downloads; needed only for the optional Remotion engine)
 [ok] Python packages (yt-dlp up to date)
 [ok] sherpa-onnx (two-person framing for podcasts)
+[ok] rapidocr (game subtitles for English streamers)
 [ok] NVIDIA GPU found (1): setting up GPU transcription
 [ok] GPU: 1 NVIDIA GPU(s) ready for transcription ("tiny" ran on the GPU)
 Setup complete. Open this folder in Claude Code (or another AI coding agent, see AGENTS.md) and say:

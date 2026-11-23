@@ -70,7 +70,8 @@ def main():
     table = load_table(pdir) if roman else {}
     game = set()
     if not settings().get('game_voice_captions', False):
-        from . import voices
+        from . import subtitles, voices
+        subtitles.scan_if_ready(pdir, project, picks['clips'], words, lines)    # English gameplay (v2.8)
         game = voices.game_words(pdir, project, words, lines)
     want = {int(x) for x in a.clips.split(',')} if a.clips else None
     print(f'# Captions as they will show. Read them like a viewer of "{project.get("title") or pdir.name}" and fix only '

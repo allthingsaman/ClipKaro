@@ -7,6 +7,7 @@ change can't break them without anyone noticing.
 import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from clipper import cut, fixword, kind, layout, more, plan, tidy
@@ -2129,6 +2130,114 @@ class FrameSheets(unittest.TestCase):
         self.assertLess(plain['ranges'][0][1], 109.0)                                     # without an event: cut
         r = cut.snap_piece(clip, 98.5, out['ranges'][0][1], words)
         self.assertEqual(r[0], 98.5)                                                       # starts on the event
+
+
+class GameSubtitles(unittest.TestCase):
+    """v2.8: with an English streamer, a line the game's own subtitles show on screen is a game line (no captions)."""
+
+    def lines_for(self, words, spans):
+        return [{'s': words[a]['s'], 'e': words[b]['e'], 'i0': a, 'i1': b} for a, b in spans]
+
+    def test_match(self):
+        from clipper import subtitles as st
+        heard = st.tokens('you think you can just walk in here')
+        self.assertTrue(st.is_game(*st.on_screen(heard, 'You think you can just walk in here?')))
+        self.assertTrue(st.is_game(*st.on_screen(heard, 'You think you can just walkin here?')))   # a reading slip
+        self.assertFalse(st.is_game(*st.on_screen(st.tokens('bro this guy is crazy'),
+                                                    'You think you can just walk in here?')))
+        self.assertFalse(st.is_game(*st.on_screen(st.tokens('go to the car now bro'), 'Go to the')))  # 3 of 6
+        self.assertFalse(st.is_game(*st.on_screen(heard, '')))
+
+    def test_webcam_blacked_out(self):
+        import numpy as np
+        from clipper import subtitles as st
+        img = np.full((1080, 1920, 3), 200, np.uint8)
+        out = st.band(img, {'x': 1458, 'y': 700, 'w': 462, 'h': 300})
+        self.assertEqual(out.shape[0], int(1080 * st.SUB_BOTTOM) - int(1080 * st.SUB_TOP))
+        self.assertEqual(int(out[100, -1].sum()), 0)                 # inside the cam box
+        self.assertEqual(int(out[100, 0].sum()), 600)                # outside it
+        self.assertEqual(int(out[-1, -1].sum()), 600)                # below it
+
+    def scan(self, read, voices_rows=None):
+        """scan() with a stand-in reader: read(t) -> the text on screen at t seconds."""
+        from clipper import subtitles as st
+        words = (sentence('you think you can just walk in here', 0.0) + sentence('bro this guy is crazy yaar', 5.0)
+                 + sentence('get in the car right now', 10.0))
+        lines = self.lines_for(words, [(0, 7), (8, 13), (14, 19)])
+        d = tempfile.mkdtemp()
+        pdir = Path(d)
+        (pdir / 'transcript').mkdir()
+        if voices_rows:
+            (pdir / 'transcript' / 'voices.json').write_text(json.dumps(
+                {'v': 1, 'main': 0, 'voices': {}, 'lines': [[ln['s'], ln['e'], lab, like]
+                                                            for ln, (lab, like) in zip(lines, voices_rows)]}))
+        project = {'language': 'en', 'video_kind': {'gaming': True}}
+        with mock.patch.object(st, 'engine', return_value=lambda img: None), \
+                mock.patch.object(st, 'frame_at', side_effect=lambda video, t: t), \
+                mock.patch.object(st, 'prepare', side_effect=lambda img, cam=None: img), \
+                mock.patch.object(st, 'read_text', side_effect=lambda t, ocr: read(t)), \
+                mock.patch.object(st, 'settings', return_value={}):
+            st.scan(pdir, project, [{'ranges': [[0.0, 13.0]]}], words, lines, 'video.mp4', quiet=True)
+        return pdir, project, words, lines
+
+    def test_scan_and_game_words(self):
+        from clipper import voices
+        subs = {(0.0, 3.2): 'You think you can just walk in here?', (10.0, 12.5): 'Get in the car right now!'}
+        read = lambda t: next((x for (a, b), x in subs.items() if a <= t <= b), '')     # noqa: E731
+        pdir, project, words, lines = self.scan(read, [(1, 0.1), (0, 0.9), (1, 0.15)])
+        with mock.patch('clipper.subtitles.settings', return_value={}):
+            game = voices.game_words(pdir, project, words, lines)
+        self.assertEqual(game, set(range(0, 8)) | set(range(14, 20)))   # the line outside the clips was checked
+        v = json.loads((pdir / 'transcript' / 'voices.json').read_text())
+        v['lines'] = [[a, b, 0, 0.9] for a, b, *_ in v['lines']]          # every line in the streamer's voice
+        (pdir / 'transcript' / 'voices.json').write_text(json.dumps(v))
+        hindi = dict(project, language='hinglish')                       # Hinglish keeps its own rule (voice +
+        self.assertEqual(voices.game_words(pdir, hindi, words, lines), set())   # language): subtitles not used
+        with mock.patch('clipper.subtitles.settings', return_value={}):
+            self.assertEqual(voices.game_words(pdir, project, words, lines), game)
+
+    def test_no_subtitles_on_screen(self):
+        from clipper import subtitles as st
+        pdir, *_ = self.scan(lambda t: '', [(1, 0.1), (0, 0.9), (1, 0.15)])
+        s = st.load(pdir)
+        self.assertEqual(st.game_lines(pdir, []), set())
+        self.assertFalse(s.get('none'))         # only 2 other-voice lines tried (< PRECHECK): no verdict yet
+        self.assertEqual(len(s['lines']), 3)
+
+    def test_a_video_without_subtitles_is_read_once(self):
+        from clipper import subtitles as st
+        words, spans = [], []
+        for k in range(14):                                   # 14 lines in another voice, nothing on screen
+            ws = sentence('so we go there and then', k * 5.0)
+            spans.append((len(words), len(words) + len(ws) - 1))
+            words += ws
+        lines = self.lines_for(words, spans)
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            (pdir / 'transcript' / 'voices.json').write_text(json.dumps(
+                {'v': 1, 'main': 0, 'voices': {}, 'lines': [[ln['s'], ln['e'], 1, 0.1] for ln in lines]}))
+            reads = []
+            with mock.patch.object(st, 'engine', return_value=lambda img: None), \
+                    mock.patch.object(st, 'frame_at', side_effect=lambda video, t: t), \
+                    mock.patch.object(st, 'prepare', side_effect=lambda img, cam=None: img), \
+                    mock.patch.object(st, 'read_text', side_effect=lambda t, ocr: reads.append(t) or ''), \
+                    mock.patch.object(st, 'settings', return_value={}):
+                project = {'language': 'en', 'video_kind': {'gaming': True}}
+                st.scan(pdir, project, [{'ranges': [[0.0, 70.0]]}], words, lines, 'v.mp4', quiet=True)
+                self.assertTrue(st.load(pdir)['none'])
+                self.assertEqual(len(reads), st.PRECHECK * len(st.PROBES))      # 10 lines, not 14
+                st.scan(pdir, project, [{'ranges': [[0.0, 70.0]]}], words, lines, 'v.mp4', quiet=True)
+                self.assertEqual(len(reads), st.PRECHECK * len(st.PROBES))      # the next run reads nothing
+
+    def test_only_english_gameplay(self):
+        from clipper import subtitles as st
+        with mock.patch.object(st, 'settings', return_value={}):
+            self.assertTrue(st.wanted({'language': 'en', 'video_kind': {'live': True}}))
+            self.assertFalse(st.wanted({'language': 'hinglish', 'video_kind': {'live': True}}))
+            self.assertFalse(st.wanted({'language': 'en', 'video_kind': {}}))          # a podcast
+        with mock.patch.object(st, 'settings', return_value={'game_subtitles': False}):
+            self.assertFalse(st.wanted({'language': 'en', 'video_kind': {'live': True}}))
 
 
 class NormalVideosUntouched(unittest.TestCase):

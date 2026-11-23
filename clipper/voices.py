@@ -300,15 +300,19 @@ def mostly_english(texts, tok):
 
 
 def game_words(pdir, project, words, lines=None, v=None):
-    """Indexes (in words.json) of the words a game character says in a gameplay video with a Hindi /
-    Hinglish streamer: their captions are left out. Empty for every other video, or without voices."""
+    """Indexes (in words.json) of the words a game character says in a gameplay video: their captions are left
+    out. With a Hindi / Hinglish streamer: the voice and the language (below); with an English one: the lines
+    the game's own subtitles show on screen (subtitles.py, v2.8). Empty for every other video."""
     from .common import norm_token
     from .fetch import is_hindi
     from .kind import is_irregular
-    if not (is_irregular(project) and is_hindi(project.get('language') or '')):
+    if not is_irregular(project):
         return set()
-    v = v or load(pdir)
     lines = lines if lines is not None else load_json(pdir / 'transcript' / 'sentences.json') or []
+    if not is_hindi(project.get('language') or ''):
+        from . import subtitles
+        return {k for i in subtitles.game_lines(pdir, lines) for k in range(lines[i]['i0'], lines[i]['i1'] + 1)}
+    v = v or load(pdir)
     if not v or not lines:
         return set()
     rows = rows_for(v, lines)

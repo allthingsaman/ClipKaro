@@ -357,6 +357,14 @@ changed. Only new ones were added.
   2026-11-20)*
   - Way back: none needed (it only brings back captions that were wrongly hidden); `"game_voice_captions": true`
     still captions everything.
+- ↔ **No captions for game characters, also when you speak English.** With an English streamer the rule
+  above had nothing to go by (both speak English), so every game line was captioned and appeared twice. Now
+  ClipKaro reads the game's own subtitles on screen (a small text reader, English only, about 10 MB): a line
+  whose words are in the subtitle area while it is said is the game's and gets no caption; its sound stays.
+  It reads only the lines of the picked clips, about a second a frame, and first checks whether the video
+  shows subtitles at all (if not, nothing more is read and every line keeps its captions). Hinglish videos
+  keep their own rule, at no extra cost. *(v2.8, 2026-11-23)*
+  - Way back: `"game_subtitles": false` (not read) or `"game_voice_captions": true` (everything captioned).
 - ⬆ ⚠ **Claude checks the captions** before cutting (standard and deep mode): it reads every clip's
   captions like a viewer and fixes clear mishearings ("sorry" heard as सारी, a wrong name) with
   `fixword`. A little more Claude usage per video; quick mode skips it, as before. *(v2.3)*

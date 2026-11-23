@@ -213,6 +213,16 @@ def main():
             print('[ok] sherpa-onnx (two-person framing for podcasts)')
         else:
             print('[!] sherpa-onnx could not be installed: podcasts with two people keep the classic framing')
+        # optional: reads the game's own subtitles, so an English streamer's game lines get no captions (v2.8).
+        # Without its own dependencies: it asks for opencv-python-headless, a second copy of OpenCV that
+        # clashes with opencv-python (already installed above); its other needs are listed by hand.
+        r3 = subprocess.run([str(PY), '-m', 'pip', 'install', '-q', '--no-deps', 'rapidocr==3.10.0'], check=False)
+        r4 = subprocess.run([str(PY), '-m', 'pip', 'install', '-q', 'colorlog', 'omegaconf', 'pillow', 'pyclipper',
+                             'shapely', 'six'], check=False) if r3.returncode == 0 else r3
+        if r4.returncode == 0:
+            print('[ok] rapidocr (game subtitles for English streamers)')
+        else:
+            print('[!] rapidocr could not be installed: an English streamer\'s game lines keep their captions')
 
     # sound effects by mood: a free starter set (Mixkit), only into mood folders that are still empty
     if PY.exists() and '--no-sounds' not in sys.argv:

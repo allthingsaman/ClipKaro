@@ -293,6 +293,10 @@ a corner of the picture). Then:
   game's only when it is real English words, so your friends' Hinglish ("Kisko khaoon?", "Main kama
   loon") keeps its captions. A friend speaking English sounds like the game to ClipKaro, so Claude's
   caption check brings those lines back by hand. `"game_voice_captions": true` captions everything.
+- **You speak English too?** Then the language can't tell you apart from the game, so ClipKaro looks at the
+  game's own subtitles instead: a line whose words are on screen in the subtitle area while it is said is the
+  game talking, and gets no caption. Turn the game's subtitles on when you stream. If the game shows none,
+  every line keeps its captions, as before. (A small text reader, about 10 MB, downloads the first time.)
 - **Your microphone on its own track?** If you record with OBS and keep the microphone on its own audio
   track, give ClipKaro that file: it writes down your words from the microphone alone (no game sound,
   no game characters) and keeps the full sound in the clips.
@@ -400,6 +404,7 @@ Claude to change them.
   "music": false,
   "hinglish_model": "auto",
   "game_voice_captions": false,
+  "game_subtitles": true,
   "hints": true,
   "source_credit": true,
   "logo": true,
@@ -443,6 +448,7 @@ Claude to change them.
 | `emoji` | `true` | `false`: no emojis on the words |
 | `music` | `false` | on hold: `true` plays background music from your own `music` folder |
 | `hinglish_model` | `auto` | the speech model for Hindi and Hinglish videos: `auto` (the Hinglish model with an NVIDIA card and English-letter captions; `large-v3-turbo` otherwise), `large-v3-turbo` (as before v2.3), or another model name |
+| `game_subtitles` | `true` | gameplay with an English streamer: a line the game's own subtitles show on screen gets no caption (a text reader reads the subtitle area); `false`: not read, every line captioned as before |
 | `game_voice_captions` | `false` | gameplay with a Hindi/Hinglish streamer: game characters' lines get no captions, because the game shows its own subtitles (their sound stays); `true`: captioned too, as before v2.3 |
 | `hints` | `true` | notes next to the words Claude reads (`[voice raised]`, `[explosion]`, `(other voice)` ...); `false`: the plain transcript, as in v1.1 |
 | `source_credit` | `true` | "© Channel name" in the bottom-left corner of clips made from a YouTube link ("© twitch.tv/name" from Twitch, "© kick.com/name" from Kick; never your own files); `false`: no credit, as before v2.4 |

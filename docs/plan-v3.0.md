@@ -199,6 +199,9 @@ house rules:
   does (a wrong hidden caption is worse than a missed one).
 - **Decided (owner):** go ahead; try it, then improve where needed.
 - **Needs:** an English-speaking stream with game dialogue to test on (the owner's, or a public one).
+- **Status (v2.8, 23 November):** clue 1 built (`clipper/subtitles.py`, English PP-OCRv5 via rapidocr): tested on
+  real GTA frames with drawn subtitle cards and through `cut`. Clues 2 and 3 wait for the English test stream,
+  where clue 1 also gets its real measure (the 9-of-10 goal).
 
 ### K. Open a clip in DaVinci Resolve (instead of Premiere Pro)
 - **What:** every clip can also come out as an editable timeline that DaVinci Resolve (free) opens. Kdenlive (free) opens it too.
