@@ -1,7 +1,30 @@
 # What's new
 
-## Not released yet
+## v2.8 (quick wins, November 2026): only part of a video, smarter action pauses, a landscape copy, English streamers, DaVinci Resolve
 
+The first step towards v3.0 ([the plan](docs/plan-v3.0.md)).
+
+- **Only part of a video.** "Only the first hour" or "from 20:00 to 1:10:00": ClipKaro writes down and clips only
+  that part (`fetch --from / --to`), handy when a stream kept recording after you stopped playing. Every time
+  stays on the full video's clock.
+- **Action pauses: only where something happened.** v2.7.1 kept every quiet second where the picture changes
+  a lot, so plain camera swings stayed too. Now such a pause stays only when something shows it mattered: a game
+  sound burst, or right after it a laugh, a shout, a reaction word ("ye kya", "bhaag"), an exclamation ("arre",
+  "oye") or a voice much louder than the talk around it. On a 4-hour GTA stream 36 of the 124 kept pauses still
+  stay, the police takedown before "ye kya ho gaya" among them (`"action_pauses": "keep"` is v2.7.1).
+- **A landscape (16:9) copy, when you ask.** "Landscape copy" keeps the standing clips and adds a 1920x1080 copy
+  of each, with the same captions, credit, logo, emojis and sound, for YouTube videos and long compilations.
+- **No captions for game characters, also when you speak English.** ClipKaro now reads the game's own
+  subtitles on screen (a small English text reader, about 10 MB): a line whose words are in the subtitle area
+  while it is said is the game's and gets no caption. Turn the game's subtitles on when you stream. Hinglish
+  videos keep their own rule.
+- **Finish a clip in DaVinci Resolve (free), when you ask.** "Export to resolve" writes each clip as a Resolve
+  timeline: the clip in its pieces, its sound, the sound effects on their own track, and the captions as a
+  subtitle file. On Linux it makes copies the free Resolve can read.
+- **"Word check done."** With `"unsure_words": "ask"`, your corrections in `word-check.json` are now applied:
+  the right words written, "-" for no caption.
+- **Frame sheets:** reaction words match whole words only ("aage" is no longer "aag" = fire) and are found in
+  Hindi letters too.
 - **A bigger webcam in gameplay clips.** The webcam under the game now grows until it is 50 px from the
   sides, 50 px below the captions and 30 px above the bottom (it was 60 / 90 / 30): a 16:9 webcam is 980
   wide instead of 958, a round one 690 instead of 650. `"facecam_margins"` in settings.json changes the

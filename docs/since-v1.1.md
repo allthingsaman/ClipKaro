@@ -23,6 +23,10 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.8 on 2026-11-23: nothing removed. Two changes are different on purpose, each with a way back:
+action pauses (only where something happened; `"action_pauses": "keep"`) and English streamers' game lines
+(no captions when the game's subtitles show them; `"game_subtitles": false`). The rest only adds (part of a
+video, landscape copy, Resolve, word check done) or only asks for it.
 Checked again for v2.7.1 on 2026-11-20: nothing removed; the one change to clips (action pauses stay)
 only touches gameplay and streams, and `"action_pauses": "cut"` brings v2.7's cutting back.
 Checked again after the release review on 2026-11-21: the private-details check, which ran on every video,
