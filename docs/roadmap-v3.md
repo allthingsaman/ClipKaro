@@ -1,7 +1,8 @@
-# ClipKaro after v2.8: what's next, in order
+# ClipKaro after v2.9: what's next, in order
 
-ClipKaro v2.8 (quick wins) is the newest version (2026-11-23), the first step towards v3.0; v2.9 ("boast, then
-fail" clips and compilations) is next. **The plan for v3.0, approved by the owner on 2026-11-23, is
+ClipKaro v2.9 ("boast, then fail" clips and compilations) is the newest version (2026-11-23), finishing phase 1
+of v3.0; phase 2 (v2.10 the review studio inside PostKaro, v2.11 learning from views) is next. The owner tests
+every new part together at the end ([test-list.md](test-list.md)). **The plan for v3.0, approved by the owner on 2026-11-23, is
 [plan-v3.0.md](plan-v3.0.md)**: three phases, released step by step (v2.8, v2.9 …) and then bundled as v3.0. This page lists what is
 still to do, in the order we plan to do it, with a rough time for each item. We close the items one
 by one. When one is done, it moves to **Done** with the date.
@@ -34,6 +35,8 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
   the fixes of the release review.
 - v2.8 (2026-11-23, quick wins): only part of a video, smarter action pauses, a landscape copy, game subtitles
   for English streamers, a DaVinci Resolve timeline, "word check done", whole reaction words.
+- v2.9 (2026-11-23): "boast, then fail" story clips with the game's own game-over screens, and compilations
+  across videos (advanced mode).
 
 ---
 
@@ -54,8 +57,9 @@ lost or made harder. [since-v1.1.md](since-v1.1.md) checks every change against 
 | P4 | **YouTube's own captions as a second opinion.** | **On hold, for the owner to decide** (research, 2026-11-17): a study of 8,740 hours of Indian speakers found YouTube's captions worse than even a small Whisper model, with errors in the same places (so it would mostly repeat our mistakes), no published test exists for Hinglish (guides say it garbles fast Hindi-English switching), and a wrong second opinion could lead the caption check astray. |
 
 ## Next phase
-The major update, v3.0, planned in detail in [plan-v3.0.md](plan-v3.0.md). Phase 1: v2.8 quick wins are out
-(2026-11-23); v2.9 ("boast, then fail" clips and compilations) is next. Item J's other two clues (voices in
+The major update, v3.0, planned in detail in [plan-v3.0.md](plan-v3.0.md). Phase 1 is done: v2.8 quick wins and
+v2.9 "boast, then fail" clips and compilations (2026-11-23). Phase 2 is next: v2.10 the review studio (a page
+inside PostKaro), v2.11 learning from real views. Item J's other two clues (voices in
 bursts, studio vs mic sound) wait for an English test stream.
 
 ## Major update (v3.0), later

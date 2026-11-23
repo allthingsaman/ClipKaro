@@ -1,5 +1,20 @@
 # What's new
 
+## v2.9 (boast, then fail; compilations, November 2026)
+
+- **"Boast, then fail" clips** (gameplay, standard and deep mode): someone promises to do a mission "like a
+  boss", and minutes later the game says FAILED. ClipKaro now reads the game's own game-over screens (WASTED,
+  FAILED, BUSTED) from the picture (about a minute for a 4-hour stream) and shows them to Claude, who tells
+  such a story in up to 6 sharp cuts, the FAILED screen shown whole. Only when it's funny: the fail must pay
+  off something said before it, never just any death.
+- **Compilations across videos** (advanced mode only): "a compilation of every glitch from my last 4 streams"
+  makes one clip from moments of several videos. You name the topic or Claude suggests some; every moment is
+  checked on its frames first (it takes a while); the moments are joined frame-exact with the loudness evened,
+  and nothing is pause-cut, so silent glitches stay. Up to 1:30 a vertical Short; longer, also a landscape copy.
+- A piece of a clip with nobody talking (a crash, a game-over screen) is now kept instead of left out, and a
+  clip never runs past the end of its video.
+- The text reader for English streamers' game subtitles is faster (it no longer enlarges every picture).
+
 ## v2.8 (quick wins, November 2026): only part of a video, smarter action pauses, a landscape copy, English streamers, DaVinci Resolve
 
 The first step towards v3.0 ([the plan](docs/plan-v3.0.md)).
