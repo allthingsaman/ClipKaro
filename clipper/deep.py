@@ -93,6 +93,11 @@ def write_map(pdir, doc, project, regular):
             (' · '.join(f"{ts(r[0][0])}-{ts(r[-1][1])}" for r in regular) or 'none'), '',
             '## SEEDS (found by code: possible ends of a thread; read them, they can be wrong)']
     rows += [f'- {s}' for s in seeds(doc, project)] or ['- none']
+    from . import gameover                     # v2.9: the payoff of a "boast-fail" thread is often only on screen
+    screens = gameover.screen_lines(pdir)
+    if screens:
+        rows += ['', '## GAME-OVER SCREENS (read from the picture; a "boast-fail" payoff may be one of these)']
+        rows += [f"- {ts(n['s'])} ({n['s']:.2f}) {n['note']}" for n in screens]
     rows += ['', '## TOPICS (time order)']
     for t in doc['topics']:
         extra = []
@@ -142,6 +147,14 @@ def check_threads(tr, doc, ans):
         marks = {}
         for key in ('setup', 'payoff'):
             m = th.get(key) or {}
+            if key == 'payoff' and 'screen' in m:           # a game-over screen (v2.9: "boast-fail")
+                note = tr.note_at(m.get('screen'))
+                if not note or th.get('pattern') != 'boast-fail':
+                    errs.append(f'{name}: a screen payoff needs "pattern": "boast-fail" and the start seconds of a '
+                                f'GAME-OVER SCREENS line ({m.get("screen")})')
+                    break
+                marks[key] = note['s']
+                continue
             topic = ids.get(m.get('topic'))
             if not topic or not m.get('words'):
                 errs.append(f'{name}: "{key}" needs a topic and its exact words')
@@ -173,14 +186,14 @@ def write_thread(pdir, tr, doc, th, k, regular):
             f"# Read your full instructions ({BRIEF}, section \"Composer\") first.",
             f"# Pattern: {th.get('pattern')}. Why these belong together: {th.get('why')}",
             f"# SETUP at {ts(th['marks']['setup'])}: \"{th['setup']['words']}\"",
-            f"# PAYOFF at {ts(th['marks']['payoff'])}: \"{th['payoff']['words']}\"",
+            f"# PAYOFF at {ts(th['marks']['payoff'])}: \"{th['payoff'].get('words') or 'the game-over screen'}\"",
             '# Regular clips already made (do not reuse their core): ' +
             (' · '.join(f"{ts(r[0][0])}-{ts(r[-1][1])}" for r in regular) or 'none'),
             '# format: [start_seconds-end_seconds] text', '']
     for n, (a, b) in enumerate(spans):
         if n:
             rows.append(f'# [... {ts(a - spans[n - 1][1])} later in the video ...]')
-        for ln in tr.lines:
+        for ln in sorted(list(tr.lines) + list(tr.notes), key=lambda x: x['s']):   # with note lines (v2.9)
             if ln['e'] > a and ln['s'] < b:
                 mark = ''
                 if ln['s'] - 0.01 <= th['marks']['setup'] < ln['e'] + 0.5:
@@ -188,6 +201,9 @@ def write_thread(pdir, tr, doc, th, k, regular):
                 elif ln['s'] - 0.01 <= th['marks']['payoff'] < ln['e'] + 0.5:
                     mark = '   <== PAYOFF'
                 rows.append(line_text(ln) + mark)
+    if th.get('pattern') == 'boast-fail':
+        rows += ['', '# BOAST-FAIL: a story clip ("kind": "story"): up to 6 pieces, a game-over screen or a line of action '
+                     'without words may be a piece ({"note_line": <its start seconds>}).']
     rows += ['', f'# TASK: up to 2 deep clips (2-3 pieces each) and the best continuous clip around the payoff,',
              f'# or none with a reason. Write {rel}, then reply in at most 4 lines.']
     text = '\n'.join(rows) + '\n'
@@ -274,7 +290,7 @@ def build_candidates(pdir, tr, doc, plan, regular):
 
 
 def check_deep(c, doc, tr, regular, first_content, pb, where):
-    """The code checks of one deep clip (composed or repaired): 2-3 pieces, no ads, outros or
+    """The code checks of one deep clip (composed or repaired): 2-3 pieces (up to 6 for a boast-fail story), no ads, outros or
     montage teasers, not a regular clip's core. Adds its moments and cut-point warnings; False
     when it can't be used."""
     rs = c['ranges']
@@ -449,8 +465,9 @@ def main():
     # quotes are matched against the words as first heard: the critic's caption fixes come later
     words = load_json(pdir / 'transcript' / 'words-before-fixes.json') or load_json(pdir / 'transcript' / 'words.json')
     lines = load_json(pdir / 'transcript' / 'sentences.json')
-    tr = tp.Transcript(words, lines)
     project = load_json(pdir / 'project.json', {}) or {}
+    from . import hints
+    tr = tp.Transcript(words, lines, hints.silent_notes(pdir, project, lines))   # note lines too (v2.9)
     OVERLAP['mode'] = overlap_mode(project)
     regular = regular_ranges(pdir)
     if a.fresh and ddir.exists():

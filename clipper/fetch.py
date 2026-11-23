@@ -1336,8 +1336,10 @@ def main():
     # gameplay, lines in another voice than the streamer's. Never fatal: without them, clips are picked
     # from the words (and laughs) alone.
     try:
-        from . import hints
+        from . import gameover, hints
         hints.ensure(pdir)
+        if not a.no_video:
+            gameover.ensure(pdir)                  # gameplay: WASTED / FAILED screens as lines (v2.9)
         render_transcript(pdir, project, load_json(pdir / 'transcript' / 'sentences.json') or [])
     except Exception as e:
         print(f'   (hints skipped: {type(e).__name__}: {e})')

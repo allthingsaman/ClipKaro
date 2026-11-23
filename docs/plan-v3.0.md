@@ -143,6 +143,10 @@ house rules:
 - **Decided (owner):** **standard mode too.** A boast and its fail almost always happen within one part
   (about 21 minutes), so the part readers can find them without the deep pass; the game-over hints are free.
   Only a boast and fail further apart than one part needs deep mode.
+- **Status (v2.9, 23 November):** built: `gameover.py` (94 s for the 4-hour GTA stream; 6 screens, all real),
+  story candidates (6 pieces, 10 minutes, note pieces) in `topics.py` and the deep pass, wordless and
+  `keep_whole` pieces in `cut` (clip 161 rebuilt as a story with the FAILED screen as a piece). Whether the
+  readers pick boast-then-fail stories well is the owner's test.
 
 ### G. Compilations across videos (advanced mode only)
 - **What:** one clip made from moments in several videos on one topic, like the "2 billion dollar glitches" compilation made by hand on 22 November.
@@ -159,6 +163,8 @@ house rules:
   also go on YouTube as a normal video.
 - **Longest length:** no fixed limit for now; a Short can be up to 3 minutes on YouTube, and a longer
   compilation simply becomes a landscape video as well.
+- **Status (v2.9, 23 November):** built as `run.py compile` (sources, moments.json, frame-sheet check, build) and
+  skill section 9; tested on 3 glitch moments from two GTA streams through cut and edit.
 
 ### H. A landscape (16:9) copy of a clip
 - **What:** a 1920x1080 version for YouTube long-form or compilations, with captions, logo, credit and emojis placed for a wide picture. On 22 November it was made by hand.

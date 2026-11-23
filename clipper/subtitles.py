@@ -52,24 +52,28 @@ def wanted(project):
     return is_irregular(project) and not is_hindi((project or {}).get('language') or '')
 
 
-def engine():
-    """The text reader with the English models only (None when rapidocr isn't installed)."""
-    if 'ocr' in _ENGINE:
-        return _ENGINE['ocr']
+def engine(side=1024):
+    """The text reader with the English models only (None when rapidocr isn't installed). The text finder
+    looks at the picture at most `side` pixels on its longer side and never enlarges it (rapidocr's default
+    blows every picture up to 736 px on its SHORTER side: 0.2-1 s a frame; this way 6-40 ms, the same words,
+    measured 23 November 2026). Also used for game-over screens (gameover.py)."""
+    if side in _ENGINE:
+        return _ENGINE[side]
     try:
         from rapidocr import LangDet, LangRec, ModelType, OCRVersion, RapidOCR
         from .speakers import CACHE
         root = CACHE / 'ocr'
         root.mkdir(parents=True, exist_ok=True)
-        _ENGINE['ocr'] = RapidOCR(params={
-            'Global.use_cls': False, 'Global.model_root_dir': str(root), 'Global.log_level': 'warning',
+        _ENGINE[side] = RapidOCR(params={
+            'Global.use_cls': False, 'Global.model_root_dir': str(root), 'Global.log_level': 'error',
             'EngineConfig.onnxruntime.intra_op_num_threads': 2,
             'Det.lang_type': LangDet.EN, 'Det.ocr_version': OCRVersion.PPOCRV4, 'Det.model_type': ModelType.MOBILE,
+            'Det.limit_type': 'max', 'Det.limit_side_len': side,
             'Rec.lang_type': LangRec.EN, 'Rec.ocr_version': OCRVersion.PPOCRV5, 'Rec.model_type': ModelType.MOBILE})
     except Exception as e:                       # not installed, or the models can't be downloaded
-        print(f'   (game subtitles not read: the text reader is not available: {type(e).__name__})')
-        _ENGINE['ocr'] = None
-    return _ENGINE['ocr']
+        print(f'   (text on screen not read: the text reader is not available: {type(e).__name__})')
+        _ENGINE[side] = None
+    return _ENGINE[side]
 
 
 def band(img, cam=None):

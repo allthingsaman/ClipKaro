@@ -152,6 +152,8 @@ clipper/                     the toolbox (Python)
     landscape.py  a 16:9 copy of finished clips: cut --landscape-copy (same timeline) + the standing edit's plan
                   redrawn for 1920x1080 (edit.write_ass with a frame size) + its sound
     subtitles.py  English gameplay: the game's own subtitles read on screen (rapidocr, English PP-OCRv5) -> game lines
+    gameover.py   gameplay: game-over screens (WASTED, FAILED, BUSTED ...) read on the keyframes -> transcript lines
+    compile.py    compilations across videos (advanced mode): moments.json -> frame sheets -> one built project
     resolve.py    "export to resolve": a clip as Final Cut Pro 7 XML (pieces on V1/A1, sound effects on A2, pause-cut
                   markers) + captions.srt; DNxHR LB + PCM edit copies on Linux (the free Resolve can't read H.264/AAC)
     hearing.py    noisy Hindi / Hinglish streams: two more speech models and the word check (hear, rehear, wordcheck);
@@ -619,6 +621,32 @@ minutes, `hints.rare`). `"hints": false` gives the plain v1.1 lines. Research (N
   voice from a mix afterwards (vocal stems, denoising) made speech recognition worse in 2025-26
   studies, so a mixed recording is left as it is.
 
+### 5.4b-2a Game-over screens and "boast, then fail" story clips (v2.9: `gameover.py`, `topics.py`, `cut.py`)
+The owner's favourite gameplay clip is a boast paid off by a fail ("ye mission like a boss karenge" ... FAILED).
+- **Game-over screens** (`gameover.scan`, gameplay and streams, `"game_over_screens"`): ffmpeg decodes only the
+  keyframes (`-skip_frame nokey`, one every 2-4 s in a Twitch VOD; `showinfo` gives their times), crops the
+  middle of the picture (15-85 % wide, 15-80 % high, webcam blacked out) and shrinks it to 480 px. The English
+  text reader (`subtitles.engine(480)`: rapidocr, en_PP-OCRv3 finder + en_PP-OCRv5 reader, `limit_type max`
+  so nothing is enlarged) reads it. A title is a fail phrase (`FAIL_WORDS`: wasted, failed, busted, game over,
+  you died ...) in text at least 8 % of the box high; small text under it is the reason. Keyframes with the same
+  title within 6 s are one screen, from 0.5 s before the first to the next keyframe (at most 4 s). GTA stream
+  (4 h, 3,523 keyframes): 94 s; 6 screens (2 WASTED, 3 FAILED, 1 BUSTED), all real, none missed in the
+  hand-checked clip 161. Saved in `transcript/gameover.json`; `hints.silent_notes` gives each its own line
+  (`[5437.03-5441.53] [on screen: FAILED - THE PHOENIX WAS DESTROYED.]`), never tucked onto a spoken line, so
+  a candidate can cite it.
+- **Story candidates** (`topics.read_part`): `"kind": "story"` allows up to `STORY_PIECES` (6) pieces within
+  `STORY_SPAN` (600 s) in a part, and note pieces `{"note_line": t}` resolved against `Transcript.notes` (the
+  silent-note lines) to that line's seconds; they go into the candidate's `keep_whole`. At least one piece has
+  words. The deep pass (`deep.py`) lists the screens in `map.txt`, accepts a `"boast-fail"` thread whose payoff
+  is `{"screen": t}`, shows note lines in the thread packets, and its composer may write story candidates
+  (no 10-minute limit there).
+- **In `cut`**: a range without words is kept exactly as given (`snap_piece` returns `(s, e, None, None)`;
+  before, it was skipped), and an edge inside a `keep_whole` span stays exactly where it is (no trimming to
+  words, no handle into the next piece); no pause is cut inside such a span (`with_jump_cuts`). A game-over
+  screen inside a clip's ranges is added to its `keep_whole` by itself. Every piece ends at the video's end at
+  the latest. Tested: clip 161 as a 6-piece story with the FAILED screen as a piece (people talk over it): the
+  screen piece starts on its own second, not on the first word.
+
 ### 5.4b-4 The Hinglish speech model (v2.3: `fetch.hinglish_model`, `romanize.ROMAN_RESPELL`)
 With an NVIDIA card and English-letter captions, Hindi and Hinglish videos are written down by
 Whisper-Hindi2Hinglish-Prime (Oriserve, Apache 2.0; the CTranslate2 int8 build `Hub84/faster-whisper-
@@ -761,6 +789,21 @@ about twice the clips wanted that the AI editor writes for a short video.
   names the earlier id in `"from"`, or it has the same ranges) keeps its earlier score when the new
   one is lower; `critic.txt` says "kept its place". `cut --check` treats a repaired version judged in
   the repair round as on purpose (no "ranges differ" warning).
+
+### 5.4d-2 Compilations across videos (v2.9: `compile.py`, advanced mode only)
+`compile <name> --from a,b` writes `compile/sources.txt` (each source's topics, clips, screens, frame sheets);
+Claude writes `moments.json`; `--check` validates it (known projects, ranges inside the video and in order, no
+seconds used twice) and makes one frame sheet per moment (up to 12 frames, labelled with source times);
+`--build` cuts each piece frame-exact at the first source's own frame rate (`resolve.rate_of`: 60/1, not the
+59.999 average), loudness evened per moment (`loudnorm` measured, gain to -16 LUFS, at most +-12 dB, limiter),
+scaled and padded when a source has another size, joins them (concat, video copied), and carries over: the
+checked words (a word cut by a piece edge is left out), the Roman spellings (`romanize.json` merged), the
+game-over screens, and the voices (each line takes its source line's row: the source's main voice -> main; a
+30 s compilation has too few lines to tell voices apart itself). clips.json gets one clip with every piece in
+`keep_whole` (the 22 November lesson: pause cutting ate silent glitches). Piece times are counted in whole
+frames, so pieces join exactly. A source whose webcam sits elsewhere, or that speaks another language, is
+warned about. `--at <project> <seconds>` maps a source second to the compilation's clock. Tested on 3 glitch
+moments from two GTA streams: 29.9 s, cut and edited, no pause cut, no flash at the joins.
 
 ### 5.4e More clips later (`more.py`)
 The critic scores every idea (all candidates of a long video, the shortlist of a short one), and

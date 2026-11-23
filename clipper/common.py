@@ -75,6 +75,8 @@ DEFAULT_SETTINGS = {
                                    # (a text reader, v2.8); false: not read, every line keeps its captions
     'resolve_copies': 'auto',      # "export to resolve": edit copies (DNxHR) for the free Resolve on Linux only;
                                    # "yes" / "no" always / never
+    'game_over_screens': True,     # gameplay: WASTED / FAILED / BUSTED screens read from the picture, as lines in the
+                                   # transcript, and kept whole in clips (v2.9); false: not read
     'hints': True,                 # notes next to the words Claude reads: [voice raised], [explosion], (other voice) ...
                                    # (run.py hints); false: the plain transcript, as in v1.1
     'source_credit': True,         # "(C) Channel name" in the bottom-left corner of clips from a YouTube link

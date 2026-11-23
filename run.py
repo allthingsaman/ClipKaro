@@ -54,6 +54,8 @@ COMMANDS = {
     'landscape': 'clipper.landscape',
     'subtitles': 'clipper.subtitles',
     'resolve': 'clipper.resolve',
+    'gameover': 'clipper.gameover',
+    'compile': 'clipper.compile',
     'find': 'clipper.find',
     'fixword': 'clipper.fixword',
     'more': 'clipper.more',
@@ -87,7 +89,7 @@ COMMANDS = {
 
 # heavy steps: while a live clipping session runs they get a low priority and the processor's video encoder,
 # so OBS keeps the graphics card's encoder and the stream never drops frames
-HEAVY = {'fetch', 'cut', 'edit', 'landscape', 'subtitles', 'resolve', 'qa', 'frames', 'sound', 'hints', 'voices', 'relisten', 'kind', 'hear', 'rehear',
+HEAVY = {'fetch', 'cut', 'edit', 'landscape', 'subtitles', 'resolve', 'gameover', 'compile', 'qa', 'frames', 'sound', 'hints', 'voices', 'relisten', 'kind', 'hear', 'rehear',
          'watch', 'zoom', 'events'}
 
 

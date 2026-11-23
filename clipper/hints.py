@@ -51,7 +51,8 @@ BASE_MIN_LINES = 8                   # ... at least this many, else all their li
 MIN_VOICED = 0.5                     # seconds of voiced speech a line needs to be judged
 PER_10_MIN = 6                       # at most this many raised-voice hints per 10 minutes (the clearest)
 HINT_RE = re.compile(r'\[(?:voice raised|shouting|laughter[^\]]*|applause|explosion|gunfire|crash|'
-                     r'big action on screen[^\]]*|both talk at once|chat exploded[^\]]*|viewers clipped this[^\]]*)\]'
+                     r'big action on screen[^\]]*|both talk at once|chat exploded[^\]]*|viewers clipped this[^\]]*|'
+                     r'on screen:[^\]]*)\]'
                      r'|\(other voice\)|\(no talking\)')
 SILENT_GAP = 3.0                     # notes where nobody talks, closer than this, share one line
 
@@ -59,7 +60,8 @@ READER_NOTE = ('Notes in [brackets] like [laughter ~2 s], [voice raised], [shout
                '[big action on screen], and "(other voice)" before a line, are measurements of the sound and '
                'picture (in a live stream also [chat exploded ...] and [viewers clipped this]: the audience, '
                'a few seconds late), not words: never quote them. They show where to look; the words decide. A note never '
-               'makes a clip by itself, and no note does not mean a moment is weak.')
+               'makes a clip by itself, and no note does not mean a moment is weak. In gameplay, a line of its own like '
+               '[on screen: FAILED] or [on screen: WASTED] is the game\'s own game-over screen (read from the picture).')
 
 
 def strip_hints(text):
@@ -246,8 +248,10 @@ def silent_notes(pdir, project=None, lines=None):
             out[-1]['parts'].append(text)
         else:
             out.append({'s': a, 'e': b, 'parts': [text]})
-    return [{'s': round(o['s'], 2), 'e': round(o['e'], 2),
-             'note': '(no talking) ' + ' '.join(dict.fromkeys(o['parts']))} for o in out]
+    from . import gameover                        # game-over screens (v2.9): always a line of their own
+    return sorted([{'s': round(o['s'], 2), 'e': round(o['e'], 2),
+                    'note': '(no talking) ' + ' '.join(dict.fromkeys(o['parts']))} for o in out]
+                  + gameover.screen_lines(pdir), key=lambda n: n['s'])
 
 
 def with_silent(lines, silent, breaks=()):
@@ -311,6 +315,8 @@ def scan(pdir, quiet=False):
     save_json(pdir / 'transcript' / 'hints.json', h)
     if is_irregular(project):
         motion.ensure(pdir, quiet=quiet)
+        from . import gameover
+        gameover.ensure(pdir, quiet=quiet)         # WASTED / FAILED screens (v2.9)
     if not quiet:
         n_sh = sum(r[2] == 'shouting' for r in raised)
         print(f"-> delivery hints in {h['seconds']:.0f}s: {len(raised) - n_sh} raised voice(s), {n_sh} shout(s)")

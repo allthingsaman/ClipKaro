@@ -413,6 +413,7 @@ Add your wishes to the same message, in normal words (English, Hindi or Hinglish
 - "it's a gameplay video" · "keep it wide (16:9)" · "landscape copy" (a wide copy next to the standing clip) · "export to resolve" (finish a clip in DaVinci Resolve) · "the video is in English"
 - After you see the clips: "clip 2 starts too early" · "make clip 1 shorter" · "use yellow captions"
 - Podcasts: "in clip 4, show both of them when he laughs" · "show the whole picture when he holds up the box"
+- Gameplay: "make a boast-then-fail clip of the mission" · advanced mode: "a compilation of every glitch from my last 4 streams"
 
 The full list, and what each one changes: [docs/usage.md](docs/usage.md).
 

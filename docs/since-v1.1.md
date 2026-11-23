@@ -23,6 +23,9 @@ its line here, in the same commit.** Released so far:
   chose it in a blind test. The line says how to get v1.1's way back.
 - ⚠ **Costs more**: more time or more Claude usage than v1.1.
 
+Checked again for v2.9 on 2026-11-23: nothing removed. One change is different on purpose: a game-over
+screen inside a clip is always shown whole (`"game_over_screens": false` is the way back). The rest only adds
+(story clips, compilations) or fixes (a piece without words kept, no clip past the video's end).
 Checked again for v2.8 on 2026-11-23: nothing removed. Two changes are different on purpose, each with a way back:
 action pauses (only where something happened; `"action_pauses": "keep"`) and English streamers' game lines
 (no captions when the game's subtitles show them; `"game_subtitles": false`). The rest only adds (part of a
@@ -413,6 +416,26 @@ changed. Only new ones were added.
   free DaVinci Resolve opens (`run.py resolve`): the clip in its pieces (each pause cut a visible cut), its sound,
   the sound effects on their own track, and the captions as a subtitle file. On Linux it makes edit copies the
   free Resolve can read. Before, a clip could only be edited further from the finished MP4. *(v2.8, 2026-11-23)*
+
+- ⬆ **"Boast, then fail" story clips** (gameplay, standard and deep mode). A promise or boast and, minutes
+  later, the fail that pays it off, told in up to 6 sharp cuts within 10 minutes (further apart: a deep
+  clip). The game's game-over screens (WASTED, FAILED, BUSTED) are read from the picture (about a minute for
+  4 hours, a small English text reader) and shown to Claude as lines of their own, so a piece can be the
+  FAILED screen itself. Only when it's funny: the fail must pay off something said before. *(v2.9, 2026-11-23)*
+- ⬆ **A piece without words is kept, not skipped.** A range in clips.json with nobody talking (a crash, a
+  game-over screen) was left out of the clip without a word; now it is shown exactly as given, and
+  `cut --check` says so. New `"keep_whole"` stretches are shown whole (no trimming to words, no pause cut).
+  *(v2.9, 2026-11-23)*
+- ↔ **A game-over screen in a clip is always shown whole** (gameplay): no pause cut inside it, and a clip
+  edge inside it isn't trimmed to the words. *(v2.9, 2026-11-23)*
+  - Way back: `"game_over_screens": false` (the screens are not read).
+- ⬆ **A clip never runs past the video's end.** The small sound handle after the last word could reach
+  beyond the end of the video; the clip's timing then didn't match the picture at its very end. *(v2.9)*
+- ⬆ **Compilations across videos** (advanced mode only): "a compilation of every glitch from my last 4
+  streams" makes one clip from moments of several clipped videos: you name the topic or Claude suggests
+  some, every moment is checked on its frames, the pieces are joined frame-exact with the loudness evened,
+  and nothing is pause-cut (silent glitches stay). Over 1:30 it also gets a landscape copy. Before, this was
+  done by hand (22 November). *(v2.9, 2026-11-23)*
 
 ## Posting
 

@@ -104,6 +104,11 @@ every decent one up to that number; never pad with weak ones.
   this part, in the order they were said, except one cold-open line of at most ~5 s that raises a
   question and means the same when heard first.
 - Never from a structural topic (teaser, sponsor, intro, outro, housekeeping).
+- **Gameplay: "boast, then fail" stories** (`picking-moments.md`, that section): a candidate with
+  `"kind": "story"` may have **up to 6 pieces** within **10 minutes**, all with their middle story in your
+  stretch, in the order they happened; the fail must pay off a boast, promise or claim said before it, and
+  be funny (never just any death). A piece may be a line without words: `{"note_line": <start seconds of a
+  line like [on screen: FAILED] or (no talking) [big action on screen ~4 s]>}`. At least one piece has words.
 - Each piece: `{"first": the first 5+ words exactly, "first_line": start time of the line they're
   in, "last": the last 5+ words exactly, "last_line": start time of the line they're in}`. Start on
   the hook's first word and end on the payoff's last word, at sentence ends.
@@ -142,7 +147,11 @@ UTF-8 JSON, no comments, exactly these keys:
             {"from": 2641.86, "best": null, "why": "<why none>"}],
  "candidates": [{"id": "c1", "pieces": [{"first": "<5+ exact words>", "first_line": 2501.20,
      "last": "<5+ exact words>", "last_line": 2541.60}], "title": "<title>",
-   "hook_type": "question", "score": 8, "why": "<reason>", "needs_context": null}],
+   "hook_type": "question", "score": 8, "why": "<reason>", "needs_context": null},
+  {"id": "c2", "kind": "story", "pieces": [{"first": "...", "first_line": 5111.07, "last": "...", "last_line": 5111.07},
+     {"note_line": 5437.03}, {"first": "...", "first_line": 5441.6, "last": "...", "last_line": 5441.6}],
+   "title": "<title>", "hook_type": "story", "score": 8, "why": "<the boast and the fail it pays off>",
+   "needs_context": null}],
  "note": "<3-4 sentences on what this part covers>",
  "look_closer": [{"at": 4815, "where": "webcam", "why": "red border, YAH KYA; a friend seems to fall in the webcam"}]}
 ```

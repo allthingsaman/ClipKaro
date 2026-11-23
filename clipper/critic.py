@@ -248,8 +248,8 @@ def prepare(pdir, source, runs):
                 if bold:
                     head.append(f'# {bold}')
                 if cues:
-                    head.append('# Markers like [laughter ~2 s], [both talk at once], [voice raised], [explosion] or '
-                                '[big action on screen], and "(other voice)" before a line (in gameplay: not the '
+                    head.append('# Markers like [laughter ~2 s], [both talk at once], [voice raised], [explosion], '
+                                '[big action on screen] or [on screen: FAILED] (the game\'s own game-over screen), and "(other voice)" before a line (in gameplay: not the '
                                 'streamer: a game character, or a friend playing along on voice chat), come from sound and picture detectors and can be wrong. '
                                 'A laugh in the room is not proof that viewers will laugh, and no marker does not mean '
                                 'the moment is dull.')

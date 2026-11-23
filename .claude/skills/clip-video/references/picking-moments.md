@@ -103,6 +103,24 @@ facecam`). Then these rules apply too:
 - **Leave out stream housekeeping**: hello chat, "is the audio OK", viewer counts, subscribe
   requests, "I'm back", reading donations, setting up the scene.
 
+## Boast, then fail (gameplay story clips)
+The owner's favourite gameplay clip: someone promises, boasts or claims ("ye mission like a boss karenge",
+"main technical gamer hoon", "isme petrol system nahi hai"), and minutes later the game proves them wrong
+(FAILED, WASTED, a crash, the bike blowing up). Told as a few sharp cuts, it is one funny story.
+- **Only when it's funny** (the owner's rule): the fail must pay off something said before it: a boast, a
+  promise, a confident claim, a joke ("agar fail hua to clip banegi"). Not every death, WASTED or FAILED is a
+  clip; a fail with nothing said before it is just gameplay.
+- **Game-over screens** show as lines of their own: `[5437.03-5441.53] [on screen: FAILED - THE PHOENIX WAS
+  DESTROYED.]`. A crash or explosion where nobody talks shows as `(no talking) [big action on screen ~4 s]`.
+- **Up to 6 pieces from one stretch of up to 10 minutes**, in the order they happened: the boast, the beats
+  that build it (the confident start, the first trouble while he still insists), the fail, and the reaction
+  ("who is gonna try next?"). Every piece must carry something (shorter wins): leave out the driving between.
+- **A piece may have no words**: the game-over screen or a crash, by its note line's times.
+- In the files of the part readers this is a candidate with `"kind": "story"`; in clips.json the clip gets
+  its pieces in `ranges` and, for each piece without words, the same seconds in `keep_whole` (shown whole:
+  never trimmed to words, no pause cut inside). `cut` keeps a game-over screen whole by itself.
+- Further apart than one part (about 21 minutes)? That is a deep clip ("boast-fail" thread, deep mode).
+
 ## How many
 `parts` prints the range to make (`-> clips: 3 to 13`):
 - **The user asked for a number** ("at least 10", "at most 5", "give me 8"): follow it exactly.
@@ -246,6 +264,10 @@ Write `output/<project>/clips.json`:
   the whole frame (`full`), or an exact spot (0 = left edge, 1 = right edge). Usually written after
   looking at the `run.py frames` sheets, to fix the automatic choice or to show a reaction the
   sound can't catch (a silent laugh: `split`). It always wins over the automatic framing.
+- `keep_whole` (optional, v2.9): `[[a, b]]` source-time stretches shown whole: a range edge inside one is
+  not trimmed to the words, and no pause is cut inside it. For pieces without words in a "boast, then fail"
+  story (a crash, the game-over screen) and silent action a clip needs (a glitch). Copy it from the
+  candidate when the candidate has one. A range with no words at all is always shown exactly as given.
 - `show_captions` / `hide_captions` (optional, gameplay): `[[a, b]]` source-time stretches whose
   captions are shown / left out whatever the game-voice rule says. `show_captions` brings back a
   player's line the rule took for a game character (a friend speaking English: "Thank you", "Ok ok

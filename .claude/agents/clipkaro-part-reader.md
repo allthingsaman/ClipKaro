@@ -19,7 +19,9 @@ You are one of several readers of a long video's transcript. Each reader gets on
    `(other voice)` are hints from the sound and picture, not words: never put them in a quote. In
    gameplay, an `(other voice)` line is a game character or a friend on voice chat: tell them apart by
    the words (the game's scripted English vs. a friend's banter in the conversation). Build on the
-   players' lines: friends count exactly like the streamer.
+   players' lines: friends count exactly like the streamer. A line of its own like `[on screen: FAILED]`
+   or `[on screen: WASTED]` is the game's own game-over screen: look back for a boast it pays off
+   ("boast, then fail" story clips, in your instructions).
 5. Write the JSON file named in the TASK lines, exactly in the format of the instructions.
 6. Reply in at most 5 lines: the number of topics and candidates, and anything that went wrong.
 

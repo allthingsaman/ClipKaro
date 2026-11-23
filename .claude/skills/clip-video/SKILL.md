@@ -33,6 +33,7 @@ game voices, break screens, cut, edit). They differ only in how the moments are 
   read the transcript yourself (step 2, "Quick mode"), with no helpers, no critic, no repair round,
   no deep pass and no caption check (2c). About v1.1's Claude usage.
 - Quick and deep both asked: deep clips need the standard read, so say so in one line and do deep.
+- **Compilations across videos** (section 9) are deep (advanced) mode only.
 
 ## 1. Get the transcript
 The user only has to say "clip this: <link>". Everything else has a default: the mode (standard),
@@ -134,7 +135,11 @@ the detector can be wrong, so judge them only by the words). Lines may carry **h
 and picture: `[laughter ~2 s]`, `[voice raised]`, `[shouting]`, `[explosion]`, `[big action on screen]`,
 and in gameplay `(other voice)` before a line that isn't the streamer's (a game character, or a friend on voice chat). They show where to look; the words
 decide; never quote them, and no hint is no reason to skip a moment. In gameplay, build clips around
-the players' own lines (friends on voice chat count like the streamer), not the game's scripted ones. A video fetched before v2.3 gets them with
+the players' own lines (friends on voice chat count like the streamer), not the game's scripted ones. A
+line of its own like `[on screen: FAILED]` or `[on screen: WASTED]` is the game's game-over screen: look
+for a **"boast, then fail" story** it pays off (`references/picking-moments.md`, that section: only when
+it's funny; up to 6 pieces within 10 minutes, the screen a piece by its own times, in `keep_whole`). A video
+fetched before v2.9 gets the screens with `python run.py gameover <project>`. A video fetched before v2.3 gets them with
 `python run.py hints <project>` (skip it in quick mode). Write a **shortlist of about twice
 the clips you'll make** (`parts` prints the number) to clips.json, in the normal format, then
 let the critic judge them (section 2a).
@@ -236,7 +241,7 @@ sees your scores, titles, the replay curve or anything about the channel.
    run `python run.py critic <project> --fresh --from clips`, start the 3 helpers again and pick
    from the new `critic.txt`. Skip the round when the top clips have no notes.
 6. Write the final clips.json: each clip with `"from": "<id>"` (e.g. `"p3-c1"`, or `"s3"` for the
-   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed, `"clip_score"`, its `"hook_text"` only when the user asked for a hook title (the 3-6 word title on screen for the first seconds), and its posting text:
+   third clip of a shortlist; after a repair round, the original id it had in the shortlist), its `ranges` exactly as listed (and its `keep_whole` when the candidate has one: the pieces without words of a "boast, then fail" story), `"clip_score"`, its `"hook_text"` only when the user asked for a hook title (the 3-6 word title on screen for the first seconds), and its posting text:
    `"caption"` and `"post"` (YouTube title + description, Instagram caption, Facebook caption;
    `references/picking-moments.md`). Every clip needs them, long videos included: the part
    readers' candidates have none, so write them here. A clip that says "इस movie" / "he" / "वो" and
@@ -271,7 +276,7 @@ for `parts/part-01.txt`, then `python run.py topics <project>`.
    again, then `critic --from deep --fresh` with 3 critics, `honesty` (judges for the new packets
    only) and `deep` once more. Never repair a repair; skip clips the judges call twisted at heart.
 7. Add the kept deep clips to
-   clips.json as extra clips, each with `"deep": {"moments": [...], "source_line": "From 2 moments of
+   clips.json as extra clips (a boast-fail story with its `keep_whole`), each with `"deep": {"moments": [...], "source_line": "From 2 moments of
    the full video: 0:08 · 22:53"}`, a real `caption` that ends with "Full video: <link>", and a
    `post` block written like any other clip's. The source line is for the owner (say it in your
    report); it never goes in a title, caption or description (`"joined_note": true` puts it back).
@@ -600,6 +605,31 @@ once (the owner chose auto-posting for live streams). Setup and what the user do
 While a live session runs, `run.py` lowers the priority of every heavy step and edits with the
 processor's encoder, and the watcher uses the graphics card for the words only when OBS leaves it
 enough memory: don't override that.
+
+## 9. Compilations across videos (advanced mode only: "compilation of every glitch from my last 4 streams")
+One clip made of moments from several videos on one topic. Only in deep (advanced) mode: in another mode,
+say in one line that compilations are an advanced-mode feature and ask whether to go ahead in advanced mode.
+Say up front that it takes a while (every moment is checked on its frames). The source videos must be clipped
+projects in `output/` (their words checked); paste a link that isn't one yet and clip it first.
+1. **The topic**: the user names it ("every glitch", "every time Jason dies"), or you suggest 2-4 topics
+   from the projects' topic maps (`topics.txt`) and clips, and the user picks.
+2. `python run.py compile <name> --from <project>,<project>,...` (folder names in `output/`). It writes
+   `output/<name>/compile/sources.txt`: each video's topics, clips, game-over screens and frame sheets.
+3. **Find the moments** in the topic maps, transcripts (`run.py find`) and frame sheets of those videos
+   (gameplay: `run.py zoom` for a closer look). A moment is the thing itself plus the players' reaction to it,
+   whole sentences, usually 5-15 s; leave out moments that don't really fit (on 22 November the owner dropped
+   two that weren't glitches). Write `output/<name>/moments.json`: `{"topic", "title", "moments": [{"project",
+   "ranges": [[a, b], ...], "what"}]}` in the order they should play (the strongest first and last).
+4. `python run.py compile <name> --check`: look at every `compile/moment-NN.jpg`. Is the moment really there,
+   from its start? Fix the ranges, then check again.
+5. `python run.py compile <name> --build`: the compilation project, with clips.json holding the one clip
+   (every piece kept whole: no pause cuts). Write its `title`, `hook`, `emphasis`, `caption`, `post`, `sfx` and
+   `emoji` (times on the compilation's clock: `run.py compile <name> --at <project> <seconds>`).
+6. Then as usual: `romanize <name> --checked` (Hinglish), the caption check (2c), `cut`, `edit`, `qa`. The
+   words were checked in their own projects: no second careful listening.
+7. **Format** (the owner's choice): up to 1:30 a vertical Short; longer, also the landscape copy
+   (`python run.py landscape <name>`). Post the vertical one through PostKaro as usual; the landscape one
+   is for a normal YouTube video (say where it is).
 
 ## Rules
 - Never invent words. Clips only contain what the speaker actually said.

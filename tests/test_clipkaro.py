@@ -4,6 +4,8 @@ Fast (no video, no model, no internet). They protect v1.1's behaviour (the class
 zoom rhythm, cut points on whole words, Roman Hinglish, post.json) and the upgrades since, so a
 change can't break them without anyone noticing.
 """
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -2272,6 +2274,152 @@ class ResolveExport(unittest.TestCase):
         with mock.patch.object(resolve, 'settings', return_value={'resolve_copies': 'no'}), \
                 mock.patch.object(resolve.sys, 'platform', 'linux'):
             self.assertFalse(resolve.copies_wanted())
+
+
+class BoastThenFail(unittest.TestCase):
+    """v2.9: game-over screens as transcript lines, story clips of up to 6 pieces (pieces without words allowed),
+    and seconds kept whole."""
+
+    def test_game_over_titles(self):
+        from clipper import gameover as go
+        self.assertEqual(go.title_of(['FaiLed', 'THE PHOENIX WAS DESTROYED.'], [0.29, 0.04]),
+                         ('FAILED', 'THE PHOENIX WAS DESTROYED.'))
+        self.assertEqual(go.title_of(['wasted'], [0.2]), ('WASTED', ''))
+        self.assertIsNone(go.title_of(['failed to load save'], [0.04]))          # small text: not a screen title
+        self.assertIsNone(go.title_of(['VB 9973 16', 'OR'], [0.12, 0.16]))        # big text, no fail word
+        keys = [5420.86, 5425.03, 5429.2, 5433.36, 5437.53, 5441.7, 5445.86]
+        self.assertEqual(go.screens_from([(5437.53, 'FAILED', 'THE PHOENIX WAS DESTROYED.')], keys),
+                         [[5437.03, 5441.53, 'FAILED', 'THE PHOENIX WAS DESTROYED.']])
+        two = go.screens_from([(100.0, 'WASTED', ''), (104.0, 'WASTED', ''), (300.0, 'WASTED', '')], [100.0, 104.0, 108.0, 300.0])
+        self.assertEqual([x[:2] for x in two], [[99.5, 108.0], [299.5, 304.0]])
+
+    def test_screens_are_lines_of_their_own(self):
+        from clipper import hints, gameover
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'transcript').mkdir()
+            (pdir / 'transcript' / 'gameover.json').write_text(json.dumps(
+                {'v': gameover.GAMEOVER_V, 'screens': [[5437.03, 5441.53, 'FAILED', 'THE PHOENIX WAS DESTROYED.']]}))
+            lines = [{'s': 5436.1, 'e': 5442.6, 'text': 'main karta hoon ... who is gonna try next?', 'i0': 0, 'i1': 9}]
+            with mock.patch('clipper.common.settings', return_value={}):
+                notes = hints.silent_notes(pdir, {'video_kind': {'gaming': True}}, lines)
+        self.assertEqual(notes, [{'s': 5437.03, 'e': 5441.53, 'note': '[on screen: FAILED - THE PHOENIX WAS DESTROYED.]'}])
+        self.assertEqual(hints.strip_hints('arre [on screen: FAILED - X] yaar').split(), ['arre', 'yaar'])
+
+    def test_pieces_without_words_and_kept_whole(self):
+        words = sentence('main karta hoon main karta hoon', 10.0) + sentence('who is gonna try next', 14.0)
+        clip = {'ranges': [[5.0, 8.0]], 'keep_whole': []}
+        self.assertEqual(cut.snap_piece(clip, 5.0, 8.0, words), (5.0, 8.0, None, None))   # shown as given
+        self.assertIsNone(cut.snap_piece(clip, 5.0, 5.3, words))                           # a sliver: dropped
+        plain = cut.snap_piece(clip, 9.0, 13.0, words)
+        self.assertGreater(plain[0], 9.5)                                                  # trimmed to the words
+        kept = cut.snap_piece(dict(clip, keep_whole=[[9.0, 13.0]]), 9.0, 13.0, words)
+        self.assertEqual(kept[:2], (9.0, 13.0))                                            # exactly as given
+        fades = cut.piece_fades([[0, 2], [5.0, 8.0], [20, 22]], 1, 5.0, 8.0, 3.0, None, None)
+        self.assertIn('afade=t=in', fades)
+
+    def test_no_pause_cut_inside_kept_seconds(self):
+        words = sentence('chalo', 0.0) + sentence('arre yaar', 1.3) + sentence('kya hua', 3.0)
+        clip = {'ranges': [[0.0, 4.0]]}
+        cut_all = cut.with_jump_cuts(clip, words, {}, True)
+        self.assertGreater(len(cut_all['ranges']), 1)
+        kept = cut.with_jump_cuts(dict(clip, keep_whole=[[0.2, 3.5]]), words, {}, True)
+        self.assertEqual(len(kept['ranges']), 1)
+
+    def test_story_candidates(self):
+        from clipper import topics as tp
+        words = (sentence('ye mission hum like a boss karenge dekhna', 10.0) + sentence('agar fail hua to clip banegi', 40.0)
+                 + sentence('arre gaadi paani mein gayi yaar', 300.0) + sentence('who is gonna try next bhai', 312.0))
+        lines = [{'s': words[a]['s'], 'e': words[b]['e'], 'i0': a, 'i1': b} for a, b in [(0, 6), (7, 12), (13, 18), (19, 24)]]
+        notes = [{'s': 306.0, 'e': 310.5, 'note': '[on screen: FAILED]'}]
+        tr = tp.Transcript(words, lines, notes)
+        piece = lambda f, fl, l, ll: {'first': f, 'first_line': fl, 'last': l, 'last_line': ll}   # noqa: E731
+        story = {'id': 'c1', 'kind': 'story', 'title': 'Like a boss... FAILED', 'hook_type': 'story', 'score': 8,
+                 'why': 'boast, then fail', 'pieces': [
+                     piece('ye mission hum like a', 10.0, 'a boss karenge dekhna', 10.0),
+                     piece('agar fail hua to clip', 40.0, 'hua to clip banegi', 40.0),
+                     piece('arre gaadi paani mein gayi', 300.0, 'paani mein gayi yaar', 300.0),
+                     {'note_line': 306.0},
+                     piece('who is gonna try next', 312.0, 'gonna try next bhai', 312.0)]}
+        part = {'part': 1, 'stretch': [0.0, 400.0], 'context': [0.0, 400.0], 'blocks': []}
+        pb = tp.Problems()
+        _, cands, _, _ = tp.read_part(tr, pb, part, {'topics': [], 'blocks': [], 'candidates': [story]}, 10.0)
+        self.assertEqual(pb.errors, [])
+        self.assertEqual(cands[0]['kind'], 'story')
+        self.assertEqual(cands[0]['keep_whole'], [[306.0, 310.5]])
+        self.assertEqual(len(cands[0]['ranges']), 5)
+        self.assertIn('[on screen: FAILED]', cands[0]['text'])
+        plain = dict(story, kind=None)                       # not a story: no note pieces, at most 3 pieces
+        pb = tp.Problems()
+        tp.read_part(tr, pb, part, {'topics': [], 'blocks': [], 'candidates': [plain]}, 10.0)
+        self.assertTrue(any('story' in m for _, m in pb.errors))
+        late = [dict(w, s=w['s'] + 400, e=w['e'] + 400) if w['s'] >= 300 else w for w in words]   # the fail 11 min later
+        late_lines = [dict(ln, s=late[ln['i0']]['s'], e=late[ln['i1']]['e']) for ln in lines]
+        tr2 = tp.Transcript(late, late_lines, [{'s': 706.0, 'e': 710.5, 'note': '[on screen: FAILED]'}])
+        far = dict(story, pieces=story['pieces'][:2] + [{'note_line': 706.0},
+                                                         piece('who is gonna try next', 712.0, 'gonna try next bhai', 712.0)])
+        pb = tp.Problems()
+        tp.read_part(tr2, pb, dict(part, stretch=[0.0, 800.0], context=[0.0, 800.0]),
+                     {'topics': [], 'blocks': [], 'candidates': [far]}, 10.0)
+        self.assertTrue(any('deep clip' in m for _, m in pb.errors))      # farther apart than 10 min: deep pass
+
+
+class Compilations(unittest.TestCase):
+    """v2.9: one clip from moments of several videos (advanced mode): frame-exact pieces, the checked words,
+    game-over screens and voices carried over onto the compilation's clock."""
+
+    def moments(self):
+        return {'moments': [{'project': 'A', 'ranges': [[100.0, 110.2]], 'what': 'wheel'},
+                            {'project': 'B', 'ranges': [[50.0, 54.0], [60.0, 63.5]], 'what': 'tree'}]}
+
+    def test_pieces_in_whole_frames(self):
+        from clipper import compile as cp
+        pieces, total = cp.pieces_of(self.moments(), 60.0)
+        self.assertEqual([p['T'] for p in pieces], [0.0, 10.2, 14.2])
+        self.assertEqual([p['frames'] for p in pieces], [612, 240, 210])
+        self.assertAlmostEqual(total, 17.7)
+        self.assertEqual(cp.at(pieces, 'B', 61.0), 15.2)
+        self.assertIsNone(cp.at(pieces, 'B', 57.0))                        # cut out between the two ranges
+
+    def test_words_screens_voices_carried(self):
+        from clipper import compile as cp, gameover
+        pieces, _ = cp.pieces_of(self.moments(), 60.0)
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            for proj, ws in (('A', sentence('haath pahiye ke andar', 101.0) + sentence('outside the piece', 120.0)),
+                             ('B', sentence('ped gayab ho gaya', 61.0))):
+                (out / proj / 'transcript').mkdir(parents=True)
+                (out / proj / 'transcript' / 'words.json').write_text(json.dumps(ws))
+            (out / 'B' / 'transcript' / 'gameover.json').write_text(json.dumps(
+                {'v': gameover.GAMEOVER_V, 'screens': [[62.0, 66.0, 'WASTED', '']]}))
+            (out / 'A' / 'transcript' / 'voices.json').write_text(json.dumps(
+                {'v': 1, 'main': 3, 'voices': {}, 'lines': [[100.9, 103.0, 3, 0.8]]}))
+            with mock.patch.object(cp, 'OUTPUT', out):
+                words = cp.carry_words(pieces)
+                screens = cp.carry_screens(pieces)
+                lines = [{'s': 1.0, 'e': 2.5, 'i0': 0, 'i1': 3}, {'s': 15.2, 'e': 16.5, 'i0': 4, 'i1': 7}]
+                v = cp.carry_voices(pieces, lines)
+        self.assertEqual([w['w'] for w in words], ['haath', 'pahiye', 'ke', 'andar', 'ped', 'gayab', 'ho', 'gaya'])
+        self.assertEqual(words[0]['s'], 1.0)                               # 101.0 in A -> 1.0
+        self.assertEqual(words[4]['s'], 15.2)                              # 61.0 in B -> 15.2
+        self.assertEqual(screens, [[16.2, 17.7, 'WASTED', '']])           # clipped to the piece
+        self.assertEqual(v['lines'][0][2:], [0, 0.8])                      # A's streamer -> the main voice
+        self.assertEqual(v['lines'][1][2:], [None, None])                  # B has no voices.json
+
+    def test_moments_checked(self):
+        from clipper import compile as cp
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            (out / 'A').mkdir()
+            (out / 'A' / 'project.json').write_text(json.dumps({'duration': 200.0}))
+            (out / 'comp').mkdir()
+            bad = {'moments': [{'project': 'A', 'ranges': [[100.0, 110.0]]}, {'project': 'A', 'ranges': [[105.0, 120.0]]},
+                               {'project': 'nope', 'ranges': [[1, 2]]}, {'project': 'A', 'ranges': [[190.0, 230.0]]}]}
+            (out / 'comp' / 'moments.json').write_text(json.dumps(bad))
+            with mock.patch.object(cp, 'OUTPUT', out), self.assertRaises(SystemExit) as e:
+                with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                    cp.read_moments(out / 'comp')
+        self.assertTrue(e.exception.code)
 
 
 class NormalVideosUntouched(unittest.TestCase):

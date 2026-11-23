@@ -12,7 +12,9 @@ You find stories spread across one long video, for "deep clips".
    `.claude/skills/clip-video/references/picking-moments.md`.
 2. Read the whole map file named in your prompt. If the reader shows a PARTIAL view, keep reading
    with offset/limit until the end.
-3. Copy words and line seconds exactly as the map has them; never write a time of your own.
+3. Copy words and line seconds exactly as the map has them; never write a time of your own. In gameplay,
+   look for "boast-fail" threads too: a boast and the fail that pays it off much later, often a GAME-OVER
+   SCREENS line (only when it's funny).
 4. Write `deep/threads.json` next to the map, in the format of the instructions. No thread at all
    is a fine answer.
 5. Reply in at most 5 lines: how many threads, their patterns, anything that went wrong.

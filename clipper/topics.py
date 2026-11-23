@@ -41,6 +41,8 @@ LINK_TYPES = {'answers', 'pays_off', 'callback_to', 'continues'}
 VAGUE = re.compile(r'^(story|part|topic|discussion|segment|chapter|conversation|talk)\s*\d*$', re.I)
 
 NEAR = 60.0            # a quote is looked for within this many seconds of the line it cites
+STORY_PIECES = 6       # a story clip ("kind": "story", v2.9: boast, then fail) has up to this many pieces ...
+STORY_SPAN = 600.0     # ... all within this many seconds (a regular part's candidate; a deep clip may span more)
 MERGE_GAP = 20.0       # topic starts closer than this are one topic
 CAND_TOKENS = 18000    # candidates.txt is split above this
 BRIEF_FOCUS = '.claude/skills/clip-video/references/reading-parts.md (section "Focus reads")'
@@ -49,11 +51,18 @@ BRIEF_FOCUS = '.claude/skills/clip-video/references/reading-parts.md (section "F
 class Transcript:
     """Words and lines, with the lookups the checks need."""
 
-    def __init__(self, words, lines):
+    def __init__(self, words, lines, notes=None):
         self.words, self.lines = words, lines
+        self.notes = notes or []           # lines of their own without words: game-over screens, silent action (v2.9)
         self.norm = [norm_token(w['w']) for w in words]
         self.starts = [w['s'] for w in words]
         self.line_at = {round(ln['s'], 2): i for i, ln in enumerate(lines)}
+
+    def note_at(self, t):
+        """The note line (game-over screen, action where nobody talks) starting at t, or None."""
+        if not isinstance(t, (int, float)) or isinstance(t, bool):
+            return None
+        return next((n for n in self.notes if abs(n['s'] - float(t)) < 0.02), None)
 
     def line_index(self, t):
         return self.line_at.get(round(float(t), 2)) if isinstance(t, (int, float)) else None
@@ -288,11 +297,28 @@ def read_part(tr, pb, plan_part, ans, first_line_s):
             pb.err(k, f'{what}: the id is used twice')
             continue
         seen.add(cid)
-        ranges, ok = [], True
-        for j, pc in enumerate(c['pieces'][:3], 1):
+        ranges, ok, keep, texts = [], True, [], []
+        story = c.get('kind') == 'story'          # boast, then fail (v2.9): up to 6 pieces, note pieces allowed
+        most = STORY_PIECES if story else 3
+        for j, pc in enumerate(c['pieces'][:most], 1):
             if not isinstance(pc, dict):
                 ok = False
                 break
+            if 'note_line' in pc:                 # a piece without words: a game-over screen, a crash
+                note = tr.note_at(pc.get('note_line'))
+                if not story:
+                    pb.err(k, f'{what} piece {j}: a note line can only be a piece of a story clip ("kind": "story")')
+                    ok = False
+                    break
+                if not note:
+                    pb.err(k, f'{what} piece {j}: no note line (like "[on screen: FAILED]") starts at '
+                              f'{pc.get("note_line")}: copy the start time of that line')
+                    ok = False
+                    break
+                ranges.append([note['s'], note['e']])
+                keep.append([note['s'], note['e']])
+                texts.append(note['note'])
+                continue
             m1 = check_quote(tr, pb, k, f'{what} piece {j} first words', pc.get('first'), pc.get('first_line'), ctx)
             m2 = check_quote(tr, pb, k, f'{what} piece {j} last words', pc.get('last'), pc.get('last_line'), ctx,
                              before=NEAR, after=NEAR + 90)
@@ -305,10 +331,19 @@ def read_part(tr, pb, plan_part, ans, first_line_s):
                 ok = False
                 break
             ranges.append([round(s, 2), round(e, 2)])
+            texts.append(words_text(tr, round(s, 2), round(e, 2)))
         if not ok:
             continue
-        if len(c['pieces']) > 3:
-            pb.err(k, f'{what}: at most 3 pieces')
+        if len(c['pieces']) > most:
+            pb.err(k, f'{what}: at most {most} pieces' + ('' if story else ' (a "boast, then fail" story: '
+                                                         '"kind": "story", up to 6)'))
+            continue
+        if story and len(keep) == len(ranges):
+            pb.err(k, f'{what}: a story needs spoken pieces too, not only note lines')
+            continue
+        if story and isinstance(k, int) and ranges[-1][1] - ranges[0][0] > STORY_SPAN:
+            pb.err(k, f'{what}: a story clip lies within {STORY_SPAN / 60:.0f} minutes (this one spans '
+                      f'{(ranges[-1][1] - ranges[0][0]) / 60:.0f}); farther apart is a deep clip')
             continue
         dur = sum(e - s for s, e in ranges)
         main = max(ranges, key=lambda r: r[1] - r[0])
@@ -338,7 +373,8 @@ def read_part(tr, pb, plan_part, ans, first_line_s):
         cands.append({'id': f'p{k}-{cid}', 'part': k, 'ranges': ranges, 'duration': round(dur, 1),
                       'title': str(c.get('title') or '').strip(), 'hook_type': c.get('hook_type'), 'score': sc,
                       'why': c.get('why'), 'needs_context': c.get('needs_context') or None,
-                      'text': ' … '.join(words_text(tr, s, e) for s, e in ranges)})
+                      'text': ' … '.join(texts),
+                      **({'kind': 'story'} if story else {}), **({'keep_whole': keep} if keep else {})})
     cap = plan_part.get('per_part', 5)
     if len(cands) > cap:
         pb.warn(f'part {k}', f'{len(cands)} candidates (up to {cap} asked)')
@@ -528,7 +564,8 @@ def build(pdir, plan, args):
     words = load_json(pdir / 'transcript' / 'words-before-fixes.json') or load_json(pdir / 'transcript' / 'words.json')
     lines = load_json(pdir / 'transcript' / 'sentences.json')
     project = load_json(pdir / 'project.json', {}) or {}
-    tr = Transcript(words, lines)
+    from . import hints
+    tr = Transcript(words, lines, hints.silent_notes(pdir, project, lines))   # note lines: story pieces (v2.9)
     out = pdir / args.dir
     all_topics, all_cands, per_part = [], [], []
     for pp in plan['parts']:
@@ -739,12 +776,14 @@ def write_candidates(pdir, cands):
         return '\n'.join([
             f"{c['id']}  {times} ({c['duration']:.0f} s)  score {c['score']}  {c['hook_type']}  \"{c['title']}\"  [{c['topic']}]"
             + (('  · ' + ' · '.join(hints)) if hints else ''),
-            f"  ranges: {json.dumps(c['ranges'])}",
+            f"  ranges: {json.dumps(c['ranges'])}"
+            + (f"   keep_whole: {json.dumps(c['keep_whole'])}" if c.get('keep_whole') else ''),
             f"  why: {c.get('why') or ''}",
             f"  text: {c['text']}", ''])
     blocks = [block(c) for c in cands]
-    head = (f'# {len(cands)} clip candidates in time order. Rank them all together; copy "ranges" and add '
-            f'"from": "<id>" in clips.json.\n\n')
+    head = (f'# {len(cands)} clip candidates in time order. Rank them all together; copy "ranges" (and "keep_whole" '
+            f'where shown: a game-over screen or action without words, kept whole) and add "from": "<id>" in '
+            f'clips.json.\n\n')
     files, cur = [], head
     for bl in blocks:
         if est_tokens(cur + bl) > CAND_TOKENS and cur != head:

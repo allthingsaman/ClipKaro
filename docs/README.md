@@ -16,7 +16,9 @@ New to Claude Code or coding? Read the [user guide](user-guide.md) first.
 | [postkaro.md](postkaro.md) | **Posting with PostKaro**: install, opening it with its link, connecting YouTube, Instagram and Facebook, default accounts, posting every day, fixes | everyone who posts |
 | [live-clipping.md](live-clipping.md) | **Live clipping**: clips posted while you stream. How it works, the OBS recording setup, your folder and Twitch channel, a test stream, going live step by step, what it costs, fixes | streamers |
 | [streaming-setup.md](streaming-setup.md) | **Multistream on OBS**: YouTube (horizontal and vertical), Twitch and Kick at once with stream keys, the encoder settings for each, audio tracks, upload speed, checking you're really live, fixes | streamers |
-| [roadmap-v3.md](roadmap-v3.md) | **What's next after v2.5**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
+| [roadmap-v3.md](roadmap-v3.md) | **What's next**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
+| [plan-v3.0.md](plan-v3.0.md) | **The plan for v3.0**, approved by the owner: every item, decision and release step | the owner |
+| [test-list.md](test-list.md) | **What to try before v3.0**: every new part, how to test it and what you should see | the owner |
 | [roadmap-v2.md](roadmap-v2.md) | **How ClipKaro compares with Opus Clip** and others (updated for v2.2), and the plan to make its clips industry grade | contributors, curious users |
 | [adding-a-language.md](adding-a-language.md) | How to add proper support for a new language (fonts, detection, Roman captions) | developers |
 | [SETUP-FEDORA.md](SETUP-FEDORA.md) | A ready-made prompt that lets Claude Code set everything up on Fedora with an NVIDIA GPU | Fedora users |

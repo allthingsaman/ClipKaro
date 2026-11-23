@@ -18,6 +18,9 @@ Patterns, best first:
 3. **setup -> story -> punchline**.
 4. **claim -> its proof**, or **objection -> its own answer**.
 5. **callback**: a later line that calls back to an earlier one, only with that earlier one in the clip.
+6. **boast-fail** (gameplay): a boast, promise or confident claim, and much later the fail that pays it
+   off, often only on screen (the map's GAME-OVER SCREENS list). Only when it's funny: never just any
+   death. The payoff may be a screen: `"payoff": {"screen": <its start seconds from the map>}`.
 Never: "he contradicts himself", "answered twice", supercuts of similar lines, or two moments that
 only share a word. Different people's words are joined only as question -> answer.
 
@@ -44,6 +47,9 @@ Then build **up to 2 deep clips** and **the best continuous clip** around the pa
 15-75 s; it is the fair comparison: a deep clip is kept only if it scores at least as high).
 - **2-3 pieces**, in the order they were said. One exception: a cold-open line of 2-5 s may go
   first if it raises the question (never the answer) and means the same when heard first.
+- **A boast-fail thread** (the file says BOAST-FAIL): a story clip, `"kind": "story"`, of **up to 6
+  pieces** in the order they happened: the boast, the beats that build it, the fail, the reaction. A
+  piece may be a line without words (the game-over screen, a crash): `{"note_line": <its start seconds>}`.
 - **Each piece is whole sentences**: body pieces about 6-20 s. Total **30-75 s**.
 - **One thread per clip**, the hook or question in the first 3 seconds, the payoff last.
 - Every piece makes sense with what came before it in the clip: no "he / वो / that" pointing at

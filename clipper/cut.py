@@ -311,6 +311,7 @@ def with_jump_cuts(clip, words, cues, gameplay, moving=None):
     Adds 'jump_edges' (piece edges made by a jump cut: they get small handles) and 'jump_saved'.
     moving(a, b): True when something happens on screen in that pause (gameplay): it stays."""
     noisy = [(a, b) for kind in ('laughter', 'applause') for a, b, *_ in (cues or {}).get(kind, [])]
+    noisy += [tuple(x[:2]) for x in clip.get('keep_whole') or []]     # kept whole: no pause cut inside (v2.9)
     kept = []
 
     def quiet_ok(a, b):
@@ -335,12 +336,26 @@ def with_jump_cuts(clip, words, cues, gameplay, moving=None):
     return dict(clip, ranges=ranges, jump_edges=edges, jump_saved=round(saved, 1), **extra)
 
 
+def in_keep(t, spans):
+    """True when second t lies in (or on the edge of) a keep_whole span."""
+    return any(a - 0.05 <= t <= b + 0.05 for a, b in spans or ())
+
+
 def snap_piece(clip, s, e, words):
     """snap_range, with small handles at the edges a jump cut made, and an edge moved off a camera cut
-    that would flash (edge_trims)."""
+    that would flash (edge_trims). v2.9: a piece without words is kept exactly as given (a crash, a game-over
+    screen: (s, e, None, None)), and an edge inside a "keep_whole" span stays where it is (no trimming to the
+    words: the picture is the point there)."""
     edges = clip.get('jump_edges') or ()
     r = snap_range(s, e, words, JUMP_PAD_IN if round(s, 3) in edges else PAD_IN,
                    JUMP_PAD_OUT if round(e, 3) in edges else PAD_OUT)
+    keep = clip.get('keep_whole') or ()
+    if r is None:
+        return (s, e, None, None) if e - s >= JUMP_MIN_PIECE else None
+    if in_keep(s, keep):                     # exactly as given: never trimmed, never grown into the next piece
+        r = (s,) + tuple(r[1:])
+    if in_keep(e, keep):
+        r = (r[0], e) + tuple(r[2:])
     if r and clip.get('event_at') is not None and clip.get('ranges') and abs(s - clip['ranges'][0][0]) < 1e-3:
         r = (min(s, r[0]),) + tuple(r[1:])        # an event clip starts on its event, before anyone talks (v2.7)
     trim = (clip.get('edge_trims') or {}).get(f'{s:.3f}-{e:.3f}')
@@ -380,7 +395,7 @@ def edge_trims(clip, words, fps, scores):
     frame = 1.0 / max(fps, 1.0)
     for s, e in clip['ranges']:
         snapped = snap_piece(clip, s, e, words)
-        if not snapped:
+        if not snapped or snapped[2] is None:      # a piece without words is shown as given
             continue
         start, end, i0, i1 = snapped
         new_s, new_e, hold_in, hold_out = start, end, 0.0, 0.0
@@ -666,11 +681,13 @@ def piece_fades(ranges, k, start, end, dur, first_word, last_word):
     clip's own start and end) fades exactly as before."""
     last = k == len(ranges) - 1
     f_in, f_out, curve = 0.01, (0.12 if last else 0.03), ''
+    room_in = first_word['s'] - start - 0.01 if first_word else dur / 4      # a piece without words (v2.9)
+    room_out = end - last_word['e'] - 0.01 if last_word else dur / 4
     if k > 0:
-        f_in = max(0.01, min(join_fade(ranges[k][0] - ranges[k - 1][1])[0], first_word['s'] - start - 0.01))
+        f_in = max(0.01, min(join_fade(ranges[k][0] - ranges[k - 1][1])[0], room_in))
         curve = ':curve=qsin'
     if not last:
-        f_out = max(0.03, min(join_fade(ranges[k + 1][0] - ranges[k][1])[1], end - last_word['e'] - 0.01))
+        f_out = max(0.03, min(join_fade(ranges[k + 1][0] - ranges[k][1])[1], room_out))
     return (f'afade=t=in:d={f_in:.3f}{curve},'
             f'afade=t=out:st={max(0, dur - f_out):.3f}:d={f_out:.3f}{":curve=qsin" if not last else ""}')
 
@@ -694,6 +711,7 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
             print(f'   ! range {s}-{e} has no words, skipped')
             continue
         start, end, i0, i1 = snapped
+        end = min(end, info.get('duration') or end)       # never past the video's end (a handle after its last word)
         dur = end - start
         inputs += ['-ss', f'{start:.3f}', '-t', f'{dur:.3f}', '-i', str(video)]
         n = len(parts)
@@ -725,9 +743,9 @@ def build_clip(video, info, clip, words, out_mp4, horizontal=False, fc=None, pla
                     chains.append(shot_filter(f'{n}s{j}', sh, src_w, src_h, f'v{n}_{j}', fps))
                 chains.append(''.join(f'[v{n}_{j}]' for j in range(len(shots))) +
                               f'concat=n={len(shots)}:v=1:a=0[v{n}]')
-        chains.append(f'[{n}:a]aresample=48000,{piece_fades(clip["ranges"], k, start, end, dur, words[i0], words[i1])}[a{n}]')
+        chains.append(f'[{n}:a]aresample=48000,{piece_fades(clip["ranges"], k, start, end, dur, words[i0] if i0 is not None else None, words[i1] if i1 is not None else None)}[a{n}]')
         labels.append(f'[v{n}][a{n}]')
-        for k, w in enumerate(words[i0:i1 + 1], i0):
+        for k, w in enumerate(words[i0:i1 + 1] if i0 is not None else [], i0 or 0):
             cw = {**w, 's': round(w['s'] - start + timeline, 3), 'e': round(w['e'] - start + timeline, 3)}
             # a game character: no caption (the game shows its own); clips.json "show_captions" /
             # "hide_captions" ([[start, end], ...] in the video) overrule the rule (v2.7)
@@ -877,8 +895,12 @@ def main():
         if want and cid not in want:
             continue
         snapped = [snap_range(s, e, words) for s, e in clip['ranges']]
-        total = sum(x[1] - x[0] for x in snapped if x)
+        total = sum(x[1] - x[0] if x else e - s for x, (s, e) in zip(snapped, clip['ranges']))
         msgs = boundary_warnings(clip['ranges'], words)
+        for k, (x, (s, e)) in enumerate(zip(snapped, clip['ranges']), 1):   # v2.9: shown as given, not skipped
+            if x is None:
+                msgs.append(f'piece {k} ({fmt_ts(s)}-{fmt_ts(e)}) has no words: it is shown exactly as given (a '
+                            f'crash, a game-over screen); fine when that is the point, else check its times')
         if total and not 15 <= total <= 90:
             msgs.append(f'length {total:.0f}s is outside 15-90 s')
         msgs += drift_warnings(clip, cands, repairs)
@@ -963,7 +985,12 @@ def main():
         cam_box = fc['cam'] if fc else (project.get('facecam') or None)
     from . import private                        # an email or phone number said out loud never ends up in a clip
     secret = private.spans(words) if private.wanted(project) else []
+    from . import gameover                       # a game-over screen in a clip is always shown whole (v2.9)
+    screens = [s_[:2] for s_ in (gameover.load(pdir) or {}).get('screens', [])]
     for i, clip in enumerate(picks['clips'], 1):
+        on = [x for x in screens if any(r0 < x[1] and x[0] < r1 for r0, r1 in clip['ranges'])]
+        if on:
+            picks['clips'][i - 1] = clip = dict(clip, keep_whole=list(clip.get('keep_whole') or []) + on)
         cid = int(clip.get('id', i))
         hits = [sp for sp in secret for a, b in clip['ranges'] if a < sp[1] and sp[0] < b]
         if hits:
