@@ -1286,6 +1286,60 @@ class SmartActionPauses(unittest.TestCase):
         self.assertEqual(DEFAULT_SETTINGS['action_pauses'], 'smart')     # "keep" = v2.7.1, "cut" = v2.7
 
 
+class LandscapeCopy(unittest.TestCase):
+    """v2.8: a 16:9 copy of a finished clip: the standing edit's captions, credit, logo and emojis placed for
+    1920x1080, on the same timeline."""
+
+    def plan(self):
+        return {'caption_style': {'size': 96, 'y': 1270, 'font': 'Montserrat ExtraBold', 'font_file': 'x.ttf'},
+                'captions': [{'start': 0.0, 'end': 1.0, 'y': 1150, 'scale': 0.8, 'words': [{'text': 'HI', 's': 0.0, 'e': 0.5}]}],
+                'credit': {'text': '(C) twitch.tv/x', 'an': 1, 'x': 0, 'y': 1920, 'size': 30},
+                'logo': {'file': 'logo.png', 'w': 160, 'h': 120, 'x': 920, 'y': 1800, 'alpha': 0.7,
+                         'corner': 'bottom-right'},
+                'emoji': [{'char': 'x', 'png': 'e.png', 't0': 0.2, 't1': 1.4, 'x': 700, 'y': 1100, 'size': 150}],
+                'hook': None, 'outro': {'file': 'outro.mp4'}}
+
+    def test_the_short_is_posted_not_the_wide_copy(self):
+        from clipper import post
+        with tempfile.TemporaryDirectory() as d:
+            pdir = Path(d)
+            (pdir / 'clips').mkdir()
+            (pdir / 'edited').mkdir()
+            (pdir / 'clips' / '03-a-title.mp4').write_bytes(b'')
+            (pdir / 'edited' / '03-a-title-landscape.mp4').write_bytes(b'')
+            self.assertEqual(post.clip_files(pdir)[3], pdir / 'clips' / '03-a-title.mp4')
+            (pdir / 'edited' / '03-a-title.mp4').write_bytes(b'')
+            self.assertEqual(post.clip_files(pdir)[3], pdir / 'edited' / '03-a-title.mp4')
+
+    def test_placed_for_a_wide_frame(self):
+        from clipper import landscape
+        old = self.plan()
+        land = landscape.landscape_plan(old)
+        self.assertEqual((land['caption_style']['y'], land['caption_style']['size']), (landscape.CAP_Y, 72))
+        self.assertNotIn('y', land['captions'][0])                       # standing-frame heights are dropped
+        self.assertEqual((land['credit']['x'], land['credit']['y']), (0, 1080))      # bottom-left corner
+        self.assertEqual((land['logo']['x'], land['logo']['y']), (1920 - 160, 1080 - 120))   # bottom-right
+        self.assertEqual((land['emoji'][0]['x'], land['emoji'][0]['y']), (960, landscape.EMOJI_Y))
+        self.assertIsNone(land['outro'])                                 # the outro is standing
+        self.assertEqual(old['caption_style']['y'], 1270)                # the standing plan is left alone
+
+    def test_captions_drawn_wide(self):
+        from clipper import edit, landscape
+        with tempfile.TemporaryDirectory() as d:
+            plan = dict(landscape.landscape_plan(self.plan()), brand={'text': '#FFFFFF', 'accent': '#FFD60A',
+                                                                      'outline': '#000000'}, fps=30, duration=1.5)
+            plan['caption_style'].update(pop=True, uppercase=True, outline=8, look='classic', spacing=1)
+            plan['credit'].update(font='Poppins', font_file=str(Path(edit.FONTS) / 'Poppins-ExtraBold.ttf'))
+            plan['caption_style']['font_file'] = str(Path(edit.FONTS) / 'Montserrat-ExtraBold.ttf')
+            out = Path(d) / 'wide.ass'
+            edit.write_ass(plan, out, frame=(1920, 1080), jump_y=landscape.JUMP_Y)
+            text = out.read_text(encoding='utf-8')
+        self.assertIn('PlayResX: 1920', text)
+        self.assertIn('PlayResY: 1080', text)
+        self.assertIn(f'\\pos(960,{landscape.CAP_Y})', text)
+        self.assertIn('\\pos(0,1080)', text)                            # the credit in its corner
+
+
 class LiveSettings(unittest.TestCase):
     """settings.json ships "<...>" placeholders for the user's own live settings (OBS folder, Twitch
     channel): they count as not set, so Claude asks for them and a placeholder is never used as a path."""

@@ -486,6 +486,12 @@ style"), or what "My preferences" say; otherwise classic. Hindi-letter captions 
 **Emojis** come from clips.json (`emoji`; `references/picking-moments.md`). Background music is on
 hold: write no `music` mood. "Add this sound as shock: <file>" -> `python run.py sfx add "<file>"
 shock`.
+**Landscape copy** (only when the user asks: "landscape copy", "16:9 copy too", "YouTube video version";
+always for a compilation longer than 1:30): after `edit`, `python run.py landscape <project> [--clips N]`. It
+cuts a wide copy on the same timeline (`cut --landscape-copy`, into `clips-landscape/`) and draws the standing
+edit's captions, credit, logo and emojis for 1920x1080 with its sound: `edited/NN-title-landscape.mp4`. Name
+it in the report next to the standing clip. (Different from `cut --horizontal`, which makes the clips wide
+instead of standing.)
 Options: `--sfx light|none`, `--no-zoom`, `--no-captions`, `--no-upper` (sentence case),
 `--caption-y 1270` (higher number = lower on screen), `--size 96`, `--engine remotion`,
 `--jump-label` (a small "27 MIN LATER" where a joined clip jumps in time; only if the user asks,

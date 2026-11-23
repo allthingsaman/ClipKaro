@@ -149,6 +149,8 @@ clipper/                     the toolbox (Python)
     private.py    gameplay and streams: an email address or phone number said out loud (pieces said one right
                   after another, never everyday talk): hidden from the readers, cut out of clips
     watch.py      gameplay and streams: frame sheets for the readers, close-ups (zoom.py), events into clips (events.py)
+    landscape.py  a 16:9 copy of finished clips: cut --landscape-copy (same timeline) + the standing edit's plan
+                  redrawn for 1920x1080 (edit.write_ass with a frame size) + its sound
     hearing.py    noisy Hindi / Hinglish streams: two more speech models and the word check (hear, rehear, wordcheck);
                   clips over ~29 s heard in windows of under 30 s; off while live clipping runs (CLIPKARO_LIVE)
     sfx.py        scans assets/sfx/ and builds the sound-effect catalog

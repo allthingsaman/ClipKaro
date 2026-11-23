@@ -150,7 +150,8 @@ captions". To have one every time, add it to your preferences.
 ### Framing
 | You write | What happens |
 |---|---|
-| "keep it wide" / "16:9" | keeps the original wide shape |
+| "keep it wide" / "16:9" | keeps the original wide shape (instead of the standing clips) |
+| "landscape copy" / "16:9 copy too" / "YouTube video version bhi" | the finished clips stay standing, and a wide 1920x1080 copy is made next to each (`edited/NN-title-landscape.mp4`): the same moment, captions, credit, logo, emojis and sound, placed for a wide frame; no zooms, no outro. Compilations longer than 1:30 always get one |
 | "use the facecam layout" / "don't use the facecam layout" | gameplay on top and your webcam below, or not |
 | "the webcam is in the bottom-left corner" | Claude saves the webcam's position in `settings.json` |
 | (nothing: it's automatic) | in podcasts with two people on screen, the person talking is shown; around laughs and when they talk over each other, both are shown stacked (split screen) |

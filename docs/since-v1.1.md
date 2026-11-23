@@ -392,6 +392,11 @@ changed. Only new ones were added.
   *(v2.8, 2026-11-23)*
   - Way back: `"action_pauses": "keep"` in settings.json (v2.7.1); `"cut"` is v2.7.
 
+- ⬆ **A landscape (16:9) copy, when you ask.** "Landscape copy" keeps the standing clips and adds a wide
+  1920x1080 copy of each (`run.py landscape`): the same pieces and pause cuts, the captions, credit, logo, emojis
+  and sound placed for a wide frame; no zooms, no outro. For YouTube videos and long compilations. Before, it
+  was made by hand (22 November). Without asking, nothing changes. *(v2.8, 2026-11-23)*
+
 ## Posting
 
 - ⬆ **Text for each platform**: a YouTube title of up to 100 characters with fitting hashtags,

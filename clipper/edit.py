@@ -224,14 +224,17 @@ def ass_name(stem, tag=''):
     return f'{safe}-{zlib.crc32(stem.encode("utf-8")):08x}{tag}.ass'
 
 
-def write_ass(plan, path):
+def write_ass(plan, path, frame=(W, H), jump_y=JUMP_Y):
+    """The captions, hook title, jump labels and credit as an ASS file for a frame of `frame` pixels (the
+    standing 1080x1920 clip, or 1920x1080 for a landscape copy, v2.8)."""
+    fw, fh = frame
     st, br = dict(plan['caption_style']), plan['brand']
     st['size'] = css_to_ass_size(st['size'], st['font_file'])
     white, accent, outline = ass_color(br['text']), ass_color(br['accent']), ass_color(br['outline'])
     head = f"""[Script Info]
 ScriptType: v4.00+
-PlayResX: {W}
-PlayResY: {H}
+PlayResX: {fw}
+PlayResY: {fh}
 WrapStyle: 2
 ScaledBorderAndShadow: yes
 
@@ -272,7 +275,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                              w['text'].replace('{', '(').replace('}', ')'))
             fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''
             events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,"
-                          f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}}}" + ''.join(
+                          f"{{\\pos({fw // 2},{g.get('y', st['y'])}){fs}}}" + ''.join(
                               x if k < 2 else ' ' + x for k, x in enumerate(parts)))
             continue
         if not st.get('pop', True):         # minimal: the group fades in, key words in the accent colour
@@ -280,7 +283,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                      (f'{{\\1c{white}}}' if w.get('emph') else '') for w in g['words']]
             fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''
             events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,"
-                          f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}\\fad(80,0)}}" + ' '.join(words))
+                          f"{{\\pos({fw // 2},{g.get('y', st['y'])}){fs}\\fad(80,0)}}" + ' '.join(words))
             continue
         for i, w in enumerate(g['words']):
             a = max(0, int((w['s'] - 1 / fps - g0) * 1000))
@@ -304,16 +307,16 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             parts.append(tag + w['text'].replace('{', '(').replace('}', ')'))
         fs = f"\\fs{round(st['size'] * g['scale'])}" if g.get('scale') else ''   # shrunk to fit the frame
         tilt = f"\\frz{st['tilt']}" if st.get('tilt') else ''
-        text = f"{{\\pos({W // 2},{g.get('y', st['y'])}){fs}{tilt}}}" + ' '.join(parts)
+        text = f"{{\\pos({fw // 2},{g.get('y', st['y'])}){fs}{tilt}}}" + ' '.join(parts)
         events.append(f"Dialogue: 0,{t(g0)},{t(g_end)},Cap,,0,0,0,,{text}")
     hk = plan.get('hook')
     if hk:                                   # the hook title: a box in the upper part, pops in, fades out
         text = '\\N'.join(line.replace('{', '(').replace('}', ')') for line in hk['lines'])
         events.append(f"Dialogue: 2,{t(hk['start'])},{t(hk['end'])},Hook,,0,0,0,,"
-                      f"{{\\pos({W // 2},{hk['y']})\\fad(90,260)\\fscx86\\fscy86\\t(0,170,0.5,\\fscx100\\fscy100)}}{text}")
+                      f"{{\\pos({fw // 2},{hk['y']})\\fad(90,260)\\fscx86\\fscy86\\t(0,170,0.5,\\fscx100\\fscy100)}}{text}")
     for lb in plan.get('labels', []):        # "27 MIN LATER" at a jump across time (optional)
         events.append(f"Dialogue: 1,{t(lb['start'])},{t(lb['end'])},Jump,,0,0,0,,"
-                      f"{{\\pos({W // 2},{JUMP_Y})\\fad(120,250)}}{lb['text']}")
+                      f"{{\\pos({fw // 2},{jump_y})\\fad(120,250)}}{lb['text']}")
     cr = plan.get('credit')
     if cr:                                   # "(C) Channel": in its corner, the whole clip (not the outro)
         text = cr['text'].replace('\\', '/').replace('{', '(').replace('}', ')')

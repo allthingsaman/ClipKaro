@@ -838,6 +838,9 @@ def main():
     ap.add_argument('project')
     ap.add_argument('--clips', default=None, help='comma list of clip ids, e.g. 1,3')
     ap.add_argument('--horizontal', action='store_true', help='keep the original 16:9 framing')
+    ap.add_argument('--landscape-copy', action='store_true',
+                    help='a 16:9 copy next to the standing clips, in clips-landscape/, on the same timeline (for '
+                         '`run.py landscape`)')
     ap.add_argument('--check', action='store_true', help='only check clip boundaries, cut nothing')
     ap.add_argument('--jump-cuts', action=argparse.BooleanOptionalAction, default=None,
                     help='cut long pauses and filler sounds out of each clip (default: settings.json "jump_cuts", on)')
@@ -937,7 +940,9 @@ def main():
     video = ensure_video(pdir, project)
     info = probe(video)
     print(f'-> source: {info["width"]}x{info["height"]} {info["fps"]:.2f}fps, {fmt_ts(info["duration"])}')
-    out_dir = pdir / 'clips'
+    if a.landscape_copy:            # v2.8: the same pieces as the standing clip, framed 16:9, in their own folder
+        a.horizontal = True
+    out_dir = pdir / ('clips-landscape' if a.landscape_copy else 'clips')
     out_dir.mkdir(exist_ok=True)
     layout = a.layout or settings().get('layout', 'auto')
     fc = None if a.horizontal else facecam_layout(pdir, project, video, info, layout)
@@ -949,6 +954,8 @@ def main():
         from . import sound
         from .kind import is_irregular
         cues, game = sound.load(pdir), is_irregular(project) or bool(fc)   # facecam layout: gameplay
+        if a.landscape_copy:          # the standing cut counted a found webcam as gameplay: the same pauses here
+            game = game or bool(project.get('facecam'))
         act_mode = str(settings().get('action_pauses', 'smart')).lower()       # smart | keep | cut
         act_on = act_mode != 'cut'
         happened = event_signs(pdir, words, load_json(pdir / 'transcript' / 'sentences.json') or []) \
@@ -1017,7 +1024,8 @@ def main():
         done.append(out)
 
     print(f'\nDONE: {len(done)} clip(s) in {out_dir}')
-    print('next (optional simple edit):  python run.py edit ' + pdir.name)
+    if not a.landscape_copy:                          # `landscape` goes on by itself
+        print('next (optional simple edit):  python run.py edit ' + pdir.name)
 
 
 if __name__ == '__main__':

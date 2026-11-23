@@ -56,7 +56,7 @@ def clip_files(pdir):
         d = pdir / sub
         for f in sorted(d.glob('*.mp4')) if d.is_dir() else ():
             head = f.name.split('-')[0]
-            if head.isdigit():
+            if head.isdigit() and not f.stem.endswith('-landscape'):   # the 16:9 copy is not a short (v2.8)
                 files[int(head)] = f
     return files
 

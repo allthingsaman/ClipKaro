@@ -410,7 +410,7 @@ Add your wishes to the same message, in normal words (English, Hindi or Hinglish
 - Caption looks: "box captions" · "karaoke captions" · "minimal captions" · "bold captions" · "comic captions" (classic otherwise)
 - "hook title" (a big 3-6 word title for the first seconds; only when you ask) · "no emojis"
 - "use #00E5FF as the caption colour" · "Hindi captions in Hindi letters"
-- "it's a gameplay video" · "keep it wide (16:9)" · "the video is in English"
+- "it's a gameplay video" · "keep it wide (16:9)" · "landscape copy" (a wide copy next to the standing clip) · "the video is in English"
 - After you see the clips: "clip 2 starts too early" · "make clip 1 shorter" · "use yellow captions"
 - Podcasts: "in clip 4, show both of them when he laughs" · "show the whole picture when he holds up the box"
 
