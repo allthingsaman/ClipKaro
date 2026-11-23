@@ -18,7 +18,7 @@ New to Claude Code or coding? Read the [user guide](user-guide.md) first.
 | [streaming-setup.md](streaming-setup.md) | **Multistream on OBS**: YouTube (horizontal and vertical), Twitch and Kick at once with stream keys, the encoder settings for each, audio tracks, upload speed, checking you're really live, fixes | streamers |
 | [roadmap-v3.md](roadmap-v3.md) | **What's next**, in order, with a rough time for each item: the road to "production ready" and beyond | everyone |
 | [plan-v3.0.md](plan-v3.0.md) | **The plan for v3.0**, approved by the owner: every item, decision and release step | the owner |
-| [test-list.md](test-list.md) | **What to try before v3.0**: every new part, how to test it and what you should see | the owner |
+| [test-list.md](test-list.md) | **Testing guide for v3.0**: every new part since v2.7.1 explained, whether it is on by itself or what to say, how to test it and what you should see | the owner |
 | [roadmap-v2.md](roadmap-v2.md) | **How ClipKaro compares with Opus Clip** and others (updated for v2.2), and the plan to make its clips industry grade | contributors, curious users |
 | [adding-a-language.md](adding-a-language.md) | How to add proper support for a new language (fonts, detection, Roman captions) | developers |
 | [SETUP-FEDORA.md](SETUP-FEDORA.md) | A ready-made prompt that lets Claude Code set everything up on Fedora with an NVIDIA GPU | Fedora users |
