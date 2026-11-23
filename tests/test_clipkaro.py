@@ -2625,12 +2625,12 @@ class SilentReactions(unittest.TestCase):
 
     def test_only_strong_and_held(self):
         from clipper import reactions as rx
-        st = rx.strong(self.samples([0.2, 0.95, 0.97, 0.9, 0.3, 0.99, 0.2, 0.5, 0.86, 0.88]))
+        st = rx.strong(self.samples([0.2, 0.96, 0.98, 0.97, 0.3, 0.99, 0.2, 0.5, 0.96, 0.97]))
         self.assertEqual([(r[2], r[3]) for r in st], [('R', 'laugh'), ('R', 'laugh')])
         self.assertEqual((st[0][0], st[0][1]), (0.33, 1.33))       # 3 samples in a row
         self.assertEqual(st[1][0], 2.67)                            # the lone 0.99 at 1.67 s is too short
-        self.assertEqual(rx.strong(self.samples([0.84] * 10)), [])   # never strong enough
-        joined = rx.strong(self.samples([0.9, 0.9, 0.2, 0.9, 0.9]))
+        self.assertEqual(rx.strong(self.samples([0.93] * 10)), [])   # a broad smile is not a strong laugh
+        joined = rx.strong(self.samples([0.96, 0.96, 0.2, 0.96, 0.96]))
         self.assertEqual(len(joined), 1)                            # a blink between two halves: one reaction
 
     def test_silent_means_not_heard_and_not_talking(self):

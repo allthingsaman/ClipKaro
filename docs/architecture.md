@@ -657,14 +657,18 @@ The owner's favourite gameplay clip is a boast paid off by a fail ("ye mission l
 A listener who cracks up or looks shocked without a sound was invisible to ClipKaro (it hears laughs). Faces are
 found with YuNet (the 2 largest, at least 8 % of the frame high) and cropped with 12 % margin; EmotiEffLib's
 `enet_b0_8_best_vgaf` (HSEmotion, Apache 2.0, 16 MB, onnxruntime on the processor; RGB, 224 px, ImageNet
-normalisation, softmax over 8 expressions) gives happiness and surprise. A STRONG reaction is happiness >= 0.85
-or surprise >= 0.85 in at least 2 samples in a row (3 a second at cut, 2 for the whole video), with readings
-of one face closer than 0.8 s joined. Measured on 5 edited podcast clips (312 face readings): people talking
-reach happiness 0.5 at most, real big grins 0.98-1.0 (8 readings >= 0.85, all real smiles); surprise >= 0.6
-caught people mid-word (13 % of readings, false "shocks" up to 9 s long), >= 0.8 none, hence 0.85. SILENT: no
+normalisation, softmax over 8 expressions) gives happiness and surprise. A STRONG reaction is happiness >= 0.95
+(a laugh) or surprise >= 0.85 (a shock) in at least 2 samples in a row (3 a second at cut, 1 a second for the
+whole video), with readings of one face closer than 0.8 s joined. Measured on 5 edited podcast clips (312 face
+readings): people talking reach happiness 0.5 at most, real big grins 0.98-1.0; surprise >= 0.6 caught people
+mid-word (13 % of readings, false "shocks" up to 9 s long), >= 0.8 none. On 6 minutes of the Khan Sir podcast
+(Figuring Out): the laughs found were real, but a broad smile also reached 0.9 (hence 0.95) and Khan Sir asking a
+question read as a 0.89 "shock": so the whole-video hints use laughs only, at most 4 per 10 minutes (the
+strongest), and shocks only count at cut, where the person talking is known. SILENT: no
 laugh heard then (sound.py / the clip's laughter frames) and, at cut, not the face of the person talking
-(the voice register's side). Whole talk videos at fetch (`reactions.scan`, 2 samples a second, about 4-8 minutes
-per hour of video) -> `transcript/reactions.json` -> hint lines through `hints.event_notes`. At cut, each clip's
+(the voice register's side). Whole talk videos at fetch (`reactions.scan`, 1 sample a second, about 4 minutes
+per hour of a two-person podcast; 2 a second took 8) -> `transcript/reactions.json` -> hint lines through
+`hints.event_notes`. The video's size comes from ffprobe (OpenCV can't open AV1 downloads). At cut, each clip's
 two-person shots are read at 3 a second (cached in the clip's signals file), and the director treats a silent
 reaction like a heard laugh: a split-screen zone from 0.3 s before to 0.8 s after it. Tested on a made-up
 two-shot (two edited clips side by side): the right person's real grin found at 7.0-8.0 s (0.999), kept as

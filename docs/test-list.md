@@ -106,9 +106,8 @@ Your steps first (once):
 
 ## Phase 3: v2.12 (silent reactions in podcasts)
 
-Needs a two-person podcast (a Khan Sir or Raj Shamani style video). Note: on 23 November YouTube refused this
-laptop's downloads ("Sign in to confirm you're not a bot"); if it still does, say which browser you use, and
-ClipKaro fetches with its sign-in (`--cookies-from-browser`).
+Needs a two-person podcast (a Khan Sir or Raj Shamani style video). If YouTube says "Sign in to confirm you're not a
+bot", say which browser you use, and ClipKaro fetches with its sign-in (`--cookies-from-browser`).
 - [ ] **The hint.** After fetch, `transcript.txt` has a few lines with `[a silent laugh on screen ~2 s]` where
   someone on camera cracks up without a sound. Are they real? (Only strong ones should be there.)
 - [ ] **Both people shown.** In a clip where the listener laughs silently while the other talks, the split

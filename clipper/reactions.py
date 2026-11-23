@@ -32,10 +32,14 @@ MODEL = ('https://raw.githubusercontent.com/sb-ai-lab/EmotiEffLib/main/models/af
          'enet_b0_8_best_vgaf.onnx', 'enet_b0_8_best_vgaf.onnx')
 LABELS = ['anger', 'contempt', 'disgust', 'fear', 'happiness', 'neutral', 'sadness', 'surprise']
 SAMPLE_FPS = 3.0             # faces read this often (2 for the whole video: the hints)
-HAPPY_ON = 0.85              # a strong laugh / big grin: happiness at least this sure ...
+HAPPY_ON = 0.95              # a strong laugh: happiness at least this sure (a broad smile reaches 0.9: tested) ...
 SURPRISE_ON = 0.85           # ... or a strong shock: surprise at least this sure (0.6 caught people mid-word: tested)
 MIN_RUN = 2                  # ... in at least this many samples in a row
 JOIN = 0.8                   # reactions of one face closer than this are one
+HINT_FPS = 1.0               # the whole video is read once a second (2 readings in a row = a 2 s laugh): about
+                             # 4 minutes per hour of a two-person podcast on the processor (2 a second took 8)
+HINTS_PER_10_MIN = 4         # the whole video's hints: only the strongest few laughs (shock only at cut, where the
+                             # person talking is known: a face asking a question reads as surprise)
 MIN_FACE = 0.08              # faces smaller than this share of the frame height are too small to read
 MARGIN = 0.12                # the face crop is the face box grown by this share on each side
 _SESSION = {}
@@ -79,10 +83,12 @@ def expressions(img, box, sess=None):
 
 def frames(video, a, b, fps):
     """(time, BGR frame) from a to b seconds, fps a second (ffmpeg, scaled to 720 px high at most)."""
-    import cv2
-    cap = cv2.VideoCapture(str(video))
-    W, H = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap.release()
+    from .common import probe
+    try:
+        info = probe(str(video))                 # (OpenCV can't open every codec: AV1 downloads)
+        W, H = int(info['width']), int(info['height'])
+    except (SystemExit, Exception):
+        return
     if not W or not H:
         return
     k = min(1.0, 720 / H)
@@ -180,7 +186,7 @@ def wanted(project):
 
 
 def scan(pdir, quiet=False):
-    """The whole video at 2 samples a second -> transcript/reactions.json (talk videos with the video here)."""
+    """The whole video at HINT_FPS -> transcript/reactions.json (talk videos with the video here)."""
     from .kind import _video_file
     from . import sound
     project = load_json(pdir / 'project.json', {}) or {}
@@ -191,14 +197,16 @@ def scan(pdir, quiet=False):
     dur = float(project.get('duration') or 0)
     if not dur:
         return None
-    samples = read(video, 0.0, dur, fps=2.0)
+    samples = read(video, 0.0, dur, fps=HINT_FPS)
     if samples is None:
         if not quiet:
             print('   (silent reactions skipped: the expression model is not available)')
         return None
     cues = sound.load(pdir) or {}
     laughs = [(a, b) for a, b, *_ in cues.get('laughter', [])]
-    found = silent(strong(samples, fps=2.0), laughs)
+    from .hints import rare
+    found = rare([r for r in silent(strong(samples, fps=HINT_FPS), laughs) if r[3] == 'laugh'],
+                 lambda r: r[4] * (r[1] - r[0]), HINTS_PER_10_MIN)
     r = {'v': REACTIONS_V, 'reactions': [list(x) for x in found], 'two_faces': round(
         sum(1 for _, row in samples if len(row) == 2) / max(1, len(samples)), 2), 'seconds': round(time.time() - t0, 1)}
     save_json(pdir / 'transcript' / 'reactions.json', r)

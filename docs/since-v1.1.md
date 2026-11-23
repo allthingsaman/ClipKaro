@@ -447,10 +447,10 @@ changed. Only new ones were added.
   done by hand (22 November). *(v2.9, 2026-11-23)*
 
 - ↔ **A listener's silent laugh is seen** (podcasts and talk videos). ClipKaro only heard laughs, so a guest who
-  cracked up without a sound was missed. Now faces are read 2-3 times a second: a strong laugh or shock without a
-  sound becomes a hint for picking (`[a silent laugh on screen ~2 s]`), and in a two-person shot both people are
-  shown while the listener reacts, as around a heard laugh. Only strong ones (the owner's rule). About 4-8 minutes
-  per hour of video at fetch. *(v2.12, 2026-11-23)*
+  cracked up without a sound was missed. Now faces are read: a strong laugh without a sound becomes a hint for
+  picking (`[a silent laugh on screen ~2 s]`, the strongest few), and in a two-person shot both people are shown
+  while the listener laughs or looks shocked, as around a heard laugh. Only strong ones (the owner's rule). About 4
+  minutes per hour of video at fetch. *(v2.12, 2026-11-23)*
   - Way back: `"silent_reactions": false` in settings.json.
 
 ## Posting
