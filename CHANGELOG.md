@@ -1,5 +1,10 @@
 # What's new
 
+## Docs (2026-11-26)
+- `BE-SMART-USER.md` at the root, linked at the top of the README: which mode fits which video (quick, standard,
+  deep; never deep clips under 21 minutes), what to type for each kind of video, and the habits that save the Claude
+  plan, time and disk.
+
 ## v2.15 (following people who move, November 2026)
 
 - **People who walk around stay in the picture.** A teacher moving along the board, a speaker crossing a stage

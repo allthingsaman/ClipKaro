@@ -545,6 +545,9 @@ changed. Only new ones were added.
   (posting with PostKaro). The README highlights the YouTube cookies file Windows needs.
 - ⬆ **Docs** *(2026-11-21)*: the README opens with the owner's 16-minute video guide (installing ClipKaro and
   PostKaro on Windows and using them), linked under the short description.
+- ⬆ **Docs** *(2026-11-26)*: `BE-SMART-USER.md` at the root (linked at the top of the README): which mode fits which
+  video (never deep clips under 21 minutes), what to type for each kind of video, and the habits that save the Claude
+  plan, time and disk. EditKaro and PostKaro have their own.
 
 ## Cost
 

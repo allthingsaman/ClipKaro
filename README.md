@@ -13,6 +13,9 @@ ClipKaro finds the best moments and makes standing (9:16) videos for **YouTube S
 Reels and TikTok**: framed on whoever is talking, with captions that appear word by word. It's free,
 it runs on your own computer, and it works just as well for **Hindi and Hinglish** as for English.
 
+> 💡 **Use it smartly:** [BE-SMART-USER.md](BE-SMART-USER.md) shows which mode fits which video (quick, standard,
+> deep), what to type for each kind of video, and how to get the best clips with the least of your Claude plan.
+
 <p align="center">
   <a href="https://youtu.be/Dlq4z26w1QM"><img src="https://img.youtube.com/vi/Dlq4z26w1QM/maxresdefault.jpg" alt="Watch the video guide on YouTube: I Built an AI That Clips Your GTA 6 Stream While You're Live (Windows Setup + Installation)" width="640"></a>
 </p>

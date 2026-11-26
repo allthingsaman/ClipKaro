@@ -4,6 +4,7 @@ New to Claude Code or coding? Read the [user guide](user-guide.md) first.
 
 | Guide | What's inside | For |
 |---|---|---|
+| [../BE-SMART-USER.md](../BE-SMART-USER.md) | **Use it smartly:** which mode for which video, what to type, how to save your Claude plan | everyone |
 | [user-guide.md](user-guide.md) | **Start here if you're new.** Simple steps from zero to your first clips, no coding needed, and how to save your own preferences | everyone |
 | [installation.md](installation.md) | Step-by-step setup on Windows, macOS and Linux (Ubuntu/Debian, Fedora, Arch), NVIDIA GPU setup, updating, uninstalling | everyone |
 | [requirements.md](requirements.md) | Minimum and recommended hardware, GPU/VRAM, disk space, model sizes, how long things take | everyone |
